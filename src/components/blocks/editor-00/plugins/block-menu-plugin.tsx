@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
   $getSelection,
@@ -7,6 +8,7 @@ import {
   $isElementNode,
   $getRoot,
   $createParagraphNode,
+  $getNodeByKey,
 } from "lexical";
 import { useEffect, useRef, useState } from "react";
 import { $createHeadingNode } from "@lexical/rich-text";
@@ -21,12 +23,12 @@ interface BlockMenuPosition {
   blockKey: string;
 }
 
-export function BlockMenuPlugin(): null {
+export function BlockMenuPlugin(): React.ReactElement | null {
   const [editor] = useLexicalComposerContext();
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState<BlockMenuPosition | null>(null);
   const [hoveredBlockKey, setHoveredBlockKey] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -63,8 +65,7 @@ export function BlockMenuPlugin(): null {
     // Show menu after short delay
     timeoutRef.current = setTimeout(() => {
       editor.getEditorState().read(() => {
-        const root = $getRoot();
-        const blockNode = root.getDescendantByKey(hoveredBlockKey);
+        const blockNode = $getNodeByKey(hoveredBlockKey);
         
         if (blockNode && $isElementNode(blockNode)) {
           // Get DOM element for positioning
@@ -91,8 +92,7 @@ export function BlockMenuPlugin(): null {
 
   const handleDelete = () => {
     editor.update(() => {
-      const root = $getRoot();
-      const blockNode = root.getDescendantByKey(position?.blockKey || "");
+      const blockNode = $getNodeByKey(position?.blockKey || "");
       if (blockNode) {
         blockNode.remove();
       }
@@ -102,11 +102,11 @@ export function BlockMenuPlugin(): null {
 
   const handleDuplicate = () => {
     editor.update(() => {
-      const root = $getRoot();
-      const blockNode = root.getDescendantByKey(position?.blockKey || "");
+      const blockNode = $getNodeByKey(position?.blockKey || "");
       if (blockNode && $isElementNode(blockNode)) {
-        const clonedNode = blockNode.constructor.create(blockNode.getJSON());
-        blockNode.insertAfter(clonedNode);
+        const clone = blockNode.exportJSON();
+        const newNode = blockNode.getLatest().constructor.importJSON(clone) as typeof blockNode;
+        blockNode.insertAfter(newNode);
       }
     });
     setIsOpen(false);
@@ -114,8 +114,7 @@ export function BlockMenuPlugin(): null {
 
   const handleConvertTo = (type: string) => {
     editor.update(() => {
-      const root = $getRoot();
-      const blockNode = root.getDescendantByKey(position?.blockKey || "");
+      const blockNode = $getNodeByKey(position?.blockKey || "");
       if (!blockNode) return;
 
       let newNode;
@@ -142,9 +141,9 @@ export function BlockMenuPlugin(): null {
           newNode = $createParagraphNode();
       }
 
-      if (newNode) {
-        const textContent = blockNode.getTextContent();
-        newNode.append(...blockNode.getChildren());
+      if (newNode && $isElementNode(blockNode)) {
+        const children = blockNode.getChildren();
+        newNode.append(...children);
         blockNode.replace(newNode);
         newNode.select();
       }
