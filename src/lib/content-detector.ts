@@ -10,11 +10,18 @@ const URL_PATTERN =
 
 const HEX_COLOR_PATTERN = /^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
 
-const RGB_COLOR_PATTERN =
-  /^rgb\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})\)$/i;
+// Matches 0-255: 0-9, 10-99, 100-199, 200-249, 250-255
+const RGB_VALUE = "(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])";
 
-const RGBA_COLOR_PATTERN =
-  /^rgba\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3}),\s*([\d.]+)\)$/i;
+const RGB_COLOR_PATTERN = new RegExp(
+  `^rgb\\(${RGB_VALUE},\\s*${RGB_VALUE},\\s*${RGB_VALUE}\\)$`,
+  "i"
+);
+
+const RGBA_COLOR_PATTERN = new RegExp(
+  `^rgba\\(${RGB_VALUE},\\s*${RGB_VALUE},\\s*${RGB_VALUE},\\s*([\\d.]+)\\)$`,
+  "i"
+);
 
 const HSL_COLOR_PATTERN =
   /^hsl\((\d{1,3}),\s*(\d{1,3})%,\s*(\d{1,3})%\)$/i;
