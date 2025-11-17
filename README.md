@@ -4,7 +4,7 @@ A minimal, keyboard-friendly read-it-later application with automatic metadata e
 
 ## Features
 
-- 🔐 **Secure Authentication** - Powered by Clerk
+- 🔐 **Secure Authentication** - Magic link authentication via Supabase OTP
 - 💾 **Personal Data Storage** - Your data stays in your own Supabase database
 - 🎯 **Auto Metadata Extraction** - Automatically fetches titles, descriptions, and favicons
 - 🧹 **URL Cleaning** - Removes tracking parameters automatically
@@ -19,7 +19,6 @@ A minimal, keyboard-friendly read-it-later application with automatic metadata e
 
 - Node.js 18+
 - Supabase account (free tier)
-- Clerk account (free tier)
 
 ### Installation
 
@@ -35,8 +34,8 @@ npm install
 ```
 
 3. Set up environment variables:
-   - Copy `.env.example` to `.env.local`
-   - Fill in your Clerk and Supabase credentials
+   - Create a `.env.local` file
+   - Add your Supabase credentials and production URL (see SETUP.md)
 
 4. Set up the database:
    - Follow the instructions in `SETUP.md`
@@ -50,13 +49,12 @@ npm run dev
 
 - 📖 [Setup Guide](./SETUP.md) - Detailed setup instructions
 - 🗄️ [Database Schema](./supabase/schema.sql) - PostgreSQL schema with RLS
-- 🔧 [Environment Variables](./.env.example) - Required configuration
 
 ## Tech Stack
 
 - **Frontend**: Next.js 15 (App Router), React, TypeScript
 - **Styling**: Tailwind CSS
-- **Authentication**: Clerk
+- **Authentication**: Supabase OTP (Magic Links)
 - **Database**: Supabase (PostgreSQL)
 - **Metadata**: Cheerio for HTML parsing
 - **Deployment**: Vercel-ready
@@ -77,8 +75,7 @@ vault/
 ├── src/
 │   ├── app/                  # Next.js app directory
 │   │   ├── api/             # API routes
-│   │   ├── sign-in/         # Clerk sign-in page
-│   │   ├── sign-up/         # Clerk sign-up page
+│   │   ├── auth/            # Authentication pages and callback
 │   │   └── page.tsx         # Main application page
 │   ├── components/          # React components
 │   │   ├── ui/              # Reusable UI components
@@ -135,4 +132,9 @@ This project follows modern React and Next.js best practices:
 
 ---
 
-**Note**: Before running `npm run build` in production, make sure all environment variables are properly configured in `.env.local`. The build will fail without valid Clerk credentials.
+## Production Deployment
+
+When deploying to Vercel:
+1. Set the `NEXT_PUBLIC_SITE_URL` environment variable to your production domain (e.g., `https://vault-theta-lac.vercel.app`)
+2. This ensures authentication redirects work correctly and don't point to localhost
+3. See [SETUP.md](./SETUP.md) for detailed deployment instructions

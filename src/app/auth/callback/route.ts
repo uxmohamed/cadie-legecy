@@ -11,21 +11,39 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     
     if (!error) {
+      // Determine the correct redirect URL
       const forwardedHost = request.headers.get("x-forwarded-host");
-      const isLocalEnv = process.env.NODE_ENV === "development";
+      const forwardedProto = request.headers.get("x-forwarded-proto") ?? "https";
       
-      if (isLocalEnv) {
-        // In development, redirect to localhost
-        return NextResponse.redirect(`${origin}${next}`);
+      let redirectUrl: string;
+      
+      // Priority: 1. Environment variable, 2. Forwarded host, 3. Origin
+      if (process.env.NEXT_PUBLIC_SITE_URL) {
+        redirectUrl = `${process.env.NEXT_PUBLIC_SITE_URL}${next}`;
       } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`);
+        redirectUrl = `${forwardedProto}://${forwardedHost}${next}`;
       } else {
-        return NextResponse.redirect(`${origin}${next}`);
+        redirectUrl = `${origin}${next}`;
       }
+      
+      return NextResponse.redirect(redirectUrl);
     }
   }
 
   // If there's an error or no code, redirect to auth page
-  return NextResponse.redirect(`${origin}/auth`);
+  // Use the same logic for error redirects
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const forwardedProto = request.headers.get("x-forwarded-proto") ?? "https";
+  
+  let authUrl: string;
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    authUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/auth`;
+  } else if (forwardedHost) {
+    authUrl = `${forwardedProto}://${forwardedHost}/auth`;
+  } else {
+    authUrl = `${origin}/auth`;
+  }
+  
+  return NextResponse.redirect(authUrl);
 }
 

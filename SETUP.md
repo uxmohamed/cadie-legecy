@@ -1,12 +1,11 @@
 # Vault Setup Guide
 
-This guide will help you set up the Vault read-it-later application with Supabase and Clerk authentication.
+This guide will help you set up the Vault read-it-later application with Supabase authentication.
 
 ## Prerequisites
 
 - Node.js 18+ installed
 - A Supabase account (free tier works)
-- A Clerk account (free tier works)
 
 ## Step 1: Install Dependencies
 
@@ -14,21 +13,7 @@ This guide will help you set up the Vault read-it-later application with Supabas
 npm install
 ```
 
-## Step 2: Set Up Clerk Authentication
-
-1. Go to [https://clerk.com](https://clerk.com) and create an account
-2. Create a new application
-3. In your Clerk dashboard:
-   - Go to **API Keys**
-   - Copy your **Publishable Key** and **Secret Key**
-4. Create a JWT template for Supabase:
-   - Go to **JWT Templates** in the sidebar
-   - Click **+ New template**
-   - Choose **Supabase** from the templates
-   - Name it "supabase" (this exact name is required)
-   - Save the template
-
-## Step 3: Set Up Supabase
+## Step 2: Set Up Supabase
 
 1. Go to [https://supabase.com](https://supabase.com) and create an account
 2. Create a new project
@@ -37,7 +22,7 @@ npm install
    - Copy your **anon/public key**
    - Copy your **service_role key** (keep this secret!)
 
-## Step 4: Configure Supabase Database
+## Step 3: Configure Supabase Database
 
 1. In your Supabase dashboard, go to **SQL Editor**
 2. Open the file `supabase/schema.sql` from this project
@@ -45,34 +30,44 @@ npm install
 4. Paste it into the SQL Editor and click **Run**
 5. This creates all tables, indexes, and Row Level Security policies
 
-## Step 5: Configure Clerk-Supabase Integration
+## Step 4: Configure Supabase Authentication
 
-1. In Supabase dashboard, go to **Authentication** > **Providers**
-2. Scroll down to **Custom Provider** or **JWT**
-3. Add your Clerk JWKS URL:
-   ```
-   https://[your-clerk-domain].clerk.accounts.dev/.well-known/jwks.json
-   ```
-   Replace `[your-clerk-domain]` with your actual Clerk domain (found in your Clerk dashboard)
+1. In your Supabase dashboard, go to **Authentication** > **Email Templates**
+2. Customize the magic link email template if desired
+3. Ensure email authentication is enabled in **Authentication** > **Providers**
 
-## Step 6: Environment Variables
+## Step 5: Environment Variables
 
 Create a `.env.local` file in the root directory:
 
 ```bash
-# Clerk Authentication
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxxxx
-CLERK_SECRET_KEY=sk_test_xxxxx
-NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=xxxxx
 SUPABASE_SERVICE_ROLE_KEY=xxxxx
+
+# Site URL (IMPORTANT for production deployments)
+# For local development, you can omit this or set it to http://localhost:3000
+# For production (Vercel), set this to your production domain
+NEXT_PUBLIC_SITE_URL=https://vault-theta-lac.vercel.app
 ```
 
-Replace the `xxxxx` values with your actual keys from Clerk and Supabase.
+Replace the `xxxxx` values with your actual keys from Supabase.
+
+**Important**: The `NEXT_PUBLIC_SITE_URL` variable is crucial for authentication to work correctly in production. Without it, the authentication redirect may point to localhost instead of your live domain.
+
+## Step 6: Configure Vercel Environment Variables (Production Only)
+
+If deploying to Vercel:
+
+1. Go to your Vercel project dashboard
+2. Navigate to **Settings** > **Environment Variables**
+3. Add the following variables:
+   - `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anon key
+   - `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key
+   - `NEXT_PUBLIC_SITE_URL`: Your production domain (e.g., `https://vault-theta-lac.vercel.app`)
+4. Redeploy your application
 
 ## Step 7: Run the Development Server
 
@@ -84,9 +79,11 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Step 8: Test the Application
 
-1. You'll be redirected to sign in
-2. Create a new account using Clerk's authentication
-3. Once signed in, you can:
+1. You'll be redirected to the authentication page
+2. Enter your email address to receive a magic link
+3. Check your email and click the magic link
+4. You'll be redirected back to the app and logged in
+5. Once signed in, you can:
    - Add links using the input at the top
    - View your saved links in the list
    - Use keyboard shortcuts (Cmd+F to focus input, Arrow keys to navigate)
@@ -95,7 +92,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Implemented
 
-- ✅ User authentication with Clerk
+- ✅ User authentication with Supabase OTP (magic links)
 - ✅ Link storage in Supabase
 - ✅ Automatic metadata extraction (title, favicon, description)
 - ✅ URL cleaning (removes tracking parameters)
@@ -122,9 +119,14 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ### Authentication Issues
 
 If you're getting authentication errors:
-1. Make sure your Clerk JWT template is named exactly "supabase"
-2. Verify your Clerk JWKS URL is correctly configured in Supabase
-3. Check that all environment variables are set correctly
+1. Verify that `NEXT_PUBLIC_SITE_URL` is set correctly in production
+2. Check that all environment variables are set correctly in Vercel
+3. Ensure email authentication is enabled in Supabase
+4. Check your spam folder for the magic link email
+
+If the magic link redirects to localhost in production:
+1. Make sure `NEXT_PUBLIC_SITE_URL` is set to your production domain in Vercel
+2. Redeploy your application after adding the environment variable
 
 ### Database Issues
 
@@ -145,23 +147,24 @@ If the build fails:
 
 - **Frontend**: Next.js 15 with App Router, React, TypeScript
 - **Styling**: Tailwind CSS with neutral color palette
-- **Authentication**: Clerk
+- **Authentication**: Supabase OTP (Magic Links)
 - **Database**: Supabase (PostgreSQL)
 - **Metadata Extraction**: Cheerio for HTML parsing
 - **Deployment**: Vercel (recommended)
 
 ## Security
 
-- All API routes are protected with Clerk authentication
+- All API routes are protected with Supabase authentication
 - Row Level Security ensures users can only access their own data
 - Service role key is only used server-side
 - No sensitive data is exposed to the client
+- Magic links expire after use for security
 
 ## Support
 
 For issues or questions:
-- Check the [Clerk documentation](https://clerk.com/docs)
 - Check the [Supabase documentation](https://supabase.com/docs)
+- Review the [Supabase authentication guide](https://supabase.com/docs/guides/auth)
 - Review the code in `src/lib/supabase/` for database utilities
 - Review the code in `src/app/api/` for API routes
 
