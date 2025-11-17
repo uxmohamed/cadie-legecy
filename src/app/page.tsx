@@ -53,7 +53,7 @@ export default function Home() {
 
     async function fetchLinks() {
       try {
-        const response = await fetch("/api/links");
+        const response = await fetch("/api/links?is_archived=false");
         if (response.ok) {
           const data = await response.json();
           setLinks(data.links || []);
@@ -96,6 +96,58 @@ export default function Home() {
   const handleSearch = React.useCallback((query: string) => {
     setSearchQuery(query);
   }, []);
+
+  const handleDeleteLink = async (id: string) => {
+    try {
+      const response = await fetch(`/api/links/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete link");
+      }
+
+      setLinks((prev) => prev.filter((link) => link.id !== id));
+      showToast("Link deleted successfully", "success");
+    } catch (error) {
+      console.error("Error deleting link:", error);
+      showToast("Failed to delete link", "error");
+    }
+  };
+
+  const handleArchiveLink = async (id: string) => {
+    try {
+      const response = await fetch(`/api/links/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_archived: true }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to archive link");
+      }
+
+      setLinks((prev) => prev.filter((link) => link.id !== id));
+      showToast("Link archived successfully", "success");
+    } catch (error) {
+      console.error("Error archiving link:", error);
+      showToast("Failed to archive link", "error");
+    }
+  };
+
+  const handleCopyUrl = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast("URL copied to clipboard", "success");
+    } catch (error) {
+      console.error("Failed to copy URL:", error);
+      showToast("Failed to copy URL", "error");
+    }
+  };
+
+  const handleEditLink = (link: Link) => {
+    showToast("Edit functionality coming soon", "info");
+  };
 
   const handleSubmit = async (value: string, type: "url" | "color" | "text") => {
     setIsLoading(true);
@@ -225,7 +277,13 @@ export default function Home() {
             {fetchingLinks ? (
               <LinkListSkeleton />
             ) : (
-              <LinkList links={filteredLinks} />
+              <LinkList 
+                links={filteredLinks}
+                onDelete={handleDeleteLink}
+                onArchive={handleArchiveLink}
+                onEdit={handleEditLink}
+                onCopyUrl={handleCopyUrl}
+              />
             )}
         </div>
         </div>

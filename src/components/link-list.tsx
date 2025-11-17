@@ -4,12 +4,37 @@ import * as React from "react";
 import type { Link } from "@/types";
 import { cn, formatDate } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
+import {
+  Menu,
+  MenuItem,
+  MenuPopup,
+  MenuSeparator,
+  MenuShortcut,
+  MenuTrigger,
+} from "@/components/ui/menu";
+import {
+  MoreHorizontal,
+  Copy,
+  Edit,
+  Archive,
+  Trash,
+} from "lucide-react";
 
 interface LinkListProps {
   links: Link[];
+  onDelete?: (id: string) => void;
+  onArchive?: (id: string) => void;
+  onEdit?: (link: Link) => void;
+  onCopyUrl?: (url: string) => void;
 }
 
-export function LinkList({ links }: LinkListProps) {
+export function LinkList({ 
+  links, 
+  onDelete, 
+  onArchive, 
+  onEdit, 
+  onCopyUrl 
+}: LinkListProps) {
   const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null);
   const linkRefs = React.useRef<(HTMLAnchorElement | null)[]>([]);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -98,9 +123,10 @@ export function LinkList({ links }: LinkListProps) {
 
   return (
     <div className="w-full" ref={containerRef}>
-      <div className="sticky top-0 z-10 mb-8 grid grid-cols-[1fr_auto] gap-4 bg-[#fafafa] py-4 text-xs font-medium text-neutral-400">
+      <div className="sticky top-0 z-10 mb-8 grid grid-cols-[1fr_auto_auto] gap-4 bg-[#fafafa] py-4 text-xs font-medium text-neutral-400">
         <div>Title</div>
         <div>Created at</div>
+        <div className="w-10"></div>
       </div>
       <div className="space-y-0.5">
         {links.map((link, index) => {
@@ -114,9 +140,38 @@ export function LinkList({ links }: LinkListProps) {
             }
           };
 
+          const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+            if ((e.metaKey || e.ctrlKey)) {
+              if (e.key === "c") {
+                e.preventDefault();
+                onCopyUrl?.(link.url);
+              } else if (e.key === "e") {
+                e.preventDefault();
+                onEdit?.(link);
+              } else if (e.key === "a") {
+                e.preventDefault();
+                onArchive?.(link.id);
+              } else if (e.key === "Backspace") {
+                e.preventDefault();
+                onDelete?.(link.id);
+              }
+            }
+          };
+
           return (
-            <a
+            <div
               key={link.id}
+              onMouseEnter={() => setFocusedIndex(index)}
+              onMouseLeave={() => {
+                if (focusedIndex === index) setFocusedIndex(null);
+              }}
+              onKeyDown={handleKeyDown}
+              className={cn(
+                "group grid grid-cols-[1fr_auto_auto] items-center gap-4 rounded-lg px-3 py-2 transition-colors",
+                focusedIndex === index && "bg-neutral-100"
+              )}
+            >
+              <a
               ref={(el) => {
                 linkRefs.current[index] = el;
               }}
@@ -125,14 +180,11 @@ export function LinkList({ links }: LinkListProps) {
               rel={isColor ? undefined : "noopener noreferrer"}
               onClick={handleClick}
               onFocus={() => setFocusedIndex(index)}
-              onMouseEnter={() => setFocusedIndex(index)}
               className={cn(
-                "group grid grid-cols-[1fr_auto] items-center gap-4 rounded-lg px-3 py-2 focus:outline-none",
-                focusedIndex === index && "bg-neutral-200",
+                  "flex min-w-0 items-center gap-3 focus:outline-none",
                 isColor && "cursor-pointer"
               )}
             >
-              <div className="flex min-w-0 items-center gap-3">
                 {isColor ? (
                   <div
                     className="h-5 w-5 flex-shrink-0 rounded-full border border-neutral-300"
@@ -157,11 +209,46 @@ export function LinkList({ links }: LinkListProps) {
                     {link.domain}
                   </div>
                 </div>
-              </div>
+              </a>
               <div className="text-sm text-neutral-400">
                 {formatDate(new Date(link.created_at))}
               </div>
-            </a>
+              <div className={cn(
+                "opacity-0 transition-opacity",
+                focusedIndex === index && "opacity-100"
+              )}>
+                <Menu>
+                  <MenuTrigger>
+                    <button className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-200 transition-colors">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+                  </MenuTrigger>
+                  <MenuPopup>
+                    <MenuItem onClick={() => onCopyUrl?.(link.url)}>
+                      <Copy className="h-4 w-4" />
+                      Copy URL
+                      <MenuShortcut>⌘C</MenuShortcut>
+                    </MenuItem>
+                    <MenuItem onClick={() => onEdit?.(link)}>
+                      <Edit className="h-4 w-4" />
+                      Edit
+                      <MenuShortcut>⌘E</MenuShortcut>
+                    </MenuItem>
+                    <MenuItem onClick={() => onArchive?.(link.id)}>
+                      <Archive className="h-4 w-4" />
+                      Archive
+                      <MenuShortcut>⌘A</MenuShortcut>
+                    </MenuItem>
+                    <MenuSeparator />
+                    <MenuItem variant="destructive" onClick={() => onDelete?.(link.id)}>
+                      <Trash className="h-4 w-4" />
+                      Delete
+                      <MenuShortcut>⌘⌫</MenuShortcut>
+                    </MenuItem>
+                  </MenuPopup>
+                </Menu>
+              </div>
+            </div>
           );
         })}
       </div>
