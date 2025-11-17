@@ -1,0 +1,98 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const searchParams = request.nextUrl.searchParams;
+    const categoryId = searchParams.get("category_id");
+    const isArchived = searchParams.get("is_archived") === "true";
+    
+    let query = supabase
+      .from("links")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("is_archived", isArchived)
+      .order("created_at", { ascending: false });
+
+    if (categoryId) {
+      query = query.eq("category_id", categoryId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ links: data });
+  } catch (error) {
+    console.error("Error fetching links:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { url, title, content_type = "url", category_id } = body;
+
+    if (!url || !title) {
+      return NextResponse.json(
+        { error: "URL and title are required" },
+        { status: 400 }
+      );
+    }
+
+    // Extract domain from URL
+    let domain = "";
+    try {
+      domain = new URL(url).hostname.replace("www.", "");
+    } catch {
+      domain = url;
+    }
+
+    const { data, error } = await supabase
+      .from("links")
+      .insert({
+        user_id: user.id,
+        url,
+        clean_url: url, // TODO: Implement URL cleaning
+        title,
+        domain,
+        content_type,
+        category_id: category_id || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ link: data }, { status: 201 });
+  } catch (error) {
+    console.error("Error creating link:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
