@@ -20,6 +20,9 @@ export default function Home() {
   const [user, setUser] = React.useState<User | null>(null);
   const { showToast } = useToast();
   const router = useRouter();
+  const deleteTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const pendingDeleteRef = React.useRef<{ id: string; link: Link; index: number } | null>(null);
+  const deletingRef = React.useRef<Set<string>>(new Set());
 
   React.useEffect(() => {
     const supabase = createClient();
@@ -98,38 +101,166 @@ export default function Home() {
     setSearchQuery(query);
   }, []);
 
-  const handleDeleteLink = async (id: string) => {
-    let deletedLink: Link | undefined;
+  const undoDelete = React.useCallback(() => {
+    if (pendingDeleteRef.current && deleteTimeoutRef.current) {
+      clearTimeout(deleteTimeoutRef.current);
+      const { id, link, index } = pendingDeleteRef.current;
+      
+      setLinks((prev) => {
+        const exists = prev.some((l) => l.id === link.id);
+        if (exists) return prev;
+        
+        // Insert the link back at its original position
+        const newLinks = [...prev];
+        newLinks.splice(index, 0, link);
+        return newLinks;
+      });
+      
+      showToast("Link restored", "success");
+      
+      pendingDeleteRef.current = null;
+      deleteTimeoutRef.current = null;
+      deletingRef.current.delete(id);
+    }
+  }, [showToast]);
+
+  // Global keyboard shortcut for undo (⌘Z)
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "z" && pendingDeleteRef.current) {
+        e.preventDefault();
+        undoDelete();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [undoDelete]);
+
+  // Process any pending deletions from sessionStorage on mount
+  React.useEffect(() => {
+    const processPendingDeletions = async () => {
+      try {
+        const pending = sessionStorage.getItem("pendingDeletions");
+        if (pending) {
+          const ids: string[] = JSON.parse(pending);
+          sessionStorage.removeItem("pendingDeletions");
+          
+          // Delete all pending items
+          await Promise.all(
+            ids.map((id) =>
+              fetch(`/api/links/${id}`, { method: "DELETE" }).catch((error) =>
+                console.error("Error deleting pending:", error)
+              )
+            )
+          );
+        }
+      } catch (error) {
+        console.error("Error processing pending deletions:", error);
+      }
+    };
+
+    processPendingDeletions();
+  }, []);
+
+  // Complete pending deletion before page unload
+  React.useEffect(() => {
+    const completePendingDelete = () => {
+      if (pendingDeleteRef.current) {
+        const { id } = pendingDeleteRef.current;
+        
+        // Store in sessionStorage to complete after reload
+        try {
+          const pending = sessionStorage.getItem("pendingDeletions");
+          const ids = pending ? JSON.parse(pending) : [];
+          if (!ids.includes(id)) {
+            ids.push(id);
+            sessionStorage.setItem("pendingDeletions", JSON.stringify(ids));
+          }
+        } catch (error) {
+          console.error("Error storing pending deletion:", error);
+        }
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      completePendingDelete();
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
     
-    // Optimistic update - remove immediately and capture the deleted link
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
+
+  const handleDeleteLink = React.useCallback((id: string) => {
+    let deletedLink: Link | undefined;
+    let deletedIndex = -1;
+    
+    // Prevent duplicate deletions
+    if (deletingRef.current.has(id)) {
+      return;
+    }
+    deletingRef.current.add(id);
+    
+    // Clear any existing timeout
+    if (deleteTimeoutRef.current) {
+      clearTimeout(deleteTimeoutRef.current);
+    }
+    
+    // Optimistic update - remove immediately and capture the deleted link with its index
     setLinks((prev) => {
-      deletedLink = prev.find((link) => link.id === id);
+      deletedIndex = prev.findIndex((link) => link.id === id);
+      deletedLink = prev[deletedIndex];
       return prev.filter((link) => link.id !== id);
     });
     
-    showToast("Link deleted successfully", "success");
-
-    try {
-      const response = await fetch(`/api/links/${id}`, {
-        method: "DELETE",
+    if (deletedLink && deletedIndex !== -1) {
+      const capturedLink = deletedLink;
+      const capturedIndex = deletedIndex;
+      pendingDeleteRef.current = { id, link: capturedLink, index: capturedIndex };
+      
+      // Show toast with undo action
+      showToast("Link deleted", "success", {
+        action: {
+          label: "Undo (⌘Z)",
+          onClick: undoDelete,
+        },
+        duration: 5000,
       });
+      
+      // Delay the actual API call
+      deleteTimeoutRef.current = setTimeout(async () => {
+        try {
+          const response = await fetch(`/api/links/${id}`, {
+            method: "DELETE",
+          });
 
-      if (!response.ok) {
-        throw new Error("Failed to delete link");
-      }
-    } catch (error) {
-      console.error("Error deleting link:", error);
-      // Restore the link on error
-      if (deletedLink) {
-        setLinks((prev) => {
-          // Only restore if it's not already in the list
-          const exists = prev.some((link) => link.id === id);
-          return exists ? prev : [deletedLink!, ...prev];
-        });
-      }
-      showToast("Failed to delete link", "error");
+          if (!response.ok) {
+            throw new Error("Failed to delete link");
+          }
+          
+          pendingDeleteRef.current = null;
+          deletingRef.current.delete(id);
+        } catch (error) {
+          console.error("Error deleting link:", error);
+          // Restore the link on error at its original position
+          setLinks((prev) => {
+            const exists = prev.some((link) => link.id === id);
+            if (exists) return prev;
+            
+            const newLinks = [...prev];
+            newLinks.splice(capturedIndex, 0, capturedLink);
+            return newLinks;
+          });
+          showToast("Failed to delete link", "error");
+          pendingDeleteRef.current = null;
+          deletingRef.current.delete(id);
+        }
+      }, 5000);
     }
-  };
+  }, [showToast, undoDelete]);
 
   const handleArchiveLink = async (id: string) => {
     let archivedLink: Link | undefined;

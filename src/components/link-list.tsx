@@ -39,10 +39,25 @@ export function LinkList({
   const linkRefs = React.useRef<(HTMLAnchorElement | null)[]>([]);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
+  const previousLengthRef = React.useRef(links.length);
 
   React.useEffect(() => {
     linkRefs.current = linkRefs.current.slice(0, links.length);
-  }, [links.length]);
+    
+    // If links were removed and we had a focused item
+    if (links.length < previousLengthRef.current && focusedIndex !== null) {
+      // Focus on the same index (next item) or the last item if we deleted the last one
+      const newFocusIndex = Math.min(focusedIndex, links.length - 1);
+      setFocusedIndex(newFocusIndex);
+      
+      // Focus after a short delay to ensure DOM is updated
+      setTimeout(() => {
+        linkRefs.current[newFocusIndex]?.focus();
+      }, 0);
+    }
+    
+    previousLengthRef.current = links.length;
+  }, [links.length, focusedIndex]);
 
   const copyToClipboard = async (text: string) => {
     try {
