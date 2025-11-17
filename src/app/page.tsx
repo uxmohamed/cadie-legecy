@@ -185,183 +185,121 @@ export default function Home() {
       let successCount = 0;
       let duplicateCount = 0;
       let failureCount = 0;
-      const addedLinks: Link[] = [];
       
-      // Determine if we should use parallel or sequential processing
-      // Use parallel for small batches (<=5 URLs), sequential for larger batches
-      const useParallel = items.length <= 5;
-      
-      if (useParallel) {
-        // Parallel processing for small batches
-        const results = await Promise.allSettled(
-          items.map(async ({ value, type }) => {
-            // Check for duplicates using smart canonicalization
-            const canonicalValue = canonicalizeContent(value, type);
-            
-            const isDuplicate = links.some((link) => {
-              if (link.content_type !== type) return false;
+      // Process ALL links in parallel with two-phase approach:
+      // Phase 1: Immediate DB insert + UI update
+      // Phase 2: Background metadata fetching + update
+      const results = await Promise.allSettled(
+        items.map(async ({ value, type }) => {
+          // Check for duplicates using smart canonicalization
+          const canonicalValue = canonicalizeContent(value, type);
+          
+          const isDuplicate = links.some((link) => {
+            if (link.content_type !== type) return false;
 
-              let linkValue = "";
-              if (type === "color") {
-                linkValue = link.color_value || link.title;
-              } else if (type === "url") {
-                linkValue = link.url;
-              } else {
-                linkValue = link.title;
-              }
-
-              const canonicalLinkValue = canonicalizeContent(linkValue, type);
-              return canonicalLinkValue === canonicalValue;
-            });
-
-            if (isDuplicate) {
-              return { status: "duplicate" as const };
-            }
-
-            // Extract metadata if it's a URL
-            let metadata = null;
-            if (type === "url") {
-              const metadataResponse = await fetch("/api/metadata", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ url: value }),
-              });
-              
-              if (metadataResponse.ok) {
-                const data = await metadataResponse.json();
-                metadata = data.metadata;
-              }
-            }
-
-            // Prepare the request body
-            const requestBody: Record<string, unknown> = {
-              url: value,
-              title: type === "color" ? value : (metadata?.title || value),
-              content_type: type,
-            };
-
+            let linkValue = "";
             if (type === "color") {
-              requestBody.color_value = value;
+              linkValue = link.color_value || link.title;
             } else if (type === "url") {
-              requestBody.favicon_url = metadata?.favicon;
-              requestBody.og_image_url = metadata?.ogImage;
-              requestBody.description = metadata?.description;
+              linkValue = link.url;
+            } else {
+              linkValue = link.title;
             }
 
-            // Create the link
-            const response = await fetch("/api/links", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(requestBody),
-            });
+            const canonicalLinkValue = canonicalizeContent(linkValue, type);
+            return canonicalLinkValue === canonicalValue;
+          });
 
-            if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.error || "Failed to create link");
-            }
-
-            const { link } = await response.json();
-            return { status: "success" as const, link };
-          })
-        );
-
-        // Process results
-        results.forEach((result) => {
-          if (result.status === "fulfilled") {
-            if (result.value.status === "duplicate") {
-              duplicateCount++;
-            } else if (result.value.status === "success") {
-              successCount++;
-              addedLinks.push(result.value.link);
-            }
-          } else {
-            failureCount++;
+          if (isDuplicate) {
+            return { status: "duplicate" as const };
           }
-        });
-      } else {
-        // Sequential processing for large batches
-        for (const { value, type } of items) {
-          try {
-            // Check for duplicates
-            const canonicalValue = canonicalizeContent(value, type);
-            
-            const isDuplicate = links.some((link) => {
-              if (link.content_type !== type) return false;
 
-              let linkValue = "";
-              if (type === "color") {
-                linkValue = link.color_value || link.title;
-              } else if (type === "url") {
-                linkValue = link.url;
-              } else {
-                linkValue = link.title;
+          // PHASE 1: Immediate DB insert with minimal data
+          const requestBody: Record<string, unknown> = {
+            url: value,
+            title: value, // Use URL/color as temporary title
+            content_type: type,
+          };
+
+          if (type === "color") {
+            requestBody.color_value = value;
+          }
+
+          // Create the link in DB immediately
+          const response = await fetch("/api/links", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestBody),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to create link");
+          }
+
+          const { link } = await response.json();
+          
+          // Add to UI immediately
+          setLinks((prev) => [link, ...prev]);
+
+          // PHASE 2: Background metadata enrichment (non-blocking)
+          if (type === "url") {
+            // Fetch metadata async - don't await, let it run in background
+            (async () => {
+              try {
+                const metadataResponse = await fetch("/api/metadata", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ url: value }),
+                });
+                
+                if (metadataResponse.ok) {
+                  const data = await metadataResponse.json();
+                  const metadata = data.metadata;
+                  
+                  // Update DB with metadata
+                  const updateResponse = await fetch(`/api/links/${link.id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      title: metadata?.title || value,
+                      favicon_url: metadata?.favicon || null,
+                      og_image_url: metadata?.ogImage || null,
+                      description: metadata?.description || null,
+                    }),
+                  });
+                  
+                  if (updateResponse.ok) {
+                    const { link: updatedLink } = await updateResponse.json();
+                    // Update UI with enriched data
+                    setLinks((prev) => 
+                      prev.map((l) => (l.id === link.id ? updatedLink : l))
+                    );
+                  }
+                }
+              } catch (error) {
+                console.error("Error fetching metadata for", value, error);
+                // Silent fail - link is already saved and displayed
               }
+            })();
+          }
 
-              const canonicalLinkValue = canonicalizeContent(linkValue, type);
-              return canonicalLinkValue === canonicalValue;
-            });
+          return { status: "success" as const, link };
+        })
+      );
 
-            if (isDuplicate) {
-              duplicateCount++;
-              continue;
-            }
-
-            // Extract metadata if it's a URL
-            let metadata = null;
-            if (type === "url") {
-              const metadataResponse = await fetch("/api/metadata", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ url: value }),
-              });
-              
-              if (metadataResponse.ok) {
-                const data = await metadataResponse.json();
-                metadata = data.metadata;
-              }
-            }
-
-            // Prepare the request body
-            const requestBody: Record<string, unknown> = {
-              url: value,
-              title: type === "color" ? value : (metadata?.title || value),
-              content_type: type,
-            };
-
-            if (type === "color") {
-              requestBody.color_value = value;
-            } else if (type === "url") {
-              requestBody.favicon_url = metadata?.favicon;
-              requestBody.og_image_url = metadata?.ogImage;
-              requestBody.description = metadata?.description;
-            }
-
-            // Create the link
-            const response = await fetch("/api/links", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(requestBody),
-            });
-
-            if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.error || "Failed to create link");
-            }
-
-            const { link } = await response.json();
+      // Process results
+      results.forEach((result) => {
+        if (result.status === "fulfilled") {
+          if (result.value.status === "duplicate") {
+            duplicateCount++;
+          } else if (result.value.status === "success") {
             successCount++;
-            addedLinks.push(link);
-          } catch (error) {
-            console.error("Error creating link:", error);
-            failureCount++;
           }
+        } else {
+          failureCount++;
         }
-      }
-      
-      // Add all new links to the list
-      if (addedLinks.length > 0) {
-        setLinks((prev) => [...addedLinks, ...prev]);
-      }
+      });
       
       // Show summary toast message
       if (items.length === 1) {
