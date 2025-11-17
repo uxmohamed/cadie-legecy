@@ -125,8 +125,9 @@ export function LinkList({ links }: LinkListProps) {
               rel={isColor ? undefined : "noopener noreferrer"}
               onClick={handleClick}
               onFocus={() => setFocusedIndex(index)}
+              onMouseEnter={() => setFocusedIndex(index)}
               className={cn(
-                "group grid grid-cols-[1fr_auto] items-center gap-4 rounded-lg px-3 py-2 hover:bg-neutral-200 focus:outline-none focus:bg-neutral-200",
+                "group grid grid-cols-[1fr_auto] items-center gap-4 rounded-lg px-3 py-2 focus:outline-none",
                 focusedIndex === index && "bg-neutral-200",
                 isColor && "cursor-pointer"
               )}
