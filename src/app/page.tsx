@@ -69,7 +69,8 @@ export default function Home() {
     }
 
     fetchLinks();
-  }, [user, showToast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const filteredLinks = React.useMemo(() => {
     if (!searchQuery.trim()) {
@@ -98,6 +99,16 @@ export default function Home() {
   }, []);
 
   const handleDeleteLink = async (id: string) => {
+    let deletedLink: Link | undefined;
+    
+    // Optimistic update - remove immediately and capture the deleted link
+    setLinks((prev) => {
+      deletedLink = prev.find((link) => link.id === id);
+      return prev.filter((link) => link.id !== id);
+    });
+    
+    showToast("Link deleted successfully", "success");
+
     try {
       const response = await fetch(`/api/links/${id}`, {
         method: "DELETE",
@@ -106,16 +117,31 @@ export default function Home() {
       if (!response.ok) {
         throw new Error("Failed to delete link");
       }
-
-      setLinks((prev) => prev.filter((link) => link.id !== id));
-      showToast("Link deleted successfully", "success");
     } catch (error) {
       console.error("Error deleting link:", error);
+      // Restore the link on error
+      if (deletedLink) {
+        setLinks((prev) => {
+          // Only restore if it's not already in the list
+          const exists = prev.some((link) => link.id === id);
+          return exists ? prev : [deletedLink!, ...prev];
+        });
+      }
       showToast("Failed to delete link", "error");
     }
   };
 
   const handleArchiveLink = async (id: string) => {
+    let archivedLink: Link | undefined;
+    
+    // Optimistic update - remove immediately and capture the archived link
+    setLinks((prev) => {
+      archivedLink = prev.find((link) => link.id === id);
+      return prev.filter((link) => link.id !== id);
+    });
+    
+    showToast("Link archived successfully", "success");
+
     try {
       const response = await fetch(`/api/links/${id}`, {
         method: "PUT",
@@ -126,11 +152,16 @@ export default function Home() {
       if (!response.ok) {
         throw new Error("Failed to archive link");
       }
-
-      setLinks((prev) => prev.filter((link) => link.id !== id));
-      showToast("Link archived successfully", "success");
     } catch (error) {
       console.error("Error archiving link:", error);
+      // Restore the link on error
+      if (archivedLink) {
+        setLinks((prev) => {
+          // Only restore if it's not already in the list
+          const exists = prev.some((link) => link.id === id);
+          return exists ? prev : [archivedLink!, ...prev];
+        });
+      }
       showToast("Failed to archive link", "error");
     }
   };
