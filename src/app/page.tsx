@@ -73,6 +73,23 @@ export default function Home() {
     setIsLoading(true);
     
     try {
+      // Check for duplicate colors
+      if (type === "color") {
+        const normalizedValue = value.toLowerCase();
+        const isDuplicate = links.some(
+          (link) =>
+            link.content_type === "color" &&
+            (link.color_value?.toLowerCase() === normalizedValue ||
+              link.title.toLowerCase() === normalizedValue)
+        );
+
+        if (isDuplicate) {
+          showToast("This color is already in your list", "info");
+          setIsLoading(false);
+          return;
+        }
+      }
+
       // Extract metadata if it's a URL
       let metadata = null;
       if (type === "url") {
@@ -88,18 +105,27 @@ export default function Home() {
         }
       }
 
+      // Prepare the request body based on content type
+      const requestBody: Record<string, unknown> = {
+        url: value,
+        title: type === "color" ? value : (metadata?.title || value),
+        content_type: type,
+      };
+
+      // Add color-specific data
+      if (type === "color") {
+        requestBody.color_value = value;
+      } else if (type === "url") {
+        requestBody.favicon_url = metadata?.favicon;
+        requestBody.og_image_url = metadata?.ogImage;
+        requestBody.description = metadata?.description;
+      }
+
       // Create the link
       const response = await fetch("/api/links", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: value,
-          title: metadata?.title || value,
-          content_type: type,
-          favicon_url: metadata?.favicon,
-          og_image_url: metadata?.ogImage,
-          description: metadata?.description,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -111,11 +137,14 @@ export default function Home() {
       
       // Add the new link to the list
       setLinks((prev) => [link, ...prev]);
-      showToast("Link saved successfully", "success");
+      showToast(
+        type === "color" ? "Color saved successfully" : "Link saved successfully",
+        "success"
+      );
     } catch (error) {
       console.error("Error creating link:", error);
       showToast(
-        error instanceof Error ? error.message : "Failed to save link",
+        error instanceof Error ? error.message : "Failed to save",
         "error"
       );
     } finally {

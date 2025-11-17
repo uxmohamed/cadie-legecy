@@ -3,6 +3,7 @@
 import * as React from "react";
 import type { Link } from "@/types";
 import { cn, formatDate } from "@/lib/utils";
+import { useToast } from "@/components/ui/toast";
 
 interface LinkListProps {
   links: Link[];
@@ -12,10 +13,21 @@ export function LinkList({ links }: LinkListProps) {
   const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null);
   const linkRefs = React.useRef<(HTMLAnchorElement | null)[]>([]);
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const { showToast } = useToast();
 
   React.useEffect(() => {
     linkRefs.current = linkRefs.current.slice(0, links.length);
   }, [links.length]);
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast("Color copied to clipboard", "success");
+    } catch (error) {
+      console.error("Failed to copy:", error);
+      showToast("Failed to copy color", "error");
+    }
+  };
 
   React.useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -92,7 +104,15 @@ export function LinkList({ links }: LinkListProps) {
       </div>
       <div className="space-y-0.5">
         {links.map((link, index) => {
-              const faviconUrl = link.favicon_url || `https://www.google.com/s2/favicons?domain=${link.domain}&sz=16`;
+          const isColor = link.content_type === "color";
+          const faviconUrl = link.favicon_url || `https://www.google.com/s2/favicons?domain=${link.domain}&sz=16`;
+
+          const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+            if (isColor) {
+              e.preventDefault();
+              copyToClipboard(link.color_value || link.title);
+            }
+          };
 
           return (
             <a
@@ -100,37 +120,46 @@ export function LinkList({ links }: LinkListProps) {
               ref={(el) => {
                 linkRefs.current[index] = el;
               }}
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={isColor ? "#" : link.url}
+              target={isColor ? undefined : "_blank"}
+              rel={isColor ? undefined : "noopener noreferrer"}
+              onClick={handleClick}
               onFocus={() => setFocusedIndex(index)}
               className={cn(
                 "group grid grid-cols-[1fr_auto] items-center gap-4 rounded-lg px-3 py-2 hover:bg-neutral-200 focus:outline-none focus:bg-neutral-200",
-                focusedIndex === index && "bg-neutral-200"
+                focusedIndex === index && "bg-neutral-200",
+                isColor && "cursor-pointer"
               )}
             >
               <div className="flex min-w-0 items-center gap-3">
-                <img
-                  src={faviconUrl}
-                  alt=""
-                  className="h-5 w-5 flex-shrink-0 rounded"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = "none";
-                  }}
-                />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[15px] text-neutral-900">
-                        {link.title || link.url}
-                      </div>
-                      <div className="truncate text-sm text-neutral-400">
-                        {link.domain}
-                      </div>
-                    </div>
-              </div>
-                  <div className="text-sm text-neutral-400">
-                    {formatDate(new Date(link.created_at))}
+                {isColor ? (
+                  <div
+                    className="h-5 w-5 flex-shrink-0 rounded-full border border-neutral-300"
+                    style={{ backgroundColor: link.color_value || link.title }}
+                  />
+                ) : (
+                  <img
+                    src={faviconUrl}
+                    alt=""
+                    className="h-5 w-5 flex-shrink-0 rounded"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = "none";
+                    }}
+                  />
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[15px] text-neutral-900">
+                    {link.title || link.url}
                   </div>
+                  <div className="truncate text-sm text-neutral-400">
+                    {link.domain}
+                  </div>
+                </div>
+              </div>
+              <div className="text-sm text-neutral-400">
+                {formatDate(new Date(link.created_at))}
+              </div>
             </a>
           );
         })}
