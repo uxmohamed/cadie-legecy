@@ -11,13 +11,27 @@ interface UserMenuProps {
 
 export function UserMenu({ user }: UserMenuProps) {
   const [isOpen, setIsOpen] = React.useState(false);
+  const [isSigningOut, setIsSigningOut] = React.useState(false);
   const router = useRouter();
 
   async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/auth");
-    router.refresh();
+    try {
+      setIsSigningOut(true);
+      const supabase = createClient();
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Error signing out:", error);
+        setIsSigningOut(false);
+        return;
+      }
+      
+      // Force a hard redirect to clear all state
+      window.location.href = "/auth";
+    } catch (error) {
+      console.error("Error signing out:", error);
+      setIsSigningOut(false);
+    }
   }
 
   return (
@@ -49,9 +63,10 @@ export function UserMenu({ user }: UserMenuProps) {
             <div className="p-2">
               <button
                 onClick={handleSignOut}
-                className="w-full rounded-md px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-100"
+                disabled={isSigningOut}
+                className="w-full rounded-md px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sign out
+                {isSigningOut ? "Signing out..." : "Sign out"}
               </button>
             </div>
           </div>
