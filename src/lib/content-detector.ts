@@ -8,16 +8,26 @@ export interface DetectedContent {
 const URL_PATTERN =
   /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i;
 
-const HEX_COLOR_PATTERN = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+const HEX_COLOR_PATTERN = /^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
 
-const RGB_COLOR_PATTERN =
-  /^rgb\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})\)$/i;
+// Matches 0-255: 0-9, 10-99, 100-199, 200-249, 250-255
+const RGB_VALUE = "(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])";
 
-const RGBA_COLOR_PATTERN =
-  /^rgba\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3}),\s*([\d.]+)\)$/i;
+const RGB_COLOR_PATTERN = new RegExp(
+  `^rgb\\(${RGB_VALUE},\\s*${RGB_VALUE},\\s*${RGB_VALUE}\\)$`,
+  "i"
+);
+
+const RGBA_COLOR_PATTERN = new RegExp(
+  `^rgba\\(${RGB_VALUE},\\s*${RGB_VALUE},\\s*${RGB_VALUE},\\s*([\\d.]+)\\)$`,
+  "i"
+);
 
 const HSL_COLOR_PATTERN =
-  /^hsl\((\d{1,3}),\s*(\d{1,2})%,\s*(\d{1,2})%\)$/i;
+  /^hsl\((\d{1,3}),\s*(\d{1,3})%,\s*(\d{1,3})%\)$/i;
+
+const HSLA_COLOR_PATTERN =
+  /^hsla\((\d{1,3}),\s*(\d{1,3})%,\s*(\d{1,3})%,\s*([\d.]+)\)$/i;
 
 const NAMED_COLORS = new Set([
   "red",
@@ -51,6 +61,27 @@ export function detectContentType(input: string): DetectedContent {
     return { type: "text", value: trimmed };
   }
 
+  // Check for hex color (with or without #) - must check before URL
+  if (HEX_COLOR_PATTERN.test(trimmed)) {
+    const normalizedColor = trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
+    return { type: "color", value: normalizedColor };
+  }
+
+  // Check for rgb/rgba color
+  if (RGB_COLOR_PATTERN.test(trimmed) || RGBA_COLOR_PATTERN.test(trimmed)) {
+    return { type: "color", value: trimmed };
+  }
+
+  // Check for hsl/hsla color
+  if (HSL_COLOR_PATTERN.test(trimmed) || HSLA_COLOR_PATTERN.test(trimmed)) {
+    return { type: "color", value: trimmed };
+  }
+
+  // Check for named colors
+  if (NAMED_COLORS.has(trimmed.toLowerCase())) {
+    return { type: "color", value: trimmed.toLowerCase() };
+  }
+
   // Check for URL
   if (
     trimmed.startsWith("http://") ||
@@ -60,26 +91,6 @@ export function detectContentType(input: string): DetectedContent {
   ) {
     const normalizedUrl = normalizeUrl(trimmed);
     return { type: "url", value: normalizedUrl };
-  }
-
-  // Check for hex color
-  if (HEX_COLOR_PATTERN.test(trimmed)) {
-    return { type: "color", value: trimmed };
-  }
-
-  // Check for rgb/rgba color
-  if (RGB_COLOR_PATTERN.test(trimmed) || RGBA_COLOR_PATTERN.test(trimmed)) {
-    return { type: "color", value: trimmed };
-  }
-
-  // Check for hsl color
-  if (HSL_COLOR_PATTERN.test(trimmed)) {
-    return { type: "color", value: trimmed };
-  }
-
-  // Check for named colors
-  if (NAMED_COLORS.has(trimmed.toLowerCase())) {
-    return { type: "color", value: trimmed.toLowerCase() };
   }
 
   // Default to text

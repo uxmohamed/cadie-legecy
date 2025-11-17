@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { url, title, content_type = "url", category_id } = body;
+    const { url, title, content_type = "url", category_id, color_value, favicon_url, og_image_url, description } = body;
 
     if (!url || !title) {
       return NextResponse.json(
@@ -60,12 +60,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Extract domain from URL
+    // Extract domain from URL or set to "color" for color entries
     let domain = "";
-    try {
-      domain = new URL(url).hostname.replace("www.", "");
-    } catch {
-      domain = url;
+    if (content_type === "color") {
+      domain = "color";
+    } else {
+      try {
+        domain = new URL(url).hostname.replace("www.", "");
+      } catch {
+        domain = url;
+      }
     }
 
     const { data, error } = await supabase
@@ -78,6 +82,10 @@ export async function POST(request: NextRequest) {
         domain,
         content_type,
         category_id: category_id || null,
+        color_value: color_value || null,
+        favicon_url: favicon_url || null,
+        og_image_url: og_image_url || null,
+        description: description || null,
       })
       .select()
       .single();
