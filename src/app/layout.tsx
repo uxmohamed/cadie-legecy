@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { Toaster } from "sonner";
+import { ToastProvider } from "@/components/ui/toast";
 import { ErrorBoundary } from "@/components/error-boundary";
 import "./globals.css";
 
@@ -23,10 +23,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
-        <ErrorBoundary>
-          {children}
-          <Toaster position="bottom-right" />
-        </ErrorBoundary>
+        <ToastProvider position="bottom-right">
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
+        </ToastProvider>
       </body>
     </html>
   );

@@ -34,6 +34,11 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Allow auth callback to process
+  if (request.nextUrl.pathname === '/auth/callback') {
+    return supabaseResponse
+  }
+
   // Protected routes
   if (!user && !request.nextUrl.pathname.startsWith('/auth')) {
     const url = request.nextUrl.clone()

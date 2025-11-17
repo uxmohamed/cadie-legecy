@@ -1,400 +1,259 @@
 "use client";
 
-import * as React from "react";
+import { Menu as MenuPrimitive } from "@base-ui-components/react/menu";
+import { CheckIcon, ChevronRightIcon } from "lucide-react";
+import type * as React from "react";
+
 import { cn } from "@/lib/utils";
 
-interface MenuContextValue {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  triggerRef: React.RefObject<HTMLElement | null>;
+const Menu = MenuPrimitive.Root;
+
+const MenuPortal = MenuPrimitive.Portal;
+
+function MenuTrigger(props: MenuPrimitive.Trigger.Props) {
+  return <MenuPrimitive.Trigger data-slot="menu-trigger" {...props} />;
 }
 
-const MenuContext = React.createContext<MenuContextValue | undefined>(undefined);
-
-function useMenu() {
-  const context = React.useContext(MenuContext);
-  if (!context) {
-    throw new Error("Menu components must be used within a Menu");
-  }
-  return context;
-}
-
-interface MenuProps {
-  children: React.ReactNode;
-}
-
-export function Menu({ children }: MenuProps) {
-  const [open, setOpen] = React.useState(false);
-  const triggerRef = React.useRef<HTMLElement>(null);
-
-  React.useEffect(() => {
-    if (!open) return;
-
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as Node;
-      if (
-        triggerRef.current &&
-        !triggerRef.current.contains(target) &&
-        !(event.target as Element).closest('[data-menu-popup]')
-      ) {
-        setOpen(false);
-      }
-    }
-
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setOpen(false);
-        triggerRef.current?.focus();
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleEscape);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [open]);
-
+function MenuPopup({
+  className,
+  sideOffset = 4,
+  align = "center",
+  alignOffset = 0,
+  side = "bottom",
+  ...props
+}: MenuPrimitive.Popup.Props & {
+  align?: MenuPrimitive.Positioner.Props["align"];
+  sideOffset?: MenuPrimitive.Positioner.Props["sideOffset"];
+  alignOffset?: MenuPrimitive.Positioner.Props["alignOffset"];
+  side?: MenuPrimitive.Positioner.Props["side"];
+}) {
   return (
-    <MenuContext.Provider value={{ open, setOpen, triggerRef }}>
-      <div className="relative inline-block">{children}</div>
-    </MenuContext.Provider>
-  );
-}
-
-interface MenuTriggerProps {
-  children: React.ReactNode;
-  render?: React.ReactElement;
-}
-
-export function MenuTrigger({ children, render }: MenuTriggerProps) {
-  const { open, setOpen, triggerRef } = useMenu();
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setOpen(!open);
-  };
-
-  if (render) {
-    return React.cloneElement(render, {
-      ref: triggerRef as any,
-      onClick: handleClick,
-      "aria-expanded": open,
-      "aria-haspopup": "true" as const,
-    } as any);
-  }
-
-  return (
-    <button
-      ref={triggerRef as any}
-      onClick={handleClick}
-      aria-expanded={open}
-      aria-haspopup="true"
-      className="inline-flex items-center justify-center"
-    >
-      {children}
-    </button>
-  );
-}
-
-interface MenuPopupProps {
-  children: React.ReactNode;
-  align?: "start" | "end";
-  className?: string;
-}
-
-export function MenuPopup({ children, align = "end", className }: MenuPopupProps) {
-  const { open } = useMenu();
-  const popupRef = React.useRef<HTMLDivElement>(null);
-
-  if (!open) return null;
-
-  return (
-    <div
-      ref={popupRef}
-      data-menu-popup
-      className={cn(
-        "absolute z-50 mt-2 min-w-[240px] overflow-hidden rounded-lg border border-neutral-200 bg-white p-1 shadow-lg animate-in fade-in-0 zoom-in-95",
-        align === "end" ? "right-0" : "left-0",
-        className
-      )}
-    >
-      {children}
-    </div>
-  );
-}
-
-interface MenuGroupProps {
-  children: React.ReactNode;
-}
-
-export function MenuGroup({ children }: MenuGroupProps) {
-  return <div className="py-1">{children}</div>;
-}
-
-interface MenuGroupLabelProps {
-  children: React.ReactNode;
-}
-
-export function MenuGroupLabel({ children }: MenuGroupLabelProps) {
-  return (
-    <div className="px-3 py-2 text-xs font-semibold text-neutral-500">
-      {children}
-    </div>
-  );
-}
-
-interface MenuItemProps {
-  children: React.ReactNode;
-  onClick?: () => void;
-  disabled?: boolean;
-  variant?: "default" | "destructive";
-  className?: string;
-}
-
-export function MenuItem({ 
-  children, 
-  onClick, 
-  disabled, 
-  variant = "default",
-  className 
-}: MenuItemProps) {
-  const { setOpen } = useMenu();
-
-  const handleClick = () => {
-    if (!disabled && onClick) {
-      onClick();
-      setOpen(false);
-    }
-  };
-
-  return (
-    <button
-      onClick={handleClick}
-      disabled={disabled}
-      className={cn(
-        "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm outline-none transition-colors",
-        "hover:bg-neutral-100 focus:bg-neutral-100",
-        disabled && "pointer-events-none opacity-50",
-        variant === "destructive" && "text-red-600 hover:bg-red-50 focus:bg-red-50",
-        className
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
-interface MenuSeparatorProps {
-  className?: string;
-}
-
-export function MenuSeparator({ className }: MenuSeparatorProps) {
-  return <div className={cn("my-1 h-px bg-neutral-200", className)} />;
-}
-
-interface MenuShortcutProps {
-  children: React.ReactNode;
-}
-
-export function MenuShortcut({ children }: MenuShortcutProps) {
-  return (
-    <span className="ml-auto text-xs tracking-widest text-neutral-400">
-      {children}
-    </span>
-  );
-}
-
-interface MenuCheckboxItemProps {
-  children: React.ReactNode;
-  checked?: boolean;
-  onCheckedChange?: (checked: boolean) => void;
-  disabled?: boolean;
-}
-
-export function MenuCheckboxItem({ 
-  children, 
-  checked, 
-  onCheckedChange,
-  disabled 
-}: MenuCheckboxItemProps) {
-  const { setOpen } = useMenu();
-
-  const handleClick = () => {
-    if (!disabled && onCheckedChange) {
-      onCheckedChange(!checked);
-    }
-  };
-
-  return (
-    <button
-      onClick={handleClick}
-      disabled={disabled}
-      className={cn(
-        "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm outline-none transition-colors",
-        "hover:bg-neutral-100 focus:bg-neutral-100",
-        disabled && "pointer-events-none opacity-50"
-      )}
-    >
-      <span className="flex h-4 w-4 items-center justify-center">
-        {checked && (
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 12 12"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M10 3L4.5 8.5L2 6"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        )}
-      </span>
-      {children}
-    </button>
-  );
-}
-
-interface MenuRadioGroupProps {
-  children: React.ReactNode;
-  value?: string;
-  onValueChange?: (value: string) => void;
-}
-
-const MenuRadioGroupContext = React.createContext<{
-  value?: string;
-  onValueChange?: (value: string) => void;
-} | undefined>(undefined);
-
-export function MenuRadioGroup({ children, value, onValueChange }: MenuRadioGroupProps) {
-  return (
-    <MenuRadioGroupContext.Provider value={{ value, onValueChange }}>
-      <div>{children}</div>
-    </MenuRadioGroupContext.Provider>
-  );
-}
-
-interface MenuRadioItemProps {
-  children: React.ReactNode;
-  value: string;
-  disabled?: boolean;
-}
-
-export function MenuRadioItem({ children, value, disabled }: MenuRadioItemProps) {
-  const context = React.useContext(MenuRadioGroupContext);
-  const isSelected = context?.value === value;
-
-  const handleClick = () => {
-    if (!disabled && context?.onValueChange) {
-      context.onValueChange(value);
-    }
-  };
-
-  return (
-    <button
-      onClick={handleClick}
-      disabled={disabled}
-      className={cn(
-        "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm outline-none transition-colors",
-        "hover:bg-neutral-100 focus:bg-neutral-100",
-        disabled && "pointer-events-none opacity-50"
-      )}
-    >
-      <span className="flex h-4 w-4 items-center justify-center">
-        {isSelected && (
-          <span className="h-2 w-2 rounded-full bg-current" />
-        )}
-      </span>
-      {children}
-    </button>
-  );
-}
-
-interface MenuSubProps {
-  children: React.ReactNode;
-}
-
-export function MenuSub({ children }: MenuSubProps) {
-  const [open, setOpen] = React.useState(false);
-  const triggerRef = React.useRef<HTMLDivElement>(null);
-
-  return (
-    <div 
-      className="relative"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-    >
-      {React.Children.map(children, (child) => {
-        if (React.isValidElement(child)) {
-          const childProps = child.props as Record<string, any>;
-          return React.cloneElement(child, { ...childProps, open, triggerRef } as any);
-        }
-        return child;
-      })}
-    </div>
-  );
-}
-
-interface MenuSubTriggerProps {
-  children: React.ReactNode;
-  open?: boolean;
-  triggerRef?: React.RefObject<HTMLDivElement>;
-}
-
-export function MenuSubTrigger({ children, open, triggerRef }: MenuSubTriggerProps) {
-  return (
-    <div
-      ref={triggerRef}
-      className={cn(
-        "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm outline-none transition-colors cursor-pointer",
-        "hover:bg-neutral-100 focus:bg-neutral-100",
-        open && "bg-neutral-100"
-      )}
-    >
-      {children}
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-        fill="none"
-        className="ml-auto"
-        xmlns="http://www.w3.org/2000/svg"
+    <MenuPrimitive.Portal>
+      <MenuPrimitive.Positioner
+        align={align}
+        alignOffset={alignOffset}
+        className="z-50"
+        data-slot="menu-positioner"
+        side={side}
+        sideOffset={sideOffset}
       >
-        <path
-          d="M6 4L10 8L6 12"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </div>
+        <span
+          className={cn(
+            "relative flex origin-(--transform-origin) rounded-lg border border-slate-200 bg-white bg-clip-padding shadow-lg transition-[scale,opacity] before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] has-data-starting-style:scale-98 has-data-starting-style:opacity-0 dark:bg-clip-border dark:before:shadow-[0_-1px_--theme(--color-white/8%)] dark:border-slate-800 dark:bg-slate-950",
+            className,
+          )}
+        >
+          <MenuPrimitive.Popup
+            className="max-h-(--available-height) not-[class*='w-']:min-w-32 overflow-y-auto p-1"
+            data-slot="menu-popup"
+            {...props}
+          />
+        </span>
+      </MenuPrimitive.Positioner>
+    </MenuPrimitive.Portal>
   );
 }
 
-interface MenuSubPopupProps {
-  children: React.ReactNode;
-  open?: boolean;
+function MenuGroup(props: MenuPrimitive.Group.Props) {
+  return <MenuPrimitive.Group data-slot="menu-group" {...props} />;
 }
 
-export function MenuSubPopup({ children, open }: MenuSubPopupProps) {
-  if (!open) return null;
-
+function MenuItem({
+  className,
+  inset,
+  variant = "default",
+  ...props
+}: MenuPrimitive.Item.Props & {
+  inset?: boolean;
+  variant?: "default" | "destructive";
+}) {
   return (
-    <div
-      className="absolute left-full top-0 ml-1 min-w-[200px] overflow-hidden rounded-lg border border-neutral-200 bg-white p-1 shadow-lg"
-      data-menu-popup
+    <MenuPrimitive.Item
+      className={cn(
+        "flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1 text-base outline-none data-disabled:pointer-events-none data-highlighted:bg-slate-100 data-inset:ps-8 data-[variant=destructive]:text-slate-50 data-highlighted:text-slate-900 data-disabled:opacity-64 sm:text-sm [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 dark:data-highlighted:bg-slate-800 dark:data-[variant=destructive]:text-slate-50 dark:data-highlighted:text-slate-50",
+        className,
+      )}
+      data-inset={inset}
+      data-slot="menu-item"
+      data-variant={variant}
+      {...props}
+    />
+  );
+}
+
+function MenuCheckboxItem({
+  className,
+  children,
+  checked,
+  ...props
+}: MenuPrimitive.CheckboxItem.Props) {
+  return (
+    <MenuPrimitive.CheckboxItem
+      checked={checked}
+      className={cn(
+        "grid in-data-[side=none]:min-w-[calc(var(--anchor-width)+1.25rem)] cursor-default grid-cols-[1rem_1fr] items-center gap-2 rounded-sm py-1 ps-2 pe-4 text-base outline-none data-disabled:pointer-events-none data-highlighted:bg-slate-100 data-highlighted:text-slate-900 data-disabled:opacity-64 sm:text-sm [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 dark:data-highlighted:bg-slate-800 dark:data-highlighted:text-slate-50",
+        className,
+      )}
+      data-slot="menu-checkbox-item"
+      {...props}
+    >
+      <MenuPrimitive.CheckboxItemIndicator className="col-start-1">
+        <CheckIcon />
+      </MenuPrimitive.CheckboxItemIndicator>
+      <span className="col-start-2">{children}</span>
+    </MenuPrimitive.CheckboxItem>
+  );
+}
+
+function MenuRadioGroup(props: MenuPrimitive.RadioGroup.Props) {
+  return <MenuPrimitive.RadioGroup data-slot="menu-radio-group" {...props} />;
+}
+
+function MenuRadioItem({
+  className,
+  children,
+  ...props
+}: MenuPrimitive.RadioItem.Props) {
+  return (
+    <MenuPrimitive.RadioItem
+      className={cn(
+        "grid in-data-[side=none]:min-w-[calc(var(--anchor-width)+1.25rem)] cursor-default grid-cols-[1rem_1fr] items-center gap-2 rounded-sm py-1 ps-2 pe-4 text-base outline-none data-disabled:pointer-events-none data-highlighted:bg-slate-100 data-highlighted:text-slate-900 data-disabled:opacity-64 sm:text-sm [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 dark:data-highlighted:bg-slate-800 dark:data-highlighted:text-slate-50",
+        className,
+      )}
+      data-slot="menu-radio-item"
+      {...props}
+    >
+      <MenuPrimitive.RadioItemIndicator className="col-start-1">
+        <CheckIcon />
+      </MenuPrimitive.RadioItemIndicator>
+      <span className="col-start-2">{children}</span>
+    </MenuPrimitive.RadioItem>
+  );
+}
+
+function MenuGroupLabel({
+  className,
+  inset,
+  ...props
+}: MenuPrimitive.GroupLabel.Props & {
+  inset?: boolean;
+}) {
+  return (
+    <MenuPrimitive.GroupLabel
+      className={cn(
+        "px-2 py-1.5 font-medium text-slate-500 text-xs data-inset:ps-9 sm:data-inset:ps-8 dark:text-slate-400",
+        className,
+      )}
+      data-inset={inset}
+      data-slot="menu-label"
+      {...props}
+    />
+  );
+}
+
+function MenuSeparator({ className, ...props }: MenuPrimitive.Separator.Props) {
+  return (
+    <MenuPrimitive.Separator
+      className={cn("mx-2 my-1 h-px bg-slate-200 dark:bg-slate-800", className)}
+      data-slot="menu-separator"
+      {...props}
+    />
+  );
+}
+
+function MenuShortcut({ className, ...props }: React.ComponentProps<"span">) {
+  return (
+    <span
+      className={cn(
+        "ms-auto text-slate-500/64 text-xs tracking-widest dark:text-slate-400/64",
+        className,
+      )}
+      data-slot="menu-shortcut"
+      {...props}
+    />
+  );
+}
+
+function MenuSub(props: MenuPrimitive.SubmenuRoot.Props) {
+  return <MenuPrimitive.SubmenuRoot data-slot="menu-sub" {...props} />;
+}
+
+function MenuSubTrigger({
+  className,
+  inset,
+  children,
+  ...props
+}: MenuPrimitive.SubmenuTrigger.Props & {
+  inset?: boolean;
+}) {
+  return (
+    <MenuPrimitive.SubmenuTrigger
+      className={cn(
+        "flex items-center gap-2 rounded-sm px-2 py-1 text-base outline-none data-disabled:pointer-events-none data-highlighted:bg-slate-100 data-inset:ps-8 data-highlighted:text-slate-900 data-disabled:opacity-64 sm:text-sm [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none dark:data-highlighted:bg-slate-800 dark:data-highlighted:text-slate-50",
+        className,
+      )}
+      data-inset={inset}
+      data-slot="menu-sub-trigger"
+      {...props}
     >
       {children}
-    </div>
+      <ChevronRightIcon className="ms-auto" />
+    </MenuPrimitive.SubmenuTrigger>
   );
 }
 
+function MenuSubPopup({
+  className,
+  sideOffset = 0,
+  alignOffset = -4,
+  align = "start",
+  ...props
+}: MenuPrimitive.Popup.Props & {
+  align?: MenuPrimitive.Positioner.Props["align"];
+  sideOffset?: MenuPrimitive.Positioner.Props["sideOffset"];
+  alignOffset?: MenuPrimitive.Positioner.Props["alignOffset"];
+}) {
+  return (
+    <MenuPopup
+      align={align}
+      alignOffset={alignOffset}
+      className={className}
+      data-slot="menu-sub-content"
+      sideOffset={sideOffset}
+      {...props}
+    />
+  );
+}
+
+export {
+  Menu,
+  Menu as DropdownMenu,
+  MenuPortal,
+  MenuPortal as DropdownMenuPortal,
+  MenuTrigger,
+  MenuTrigger as DropdownMenuTrigger,
+  MenuPopup,
+  MenuPopup as DropdownMenuContent,
+  MenuGroup,
+  MenuGroup as DropdownMenuGroup,
+  MenuItem,
+  MenuItem as DropdownMenuItem,
+  MenuCheckboxItem,
+  MenuCheckboxItem as DropdownMenuCheckboxItem,
+  MenuRadioGroup,
+  MenuRadioGroup as DropdownMenuRadioGroup,
+  MenuRadioItem,
+  MenuRadioItem as DropdownMenuRadioItem,
+  MenuGroupLabel,
+  MenuGroupLabel as DropdownMenuLabel,
+  MenuSeparator,
+  MenuSeparator as DropdownMenuSeparator,
+  MenuShortcut,
+  MenuShortcut as DropdownMenuShortcut,
+  MenuSub,
+  MenuSub as DropdownMenuSub,
+  MenuSubTrigger,
+  MenuSubTrigger as DropdownMenuSubTrigger,
+  MenuSubPopup,
+  MenuSubPopup as DropdownMenuSubContent,
+};
