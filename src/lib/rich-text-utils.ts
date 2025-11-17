@@ -32,7 +32,7 @@ export function createInitialRichTextState(text: string): SerializedEditorState 
       type: "root",
       version: 1,
     },
-  } as SerializedEditorState;
+  } as unknown as SerializedEditorState;
 }
 
 /**
