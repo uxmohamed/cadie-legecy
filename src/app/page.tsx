@@ -12,6 +12,9 @@ import { canonicalizeContent } from "@/lib/canonicalize";
 import type { Link } from "@/types";
 import type { User } from "@supabase/supabase-js";
 import type { DetectedContent } from "@/lib/content-detector";
+import { RichTextModal } from "@/components/rich-text-modal";
+import type { SerializedEditorState } from "lexical";
+import { createInitialRichTextState } from "@/lib/rich-text-utils";
 
 export default function Home() {
   const [isLoading, setIsLoading] = React.useState(false);
@@ -19,6 +22,8 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [fetchingLinks, setFetchingLinks] = React.useState(true);
   const [user, setUser] = React.useState<User | null>(null);
+  const [richTextModalOpen, setRichTextModalOpen] = React.useState(false);
+  const [editingLink, setEditingLink] = React.useState<Link | null>(null);
   const { showToast } = useToast();
   const router = useRouter();
 
@@ -172,8 +177,116 @@ export default function Home() {
   };
 
   const handleEditLink = (link: Link) => {
-    showToast("Edit functionality coming soon", "info");
+    if (link.content_type === "text") {
+      setEditingLink(link);
+      setRichTextModalOpen(true);
+    } else {
+      showToast("Edit functionality coming soon", "info");
+    }
   };
+
+  const handleSaveRichText = async (content: SerializedEditorState) => {
+    if (!editingLink) return;
+
+    try {
+      const response = await fetch(`/api/links/${editingLink.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rich_text_content: content }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save rich text");
+      }
+
+      const { link: updatedLink } = await response.json();
+      
+      // Update the link in the list
+      setLinks((prev) =>
+        prev.map((l) => (l.id === editingLink.id ? updatedLink : l))
+      );
+
+      showToast("Rich text saved successfully", "success");
+    } catch (error) {
+      console.error("Error saving rich text:", error);
+      showToast("Failed to save rich text", "error");
+      throw error;
+    }
+  };
+
+  const handlePinLink = React.useCallback(async (id: string) => {
+    // Optimistic update
+    setLinks((prev) =>
+      prev.map((link) =>
+        link.id === id ? { ...link, is_pinned: true } : link
+      )
+    );
+
+    try {
+      const response = await fetch(`/api/links/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_pinned: true }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to pin link");
+      }
+
+      showToast("Link pinned", "success");
+    } catch (error) {
+      console.error("Error pinning link:", error);
+      showToast("Failed to pin link", "error");
+
+      // Refresh links on error to restore the item
+      try {
+        const response = await fetch("/api/links?is_archived=false");
+        if (response.ok) {
+          const data = await response.json();
+          setLinks(data.links || []);
+        }
+      } catch (refreshError) {
+        console.error("Error refreshing links:", refreshError);
+      }
+    }
+  }, [showToast]);
+
+  const handleUnpinLink = React.useCallback(async (id: string) => {
+    // Optimistic update
+    setLinks((prev) =>
+      prev.map((link) =>
+        link.id === id ? { ...link, is_pinned: false } : link
+      )
+    );
+
+    try {
+      const response = await fetch(`/api/links/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_pinned: false }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to unpin link");
+      }
+
+      showToast("Link unpinned", "success");
+    } catch (error) {
+      console.error("Error unpinning link:", error);
+      showToast("Failed to unpin link", "error");
+
+      // Refresh links on error to restore the item
+      try {
+        const response = await fetch("/api/links?is_archived=false");
+        if (response.ok) {
+          const data = await response.json();
+          setLinks(data.links || []);
+        }
+      } catch (refreshError) {
+        console.error("Error refreshing links:", refreshError);
+      }
+    }
+  }, [showToast]);
 
   const handleSubmit = async (items: DetectedContent[]) => {
     if (items.length === 0) return;
@@ -187,8 +300,8 @@ export default function Home() {
       let failureCount = 0;
       
       // Process ALL links in parallel with two-phase approach:
-      // Phase 1: Immediate DB insert + UI update
-      // Phase 2: Background metadata fetching + update
+      // Phase 1: Immediate DB insert (collect all links first)
+      // Phase 2: Batch UI update, then background metadata fetching
       const results = await Promise.allSettled(
         items.map(async ({ value, type }) => {
           // Check for duplicates using smart canonicalization
@@ -238,66 +351,74 @@ export default function Home() {
           }
 
           const { link } = await response.json();
-          
-          // Add to UI immediately
-          setLinks((prev) => [link, ...prev]);
 
-          // PHASE 2: Background metadata enrichment (non-blocking)
-          if (type === "url") {
-            // Fetch metadata async - don't await, let it run in background
-            (async () => {
-              try {
-                const metadataResponse = await fetch("/api/metadata", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ url: value }),
-                });
-                
-                if (metadataResponse.ok) {
-                  const data = await metadataResponse.json();
-                  const metadata = data.metadata;
-                  
-                  // Update DB with metadata
-                  const updateResponse = await fetch(`/api/links/${link.id}`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      title: metadata?.title || value,
-                      favicon_url: metadata?.favicon || null,
-                      og_image_url: metadata?.ogImage || null,
-                      description: metadata?.description || null,
-                    }),
-                  });
-                  
-                  if (updateResponse.ok) {
-                    const { link: updatedLink } = await updateResponse.json();
-                    // Update UI with enriched data
-                    setLinks((prev) => 
-                      prev.map((l) => (l.id === link.id ? updatedLink : l))
-                    );
-                  }
-                }
-              } catch (error) {
-                console.error("Error fetching metadata for", value, error);
-                // Silent fail - link is already saved and displayed
-              }
-            })();
-          }
-
-          return { status: "success" as const, link };
+          return { status: "success" as const, link, originalValue: value, contentType: type };
         })
       );
 
-      // Process results
+      // Collect all successfully created links
+      const newLinks: Link[] = [];
       results.forEach((result) => {
         if (result.status === "fulfilled") {
           if (result.value.status === "duplicate") {
             duplicateCount++;
           } else if (result.value.status === "success") {
             successCount++;
+            newLinks.push(result.value.link);
           }
         } else {
           failureCount++;
+        }
+      });
+      
+      // PHASE 2: Batch UI update - Add all new links at once (no race condition!)
+      if (newLinks.length > 0) {
+        setLinks((prev) => [...newLinks, ...prev]);
+      }
+
+      // PHASE 3: Background metadata enrichment for URLs (non-blocking)
+      results.forEach((result) => {
+        if (result.status === "fulfilled" && result.value.status === "success" && result.value.contentType === "url") {
+          const { link, originalValue } = result.value;
+          
+          // Fetch metadata async - don't await, let it run in background
+          (async () => {
+            try {
+              const metadataResponse = await fetch("/api/metadata", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url: originalValue }),
+              });
+              
+              if (metadataResponse.ok) {
+                const data = await metadataResponse.json();
+                const metadata = data.metadata;
+                
+                // Update DB with metadata
+                const updateResponse = await fetch(`/api/links/${link.id}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    title: metadata?.title || originalValue,
+                    favicon_url: metadata?.favicon || null,
+                    og_image_url: metadata?.ogImage || null,
+                    description: metadata?.description || null,
+                  }),
+                });
+                
+                if (updateResponse.ok) {
+                  const { link: updatedLink } = await updateResponse.json();
+                  // Update UI with enriched data
+                  setLinks((prev) => 
+                    prev.map((l) => (l.id === link.id ? updatedLink : l))
+                  );
+                }
+              }
+            } catch (error) {
+              console.error("Error fetching metadata for", originalValue, error);
+              // Silent fail - link is already saved and displayed
+            }
+          })();
         }
       });
       
@@ -366,20 +487,19 @@ export default function Home() {
   return (
     <div className="flex h-screen overflow-hidden">
       <main className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-24 items-center justify-between border-b border-neutral-200 px-8">
-          <div className="flex-1 max-w-4xl">
-            <CaptureInput 
-              onSubmit={handleSubmit} 
-              onSearch={handleSearch}
-              isLoading={isLoading} 
-            />
-          </div>
-          <div className="ml-6">
-            <UserMenu user={user} />
-          </div>
+        <header className="flex h-16 items-center justify-end border-b border-neutral-200 px-8">
+          <UserMenu user={user} />
         </header>
         <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-4xl px-8 pt-12">
+          <div className="mx-auto w-full max-w-4xl px-8">
+            <div className="sticky top-0 z-20 bg-[#fafafa] pt-8 pb-6 relative">
+              <CaptureInput 
+                onSubmit={handleSubmit} 
+                onSearch={handleSearch}
+                isLoading={isLoading} 
+              />
+              <div className="absolute -bottom-6 left-0 right-0 h-6 bg-gradient-to-b from-[#fafafa] to-transparent pointer-events-none" />
+            </div>
             {fetchingLinks ? (
               <LinkListSkeleton />
             ) : (
@@ -389,11 +509,25 @@ export default function Home() {
                 onArchive={handleArchiveLink}
                 onEdit={handleEditLink}
                 onCopyUrl={handleCopyUrl}
+                onPin={handlePinLink}
+                onUnpin={handleUnpinLink}
               />
             )}
-        </div>
+          </div>
         </div>
       </main>
+      {editingLink && (
+        <RichTextModal
+          isOpen={richTextModalOpen}
+          onClose={() => {
+            setRichTextModalOpen(false);
+            setEditingLink(null);
+          }}
+          onSave={handleSaveRichText}
+          initialContent={(editingLink.rich_text_content as SerializedEditorState | null) || undefined}
+          linkId={editingLink.id}
+        />
+      )}
     </div>
   );
 }

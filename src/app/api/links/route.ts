@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createInitialRichTextState } from "@/lib/rich-text-utils";
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,6 +20,7 @@ export async function GET(request: NextRequest) {
       .select("*")
       .eq("user_id", user.id)
       .eq("is_archived", isArchived)
+      .order("is_pinned", { ascending: false })
       .order("created_at", { ascending: false });
 
     if (categoryId) {
@@ -51,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { url, title, content_type = "url", category_id, color_value, favicon_url, og_image_url, description } = body;
+    const { url, title, content_type = "url", category_id, color_value, favicon_url, og_image_url, description, rich_text_content } = body;
 
     if (!url || !title) {
       return NextResponse.json(
@@ -60,16 +62,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Extract domain from URL or set to "color" for color entries
+    // Extract domain from URL or set to "color" for color entries, or "text" for text entries
     let domain = "";
     if (content_type === "color") {
       domain = "color";
+    } else if (content_type === "text") {
+      domain = "text";
     } else {
       try {
         domain = new URL(url).hostname.replace("www.", "");
       } catch {
         domain = url;
       }
+    }
+
+    // For text content type, create initial rich text state if not provided
+    let richTextContent = rich_text_content || null;
+    if (content_type === "text" && !richTextContent) {
+      richTextContent = createInitialRichTextState(title);
     }
 
     const { data, error } = await supabase
@@ -83,9 +93,11 @@ export async function POST(request: NextRequest) {
         content_type,
         category_id: category_id || null,
         color_value: color_value || null,
+        rich_text_content: richTextContent,
         favicon_url: favicon_url || null,
         og_image_url: og_image_url || null,
         description: description || null,
+        is_pinned: false,
       })
       .select()
       .single();

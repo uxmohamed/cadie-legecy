@@ -153,18 +153,18 @@ export function isValidUrl(url: string): boolean {
 }
 
 /**
- * Splits input string by multiple delimiters (spaces, commas, newlines)
+ * Splits input string by whitespace only (spaces, tabs, newlines)
  * and returns an array of trimmed, non-empty strings
- * Note: Doesn't split by dashes or underscores as they're common in URLs
+ * Note: Does NOT split by commas, dashes, or underscores as they're common in URLs
  */
 export function splitMultipleContent(input: string): string[] {
   if (!input || !input.trim()) {
     return [];
   }
 
-  // Split by whitespace (spaces, tabs, newlines) and commas
-  // Don't split by dashes or underscores as they're part of URLs
-  const items = input.split(/[\s,]+/);
+  // Split by whitespace only (spaces, tabs, newlines)
+  // Don't split by commas - they can appear in URLs (e.g. https://cubic-bezier.com/#.27,.82,.78,.6)
+  const items = input.split(/\s+/);
   
   // Filter out empty strings and trim each item
   return items

@@ -76,6 +76,7 @@ export interface Database {
           description: string | null;
           content_type: string;
           color_value: string | null;
+          rich_text_content: Record<string, unknown> | null;
           notes: string | null;
           ai_summary: string | null;
           ai_tags: string[] | null;
@@ -85,7 +86,9 @@ export interface Database {
           ai_people: string[] | null;
           is_archived: boolean;
           is_favorite: boolean;
+          is_pinned: boolean;
           read_at: string | null;
+          sort_order: number;
           created_at: string;
           updated_at: string;
         };
@@ -102,6 +105,7 @@ export interface Database {
           description?: string | null;
           content_type?: string;
           color_value?: string | null;
+          rich_text_content?: Record<string, unknown> | null;
           notes?: string | null;
           ai_summary?: string | null;
           ai_tags?: string[] | null;
@@ -111,7 +115,9 @@ export interface Database {
           ai_people?: string[] | null;
           is_archived?: boolean;
           is_favorite?: boolean;
+          is_pinned?: boolean;
           read_at?: string | null;
+          sort_order?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -128,6 +134,7 @@ export interface Database {
           description?: string | null;
           content_type?: string;
           color_value?: string | null;
+          rich_text_content?: Record<string, unknown> | null;
           notes?: string | null;
           ai_summary?: string | null;
           ai_tags?: string[] | null;
@@ -137,7 +144,9 @@ export interface Database {
           ai_people?: string[] | null;
           is_archived?: boolean;
           is_favorite?: boolean;
+          is_pinned?: boolean;
           read_at?: string | null;
+          sort_order?: number;
           created_at?: string;
           updated_at?: string;
         };

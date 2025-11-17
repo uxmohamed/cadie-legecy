@@ -18,7 +18,11 @@ import {
   Edit,
   Archive,
   Trash,
+  Pin,
+  PinOff,
+  FileText,
 } from "lucide-react";
+import { extractTextFromRichText } from "@/lib/rich-text-utils";
 
 interface LinkListProps {
   links: Link[];
@@ -26,6 +30,8 @@ interface LinkListProps {
   onArchive?: (id: string) => void;
   onEdit?: (link: Link) => void;
   onCopyUrl?: (url: string) => void;
+  onPin?: (id: string) => void;
+  onUnpin?: (id: string) => void;
 }
 
 export function LinkList({ 
@@ -33,9 +39,12 @@ export function LinkList({
   onDelete, 
   onArchive, 
   onEdit, 
-  onCopyUrl 
+  onCopyUrl,
+  onPin,
+  onUnpin
 }: LinkListProps) {
   const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null);
+  const [faviconErrors, setFaviconErrors] = React.useState<Set<string>>(new Set());
   const linkRefs = React.useRef<(HTMLAnchorElement | null)[]>([]);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
@@ -136,143 +145,205 @@ export function LinkList({
     );
   }
 
+  // Separate links into pinned and unpinned
+  const pinnedLinks = links.filter(link => link.is_pinned);
+  const unpinnedLinks = links.filter(link => !link.is_pinned);
+
+  const renderLink = (link: Link, index: number, isPinned: boolean) => {
+    const isColor = link.content_type === "color";
+    const isRichText = link.content_type === "text";
+    const faviconUrl = link.favicon_url || `https://www.google.com/s2/favicons?domain=${link.domain}&sz=16`;
+    
+    // Extract preview text for rich text items
+    const richTextPreview = isRichText 
+      ? extractTextFromRichText(link.rich_text_content) || link.title
+      : null;
+
+    const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+      if (isColor) {
+        e.preventDefault();
+        copyToClipboard(link.color_value || link.title);
+      } else if (isRichText) {
+        e.preventDefault();
+        onEdit?.(link);
+      }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if ((e.metaKey || e.ctrlKey)) {
+        if (e.key === "c") {
+          e.preventDefault();
+          onCopyUrl?.(link.url);
+        } else if (e.key === "e") {
+          e.preventDefault();
+          onEdit?.(link);
+        } else if (e.key === "a") {
+          e.preventDefault();
+          onArchive?.(link.id);
+        } else if (e.key === "Backspace") {
+          // Cmd+Delete archives
+          if (!e.shiftKey) {
+            e.preventDefault();
+            onArchive?.(link.id);
+          } else {
+            // Cmd+Shift+Delete deletes
+            e.preventDefault();
+            onDelete?.(link.id);
+          }
+        }
+      }
+    };
+
+    return (
+      <div
+        key={link.id}
+        onMouseEnter={() => setFocusedIndex(index)}
+        onMouseLeave={() => {
+          if (focusedIndex === index) setFocusedIndex(null);
+        }}
+        onKeyDown={handleKeyDown}
+        className={cn(
+          "group grid grid-cols-[1fr_auto_auto] items-center gap-4 rounded-lg px-3 py-2 transition-colors",
+          focusedIndex === index && "bg-neutral-100"
+        )}
+      >
+        <a
+          ref={(el) => {
+            linkRefs.current[index] = el;
+          }}
+          href={isColor || isRichText ? "#" : link.url}
+          target={isColor || isRichText ? undefined : "_blank"}
+          rel={isColor || isRichText ? undefined : "noopener noreferrer"}
+          onClick={handleClick}
+          onFocus={() => setFocusedIndex(index)}
+          className={cn(
+            "flex min-w-0 items-center gap-3 focus:outline-none",
+            (isColor || isRichText) && "cursor-pointer"
+          )}
+        >
+          {isColor ? (
+            <div
+              className="h-5 w-5 flex-shrink-0 rounded-full border border-neutral-300"
+              style={{ backgroundColor: link.color_value || link.title }}
+            />
+          ) : isRichText ? (
+            <div className="h-5 w-5 flex-shrink-0 rounded bg-neutral-100 flex items-center justify-center">
+              <FileText className="h-3.5 w-3.5 text-neutral-500" />
+            </div>
+          ) : faviconErrors.has(link.id) ? (
+            <div className="h-5 w-5 flex-shrink-0 rounded bg-neutral-200" />
+          ) : (
+            <img
+              src={faviconUrl}
+              alt=""
+              className="h-5 w-5 flex-shrink-0 rounded"
+              onError={() => {
+                setFaviconErrors((prev) => new Set(prev).add(link.id));
+              }}
+            />
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[15px] text-neutral-900">
+              {isRichText && richTextPreview ? richTextPreview : (link.title || link.url)}
+            </div>
+            <div className="truncate text-sm text-neutral-400">
+              {isRichText ? "Rich text" : link.domain}
+            </div>
+          </div>
+        </a>
+        <div className="text-sm text-neutral-400">
+          {formatDate(new Date(link.created_at))}
+        </div>
+        <div className={cn(
+          "flex items-center gap-1 transition-opacity",
+          focusedIndex === index ? "opacity-100" : "opacity-0"
+        )}>
+          {isPinned && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onUnpin?.(link.id);
+              }}
+              className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-200 transition-colors"
+              title="Unpin"
+            >
+              <PinOff className="h-4 w-4" />
+            </button>
+          )}
+          <Menu>
+            <MenuTrigger>
+              <button className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-200 transition-colors">
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+            </MenuTrigger>
+            <MenuPopup>
+              <MenuItem onClick={() => onCopyUrl?.(link.url)}>
+                <Copy className="h-4 w-4" />
+                Copy URL
+                <MenuShortcut>⌘C</MenuShortcut>
+              </MenuItem>
+              <MenuItem onClick={() => onEdit?.(link)}>
+                <Edit className="h-4 w-4" />
+                Edit
+                <MenuShortcut>⌘E</MenuShortcut>
+              </MenuItem>
+              {isPinned ? (
+                <MenuItem onClick={() => onUnpin?.(link.id)}>
+                  <PinOff className="h-4 w-4" />
+                  Unpin
+                </MenuItem>
+              ) : (
+                <MenuItem onClick={() => onPin?.(link.id)}>
+                  <Pin className="h-4 w-4" />
+                  Pin
+                </MenuItem>
+              )}
+              <MenuItem onClick={() => onArchive?.(link.id)}>
+                <Archive className="h-4 w-4" />
+                Archive
+                <MenuShortcut>⌘⌫</MenuShortcut>
+              </MenuItem>
+              <MenuSeparator />
+              <MenuItem variant="destructive" onClick={() => onDelete?.(link.id)}>
+                <Trash className="h-4 w-4" />
+                Delete
+                <MenuShortcut>⌘⇧⌫</MenuShortcut>
+              </MenuItem>
+            </MenuPopup>
+          </Menu>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full" ref={containerRef}>
-      <div className="sticky top-0 z-10 mb-8 grid grid-cols-[1fr_auto_auto] gap-4 bg-[#fafafa] py-4 text-xs font-medium text-neutral-400">
+      <div className="sticky top-[104px] z-10 mb-8 grid grid-cols-[1fr_auto_auto] gap-4 bg-[#fafafa] py-4 text-xs font-medium text-neutral-400 relative">
         <div>Title</div>
         <div>Created at</div>
         <div className="w-10"></div>
+        <div className="absolute -bottom-8 left-0 right-0 h-8 bg-gradient-to-b from-[#fafafa] to-transparent pointer-events-none" />
       </div>
       <div className="space-y-0.5">
-        {links.map((link, index) => {
-          const isColor = link.content_type === "color";
-          const faviconUrl = link.favicon_url || `https://www.google.com/s2/favicons?domain=${link.domain}&sz=16`;
-
-          const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-            if (isColor) {
-              e.preventDefault();
-              copyToClipboard(link.color_value || link.title);
-            }
-          };
-
-          const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-            if ((e.metaKey || e.ctrlKey)) {
-              if (e.key === "c") {
-                e.preventDefault();
-                onCopyUrl?.(link.url);
-              } else if (e.key === "e") {
-                e.preventDefault();
-                onEdit?.(link);
-              } else if (e.key === "a") {
-                e.preventDefault();
-                onArchive?.(link.id);
-              } else if (e.key === "Backspace") {
-                // Cmd+Delete archives
-                if (!e.shiftKey) {
-                  e.preventDefault();
-                  onArchive?.(link.id);
-                } else {
-                  // Cmd+Shift+Delete deletes
-                  e.preventDefault();
-                  onDelete?.(link.id);
-                }
-              }
-            }
-          };
-
-          return (
-            <div
-              key={link.id}
-              onMouseEnter={() => setFocusedIndex(index)}
-              onMouseLeave={() => {
-                if (focusedIndex === index) setFocusedIndex(null);
-              }}
-              onKeyDown={handleKeyDown}
-              className={cn(
-                "group grid grid-cols-[1fr_auto_auto] items-center gap-4 rounded-lg px-3 py-2 transition-colors",
-                focusedIndex === index && "bg-neutral-100"
-              )}
-            >
-              <a
-              ref={(el) => {
-                linkRefs.current[index] = el;
-              }}
-              href={isColor ? "#" : link.url}
-              target={isColor ? undefined : "_blank"}
-              rel={isColor ? undefined : "noopener noreferrer"}
-              onClick={handleClick}
-              onFocus={() => setFocusedIndex(index)}
-              className={cn(
-                  "flex min-w-0 items-center gap-3 focus:outline-none",
-                isColor && "cursor-pointer"
-              )}
-            >
-                {isColor ? (
-                  <div
-                    className="h-5 w-5 flex-shrink-0 rounded-full border border-neutral-300"
-                    style={{ backgroundColor: link.color_value || link.title }}
-                  />
-                ) : (
-                  <img
-                    src={faviconUrl}
-                    alt=""
-                    className="h-5 w-5 flex-shrink-0 rounded"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = "none";
-                    }}
-                  />
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[15px] text-neutral-900">
-                    {link.title || link.url}
-                  </div>
-                  <div className="truncate text-sm text-neutral-400">
-                    {link.domain}
-                  </div>
-                </div>
-              </a>
-              <div className="text-sm text-neutral-400">
-                {formatDate(new Date(link.created_at))}
-              </div>
-              <div className={cn(
-                "opacity-0 transition-opacity",
-                focusedIndex === index && "opacity-100"
-              )}>
-                <Menu>
-                  <MenuTrigger>
-                    <button className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-200 transition-colors">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </button>
-                  </MenuTrigger>
-                  <MenuPopup>
-                    <MenuItem onClick={() => onCopyUrl?.(link.url)}>
-                      <Copy className="h-4 w-4" />
-                      Copy URL
-                      <MenuShortcut>⌘C</MenuShortcut>
-                    </MenuItem>
-                    <MenuItem onClick={() => onEdit?.(link)}>
-                      <Edit className="h-4 w-4" />
-                      Edit
-                      <MenuShortcut>⌘E</MenuShortcut>
-                    </MenuItem>
-                    <MenuItem onClick={() => onArchive?.(link.id)}>
-                      <Archive className="h-4 w-4" />
-                      Archive
-                      <MenuShortcut>⌘⌫</MenuShortcut>
-                    </MenuItem>
-                    <MenuSeparator />
-                    <MenuItem variant="destructive" onClick={() => onDelete?.(link.id)}>
-                      <Trash className="h-4 w-4" />
-                      Delete
-                      <MenuShortcut>⌘⇧⌫</MenuShortcut>
-                    </MenuItem>
-                  </MenuPopup>
-                </Menu>
-              </div>
+        {pinnedLinks.length > 0 && (
+          <>
+            <div className="mb-4 mt-4 text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+              Pinned
             </div>
-          );
-        })}
+            {pinnedLinks.map((link, index) => renderLink(link, index, true))}
+          </>
+        )}
+        {unpinnedLinks.length > 0 && (
+          <>
+            {pinnedLinks.length > 0 && (
+              <div className="mb-4 mt-8 text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                All Links
+              </div>
+            )}
+            {unpinnedLinks.map((link, index) => renderLink(link, pinnedLinks.length + index, false))}
+          </>
+        )}
       </div>
     </div>
   );
