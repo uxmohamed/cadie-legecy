@@ -8,6 +8,7 @@ import { LinkListSkeleton } from "@/components/link-list-skeleton";
 import { UserMenu } from "@/components/user-menu";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
+import { canonicalizeContent } from "@/lib/canonicalize";
 import type { Link } from "@/types";
 import type { User } from "@supabase/supabase-js";
 
@@ -73,21 +74,38 @@ export default function Home() {
     setIsLoading(true);
     
     try {
-      // Check for duplicate colors
-      if (type === "color") {
-        const normalizedValue = value.toLowerCase();
-        const isDuplicate = links.some(
-          (link) =>
-            link.content_type === "color" &&
-            (link.color_value?.toLowerCase() === normalizedValue ||
-              link.title.toLowerCase() === normalizedValue)
-        );
+      // Check for duplicates using smart canonicalization
+      const canonicalValue = canonicalizeContent(value, type);
+      
+      const isDuplicate = links.some((link) => {
+        // Only compare items of the same content type
+        if (link.content_type !== type) return false;
 
-        if (isDuplicate) {
-          showToast("This color is already in your list", "info");
-          setIsLoading(false);
-          return;
+        // Get the value to compare based on content type
+        let linkValue = "";
+        if (type === "color") {
+          linkValue = link.color_value || link.title;
+        } else if (type === "url") {
+          linkValue = link.url;
+        } else {
+          linkValue = link.title;
         }
+
+        // Canonicalize and compare
+        const canonicalLinkValue = canonicalizeContent(linkValue, type);
+        return canonicalLinkValue === canonicalValue;
+      });
+
+      if (isDuplicate) {
+        const message =
+          type === "color"
+            ? "This color is already in your list"
+            : type === "url"
+              ? "This link is already in your list"
+              : "This item is already in your list";
+        showToast(message, "info");
+        setIsLoading(false);
+        return;
       }
 
       // Extract metadata if it's a URL
