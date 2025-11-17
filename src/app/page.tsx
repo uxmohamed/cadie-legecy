@@ -15,6 +15,7 @@ import type { User } from "@supabase/supabase-js";
 export default function Home() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [links, setLinks] = React.useState<Link[]>([]);
+  const [searchQuery, setSearchQuery] = React.useState("");
   const [fetchingLinks, setFetchingLinks] = React.useState(true);
   const [user, setUser] = React.useState<User | null>(null);
   const { showToast } = useToast();
@@ -69,6 +70,32 @@ export default function Home() {
 
     fetchLinks();
   }, [user, showToast]);
+
+  const filteredLinks = React.useMemo(() => {
+    if (!searchQuery.trim()) {
+      return links;
+    }
+
+    const lowerQuery = searchQuery.toLowerCase();
+    return links.filter((link) => {
+      const searchableText = [
+        link.title,
+        link.url,
+        link.domain,
+        link.description,
+        link.color_value,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      
+      return searchableText.includes(lowerQuery);
+    });
+  }, [links, searchQuery]);
+
+  const handleSearch = React.useCallback((query: string) => {
+    setSearchQuery(query);
+  }, []);
 
   const handleSubmit = async (value: string, type: "url" | "color" | "text") => {
     setIsLoading(true);
@@ -183,7 +210,11 @@ export default function Home() {
       <main className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-24 items-center justify-between border-b border-neutral-200 px-8">
           <div className="flex-1 max-w-4xl">
-            <CaptureInput onSubmit={handleSubmit} isLoading={isLoading} />
+            <CaptureInput 
+              onSubmit={handleSubmit} 
+              onSearch={handleSearch}
+              isLoading={isLoading} 
+            />
           </div>
           <div className="ml-6">
             <UserMenu user={user} />
@@ -194,7 +225,7 @@ export default function Home() {
             {fetchingLinks ? (
               <LinkListSkeleton />
             ) : (
-              <LinkList links={links} />
+              <LinkList links={filteredLinks} />
             )}
         </div>
         </div>

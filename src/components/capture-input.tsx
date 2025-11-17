@@ -6,10 +6,11 @@ import { detectContentType } from "@/lib/content-detector";
 
 interface CaptureInputProps {
   onSubmit: (value: string, type: "url" | "color" | "text") => void;
+  onSearch?: (query: string) => void;
   isLoading?: boolean;
 }
 
-export function CaptureInput({ onSubmit, isLoading }: CaptureInputProps) {
+export function CaptureInput({ onSubmit, onSearch, isLoading }: CaptureInputProps) {
   const [value, setValue] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -25,18 +26,26 @@ export function CaptureInput({ onSubmit, isLoading }: CaptureInputProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setValue(newValue);
+    onSearch?.(newValue);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!value.trim() || isLoading) return;
 
     const detected = detectContentType(value);
-    onSubmit(detected.value, detected.type);
     setValue("");
+    onSearch?.("");
+    onSubmit(detected.value, detected.type);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") {
       setValue("");
+      onSearch?.("");
       inputRef.current?.blur();
     }
   };
@@ -48,7 +57,7 @@ export function CaptureInput({ onSubmit, isLoading }: CaptureInputProps) {
           ref={inputRef}
           type="text"
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={handleChange}
           onKeyDown={handleKeyDown}
           placeholder="+ Insert a link, color, or just plain text..."
           disabled={isLoading}
