@@ -45,9 +45,9 @@ export function AuthForm() {
     <div className="w-full max-w-[400px] space-y-8">
       {/* Logo/Icon Section */}
       <div className="flex flex-col items-center space-y-4">
-        <div className="flex size-20 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-900 to-slate-700 shadow-lg">
+        <div className="flex size-20 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-950 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50">
           <svg
-            className="size-10 text-white"
+            className="size-10"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -69,33 +69,6 @@ export function AuthForm() {
           </p>
         </div>
       </div>
-
-      {/* Success State */}
-      {success && (
-        <div className="animate-in fade-in slide-in-from-top-2 rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/50">
-          <div className="flex items-start gap-3">
-            <svg
-              className="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-emerald-900 dark:text-emerald-50">
-                Check your email
-              </p>
-              <p className="text-sm text-emerald-700 dark:text-emerald-300">
-                We&apos;ve sent you a magic link. Click the link in your email to sign in.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Error State */}
       {error && (
@@ -175,10 +148,32 @@ export function AuthForm() {
         </Button>
       </form>
 
-      {/* Footer Text */}
-      <p className="text-center text-xs text-slate-500 dark:text-slate-400">
-        By continuing, you agree to our Terms of Service and Privacy Policy
-      </p>
+      {/* Success State */}
+      {success && (
+        <div className="animate-in fade-in slide-in-from-top-2 rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/50">
+          <div className="flex items-start gap-3">
+            <svg
+              className="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-emerald-900 dark:text-emerald-50">
+                Check your email
+              </p>
+              <p className="text-sm text-emerald-700 dark:text-emerald-300">
+                We&apos;ve sent you a magic link. Click the link in your email to sign in.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

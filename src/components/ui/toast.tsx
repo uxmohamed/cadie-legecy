@@ -176,7 +176,6 @@ function useToast() {
       toastManager.add({
         title: message,
         type,
-        duration,
       });
     },
     []
