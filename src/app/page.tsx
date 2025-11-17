@@ -206,7 +206,7 @@ export default function Home() {
         prev.map((l) => (l.id === editingLink.id ? updatedLink : l))
       );
 
-      showToast("Rich text saved successfully", "success");
+      // Toast removed - using auto-save indicator in modal instead
     } catch (error) {
       console.error("Error saving rich text:", error);
       showToast("Failed to save rich text", "error");

@@ -36,7 +36,7 @@ export function RichTextEditor({
   );
 
   return (
-    <div className={className}>
+    <div className={className || "w-full"}>
       <Editor
         editorSerializedState={editorState}
         onSerializedChange={handleChange}
