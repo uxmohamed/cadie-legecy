@@ -29,6 +29,23 @@ const HSL_COLOR_PATTERN =
 const HSLA_COLOR_PATTERN =
   /^hsla\((\d{1,3}),\s*(\d{1,3})%,\s*(\d{1,3})%,\s*([\d.]+)\)$/i;
 
+// Modern color formats (CSS Color Module Level 4)
+const OKLCH_COLOR_PATTERN =
+  /^oklch\(([\d.]+%?)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+%?))?\)$/i;
+
+const OKLAB_COLOR_PATTERN =
+  /^oklab\(([\d.]+%?)\s+([\d.-]+)\s+([\d.-]+)(?:\s*\/\s*([\d.]+%?))?\)$/i;
+
+const LAB_COLOR_PATTERN =
+  /^lab\(([\d.]+%?)\s+([\d.-]+)\s+([\d.-]+)(?:\s*\/\s*([\d.]+%?))?\)$/i;
+
+const LCH_COLOR_PATTERN =
+  /^lch\(([\d.]+%?)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+%?))?\)$/i;
+
+// color() function with various color spaces
+const COLOR_FUNCTION_PATTERN =
+  /^color\((srgb|srgb-linear|display-p3|a98-rgb|prophoto-rgb|rec2020|xyz|xyz-d50|xyz-d65)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?\)$/i;
+
 const NAMED_COLORS = new Set([
   "red",
   "blue",
@@ -74,6 +91,21 @@ export function detectContentType(input: string): DetectedContent {
 
   // Check for hsl/hsla color
   if (HSL_COLOR_PATTERN.test(trimmed) || HSLA_COLOR_PATTERN.test(trimmed)) {
+    return { type: "color", value: trimmed };
+  }
+
+  // Check for modern color formats (oklch, oklab, lab, lch)
+  if (
+    OKLCH_COLOR_PATTERN.test(trimmed) ||
+    OKLAB_COLOR_PATTERN.test(trimmed) ||
+    LAB_COLOR_PATTERN.test(trimmed) ||
+    LCH_COLOR_PATTERN.test(trimmed)
+  ) {
+    return { type: "color", value: trimmed };
+  }
+
+  // Check for color() function
+  if (COLOR_FUNCTION_PATTERN.test(trimmed)) {
     return { type: "color", value: trimmed };
   }
 

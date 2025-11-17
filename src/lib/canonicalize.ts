@@ -4,16 +4,38 @@
  */
 
 /**
- * Converts a color to its canonical hex format for comparison
+ * Converts a color to its canonical format for comparison
+ * - Legacy formats (hex, rgb, hsl, named) -> normalized hex
+ * - Modern formats (oklch, oklab, lab, lch, color()) -> normalized functional notation
+ * 
  * Examples:
  * - #F53 -> #ff5533
  * - #FF5733 -> #ff5733
  * - rgb(255, 87, 51) -> #ff5733
  * - hsl(9, 100%, 60%) -> #ff5733 (approximate)
  * - red -> #ff0000
+ * - oklch(0.6 0.15 30) -> oklch(0.6 0.15 30)
+ * - oklab(0.6 0.1 0.05) -> oklab(0.6 0.1 0.05)
  */
 export function canonicalizeColor(color: string): string {
   const trimmed = color.trim().toLowerCase();
+
+  // Check for modern color formats first (preserve them with normalized spacing)
+  if (trimmed.startsWith("oklch(")) {
+    return normalizeColorFunction(trimmed, "oklch");
+  }
+  if (trimmed.startsWith("oklab(")) {
+    return normalizeColorFunction(trimmed, "oklab");
+  }
+  if (trimmed.startsWith("lab(")) {
+    return normalizeColorFunction(trimmed, "lab");
+  }
+  if (trimmed.startsWith("lch(")) {
+    return normalizeColorFunction(trimmed, "lch");
+  }
+  if (trimmed.startsWith("color(")) {
+    return normalizeColorFunction(trimmed, "color");
+  }
 
   // Handle hex colors
   if (trimmed.match(/^#?[0-9a-f]{3}$/)) {
@@ -77,6 +99,21 @@ export function canonicalizeColor(color: string): string {
   };
 
   return namedColors[trimmed] || trimmed;
+}
+
+/**
+ * Normalizes modern color function notation
+ * Converts to consistent spacing and lowercase
+ */
+function normalizeColorFunction(color: string, functionName: string): string {
+  // Remove extra spaces and normalize to single space between values
+  const normalized = color
+    .replace(/\s+/g, " ")
+    .replace(/\(\s*/g, "(")
+    .replace(/\s*\)/g, ")")
+    .replace(/\s*\/\s*/g, " / ");
+  
+  return normalized;
 }
 
 /**

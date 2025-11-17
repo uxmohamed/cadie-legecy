@@ -133,6 +133,59 @@ describe("Canonicalization - Smart Duplicate Detection", () => {
         expect(canonicalizeColor("notacolor")).toBe("notacolor");
       });
     });
+
+    describe("Modern Color Formats", () => {
+      test("oklch colors are normalized with consistent spacing", () => {
+        const color1 = canonicalizeColor("oklch(0.6 0.15 30)");
+        const color2 = canonicalizeColor("OKLCH(0.6  0.15  30)");
+        const color3 = canonicalizeColor("oklch( 0.6  0.15  30 )");
+        expect(color1).toBe(color2);
+        expect(color1).toBe(color3);
+      });
+
+      test("oklch with alpha normalized", () => {
+        const color1 = canonicalizeColor("oklch(0.6 0.15 30 / 0.8)");
+        const color2 = canonicalizeColor("oklch(0.6  0.15  30  /  0.8)");
+        expect(color1).toBe(color2);
+      });
+
+      test("oklab colors are normalized", () => {
+        const color1 = canonicalizeColor("oklab(0.6 0.1 0.05)");
+        const color2 = canonicalizeColor("OKLAB(0.6  0.1  0.05)");
+        expect(color1).toBe(color2);
+      });
+
+      test("lab colors are normalized", () => {
+        const color1 = canonicalizeColor("lab(60 40 30)");
+        const color2 = canonicalizeColor("LAB(60  40  30)");
+        expect(color1).toBe(color2);
+      });
+
+      test("lch colors are normalized", () => {
+        const color1 = canonicalizeColor("lch(60 50 180)");
+        const color2 = canonicalizeColor("LCH(60  50  180)");
+        expect(color1).toBe(color2);
+      });
+
+      test("color() function is normalized", () => {
+        const color1 = canonicalizeColor("color(srgb 1 0.5 0)");
+        const color2 = canonicalizeColor("COLOR(srgb  1  0.5  0)");
+        expect(color1).toBe(color2);
+      });
+
+      test("color() with display-p3 is normalized", () => {
+        const color1 = canonicalizeColor("color(display-p3 1 0.5 0)");
+        const color2 = canonicalizeColor("color(display-p3  1  0.5  0)");
+        expect(color1).toBe(color2);
+      });
+
+      test("modern formats are preserved (not converted to hex)", () => {
+        expect(canonicalizeColor("oklch(0.6 0.15 30)")).toBe("oklch(0.6 0.15 30)");
+        expect(canonicalizeColor("oklab(0.6 0.1 0.05)")).toBe("oklab(0.6 0.1 0.05)");
+        expect(canonicalizeColor("lab(60 40 30)")).toBe("lab(60 40 30)");
+        expect(canonicalizeColor("lch(60 50 180)")).toBe("lch(60 50 180)");
+      });
+    });
   });
 
   describe("canonicalizeUrl", () => {

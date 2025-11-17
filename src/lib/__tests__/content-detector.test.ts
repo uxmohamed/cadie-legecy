@@ -245,6 +245,121 @@ describe("Content Detector - Color Detection", () => {
     });
   });
 
+  describe("OKLCH Colors", () => {
+    test("should detect oklch with standard values", () => {
+      const result = detectContentType("oklch(0.6 0.15 30)");
+      expect(result.type).toBe("color");
+      expect(result.value).toBe("oklch(0.6 0.15 30)");
+    });
+
+    test("should detect oklch with alpha", () => {
+      const result = detectContentType("oklch(0.6 0.15 30 / 0.8)");
+      expect(result.type).toBe("color");
+    });
+
+    test("should detect oklch with percentage lightness", () => {
+      const result = detectContentType("oklch(60% 0.15 30)");
+      expect(result.type).toBe("color");
+    });
+
+    test("should detect oklch with uppercase", () => {
+      const result = detectContentType("OKLCH(0.6 0.15 30)");
+      expect(result.type).toBe("color");
+    });
+  });
+
+  describe("OKLAB Colors", () => {
+    test("should detect oklab with standard values", () => {
+      const result = detectContentType("oklab(0.6 0.1 0.05)");
+      expect(result.type).toBe("color");
+      expect(result.value).toBe("oklab(0.6 0.1 0.05)");
+    });
+
+    test("should detect oklab with negative values", () => {
+      const result = detectContentType("oklab(0.6 -0.1 0.05)");
+      expect(result.type).toBe("color");
+    });
+
+    test("should detect oklab with alpha", () => {
+      const result = detectContentType("oklab(0.6 0.1 0.05 / 0.8)");
+      expect(result.type).toBe("color");
+    });
+
+    test("should detect oklab with uppercase", () => {
+      const result = detectContentType("OKLAB(0.6 0.1 0.05)");
+      expect(result.type).toBe("color");
+    });
+  });
+
+  describe("LAB Colors", () => {
+    test("should detect lab with standard values", () => {
+      const result = detectContentType("lab(60 40 30)");
+      expect(result.type).toBe("color");
+      expect(result.value).toBe("lab(60 40 30)");
+    });
+
+    test("should detect lab with negative values", () => {
+      const result = detectContentType("lab(60 -40 30)");
+      expect(result.type).toBe("color");
+    });
+
+    test("should detect lab with alpha", () => {
+      const result = detectContentType("lab(60 40 30 / 0.8)");
+      expect(result.type).toBe("color");
+    });
+
+    test("should detect lab with percentage", () => {
+      const result = detectContentType("lab(60% 40 30)");
+      expect(result.type).toBe("color");
+    });
+  });
+
+  describe("LCH Colors", () => {
+    test("should detect lch with standard values", () => {
+      const result = detectContentType("lch(60 50 180)");
+      expect(result.type).toBe("color");
+      expect(result.value).toBe("lch(60 50 180)");
+    });
+
+    test("should detect lch with alpha", () => {
+      const result = detectContentType("lch(60 50 180 / 0.8)");
+      expect(result.type).toBe("color");
+    });
+
+    test("should detect lch with percentage", () => {
+      const result = detectContentType("lch(60% 50 180)");
+      expect(result.type).toBe("color");
+    });
+  });
+
+  describe("Color Function", () => {
+    test("should detect color() with srgb", () => {
+      const result = detectContentType("color(srgb 1 0.5 0)");
+      expect(result.type).toBe("color");
+      expect(result.value).toBe("color(srgb 1 0.5 0)");
+    });
+
+    test("should detect color() with display-p3", () => {
+      const result = detectContentType("color(display-p3 1 0.5 0)");
+      expect(result.type).toBe("color");
+    });
+
+    test("should detect color() with alpha", () => {
+      const result = detectContentType("color(srgb 1 0.5 0 / 0.8)");
+      expect(result.type).toBe("color");
+    });
+
+    test("should detect color() with rec2020", () => {
+      const result = detectContentType("color(rec2020 1 0.5 0)");
+      expect(result.type).toBe("color");
+    });
+
+    test("should detect color() with xyz", () => {
+      const result = detectContentType("color(xyz 0.5 0.3 0.2)");
+      expect(result.type).toBe("color");
+    });
+  });
+
   describe("Edge Cases", () => {
     test("should handle empty string", () => {
       const result = detectContentType("");
