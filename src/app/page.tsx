@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 import { canonicalizeContent } from "@/lib/canonicalize";
 import type { Link } from "@/types";
 import type { User } from "@supabase/supabase-js";
+import type { DetectedContent } from "@/lib/content-detector";
 
 export default function Home() {
   const [isLoading, setIsLoading] = React.useState(false);
@@ -20,9 +21,6 @@ export default function Home() {
   const [user, setUser] = React.useState<User | null>(null);
   const { showToast } = useToast();
   const router = useRouter();
-  const deleteTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-  const pendingDeleteRef = React.useRef<{ id: string; link: Link; index: number } | null>(null);
-  const deletingRef = React.useRef<Set<string>>(new Set());
 
   React.useEffect(() => {
     const supabase = createClient();
@@ -101,177 +99,38 @@ export default function Home() {
     setSearchQuery(query);
   }, []);
 
-  const undoDelete = React.useCallback(() => {
-    if (pendingDeleteRef.current && deleteTimeoutRef.current) {
-      clearTimeout(deleteTimeoutRef.current);
-      const { id, link, index } = pendingDeleteRef.current;
+  const handleDeleteLink = React.useCallback(async (id: string) => {
+    // Optimistic update - remove immediately
+    setLinks((prev) => prev.filter((link) => link.id !== id));
+    
+    try {
+      const response = await fetch(`/api/links/${id}`, { method: "DELETE" });
       
-      setLinks((prev) => {
-        const exists = prev.some((l) => l.id === link.id);
-        if (exists) return prev;
-        
-        // Insert the link back at its original position
-        const newLinks = [...prev];
-        newLinks.splice(index, 0, link);
-        return newLinks;
-      });
+      if (!response.ok) {
+        throw new Error("Failed to delete link");
+      }
       
-      showToast("Link restored", "success");
+      showToast("Link deleted", "success");
+    } catch (error) {
+      console.error("Error deleting link:", error);
+      showToast("Failed to delete link", "error");
       
-      pendingDeleteRef.current = null;
-      deleteTimeoutRef.current = null;
-      deletingRef.current.delete(id);
+      // Refresh links on error to restore the item
+      try {
+        const response = await fetch("/api/links?is_archived=false");
+        if (response.ok) {
+          const data = await response.json();
+          setLinks(data.links || []);
+        }
+      } catch (refreshError) {
+        console.error("Error refreshing links:", refreshError);
+      }
     }
   }, [showToast]);
 
-  // Global keyboard shortcut for undo (⌘Z)
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "z" && pendingDeleteRef.current) {
-        e.preventDefault();
-        undoDelete();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [undoDelete]);
-
-  // Process any pending deletions from sessionStorage on mount
-  React.useEffect(() => {
-    const processPendingDeletions = async () => {
-      try {
-        const pending = sessionStorage.getItem("pendingDeletions");
-        if (pending) {
-          const ids: string[] = JSON.parse(pending);
-          sessionStorage.removeItem("pendingDeletions");
-          
-          // Delete all pending items
-          await Promise.all(
-            ids.map((id) =>
-              fetch(`/api/links/${id}`, { method: "DELETE" }).catch((error) =>
-                console.error("Error deleting pending:", error)
-              )
-            )
-          );
-        }
-      } catch (error) {
-        console.error("Error processing pending deletions:", error);
-      }
-    };
-
-    processPendingDeletions();
-  }, []);
-
-  // Complete pending deletion before page unload
-  React.useEffect(() => {
-    const completePendingDelete = () => {
-      if (pendingDeleteRef.current) {
-        const { id } = pendingDeleteRef.current;
-        
-        // Store in sessionStorage to complete after reload
-        try {
-          const pending = sessionStorage.getItem("pendingDeletions");
-          const ids = pending ? JSON.parse(pending) : [];
-          if (!ids.includes(id)) {
-            ids.push(id);
-            sessionStorage.setItem("pendingDeletions", JSON.stringify(ids));
-          }
-        } catch (error) {
-          console.error("Error storing pending deletion:", error);
-        }
-      }
-    };
-
-    const handleBeforeUnload = () => {
-      completePendingDelete();
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, []);
-
-  const handleDeleteLink = React.useCallback((id: string) => {
-    let deletedLink: Link | undefined;
-    let deletedIndex = -1;
-    
-    // Prevent duplicate deletions
-    if (deletingRef.current.has(id)) {
-      return;
-    }
-    deletingRef.current.add(id);
-    
-    // Clear any existing timeout
-    if (deleteTimeoutRef.current) {
-      clearTimeout(deleteTimeoutRef.current);
-    }
-    
-    // Optimistic update - remove immediately and capture the deleted link with its index
-    setLinks((prev) => {
-      deletedIndex = prev.findIndex((link) => link.id === id);
-      deletedLink = prev[deletedIndex];
-      return prev.filter((link) => link.id !== id);
-    });
-    
-    if (deletedLink && deletedIndex !== -1) {
-      const capturedLink = deletedLink;
-      const capturedIndex = deletedIndex;
-      pendingDeleteRef.current = { id, link: capturedLink, index: capturedIndex };
-      
-      // Show toast with undo action
-      showToast("Link deleted", "success", {
-        action: {
-          label: "Undo (⌘Z)",
-          onClick: undoDelete,
-        },
-        duration: 5000,
-      });
-      
-      // Delay the actual API call
-      deleteTimeoutRef.current = setTimeout(async () => {
-        try {
-          const response = await fetch(`/api/links/${id}`, {
-            method: "DELETE",
-          });
-
-          if (!response.ok) {
-            throw new Error("Failed to delete link");
-          }
-          
-          pendingDeleteRef.current = null;
-          deletingRef.current.delete(id);
-        } catch (error) {
-          console.error("Error deleting link:", error);
-          // Restore the link on error at its original position
-          setLinks((prev) => {
-            const exists = prev.some((link) => link.id === id);
-            if (exists) return prev;
-            
-            const newLinks = [...prev];
-            newLinks.splice(capturedIndex, 0, capturedLink);
-            return newLinks;
-          });
-          showToast("Failed to delete link", "error");
-          pendingDeleteRef.current = null;
-          deletingRef.current.delete(id);
-        }
-      }, 5000);
-    }
-  }, [showToast, undoDelete]);
-
-  const handleArchiveLink = async (id: string) => {
-    let archivedLink: Link | undefined;
-    
-    // Optimistic update - remove immediately and capture the archived link
-    setLinks((prev) => {
-      archivedLink = prev.find((link) => link.id === id);
-      return prev.filter((link) => link.id !== id);
-    });
-    
-    showToast("Link archived successfully", "success");
+  const handleArchiveLink = React.useCallback(async (id: string) => {
+    // Optimistic update - remove immediately
+    setLinks((prev) => prev.filter((link) => link.id !== id));
 
     try {
       const response = await fetch(`/api/links/${id}`, {
@@ -283,19 +142,24 @@ export default function Home() {
       if (!response.ok) {
         throw new Error("Failed to archive link");
       }
+      
+      showToast("Link archived", "success");
     } catch (error) {
       console.error("Error archiving link:", error);
-      // Restore the link on error
-      if (archivedLink) {
-        setLinks((prev) => {
-          // Only restore if it's not already in the list
-          const exists = prev.some((link) => link.id === id);
-          return exists ? prev : [archivedLink!, ...prev];
-        });
-      }
       showToast("Failed to archive link", "error");
+      
+      // Refresh links on error to restore the item
+      try {
+        const response = await fetch("/api/links?is_archived=false");
+        if (response.ok) {
+          const data = await response.json();
+          setLinks(data.links || []);
+        }
+      } catch (refreshError) {
+        console.error("Error refreshing links:", refreshError);
+      }
     }
-  };
+  }, [showToast]);
 
   const handleCopyUrl = async (url: string) => {
     try {
@@ -311,97 +175,239 @@ export default function Home() {
     showToast("Edit functionality coming soon", "info");
   };
 
-  const handleSubmit = async (value: string, type: "url" | "color" | "text") => {
+  const handleSubmit = async (items: DetectedContent[]) => {
+    if (items.length === 0) return;
+    
     setIsLoading(true);
     
     try {
-      // Check for duplicates using smart canonicalization
-      const canonicalValue = canonicalizeContent(value, type);
+      // Track results for summary message
+      let successCount = 0;
+      let duplicateCount = 0;
+      let failureCount = 0;
+      const addedLinks: Link[] = [];
       
-      const isDuplicate = links.some((link) => {
-        // Only compare items of the same content type
-        if (link.content_type !== type) return false;
+      // Determine if we should use parallel or sequential processing
+      // Use parallel for small batches (<=5 URLs), sequential for larger batches
+      const useParallel = items.length <= 5;
+      
+      if (useParallel) {
+        // Parallel processing for small batches
+        const results = await Promise.allSettled(
+          items.map(async ({ value, type }) => {
+            // Check for duplicates using smart canonicalization
+            const canonicalValue = canonicalizeContent(value, type);
+            
+            const isDuplicate = links.some((link) => {
+              if (link.content_type !== type) return false;
 
-        // Get the value to compare based on content type
-        let linkValue = "";
-        if (type === "color") {
-          linkValue = link.color_value || link.title;
-        } else if (type === "url") {
-          linkValue = link.url;
-        } else {
-          linkValue = link.title;
-        }
+              let linkValue = "";
+              if (type === "color") {
+                linkValue = link.color_value || link.title;
+              } else if (type === "url") {
+                linkValue = link.url;
+              } else {
+                linkValue = link.title;
+              }
 
-        // Canonicalize and compare
-        const canonicalLinkValue = canonicalizeContent(linkValue, type);
-        return canonicalLinkValue === canonicalValue;
-      });
+              const canonicalLinkValue = canonicalizeContent(linkValue, type);
+              return canonicalLinkValue === canonicalValue;
+            });
 
-      if (isDuplicate) {
-        const message =
-          type === "color"
-            ? "This color is already in your list"
-            : type === "url"
-              ? "This link is already in your list"
-              : "This item is already in your list";
-        showToast(message, "info");
-        setIsLoading(false);
-        return;
-      }
+            if (isDuplicate) {
+              return { status: "duplicate" as const };
+            }
 
-      // Extract metadata if it's a URL
-      let metadata = null;
-      if (type === "url") {
-        const metadataResponse = await fetch("/api/metadata", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: value }),
+            // Extract metadata if it's a URL
+            let metadata = null;
+            if (type === "url") {
+              const metadataResponse = await fetch("/api/metadata", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url: value }),
+              });
+              
+              if (metadataResponse.ok) {
+                const data = await metadataResponse.json();
+                metadata = data.metadata;
+              }
+            }
+
+            // Prepare the request body
+            const requestBody: Record<string, unknown> = {
+              url: value,
+              title: type === "color" ? value : (metadata?.title || value),
+              content_type: type,
+            };
+
+            if (type === "color") {
+              requestBody.color_value = value;
+            } else if (type === "url") {
+              requestBody.favicon_url = metadata?.favicon;
+              requestBody.og_image_url = metadata?.ogImage;
+              requestBody.description = metadata?.description;
+            }
+
+            // Create the link
+            const response = await fetch("/api/links", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(requestBody),
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error || "Failed to create link");
+            }
+
+            const { link } = await response.json();
+            return { status: "success" as const, link };
+          })
+        );
+
+        // Process results
+        results.forEach((result) => {
+          if (result.status === "fulfilled") {
+            if (result.value.status === "duplicate") {
+              duplicateCount++;
+            } else if (result.value.status === "success") {
+              successCount++;
+              addedLinks.push(result.value.link);
+            }
+          } else {
+            failureCount++;
+          }
         });
-        
-        if (metadataResponse.ok) {
-          const data = await metadataResponse.json();
-          metadata = data.metadata;
+      } else {
+        // Sequential processing for large batches
+        for (const { value, type } of items) {
+          try {
+            // Check for duplicates
+            const canonicalValue = canonicalizeContent(value, type);
+            
+            const isDuplicate = links.some((link) => {
+              if (link.content_type !== type) return false;
+
+              let linkValue = "";
+              if (type === "color") {
+                linkValue = link.color_value || link.title;
+              } else if (type === "url") {
+                linkValue = link.url;
+              } else {
+                linkValue = link.title;
+              }
+
+              const canonicalLinkValue = canonicalizeContent(linkValue, type);
+              return canonicalLinkValue === canonicalValue;
+            });
+
+            if (isDuplicate) {
+              duplicateCount++;
+              continue;
+            }
+
+            // Extract metadata if it's a URL
+            let metadata = null;
+            if (type === "url") {
+              const metadataResponse = await fetch("/api/metadata", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url: value }),
+              });
+              
+              if (metadataResponse.ok) {
+                const data = await metadataResponse.json();
+                metadata = data.metadata;
+              }
+            }
+
+            // Prepare the request body
+            const requestBody: Record<string, unknown> = {
+              url: value,
+              title: type === "color" ? value : (metadata?.title || value),
+              content_type: type,
+            };
+
+            if (type === "color") {
+              requestBody.color_value = value;
+            } else if (type === "url") {
+              requestBody.favicon_url = metadata?.favicon;
+              requestBody.og_image_url = metadata?.ogImage;
+              requestBody.description = metadata?.description;
+            }
+
+            // Create the link
+            const response = await fetch("/api/links", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(requestBody),
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error || "Failed to create link");
+            }
+
+            const { link } = await response.json();
+            successCount++;
+            addedLinks.push(link);
+          } catch (error) {
+            console.error("Error creating link:", error);
+            failureCount++;
+          }
         }
       }
-
-      // Prepare the request body based on content type
-      const requestBody: Record<string, unknown> = {
-        url: value,
-        title: type === "color" ? value : (metadata?.title || value),
-        content_type: type,
-      };
-
-      // Add color-specific data
-      if (type === "color") {
-        requestBody.color_value = value;
-      } else if (type === "url") {
-        requestBody.favicon_url = metadata?.favicon;
-        requestBody.og_image_url = metadata?.ogImage;
-        requestBody.description = metadata?.description;
-      }
-
-      // Create the link
-      const response = await fetch("/api/links", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to create link");
-      }
-
-      const { link } = await response.json();
       
-      // Add the new link to the list
-      setLinks((prev) => [link, ...prev]);
-      showToast(
-        type === "color" ? "Color saved successfully" : "Link saved successfully",
-        "success"
-      );
+      // Add all new links to the list
+      if (addedLinks.length > 0) {
+        setLinks((prev) => [...addedLinks, ...prev]);
+      }
+      
+      // Show summary toast message
+      if (items.length === 1) {
+        // Single item - use simple messages
+        if (successCount === 1) {
+          const type = items[0].type;
+          showToast(
+            type === "color" ? "Color saved successfully" : "Link saved successfully",
+            "success"
+          );
+        } else if (duplicateCount === 1) {
+          const type = items[0].type;
+          const message =
+            type === "color"
+              ? "This color is already in your list"
+              : type === "url"
+                ? "This link is already in your list"
+                : "This item is already in your list";
+          showToast(message, "info");
+        } else {
+          showToast("Failed to save", "error");
+        }
+      } else {
+        // Multiple items - show summary
+        if (successCount > 0 && duplicateCount === 0 && failureCount === 0) {
+          showToast(`${successCount} ${successCount === 1 ? "link" : "links"} added successfully`, "success");
+        } else if (successCount > 0 && duplicateCount > 0) {
+          showToast(
+            `${successCount} ${successCount === 1 ? "link" : "links"} added, ${duplicateCount} ${duplicateCount === 1 ? "was" : "were"} already in your list`,
+            "success"
+          );
+        } else if (duplicateCount > 0 && successCount === 0) {
+          showToast(`${duplicateCount} ${duplicateCount === 1 ? "link was" : "links were"} already in your list`, "info");
+        } else if (failureCount > 0) {
+          if (successCount > 0) {
+            showToast(
+              `${successCount} ${successCount === 1 ? "link" : "links"} added, ${failureCount} failed`,
+              "success"
+            );
+          } else {
+            showToast("Failed to add links", "error");
+          }
+        }
+      }
     } catch (error) {
-      console.error("Error creating link:", error);
+      console.error("Error creating links:", error);
       showToast(
         error instanceof Error ? error.message : "Failed to save",
         "error"

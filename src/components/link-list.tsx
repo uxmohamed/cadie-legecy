@@ -167,8 +167,15 @@ export function LinkList({
                 e.preventDefault();
                 onArchive?.(link.id);
               } else if (e.key === "Backspace") {
-                e.preventDefault();
-                onDelete?.(link.id);
+                // Cmd+Delete archives
+                if (!e.shiftKey) {
+                  e.preventDefault();
+                  onArchive?.(link.id);
+                } else {
+                  // Cmd+Shift+Delete deletes
+                  e.preventDefault();
+                  onDelete?.(link.id);
+                }
               }
             }
           };
@@ -252,13 +259,13 @@ export function LinkList({
                     <MenuItem onClick={() => onArchive?.(link.id)}>
                       <Archive className="h-4 w-4" />
                       Archive
-                      <MenuShortcut>⌘A</MenuShortcut>
+                      <MenuShortcut>⌘⌫</MenuShortcut>
                     </MenuItem>
                     <MenuSeparator />
                     <MenuItem variant="destructive" onClick={() => onDelete?.(link.id)}>
                       <Trash className="h-4 w-4" />
                       Delete
-                      <MenuShortcut>⌘⌫</MenuShortcut>
+                      <MenuShortcut>⌘⇧⌫</MenuShortcut>
                     </MenuItem>
                   </MenuPopup>
                 </Menu>

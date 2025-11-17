@@ -152,3 +152,43 @@ export function isValidUrl(url: string): boolean {
   }
 }
 
+/**
+ * Splits input string by multiple delimiters (spaces, commas, newlines)
+ * and returns an array of trimmed, non-empty strings
+ * Note: Doesn't split by dashes or underscores as they're common in URLs
+ */
+export function splitMultipleContent(input: string): string[] {
+  if (!input || !input.trim()) {
+    return [];
+  }
+
+  // Split by whitespace (spaces, tabs, newlines) and commas
+  // Don't split by dashes or underscores as they're part of URLs
+  const items = input.split(/[\s,]+/);
+  
+  // Filter out empty strings and trim each item
+  return items
+    .map(item => item.trim())
+    .filter(item => item.length > 0);
+}
+
+/**
+ * Detects content types for multiple items
+ * Returns an array of detected content items
+ */
+export function detectMultipleContentTypes(input: string): DetectedContent[] {
+  const items = splitMultipleContent(input);
+  
+  if (items.length === 0) {
+    return [];
+  }
+  
+  // If only one item, return single detection
+  if (items.length === 1) {
+    return [detectContentType(items[0])];
+  }
+  
+  // Detect type for each item
+  return items.map(item => detectContentType(item));
+}
+

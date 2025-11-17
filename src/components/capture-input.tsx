@@ -2,10 +2,10 @@
 
 import * as React from "react";
 import { Input } from "@/components/ui/input";
-import { detectContentType } from "@/lib/content-detector";
+import { detectMultipleContentTypes, type DetectedContent } from "@/lib/content-detector";
 
 interface CaptureInputProps {
-  onSubmit: (value: string, type: "url" | "color" | "text") => void;
+  onSubmit: (items: DetectedContent[]) => void;
   onSearch?: (query: string) => void;
   isLoading?: boolean;
 }
@@ -36,10 +36,10 @@ export function CaptureInput({ onSubmit, onSearch, isLoading }: CaptureInputProp
     e.preventDefault();
     if (!value.trim() || isLoading) return;
 
-    const detected = detectContentType(value);
+    const detectedItems = detectMultipleContentTypes(value);
     setValue("");
     onSearch?.("");
-    onSubmit(detected.value, detected.type);
+    onSubmit(detectedItems);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
