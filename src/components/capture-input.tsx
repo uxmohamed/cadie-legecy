@@ -12,6 +12,7 @@ interface CaptureInputProps {
 
 export function CaptureInput({ onSubmit, onSearch, isLoading }: CaptureInputProps) {
   const [value, setValue] = React.useState("");
+  const [showFocusAnimation, setShowFocusAnimation] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
@@ -19,6 +20,8 @@ export function CaptureInput({ onSubmit, onSearch, isLoading }: CaptureInputProp
       if ((e.metaKey || e.ctrlKey) && e.key === "f") {
         e.preventDefault();
         inputRef.current?.focus();
+        setShowFocusAnimation(true);
+        setTimeout(() => setShowFocusAnimation(false), 200);
       }
     };
 
@@ -52,7 +55,7 @@ export function CaptureInput({ onSubmit, onSearch, isLoading }: CaptureInputProp
 
   return (
     <form onSubmit={handleSubmit} className="w-full">
-      <div className="relative">
+      <div className={`relative transition-shadow duration-200 rounded-lg ${showFocusAnimation ? 'shadow-[0_0_40px_8px_rgba(0,0,0,0.2),0_0_20px_4px_rgba(0,0,0,0.15)]' : ''}`}>
         <Input
           ref={inputRef}
           type="text"
