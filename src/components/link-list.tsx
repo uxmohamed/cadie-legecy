@@ -59,6 +59,9 @@ export function LinkList({
   const [dragCurrentIndex, setDragCurrentIndex] = React.useState<number | null>(null);
   const [lastSelectedIndex, setLastSelectedIndex] = React.useState<number | null>(null);
   
+  const mouseDownPos = React.useRef<{ x: number, y: number } | null>(null);
+  const wasDraggingRef = React.useRef(false);
+  
   const linkRefs = React.useRef<(HTMLAnchorElement | null)[]>([]);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
@@ -97,19 +100,59 @@ export function LinkList({
     previousLengthRef.current = displayLinks.length;
   }, [displayLinks.length, focusedIndex, displayLinks]);
 
-  // Global mouse up handler to end dragging
+  // Global mouse up/move handler
   React.useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!mouseDownPos.current) return;
+
+      const dx = e.clientX - mouseDownPos.current.x;
+      const dy = e.clientY - mouseDownPos.current.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance > 5 && !isDragging) {
+        setIsDragging(true);
+        wasDraggingRef.current = true;
+      }
+    };
+
     const handleMouseUp = () => {
+      mouseDownPos.current = null;
       if (isDragging) {
         setIsDragging(false);
         setDragStartIndex(null);
         setDragCurrentIndex(null);
+        // Don't clear wasDraggingRef here immediately, wait for click event to process
+        setTimeout(() => {
+            wasDraggingRef.current = false;
+        }, 0);
+      } else {
+          wasDraggingRef.current = false;
       }
     };
 
+    const handleMouseDown = (e: MouseEvent) => {
+      // Check if click is outside the list items and outside the action bar
+      const target = e.target as HTMLElement;
+      if (
+        selectedIds.size > 0 && 
+        !target.closest('.group') && // Link items
+        !target.closest('.fixed.bottom-8') && // Action bar
+        !target.closest('[role="menu"]') // Menus
+      ) {
+        setSelectedIds(new Set());
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
-    return () => window.removeEventListener('mouseup', handleMouseUp);
-  }, [isDragging]);
+    window.addEventListener('mousedown', handleMouseDown);
+    
+    return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+        window.removeEventListener('mousedown', handleMouseDown);
+    };
+  }, [isDragging, selectedIds.size]);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -140,20 +183,17 @@ export function LinkList({
     const isColor = link.content_type === "color";
     const isRichText = link.content_type === "text";
     
-    // Always prevent default behavior first to handle selection logic
-    // We will manually navigate or perform action if it's a "pure" click
-    
-    // Check if we are in selection mode (either modifying selection or finishing a drag)
-    // If isDragging is true, it means we just finished a drag, so we shouldn't open the link.
-    // However, mouseup happens before click, so isDragging might already be false here.
-    // We can check if selection size changed recently or if modifiers are held.
-
-    if (e.metaKey || e.ctrlKey || e.shiftKey) {
+    // Prevent default behavior for modifiers OR if we just dragged
+    if (e.metaKey || e.shiftKey || wasDraggingRef.current) {
       e.preventDefault();
       e.stopPropagation();
       
-      // Toggle logic
-      if (e.metaKey || e.ctrlKey) {
+      // If it was a drag, we already handled selection updates in mouseMove/Enter
+      if (wasDraggingRef.current) return;
+
+      // Modifier logic for click
+      if (e.metaKey) {
+        // Mac-style Command click toggle
         const newSet = new Set(selectedIds);
         if (newSet.has(link.id)) {
             newSet.delete(link.id);
@@ -163,16 +203,10 @@ export function LinkList({
         }
         setSelectedIds(newSet);
       } else if (e.shiftKey && lastSelectedIndex !== null) {
-        // Range select from last selected
         const start = Math.min(lastSelectedIndex, index);
         const end = Math.max(lastSelectedIndex, index);
         const newSet = new Set(selectedIds);
-        // If we want to replace selection like standard OS:
-        // newSet.clear(); 
-        // But typically web apps might add to selection or replace.
-        // Let's assume standard Shift+Click extends selection from anchor.
-        // To make it cleaner, let's clear and select the range if no meta key.
-        if (!e.metaKey && !e.ctrlKey) {
+        if (!e.metaKey) {
            newSet.clear();
         }
         
@@ -184,113 +218,46 @@ export function LinkList({
       return;
     }
 
-    // If we are not using modifiers, check if we are just clicking to open
-    // But if we have a selection, maybe we want to clear it?
-    // Standard behavior: Click on an item clears other selections and selects this one (or opens it).
-    // The user said "by mistake I click into the link and it's open".
-    // This implies they tried to drag/select and it opened.
-    
-    // If we just finished dragging (which we can't easily detect here since mouseup fired),
-    // we rely on the fact that dragging usually doesn't trigger a click on the element if cursor moved enough.
-    // But if they just clicked to select (without modifier), they might expect selection, not open.
-    // BUT standard link behavior is open on click.
-    
-    // If they want to select individual items without opening, they usually use modifiers or specific selection areas.
-    // However, the user asked: "control for selecting individual items shift and click... not to do this open by mistake"
-    
-    // If we simply click, we open.
+    // If no modifiers and no drag: Open link directly
     if (isColor) {
         e.preventDefault();
         copyToClipboard(link.color_value || link.title);
     } else if (isRichText) {
         e.preventDefault();
         onEdit?.(link);
-    } else {
-        // Regular URL link
-        // If selectedIds has items, clicking a non-selected item usually clears selection and navigates?
-        // Or just navigates?
-        // User wants to avoid accidental open.
-        // Maybe we should only open if NO selection modifiers were used AND we didn't just drag?
-        // Since we prevented default for modifiers above, we are good there.
-        
-        // The issue "click into the link and it's open" likely happens when they try to start a drag on the link text itself.
-        // We already prevent drag start on links in handleMouseDown. 
-        // But if they click-down on link, move mouse, click-up, it might trigger click.
-        
-        // To prevent accidental open during "selection interactions", we can check if we are currently "selecting".
-        // Since we don't support drag-start on the link anchor itself (see handleMouseDown), 
-        // the only way to drag-select is starting from the padding/void area of the row.
-        
-        // If the user wants "control click" to select without opening: implemented above.
-        
-        // If the user means they want to click the row to select (like a file manager), and double click to open?
-        // Or click text to open, click row to select?
-        // Currently the whole row is the anchor (except buttons).
-        
-        // Let's allow opening ONLY if no modifiers.
-        // And since we handled modifiers above, we just let it fall through here.
-        // We don't need to do anything special for regular clicks unless we want to change 'single click open' paradigm.
     }
+    // For URL links, we let the default behavior happen (open in new tab)
   };
 
   const handleMouseDown = (index: number, e: React.MouseEvent) => {
-    // Don't start drag if clicking buttons/links
-    // The anchor tag covers the whole row. 
-    // If we want to allow drag-select by clicking ANYWHERE, we must prevent the anchor from stealing the drag?
-    // OR we treat the anchor as the drag handle too?
-    
-    // The user said "selecting multiple items by dragging the cursor".
-    // If I click on "Google" link and drag, I expect to select "Google" and "Facebook" below it.
-    // I do NOT expect to drag the "Google" link itself (ghost image).
-    
-    // So we should prevent default on the anchor for drag interactions?
-    // But we need click to work.
-    
-    // We can prevent drag start on the anchor if we want our custom drag logic.
-    // But we need to know if it's a click or a drag.
-    
-    // Solution: Handle MouseDown on the DIV wrapper.
-    // If we click the anchor, it bubbles to div.
-    
-    // If modifiers are held, we definitely want selection logic, not link drag/click.
     if (e.shiftKey || e.metaKey || e.ctrlKey) {
-        e.preventDefault(); // Prevent text selection/native drag
+        e.preventDefault(); 
     }
-
-    setIsDragging(true);
+    
+    mouseDownPos.current = { x: e.clientX, y: e.clientY };
     setDragStartIndex(index);
     setDragCurrentIndex(index);
     
-    if (!e.shiftKey && !e.metaKey && !e.ctrlKey) {
-        // If clicking without modifiers, we start a new selection?
-        // If we just CLICK, we want to open the link.
-        // If we DRAG, we want to select.
-        // We can't know yet.
-        // But we can set the start index.
-        
-        // If we don't select immediately, we wait for move?
-        // Let's select the current item on mousedown if we are not opening?
-        // No, let's wait for drag to select if no modifiers.
-    } else {
-        // Handle immediate modifier selection
-        if (e.shiftKey) {
+    // Handle immediate modifier selection logic
+    if (e.shiftKey || e.metaKey) {
+         if (e.shiftKey) {
             if (lastSelectedIndex !== null) {
                 const start = Math.min(lastSelectedIndex, index);
                 const end = Math.max(lastSelectedIndex, index);
                 const newSet = new Set(selectedIds);
-                if (!e.metaKey && !e.ctrlKey) newSet.clear();
+                if (!e.metaKey) newSet.clear();
                 for (let i = start; i <= end; i++) {
                     newSet.add(displayLinks[i].id);
                 }
                 setSelectedIds(newSet);
             } else {
-                 // Treat shift as single select if no last
                  const newSet = new Set(selectedIds);
                  newSet.add(displayLinks[index].id);
                  setSelectedIds(newSet);
                  setLastSelectedIndex(index);
             }
-        } else if (e.metaKey || e.ctrlKey) {
+        } else if (e.metaKey) {
+            // Only allow Command (Meta) for single toggle on Mac
             const id = displayLinks[index].id;
             const newSet = new Set(selectedIds);
             if (newSet.has(id)) newSet.delete(id);
@@ -300,7 +267,7 @@ export function LinkList({
             }
             setSelectedIds(newSet);
         }
-    }
+    } 
     
     setFocusedIndex(index);
   };
@@ -309,16 +276,10 @@ export function LinkList({
     if (isDragging && dragStartIndex !== null) {
         setDragCurrentIndex(index);
         
-        // Update selection based on drag range
         const start = Math.min(dragStartIndex, index);
         const end = Math.max(dragStartIndex, index);
         
         const newSet = new Set<string>();
-        // If we are dragging, we usually clear previous selection and define new one
-        // UNLESS meta key was held down at start?
-        // For simplicity, let's make drag always create new selection set for now
-        // (mimics simple file explorer behavior without complex modifier state tracking across drag)
-        
         for (let i = start; i <= end; i++) {
             newSet.add(displayLinks[i].id);
         }
@@ -355,6 +316,12 @@ export function LinkList({
       const target = e.target as HTMLElement;
       const isInputFocused = target.tagName === "INPUT" || target.tagName === "TEXTAREA";
       
+      // Restore native browser search (Cmd+F)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+          // We explicitly allow this event to propagate
+          return; 
+      }
+
       if ((e.key === "ArrowDown" || e.key === "ArrowUp") && !isInputFocused) {
         e.preventDefault();
         
@@ -389,7 +356,7 @@ export function LinkList({
         linkRefs.current[lastIndex]?.focus();
       }
 
-      if ((e.metaKey || e.ctrlKey) && selectedIds.size > 0) {
+      if (e.metaKey && selectedIds.size > 0) {
           if (e.key === 'Backspace') {
              e.preventDefault();
              if (e.shiftKey) handleBatchDelete();
