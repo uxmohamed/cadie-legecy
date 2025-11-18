@@ -46,3 +46,4 @@ Object.keys(iconSizes).forEach(size => {
 console.log('\n✅ Placeholder icons created successfully!');
 console.log('Note: These are minimal placeholders. For production, create proper icons.');
 
+
