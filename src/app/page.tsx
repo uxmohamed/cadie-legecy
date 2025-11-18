@@ -492,7 +492,7 @@ export default function Home() {
         </header>
         <div className="flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-4xl px-8">
-            <div className="sticky top-0 z-20 bg-[#fafafa] pt-8 relative">
+            <div className="sticky top-0 z-20 bg-[#fafafa] pt-8 pb-4 relative">
               <CaptureInput 
                 onSubmit={handleSubmit} 
                 onSearch={handleSearch}

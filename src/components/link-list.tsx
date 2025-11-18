@@ -319,11 +319,11 @@ export function LinkList({
 
   return (
     <div className="w-full" ref={containerRef}>
-      <div className="sticky top-[104px] z-10 mb-8 grid grid-cols-[1fr_auto_auto] gap-4 bg-[#fafafa] py-4 text-xs font-medium text-neutral-400 relative">
+      <div className="sticky top-[104px] z-10 grid grid-cols-[1fr_auto_auto] gap-4 bg-[#fafafa] py-4 text-xs font-medium text-neutral-400 relative">
         <div>Title</div>
         <div>Created at</div>
         <div className="w-10"></div>
-        <div className="absolute -bottom-8 left-0 right-0 h-8 bg-gradient-to-b from-[#fafafa] to-transparent pointer-events-none" />
+        <div className="absolute -bottom-4 left-0 right-0 h-4 bg-gradient-to-b from-[#fafafa] to-transparent pointer-events-none" />
       </div>
       <div className="space-y-0.5">
         {pinnedLinks.length > 0 && (
