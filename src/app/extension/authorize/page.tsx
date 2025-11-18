@@ -86,17 +86,29 @@ export default function ExtensionAuthorizePage() {
   }
 
   function redirectToExtension(authData: any, extensionId: string) {
-    // Encode data for URL
-    const params = new URLSearchParams({
-      authorized: "true",
+    // Store auth data in a data attribute on the page so content script can read it
+    // This avoids the chrome-extension:// redirect issue
+    const authDataElement = document.createElement("div");
+    authDataElement.id = "vault-auth-data";
+    authDataElement.setAttribute("data-auth", JSON.stringify({
       token: authData.token,
       email: authData.email || "",
       url: authData.vaultUrl,
       state: authData.state || "",
-    });
+    }));
+    authDataElement.style.display = "none";
+    document.body.appendChild(authDataElement);
 
-    // Redirect to extension options page with auth params
-    window.location.href = `chrome-extension://${extensionId}/options.html?${params.toString()}`;
+    // Dispatch a custom event that the content script can listen for
+    window.dispatchEvent(new CustomEvent("vaultAuthSuccess", {
+      detail: {
+        extensionId,
+        ...authData,
+      },
+    }));
+
+    // Show success message - extension will handle opening options page
+    alert("Authorization successful! The extension will open automatically...");
   }
 
   function showManualCopyOption(authData: any) {

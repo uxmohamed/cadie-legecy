@@ -179,6 +179,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ success: true });
     return true;
   }
+
+  // Handle authorization success from content script
+  if (request.type === "VAULT_AUTH_SUCCESS" && request.data) {
+    const { token, email, url, state } = request.data;
+    
+    // Construct options page URL with auth params
+    const params = new URLSearchParams({
+      authorized: "true",
+      token: token,
+      email: email || "",
+      url: url || "http://localhost:3000",
+      state: state || "",
+    });
+    
+    const optionsUrl = chrome.runtime.getURL(`options.html?${params.toString()}`);
+    
+    // Open options page with auth data
+    chrome.tabs.create({ url: optionsUrl });
+    
+    sendResponse({ success: true });
+    return true;
+  }
 });
 
 console.log("Vault background service worker loaded");

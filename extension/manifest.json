@@ -16,7 +16,19 @@
   ],
   "host_permissions": [
     "http://localhost:3000/*",
+    "https://vault-theta-lac.vercel.app/*",
     "https://*.yourdomain.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost:3000/*",
+        "https://vault-theta-lac.vercel.app/*",
+        "https://*.yourdomain.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
   ],
   "background": {
     "service_worker": "background.js"
