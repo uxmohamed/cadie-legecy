@@ -8,7 +8,8 @@ export interface ExtensionSettings {
   userEmail?: string;
 }
 
-const DEFAULT_VAULT_URL = "http://localhost:3000";
+// Default to production URL
+const DEFAULT_VAULT_URL = "https://vault-theta-lac.vercel.app";
 
 /**
  * Get extension settings from Chrome storage

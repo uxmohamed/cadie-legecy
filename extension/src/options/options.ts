@@ -28,7 +28,7 @@ const manualTestBtn = document.getElementById("manualTestBtn") as HTMLButtonElem
 // State
 let currentSettings = {
   apiToken: "",
-  vaultUrl: "http://localhost:3000",
+  vaultUrl: "https://vault-theta-lac.vercel.app", // Default to production
   userEmail: "",
 };
 
@@ -44,7 +44,7 @@ async function init() {
   updateView();
 
   // Update Open Vault link
-  openVaultBtn.href = currentSettings.vaultUrl || "http://localhost:3000";
+  openVaultBtn.href = currentSettings.vaultUrl || "https://vault-theta-lac.vercel.app";
 }
 
 /**
@@ -61,7 +61,7 @@ function checkAuthorizationParams() {
     // Save settings
     saveSettings({
       apiToken: token,
-      vaultUrl: url || "http://localhost:3000",
+      vaultUrl: url || "https://vault-theta-lac.vercel.app",
       userEmail: email || "",
     }).then(() => {
       // Clear URL params
@@ -80,9 +80,18 @@ function checkAuthorizationParams() {
  */
 async function loadSettings() {
   const settings = await getSettings();
+  let vaultUrl = settings.vaultUrl || "https://vault-theta-lac.vercel.app";
+  
+  // If vaultUrl is localhost, replace with production URL
+  if (vaultUrl === "http://localhost:3000" || vaultUrl.startsWith("http://localhost")) {
+    vaultUrl = "https://vault-theta-lac.vercel.app";
+    // Save the corrected URL
+    await saveSettings({ vaultUrl });
+  }
+  
   currentSettings = {
     apiToken: settings.apiToken || "",
-    vaultUrl: settings.vaultUrl || "http://localhost:3000",
+    vaultUrl: vaultUrl,
     userEmail: settings.userEmail || "",
   };
 
@@ -126,9 +135,30 @@ async function handleConnect() {
     // Get the extension ID
     const extensionId = chrome.runtime.id;
 
-    // Construct authorization URL
-    const vaultUrl = currentSettings.vaultUrl || "http://localhost:3000";
+    // Determine vault URL - always default to production, never localhost
+    let vaultUrl = currentSettings.vaultUrl;
+    
+    // If no URL set, or if it's localhost, use production
+    if (!vaultUrl || vaultUrl === "http://localhost:3000" || vaultUrl.startsWith("http://localhost")) {
+      vaultUrl = "https://vault-theta-lac.vercel.app";
+    }
+    
+    // Try to detect if user is on a Vault page and use that URL (async)
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tabs[0]?.url) {
+      try {
+        const tabUrl = new URL(tabs[0].url);
+        // Check if this is a Vault domain (production)
+        if (tabUrl.hostname.includes("vault") || tabUrl.hostname.includes("vercel.app")) {
+          vaultUrl = `${tabUrl.protocol}//${tabUrl.host}`;
+        }
+      } catch (e) {
+        // Invalid URL, use default
+      }
+    }
+    
     const authUrl = `${vaultUrl}/extension/authorize?extensionId=${extensionId}`;
+    console.log("Opening authorize URL:", authUrl);
 
     // Open authorization page in new tab
     const tab = await chrome.tabs.create({ url: authUrl });
@@ -137,18 +167,38 @@ async function handleConnect() {
     chrome.runtime.onMessage.addListener(handleAuthMessage);
 
     // Also poll the tab to see if it closes (user completed auth)
-    const checkInterval = setInterval(async () => {
+    let checkInterval: number | undefined;
+    
+    // Listen for messages from background script when auth completes
+    const messageListener = (message: any) => {
+      if (message.type === "VAULT_AUTH_COMPLETE") {
+        chrome.runtime.onMessage.removeListener(messageListener);
+        if (checkInterval) clearInterval(checkInterval);
+        loadSettings().then(() => {
+          updateView();
+          connectBtn.classList.remove("loading");
+          connectBtn.disabled = false;
+        });
+      }
+    };
+    chrome.runtime.onMessage.addListener(messageListener);
+
+    checkInterval = setInterval(async () => {
       try {
         const updatedTab = await chrome.tabs.get(tab.id!);
         if (!updatedTab) {
           // Tab closed, check if we got authorized
           clearInterval(checkInterval);
+          chrome.runtime.onMessage.removeListener(messageListener);
           await loadSettings();
           updateView();
+          connectBtn.classList.remove("loading");
+          connectBtn.disabled = false;
         }
       } catch {
         // Tab doesn't exist anymore
         clearInterval(checkInterval);
+        chrome.runtime.onMessage.removeListener(messageListener);
         await loadSettings();
         updateView();
         connectBtn.classList.remove("loading");
@@ -185,9 +235,23 @@ function handleAuthMessage(message: any, sender: any, sendResponse: any) {
       await loadSettings();
       updateView();
       showStatus("Successfully connected!", "success");
+      connectBtn.classList.remove("loading");
+      connectBtn.disabled = false;
       sendResponse({ success: true });
     });
     return true; // Keep message channel open
+  }
+  
+  if (message.type === "VAULT_AUTH_COMPLETE") {
+    // Background script notified us that auth completed
+    loadSettings().then(() => {
+      updateView();
+      connectBtn.classList.remove("loading");
+      connectBtn.disabled = false;
+      showStatus("Successfully connected to Vault!", "success");
+    });
+    sendResponse({ success: true });
+    return true;
   }
 }
 
@@ -206,7 +270,7 @@ async function handleDisconnect() {
     await clearSettings();
     currentSettings = {
       apiToken: "",
-      vaultUrl: "http://localhost:3000",
+      vaultUrl: "https://vault-theta-lac.vercel.app",
       userEmail: "",
     };
 

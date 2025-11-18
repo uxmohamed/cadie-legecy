@@ -11,6 +11,7 @@ export default function ExtensionAuthorizePage() {
   const [user, setUser] = React.useState<User | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isAuthorizing, setIsAuthorizing] = React.useState(false);
+  const [isAuthorized, setIsAuthorized] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -63,11 +64,14 @@ export default function ExtensionAuthorizePage() {
       const extensionId = params.get("extensionId");
       const state = params.get("state");
 
+      // Use production URL - prefer NEXT_PUBLIC_SITE_URL if available, otherwise use current origin
+      const vaultUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+
       // Construct authorization response
       const authData = {
         token: data.token,
         email: user.email,
-        vaultUrl: window.location.origin,
+        vaultUrl: vaultUrl,
         state: state || "",
       };
 
@@ -100,15 +104,29 @@ export default function ExtensionAuthorizePage() {
     document.body.appendChild(authDataElement);
 
     // Dispatch a custom event that the content script can listen for
-    window.dispatchEvent(new CustomEvent("vaultAuthSuccess", {
+    const event = new CustomEvent("vaultAuthSuccess", {
       detail: {
         extensionId,
-        ...authData,
+        token: authData.token,
+        email: authData.email || "",
+        url: authData.vaultUrl,
+        vaultUrl: authData.vaultUrl,
+        state: authData.state || "",
       },
-    }));
+    });
+    window.dispatchEvent(event);
+
+    // Also try dispatching after a short delay to ensure content script is ready
+    setTimeout(() => {
+      window.dispatchEvent(event);
+    }, 100);
 
     // Show success message - extension will handle opening options page
-    alert("Authorization successful! The extension will open automatically...");
+    console.log("Authorization successful! Extension should open automatically...");
+    
+    // Set success state
+    setIsAuthorizing(false);
+    setIsAuthorized(true);
   }
 
   function showManualCopyOption(authData: any) {
@@ -127,6 +145,25 @@ export default function ExtensionAuthorizePage() {
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-neutral-900 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-neutral-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAuthorized) {
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white rounded-lg border border-green-200 p-6 text-center">
+          <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-600">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <h1 className="text-xl font-bold text-neutral-900 mb-2">Authorization Successful!</h1>
+          <p className="text-neutral-600 mb-4">
+            The extension should open automatically. If it doesn't, check your extension settings.
+          </p>
+          <Button onClick={() => window.close()}>Close</Button>
         </div>
       </div>
     );

@@ -37,13 +37,11 @@ chrome.commands.onCommand.addListener(async (command) => {
   }
 });
 
-// Handle extension icon clicks
-chrome.action.onClicked.addListener(async (tab) => {
-  // This will open the popup instead, but kept for fallback
-  if (tab?.id) {
-    await saveCurrentTab(tab.id);
-  }
-});
+// Note: chrome.action.onClicked is NOT used because we have a popup configured
+// The popup (popup.html) handles the save action instead
+
+// Track saves in progress to prevent duplicates
+const savesInProgress = new Set<string>();
 
 /**
  * Save the current tab to Vault
@@ -64,6 +62,18 @@ async function saveCurrentTab(tabId: number): Promise<void> {
 
     // Get tab information
     const tab = await chrome.tabs.get(tabId);
+    
+    // Create a unique key for this save operation
+    const saveKey = `${tab.url}`;
+    
+    // Check if we're already saving this URL
+    if (savesInProgress.has(saveKey)) {
+      console.log("Already saving this URL, skipping duplicate request");
+      return;
+    }
+    
+    // Mark this URL as being saved
+    savesInProgress.add(saveKey);
     
     if (!tab.url || !tab.title) {
       showNotification("Error", "Could not get page information", "error");
@@ -123,6 +133,18 @@ async function saveCurrentTab(tabId: number): Promise<void> {
       error instanceof Error ? error.message : "Failed to save",
       "error"
     );
+  } finally {
+    // Always remove the save lock, even if there was an error
+    const tab = await chrome.tabs.get(tabId).catch(() => null);
+    if (tab?.url) {
+      const saveKey = `${tab.url}`;
+      savesInProgress.delete(saveKey);
+      
+      // Auto-clear after 5 seconds as a safety measure
+      setTimeout(() => {
+        savesInProgress.delete(saveKey);
+      }, 5000);
+    }
   }
 }
 
@@ -182,14 +204,33 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   // Handle authorization success from content script
   if (request.type === "VAULT_AUTH_SUCCESS" && request.data) {
-    const { token, email, url, state } = request.data;
+    const { token, email, url, vaultUrl, state } = request.data;
+    
+    // Use the provided URL, or try to get it from the sender tab
+    let vaultUrlToUse = url || vaultUrl;
+    
+    // If no URL provided, try to get it from the sender tab
+    if (!vaultUrlToUse && sender?.tab?.url) {
+      try {
+        const tabUrl = new URL(sender.tab.url);
+        vaultUrlToUse = `${tabUrl.protocol}//${tabUrl.host}`;
+      } catch (e) {
+        console.error("Error parsing sender URL:", e);
+      }
+    }
+    
+    // Fallback to localhost only if we really can't determine the URL
+    if (!vaultUrlToUse) {
+      console.warn("No vault URL provided, using localhost fallback");
+      vaultUrlToUse = "http://localhost:3000";
+    }
     
     // Construct options page URL with auth params
     const params = new URLSearchParams({
       authorized: "true",
       token: token,
       email: email || "",
-      url: url || "http://localhost:3000",
+      url: vaultUrlToUse,
       state: state || "",
     });
     
@@ -197,6 +238,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     // Open options page with auth data
     chrome.tabs.create({ url: optionsUrl });
+    
+    // Also notify the options page if it's open
+    chrome.runtime.sendMessage({
+      type: "VAULT_AUTH_COMPLETE",
+      data: { vaultUrl: vaultUrlToUse },
+    }).catch(() => {
+      // Options page might not be listening, that's okay
+    });
     
     sendResponse({ success: true });
     return true;

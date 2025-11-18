@@ -67,6 +67,9 @@ async function init() {
   saveBtn.disabled = false;
 }
 
+// Track if we're currently saving to prevent duplicates
+let isSaving = false;
+
 // Save current page
 async function savePage() {
   if (!currentTab?.url || !currentTab.title) {
@@ -74,7 +77,15 @@ async function savePage() {
     return;
   }
 
+  // Prevent duplicate saves
+  if (isSaving) {
+    console.log("Already saving, ignoring duplicate request");
+    return;
+  }
+
   try {
+    isSaving = true;
+    
     // Update button state
     saveBtn.disabled = true;
     saveBtn.classList.add("saving");
@@ -99,11 +110,13 @@ async function savePage() {
         saveBtn.classList.remove("success");
         saveBtnText.textContent = "Save to Vault";
         saveBtn.disabled = false;
+        isSaving = false;
       }, 2000);
     } else {
       saveBtn.classList.remove("saving");
       saveBtnText.textContent = "Save to Vault";
       saveBtn.disabled = false;
+      isSaving = false;
       showStatus(response.error || "Failed to save", "error");
     }
   } catch (error) {
@@ -111,6 +124,7 @@ async function savePage() {
     saveBtn.classList.remove("saving");
     saveBtnText.textContent = "Save to Vault";
     saveBtn.disabled = false;
+    isSaving = false;
     showStatus(
       error instanceof Error ? error.message : "Failed to save",
       "error"
@@ -141,10 +155,16 @@ async function openVault() {
   chrome.tabs.create({ url: vaultUrl });
 }
 
-// Event listeners
-saveBtn.addEventListener("click", savePage);
-settingsBtn.addEventListener("click", openSettings);
-openVaultBtn.addEventListener("click", openVault);
+// Event listeners - use { once: false } but check in handler to prevent double-binding
+if (!saveBtn.onclick) {
+  saveBtn.addEventListener("click", savePage);
+}
+if (!settingsBtn.onclick) {
+  settingsBtn.addEventListener("click", openSettings);
+}
+if (!openVaultBtn.onclick) {
+  openVaultBtn.addEventListener("click", openVault);
+}
 
 // Initialize on load
 init();

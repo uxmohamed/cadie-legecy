@@ -53,6 +53,12 @@ export async function saveLink(request: SaveLinkRequest): Promise<ApiResponse> {
     }
 
     const data = await response.json();
+    
+    // Check if this was a duplicate
+    if (data.duplicate) {
+      console.log("Link already exists in Vault");
+    }
+    
     return {
       success: true,
       data,

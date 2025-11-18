@@ -79,6 +79,45 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Normalize URL for duplicate checking (remove trailing slash, query params, fragments)
+    let normalizedUrl = url;
+    try {
+      const urlObj = new URL(url);
+      // Remove trailing slash, hash, and some query params for comparison
+      normalizedUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname.replace(/\/$/, '')}`;
+    } catch {
+      // If URL parsing fails, use original
+      normalizedUrl = url;
+    }
+
+    // Check for duplicates - if same URL exists for this user, return existing link
+    // Check both exact match and normalized match
+    const { data: existingLinks } = await supabase
+      .from("links")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("is_archived", false);
+
+    // Check if any existing link matches
+    const existingLink = existingLinks?.find(link => {
+      if (link.url === url) return true;
+      
+      // Also check normalized URLs
+      try {
+        const existingUrlObj = new URL(link.url);
+        const existingNormalized = `${existingUrlObj.protocol}//${existingUrlObj.host}${existingUrlObj.pathname.replace(/\/$/, '')}`;
+        return existingNormalized === normalizedUrl;
+      } catch {
+        return false;
+      }
+    });
+
+    if (existingLink) {
+      // Link already exists, return it instead of creating duplicate
+      console.log("Duplicate link detected:", { existing: existingLink.url, new: url });
+      return NextResponse.json({ link: existingLink, duplicate: true }, { status: 200 });
+    }
+
     // For text content type, create initial rich text state if not provided
     let richTextContent = rich_text_content || null;
     if (content_type === "text" && !richTextContent) {

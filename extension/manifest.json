@@ -46,8 +46,8 @@
   "commands": {
     "save-page": {
       "suggested_key": {
-        "default": "Ctrl+Shift+S",
-        "mac": "Command+Shift+S"
+        "default": "Alt+V",
+        "mac": "Alt+V"
       },
       "description": "Save current page to Vault"
     }

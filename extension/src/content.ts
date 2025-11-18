@@ -21,7 +21,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Listen for authorization success events
 window.addEventListener("vaultAuthSuccess", (event: any) => {
   const detail = event.detail;
-  if (detail && detail.extensionId) {
+  if (detail && detail.token) {
+    console.log("Vault auth success event received", detail);
     // Send auth data to background script
     chrome.runtime.sendMessage({
       type: "VAULT_AUTH_SUCCESS",
@@ -29,8 +30,15 @@ window.addEventListener("vaultAuthSuccess", (event: any) => {
         token: detail.token,
         email: detail.email,
         url: detail.url || detail.vaultUrl,
+        vaultUrl: detail.url || detail.vaultUrl,
         state: detail.state,
       },
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error("Error sending auth message:", chrome.runtime.lastError);
+      } else {
+        console.log("Auth message sent successfully", response);
+      }
     });
   }
 });
@@ -57,9 +65,22 @@ function checkForAuthData(): boolean {
     try {
       const authData = JSON.parse(authDataElement.getAttribute("data-auth") || "{}");
       if (authData.token) {
+        console.log("Found auth data in DOM, sending to background", authData);
         chrome.runtime.sendMessage({
           type: "VAULT_AUTH_SUCCESS",
-          data: authData,
+          data: {
+            token: authData.token,
+            email: authData.email,
+            url: authData.url,
+            vaultUrl: authData.url,
+            state: authData.state,
+          },
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.error("Error sending auth message:", chrome.runtime.lastError);
+          } else {
+            console.log("Auth message sent successfully", response);
+          }
         });
         return true;
       }
