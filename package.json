@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "extension:dev": "cd extension && npm run dev",
+    "extension:build": "cd extension && npm run build",
+    "extension:install": "cd extension && npm install"
   },
   "dependencies": {
     "@base-ui-components/react": "1.0.0-beta.6",

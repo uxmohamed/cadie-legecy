@@ -12,6 +12,7 @@ A minimal, keyboard-friendly read-it-later application with automatic metadata e
 - 🎨 **Clean Design** - Minimal, Linear/Craft-inspired interface
 - 🔒 **Row Level Security** - Only you can see your data
 - 📱 **Responsive** - Works on all devices
+- 🧩 **Chrome Extension** - Save links from any webpage with one click (see [Extension Setup](./EXTENSION_SETUP.md))
 
 ## Quick Start
 
@@ -48,6 +49,9 @@ npm run dev
 ## Documentation
 
 - 📖 [Setup Guide](./SETUP.md) - Detailed setup instructions
+- ⚡ [One-Click Extension Setup](./ONE_CLICK_SETUP.md) - **NEW:** Simple 2-click extension setup
+- 🧩 [Chrome Extension Setup](./EXTENSION_SETUP.md) - Set up and develop the browser extension
+- 🧪 [Extension Testing Guide](./extension/TESTING.md) - Test the extension end-to-end
 - 🗄️ [Database Schema](./supabase/schema.sql) - PostgreSQL schema with RLS
 
 ## Tech Stack

@@ -1,16 +1,25 @@
 # Supabase Setup
 
-## Database Schema
+## Database Migrations
 
-To set up the database schema, run the SQL commands in `schema.sql` in your Supabase SQL editor:
+This project uses SQL migrations for database schema management. All migrations are located in the `migrations/` directory.
+
+### Running Migrations
+
+To set up or update the database schema:
 
 1. Go to your Supabase project dashboard
 2. Navigate to **SQL Editor**
-3. Copy and paste the contents of `schema.sql`
-4. Click **Run**
+3. Run each migration file in order (001, 002, etc.)
+4. Copy and paste the contents of each migration file
+5. Click **Run**
+
+### Current Migrations
+
+- `001_create_api_tokens_table.sql` - API tokens for browser extension authentication
 
 This will create:
-- Tables: `users`, `categories`, `links`, `link_tags`
+- Tables: `categories`, `links`, `api_tokens`
 - Indexes for performance optimization
 - Row Level Security (RLS) policies
 - Triggers for `updated_at` timestamps

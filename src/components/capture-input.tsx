@@ -55,7 +55,7 @@ export function CaptureInput({ onSubmit, onSearch, isLoading }: CaptureInputProp
 
   return (
     <form onSubmit={handleSubmit} className="w-full">
-      <div className={`relative transition-shadow duration-200 rounded-lg ${showFocusAnimation ? 'shadow-[0_0_40px_8px_rgba(0,0,0,0.2),0_0_20px_4px_rgba(0,0,0,0.15)]' : ''}`}>
+      <div className={`relative transition-shadow duration-300 rounded-lg ${showFocusAnimation ? 'shadow-[0_0_40px_8px_rgba(0,0,0,0.2),0_0_20px_4px_rgba(0,0,0,0.15)]' : ''}`}>
         <Input
           ref={inputRef}
           type="text"

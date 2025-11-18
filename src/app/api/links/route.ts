@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createInitialRichTextState } from "@/lib/rich-text-utils";
+import { authenticateRequest } from "@/lib/auth-middleware";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const userId = await authenticateRequest(request);
     
-    if (!user) {
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const supabase = await createClient();
 
     const searchParams = request.nextUrl.searchParams;
     const categoryId = searchParams.get("category_id");
@@ -18,7 +20,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from("links")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("is_archived", isArchived)
       .order("is_pinned", { ascending: false })
       .order("created_at", { ascending: false });
@@ -45,12 +47,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const userId = await authenticateRequest(request);
     
-    if (!user) {
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const supabase = await createClient();
 
     const body = await request.json();
     const { url, title, content_type = "url", category_id, color_value, favicon_url, og_image_url, description, rich_text_content } = body;
@@ -85,7 +88,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase
       .from("links")
       .insert({
-        user_id: user.id,
+        user_id: userId,
         url,
         clean_url: url, // TODO: Implement URL cleaning
         title,
