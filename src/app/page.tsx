@@ -492,13 +492,12 @@ export default function Home() {
         </header>
         <div className="flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-4xl px-8">
-            <div className="sticky top-0 z-20 bg-[#fafafa] pt-8 pb-6 relative">
+            <div className="sticky top-0 z-20 bg-[#fafafa] pt-8 relative">
               <CaptureInput 
                 onSubmit={handleSubmit} 
                 onSearch={handleSearch}
                 isLoading={isLoading} 
               />
-              <div className="absolute -bottom-6 left-0 right-0 h-6 bg-gradient-to-b from-[#fafafa] to-transparent pointer-events-none" />
             </div>
             {fetchingLinks ? (
               <LinkListSkeleton />

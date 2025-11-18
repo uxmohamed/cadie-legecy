@@ -61,8 +61,9 @@ export function CaptureInput({ onSubmit, onSearch, isLoading }: CaptureInputProp
           onKeyDown={handleKeyDown}
           placeholder="+ Insert a link, color, or just plain text..."
           disabled={isLoading}
-          className="w-full pr-16"
+          className="w-full pr-16 text-lg py-2.5"
           aria-label="Capture input"
+          size="lg"
         />
         <div className="absolute right-4 top-1/2 -translate-y-1/2">
           <kbd className="pointer-events-none flex h-6 select-none items-center gap-1 rounded border border-neutral-200 bg-neutral-50 px-2 font-mono text-[11px] font-medium text-neutral-400">

@@ -32,9 +32,17 @@ npm install
 
 ## Step 4: Configure Supabase Authentication
 
-1. In your Supabase dashboard, go to **Authentication** > **Email Templates**
-2. Customize the magic link email template if desired
-3. Ensure email authentication is enabled in **Authentication** > **Providers**
+1. In your Supabase dashboard, go to **Authentication** > **Providers**
+2. Ensure **Email** is enabled
+3. Go to **Authentication** > **URL Configuration**:
+   - Set **Site URL** to your primary domain (e.g., `http://localhost:3000` for development or `https://vault-theta-lac.vercel.app` for production)
+   - Add **Redirect URLs** (one per line):
+     ```
+     http://localhost:3000/auth/callback
+     https://vault-theta-lac.vercel.app/auth/callback
+     ```
+   - Click **Save**
+4. (Optional) Go to **Authentication** > **Email Templates** to customize the magic link email
 
 ## Step 5: Environment Variables
 
@@ -118,11 +126,17 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Authentication Issues
 
-If you're getting authentication errors:
-1. Verify that `NEXT_PUBLIC_SITE_URL` is set correctly in production
-2. Check that all environment variables are set correctly in Vercel
-3. Ensure email authentication is enabled in Supabase
-4. Check your spam folder for the magic link email
+If you're getting authentication errors or stuck on the auth page:
+1. **Most Common Issue**: Check that redirect URLs are configured in Supabase dashboard (**Authentication** > **URL Configuration**)
+   - Add both `http://localhost:3000/auth/callback` and `https://your-domain.vercel.app/auth/callback`
+2. Verify that `NEXT_PUBLIC_SITE_URL` is set correctly in production
+3. Check that all environment variables are set correctly in Vercel
+4. Ensure email authentication is enabled in Supabase
+5. Check your spam folder for the magic link email
+
+If the magic link redirects to `/auth` instead of `/auth/callback`:
+1. You need to add the callback URL to **Authentication** > **URL Configuration** > **Redirect URLs** in your Supabase dashboard
+2. The redirect URLs must include the full path: `http://localhost:3000/auth/callback`
 
 If the magic link redirects to localhost in production:
 1. Make sure `NEXT_PUBLIC_SITE_URL` is set to your production domain in Vercel

@@ -70,7 +70,7 @@ function MenuItem({
   return (
     <MenuPrimitive.Item
       className={cn(
-        "flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1 text-base outline-none data-disabled:pointer-events-none data-highlighted:bg-slate-100 data-inset:ps-8 data-[variant=destructive]:text-slate-50 data-highlighted:text-slate-900 data-disabled:opacity-64 sm:text-sm [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 dark:data-highlighted:bg-slate-800 dark:data-[variant=destructive]:text-slate-50 dark:data-highlighted:text-slate-50",
+        "flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1 text-base outline-none data-disabled:pointer-events-none data-highlighted:bg-slate-100 data-inset:ps-8 data-[variant=destructive]:text-red-600 data-highlighted:text-slate-900 data-disabled:opacity-64 sm:text-sm [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 dark:data-highlighted:bg-slate-800 dark:data-[variant=destructive]:text-red-400 dark:data-highlighted:text-slate-50 data-[variant=destructive]:data-highlighted:bg-red-50 dark:data-[variant=destructive]:data-highlighted:bg-red-950/50",
         className,
       )}
       data-inset={inset}
