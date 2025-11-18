@@ -487,7 +487,7 @@ export default function Home() {
   return (
     <div className="flex h-screen overflow-hidden">
       <main className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-16 items-center justify-end border-b border-neutral-200 px-8 relative z-30">
+        <header className="flex h-16 items-center justify-end px-8 relative z-30">
           <UserMenu user={user} />
         </header>
         <div className="flex-1 overflow-y-auto">

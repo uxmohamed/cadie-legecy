@@ -43,11 +43,15 @@ export async function extractMetadata(url: string): Promise<LinkMetadata> {
     // Extract Open Graph image
     const ogImage = $('meta[property="og:image"]').attr("content") || undefined;
 
-    // Extract favicon
+    // Extract favicon - prioritize high-resolution icons
     let favicon =
+      $('link[rel="apple-touch-icon"]').attr("href") ||
+      $('link[rel="apple-touch-icon-precomposed"]').attr("href") ||
+      $('link[rel="icon"][sizes="192x192"]').attr("href") ||
+      $('link[rel="icon"][sizes="128x128"]').attr("href") ||
+      $('link[rel="icon"][type="image/png"]').attr("href") ||
       $('link[rel="icon"]').attr("href") ||
       $('link[rel="shortcut icon"]').attr("href") ||
-      $('link[rel="apple-touch-icon"]').attr("href") ||
       undefined;
 
     // Make favicon URL absolute
@@ -62,10 +66,13 @@ export async function extractMetadata(url: string): Promise<LinkMetadata> {
       }
     }
 
-    // Fallback to Google's favicon service
+    // Fallback options - use Clearbit for best quality
     if (!favicon) {
       const domain = new URL(url).hostname;
-      favicon = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+      
+      // Use Clearbit Logo API as primary fallback (high quality, well-maintained)
+      // The frontend Favicon component will handle additional fallbacks if this fails
+      favicon = `https://logo.clearbit.com/${domain}`;
     }
 
     // Extract domain
@@ -82,11 +89,12 @@ export async function extractMetadata(url: string): Promise<LinkMetadata> {
     console.error("Error extracting metadata:", error);
     
     // Return fallback metadata
-    const domain = new URL(url).hostname.replace("www.", "");
+    const urlObj = new URL(url);
+    const domain = urlObj.hostname.replace("www.", "");
     return {
       title: domain,
       domain,
-      favicon: `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
+      favicon: `https://logo.clearbit.com/${domain}`,
     };
   }
 }

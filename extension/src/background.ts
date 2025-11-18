@@ -178,8 +178,12 @@ async function saveCurrentTab(tabId: number): Promise<void> {
     });
 
     if (response.success) {
-      // Show success overlay
-      showOverlayInTab(tabId, "success");
+      // Show success overlay - different message for duplicates
+      if (response.duplicate) {
+        showOverlayInTab(tabId, "duplicate");
+      } else {
+        showOverlayInTab(tabId, "success");
+      }
     } else {
       // Show error overlay
       showOverlayInTab(tabId, "error", response.error || "Unknown error occurred");
@@ -211,7 +215,7 @@ async function saveCurrentTab(tabId: number): Promise<void> {
  */
 function showOverlayInTab(
   tabId: number,
-  state: "loading" | "success" | "error",
+  state: "loading" | "success" | "error" | "duplicate",
   message?: string
 ): void {
   console.log(`📨 Sending message to tab ${tabId}:`, { action: "showSaveOverlay", state, message });
@@ -226,7 +230,9 @@ function showOverlayInTab(
     console.error("❌ Could not show overlay, error:", error);
     console.log("🔔 Falling back to notification");
     if (state === "success") {
-      showNotification("Saved to Vault!", "Successfully saved", "success");
+      showNotification("Saved to Vault! ✨", "Page saved successfully", "success");
+    } else if (state === "duplicate") {
+      showNotification("Already in Vault!", "This page was already saved", "info");
     } else if (state === "error") {
       showNotification("Error", message || "Failed to save", "error");
     }

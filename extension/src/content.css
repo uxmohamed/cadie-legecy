@@ -1,12 +1,12 @@
 /* Vault Save Overlay */
 #vault-save-overlay {
-  position: fixed;
-  top: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2147483647;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  animation: vaultSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  position: fixed !important;
+  top: 24px !important;
+  right: 24px !important;
+  z-index: 2147483647 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
+  animation: vaultSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  pointer-events: none !important;
 }
 
 #vault-save-overlay.vault-hiding {
@@ -15,14 +15,15 @@
 }
 
 .vault-overlay-content {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
-  padding: 20px 28px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  min-width: 320px;
+  background: white !important;
+  border-radius: 16px !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  padding: 20px 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+  min-width: 320px !important;
+  pointer-events: auto !important;
 }
 
 .vault-overlay-icon {
@@ -62,22 +63,22 @@
 @keyframes vaultSlideIn {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(-8px);
+    transform: translateX(8px);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateX(0);
   }
 }
 
 @keyframes vaultSlideOut {
   from {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateX(0);
   }
   to {
     opacity: 0;
-    transform: translateX(-50%) translateY(-8px);
+    transform: translateX(8px);
   }
 }
 

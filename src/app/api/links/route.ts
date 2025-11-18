@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createInitialRichTextState } from "@/lib/rich-text-utils";
 import { authenticateRequest } from "@/lib/auth-middleware";
+import { extractMetadata } from "@/lib/metadata";
 
 export async function GET(request: NextRequest) {
   try {
@@ -56,13 +57,45 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     const body = await request.json();
-    const { url, title, content_type = "url", category_id, color_value, favicon_url, og_image_url, description, rich_text_content } = body;
+    let { url, title, content_type = "url", category_id, color_value, favicon_url, og_image_url, description, rich_text_content } = body;
 
     if (!url || !title) {
       return NextResponse.json(
         { error: "URL and title are required" },
         { status: 400 }
       );
+    }
+
+    // Auto-fetch metadata if not provided and content type is URL
+    if (content_type === "url" && (!favicon_url || !og_image_url || !description)) {
+      try {
+        console.log("Auto-fetching metadata for URL:", url);
+        const metadata = await extractMetadata(url);
+        
+        // Only override if not already provided
+        if (!favicon_url && metadata.favicon) {
+          favicon_url = metadata.favicon;
+        }
+        if (!og_image_url && metadata.ogImage) {
+          og_image_url = metadata.ogImage;
+        }
+        if (!description && metadata.description) {
+          description = metadata.description;
+        }
+        // Update title if it was generic and we got a better one
+        if (title === url && metadata.title !== metadata.domain) {
+          title = metadata.title;
+        }
+        
+        console.log("Metadata fetched successfully:", { 
+          favicon: !!favicon_url, 
+          ogImage: !!og_image_url, 
+          description: !!description 
+        });
+      } catch (error) {
+        // Don't fail the request if metadata fetch fails, just log it
+        console.error("Failed to auto-fetch metadata:", error);
+      }
     }
 
     // Extract domain from URL or set to "color" for color entries, or "text" for text entries
