@@ -61,6 +61,7 @@ export function LinkList({
   
   const mouseDownPos = React.useRef<{ x: number, y: number } | null>(null);
   const wasDraggingRef = React.useRef(false);
+  const shouldOpenRef = React.useRef(false);
   
   const linkRefs = React.useRef<(HTMLAnchorElement | null)[]>([]);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -68,7 +69,6 @@ export function LinkList({
   const previousLengthRef = React.useRef(links.length);
 
   // Helper to get flattened list of links for index calculation
-  // We need to maintain the same order as rendered: pinned first, then unpinned
   const displayLinks = React.useMemo(() => {
     const pinned = links.filter(l => l.is_pinned);
     const unpinned = links.filter(l => !l.is_pinned);
@@ -78,13 +78,11 @@ export function LinkList({
   React.useEffect(() => {
     linkRefs.current = linkRefs.current.slice(0, displayLinks.length);
     
-    // If links were removed and we had a focused item
     if (displayLinks.length < previousLengthRef.current && focusedIndex !== null) {
       const newFocusIndex = Math.min(focusedIndex, displayLinks.length - 1);
       setFocusedIndex(newFocusIndex);
     }
 
-    // Clean up selected IDs for items that no longer exist
     setSelectedIds(prev => {
       const next = new Set(prev);
       let changed = false;
@@ -112,6 +110,7 @@ export function LinkList({
       if (distance > 5 && !isDragging) {
         setIsDragging(true);
         wasDraggingRef.current = true;
+        shouldOpenRef.current = false; // Cancel open on drag
       }
     };
 
@@ -121,7 +120,6 @@ export function LinkList({
         setIsDragging(false);
         setDragStartIndex(null);
         setDragCurrentIndex(null);
-        // Don't clear wasDraggingRef here immediately, wait for click event to process
         setTimeout(() => {
             wasDraggingRef.current = false;
         }, 0);
@@ -131,13 +129,12 @@ export function LinkList({
     };
 
     const handleMouseDown = (e: MouseEvent) => {
-      // Check if click is outside the list items and outside the action bar
       const target = e.target as HTMLElement;
       if (
         selectedIds.size > 0 && 
-        !target.closest('.group') && // Link items
-        !target.closest('.fixed.bottom-8') && // Action bar
-        !target.closest('[role="menu"]') // Menus
+        !target.closest('.group') &&
+        !target.closest('.fixed.bottom-8') &&
+        !target.closest('[role="menu"]')
       ) {
         setSelectedIds(new Set());
       }
@@ -167,33 +164,31 @@ export function LinkList({
   const handleContextMenu = (e: React.MouseEvent, link: Link) => {
     e.preventDefault();
     if (!selectedIds.has(link.id)) {
-      // If right-clicking an unselected item, clear selection and select it
-      // Unless Shift/Cmd is held, but for simple context menu behavior usually we reset
       if (!e.shiftKey && !e.metaKey && !e.ctrlKey) {
          setSelectedIds(new Set());
       }
       setContextMenu({ x: e.clientX, y: e.clientY, link });
     } else {
-      // If right-clicking a selected item, keep selection
       setContextMenu({ x: e.clientX, y: e.clientY, link });
     }
   };
 
-  const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, link: Link, index: number) => {
+  const handleRowClick = (e: React.MouseEvent<HTMLDivElement>, link: Link, index: number) => {
+    // Don't handle click if it's on a button or menu
+    if ((e.target as HTMLElement).closest('button, [role="menuitem"]')) {
+        return;
+    }
+
     const isColor = link.content_type === "color";
     const isRichText = link.content_type === "text";
     
-    // Prevent default behavior for modifiers OR if we just dragged
+    // If modifiers or drag: handle selection only
     if (e.metaKey || e.shiftKey || wasDraggingRef.current) {
       e.preventDefault();
-      e.stopPropagation();
       
-      // If it was a drag, we already handled selection updates in mouseMove/Enter
       if (wasDraggingRef.current) return;
 
-      // Modifier logic for click
       if (e.metaKey) {
-        // Mac-style Command click toggle
         const newSet = new Set(selectedIds);
         if (newSet.has(link.id)) {
             newSet.delete(link.id);
@@ -218,18 +213,24 @@ export function LinkList({
       return;
     }
 
-    // If no modifiers and no drag: Open link directly
-    if (isColor) {
-        e.preventDefault();
-        copyToClipboard(link.color_value || link.title);
-    } else if (isRichText) {
-        e.preventDefault();
-        onEdit?.(link);
+    // Single click with no modifiers and no drag: Open
+    if (shouldOpenRef.current) {
+        if (isColor) {
+            copyToClipboard(link.color_value || link.title);
+        } else if (isRichText) {
+            onEdit?.(link);
+        } else {
+            window.open(link.url, '_blank', 'noopener,noreferrer');
+        }
     }
-    // For URL links, we let the default behavior happen (open in new tab)
+    
+    shouldOpenRef.current = false;
   };
 
   const handleMouseDown = (index: number, e: React.MouseEvent) => {
+    // Don't start interactions if clicking buttons
+     if ((e.target as HTMLElement).closest('button, [role="menuitem"]')) return;
+
     if (e.shiftKey || e.metaKey || e.ctrlKey) {
         e.preventDefault(); 
     }
@@ -237,6 +238,13 @@ export function LinkList({
     mouseDownPos.current = { x: e.clientX, y: e.clientY };
     setDragStartIndex(index);
     setDragCurrentIndex(index);
+    
+    // If no modifiers, mark that we should potentially open on click
+    if (!e.shiftKey && !e.metaKey && !e.ctrlKey) {
+        shouldOpenRef.current = true;
+    } else {
+        shouldOpenRef.current = false;
+    }
     
     // Handle immediate modifier selection logic
     if (e.shiftKey || e.metaKey) {
@@ -257,7 +265,6 @@ export function LinkList({
                  setLastSelectedIndex(index);
             }
         } else if (e.metaKey) {
-            // Only allow Command (Meta) for single toggle on Mac
             const id = displayLinks[index].id;
             const newSet = new Set(selectedIds);
             if (newSet.has(id)) newSet.delete(id);
@@ -316,9 +323,7 @@ export function LinkList({
       const target = e.target as HTMLElement;
       const isInputFocused = target.tagName === "INPUT" || target.tagName === "TEXTAREA";
       
-      // Restore native browser search (Cmd+F)
       if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
-          // We explicitly allow this event to propagate
           return; 
       }
 
@@ -363,7 +368,6 @@ export function LinkList({
              else handleBatchArchive();
           }
           
-          // Select All
           if (e.key === 'a') {
               e.preventDefault();
               const newSet = new Set(displayLinks.map(l => l.id));
@@ -440,7 +444,6 @@ export function LinkList({
     );
   }
 
-  // Separate links into pinned and unpinned
   const pinnedLinks = links.filter(link => link.is_pinned);
   const unpinnedLinks = links.filter(link => !link.is_pinned);
 
@@ -449,7 +452,6 @@ export function LinkList({
     const isRichText = link.content_type === "text";
     const isSelected = selectedIds.has(link.id);
     
-    // Extract preview text for rich text items
     const richTextPreview = isRichText 
       ? extractTextFromRichText(link.rich_text_content) || link.title
       : null;
@@ -466,12 +468,10 @@ export function LinkList({
           e.preventDefault();
           onArchive?.(link.id);
         } else if (e.key === "Backspace") {
-          // Cmd+Delete archives
           if (!e.shiftKey) {
             e.preventDefault();
             onArchive?.(link.id);
           } else {
-            // Cmd+Shift+Delete deletes
             e.preventDefault();
             onDelete?.(link.id);
           }
@@ -483,6 +483,7 @@ export function LinkList({
       <div
         key={link.id}
         onMouseDown={(e) => handleMouseDown(index, e)}
+        onClick={(e) => handleRowClick(e, link, index)}
         onMouseEnter={() => handleMouseEnter(index)}
         onMouseLeave={() => {
           if (focusedIndex === index && !isDragging) setFocusedIndex(null);
@@ -490,7 +491,7 @@ export function LinkList({
         onKeyDown={handleKeyDown}
         onContextMenu={(e) => handleContextMenu(e, link)}
         className={cn(
-          "group grid grid-cols-[1fr_auto_auto] items-center gap-4 rounded-lg px-3 py-2 transition-colors select-none",
+          "group grid grid-cols-[1fr_auto_auto] items-center gap-4 rounded-lg px-3 py-2 transition-colors select-none cursor-pointer",
           isSelected 
             ? "bg-neutral-200" 
             : focusedIndex === index 
@@ -505,13 +506,15 @@ export function LinkList({
           href={isColor || isRichText ? "#" : link.url}
           target={isColor || isRichText ? undefined : "_blank"}
           rel={isColor || isRichText ? undefined : "noopener noreferrer"}
-          onClick={(e) => handleLinkClick(e, link, index)}
+          onClick={(e) => {
+              // Prevent anchor default to let parent handle all navigation
+              e.preventDefault();
+          }}
           onFocus={() => setFocusedIndex(index)}
           className={cn(
-            "flex min-w-0 items-center gap-3 focus:outline-none",
+            "flex min-w-0 items-center gap-3 focus:outline-none select-none",
             (isColor || isRichText) && "cursor-pointer"
           )}
-          // Prevent default drag on the link so our custom drag works
           onDragStart={(e) => e.preventDefault()}
         >
           {isColor ? (
@@ -529,16 +532,16 @@ export function LinkList({
               domain={link.domain}
             />
           )}
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[15px] text-neutral-900">
+          <div className="min-w-0 flex-1 select-none">
+            <div className="truncate text-[15px] text-neutral-900 select-none">
               {isRichText && richTextPreview ? richTextPreview : (link.title || link.url)}
             </div>
-            <div className="truncate text-sm text-neutral-400">
+            <div className="truncate text-sm text-neutral-400 select-none">
               {isRichText ? "Rich text" : link.domain}
             </div>
           </div>
         </a>
-        <div className="text-sm text-neutral-400">
+        <div className="text-sm text-neutral-400 select-none">
           {formatDate(new Date(link.created_at))}
         </div>
         <div className={cn(
@@ -575,7 +578,7 @@ export function LinkList({
 
   return (
     <div className="w-full" ref={containerRef}>
-      <div className="sticky top-[104px] z-10 grid grid-cols-[1fr_auto_auto] gap-4 bg-[#fafafa] py-4 text-xs font-medium text-neutral-400 relative">
+      <div className="sticky top-[104px] z-10 grid grid-cols-[1fr_auto_auto] gap-4 bg-[#fafafa] py-4 text-xs font-medium text-neutral-400 relative select-none">
         <div>Title</div>
         <div>Created at</div>
         <div className="w-10"></div>
@@ -584,7 +587,7 @@ export function LinkList({
       <div className="space-y-0.5 pt-4 relative">
         {pinnedLinks.length > 0 && (
           <>
-            <div className="mb-4 mt-4 text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+            <div className="mb-4 mt-4 text-xs font-semibold text-neutral-500 uppercase tracking-wider select-none">
               Pinned
             </div>
             {pinnedLinks.map((link, index) => renderLink(link, index, true))}
@@ -593,7 +596,7 @@ export function LinkList({
         {unpinnedLinks.length > 0 && (
           <>
             {pinnedLinks.length > 0 && (
-              <div className="mb-4 mt-8 text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+              <div className="mb-4 mt-8 text-xs font-semibold text-neutral-500 uppercase tracking-wider select-none">
                 All Links
               </div>
             )}
@@ -621,7 +624,7 @@ export function LinkList({
       {selectedIds.size > 0 && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-white border border-neutral-200 shadow-xl rounded-lg p-1.5 animate-in fade-in slide-in-from-bottom-4 duration-200">
             <div className="flex items-center gap-2 px-2 border-r border-neutral-200 pr-3 mr-1">
-                <span className="text-sm font-medium text-neutral-900">
+                <span className="text-sm font-medium text-neutral-900 select-none">
                     {selectedIds.size} selected
                 </span>
                 <button 
@@ -634,7 +637,7 @@ export function LinkList({
             
             <button 
                 onClick={handleBatchArchive}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors select-none"
             >
                 <Archive className="h-4 w-4" />
                 Archive
@@ -642,7 +645,7 @@ export function LinkList({
             
              <button 
                 onClick={handleBatchDelete}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors select-none"
             >
                 <Trash className="h-4 w-4" />
                 Delete
@@ -650,7 +653,7 @@ export function LinkList({
             
             <Menu>
                 <MenuTrigger>
-                     <button className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors">
+                     <button className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors select-none">
                          <MoreHorizontal className="h-4 w-4" />
                          Actions
                      </button>

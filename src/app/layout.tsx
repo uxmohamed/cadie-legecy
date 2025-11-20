@@ -11,8 +11,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Vault - Read it Later",
+  title: "Vault",
   description: "Personal read-it-later app",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
