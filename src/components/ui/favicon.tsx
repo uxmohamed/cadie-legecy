@@ -101,7 +101,7 @@ export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
       {/* Always show placeholder, hide when image loads */}
       <div 
         className={cn(
-          "absolute inset-0 rounded bg-gray-300",
+          "absolute inset-0 rounded bg-gray-200",
           isLoaded && "hidden",
           className
         )} 
