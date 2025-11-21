@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ToastProvider } from "@/components/ui/toast";
 import { ErrorBoundary } from "@/components/error-boundary";
-import "@/instrumentation-client";
+import { PostHogPageView } from "@/components/posthog-pageview";
+import { Suspense } from "react";
 import "./globals.css";
 
 const inter = Inter({
@@ -27,6 +28,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
+        <Suspense fallback={null}>
+          <PostHogPageView />
+        </Suspense>
         <ToastProvider position="bottom-right">
           <ErrorBoundary>
             {children}
