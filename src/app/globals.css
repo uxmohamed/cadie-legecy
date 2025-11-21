@@ -6,6 +6,8 @@
 :root {
   --background: #fafafa;
   --foreground: #171717;
+  --brand: #2783DE;
+  --brand-hover: #1f6bc4;
   --destructive-foreground: var(--color-red-700);
   --info: var(--color-blue-500);
   --info-foreground: var(--color-blue-700);
@@ -45,6 +47,8 @@ body {
 
 @theme inline {
   --animate-skeleton: skeleton 2s -1s infinite linear;
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
   --color-warning-foreground: var(--warning-foreground);
   --color-warning: var(--warning);
   --color-success-foreground: var(--success-foreground);
