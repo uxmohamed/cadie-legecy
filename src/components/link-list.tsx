@@ -580,9 +580,9 @@ export function LinkList({
           )}
           <Menu>
             <MenuTrigger>
-              <button className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-300 transition-colors">
-                <MoreHorizontal className="h-4 w-4" />
-              </button>
+              {/* <button className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-300 transition-colors"> */}
+              <MoreHorizontal className="h-4 w-4" />
+              {/* </button> */}
             </MenuTrigger>
             <MenuPopup>{renderMenuContent(link)}</MenuPopup>
           </Menu>
@@ -673,10 +673,10 @@ export function LinkList({
 
           <Menu>
             <MenuTrigger>
-              <button className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors select-none">
-                <MoreHorizontal className="h-4 w-4" />
-                Actions
-              </button>
+              {/* <button className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors select-none"> */}
+              <MoreHorizontal className="h-4 w-4" />
+              Actions
+              {/* </button> */}
             </MenuTrigger>
             <MenuPopup align="center" side="top">
               <MenuItem onClick={handleBatchPin}>
