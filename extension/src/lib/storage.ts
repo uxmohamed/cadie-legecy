@@ -9,7 +9,13 @@ export interface ExtensionSettings {
 }
 
 // Default to production URL
-const DEFAULT_CADDY_URL = "https://caddy-theta-lac.vercel.app";
+export const EXTENSION_CONFIG = {
+  API_URL: "https://caddy-space.vercel.app/api",
+  BASE_URL: "https://caddy-space.vercel.app",
+};
+
+// Default to production URL
+const DEFAULT_CADDY_URL = EXTENSION_CONFIG.BASE_URL;
 
 /**
  * Get extension settings from Chrome storage

@@ -6,6 +6,7 @@ import { CaptureInput } from "@/components/capture-input";
 import { LinkList } from "@/components/link-list";
 import { LinkListSkeleton } from "@/components/link-list-skeleton";
 import { UserMenu } from "@/components/user-menu";
+import { Logo } from "@/components/logo";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
 import { canonicalizeContent } from "@/lib/canonicalize";
@@ -487,7 +488,8 @@ export default function Home() {
   return (
     <div className="flex h-screen overflow-hidden">
       <main className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-16 items-center justify-end px-8 relative z-30">
+        <header className="flex h-16 items-center justify-between px-8 relative z-30">
+          <Logo className="text-neutral-200" />
           <UserMenu user={user} />
         </header>
         <div className="flex-1 overflow-y-auto">

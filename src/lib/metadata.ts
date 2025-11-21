@@ -9,14 +9,21 @@ export interface LinkMetadata {
 }
 
 export async function extractMetadata(url: string): Promise<LinkMetadata> {
+  // Create timeout for metadata extraction (10 seconds max)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  
   try {
     const response = await fetch(url, {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (compatible; CaddyBot/1.0; +https://caddy.app)",
       },
+      signal: controller.signal,
       next: { revalidate: 3600 }, // Cache for 1 hour
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch: ${response.statusText}`);
@@ -86,7 +93,14 @@ export async function extractMetadata(url: string): Promise<LinkMetadata> {
       domain,
     };
   } catch (error) {
-    console.error("Error extracting metadata:", error);
+    clearTimeout(timeoutId);
+    
+    // Log different error types
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error("Metadata extraction timeout for:", url);
+    } else {
+      console.error("Error extracting metadata:", error);
+    }
     
     // Return fallback metadata
     const urlObj = new URL(url);

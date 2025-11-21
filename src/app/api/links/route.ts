@@ -66,37 +66,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Auto-fetch metadata if not provided and content type is URL
-    if (content_type === "url" && (!favicon_url || !og_image_url || !description)) {
-      try {
-        console.log("Auto-fetching metadata for URL:", url);
-        const metadata = await extractMetadata(url);
-        
-        // Only override if not already provided
-        if (!favicon_url && metadata.favicon) {
-          favicon_url = metadata.favicon;
-        }
-        if (!og_image_url && metadata.ogImage) {
-          og_image_url = metadata.ogImage;
-        }
-        if (!description && metadata.description) {
-          description = metadata.description;
-        }
-        // Update title if it was generic and we got a better one
-        if (title === url && metadata.title !== metadata.domain) {
-          title = metadata.title;
-        }
-        
-        console.log("Metadata fetched successfully:", { 
-          favicon: !!favicon_url, 
-          ogImage: !!og_image_url, 
-          description: !!description 
-        });
-      } catch (error) {
-        // Don't fail the request if metadata fetch fails, just log it
-        console.error("Failed to auto-fetch metadata:", error);
-      }
-    }
+    // Note: Metadata fetching moved to background job for faster response
+    // If metadata is not provided, it will be fetched asynchronously after save
 
     // Extract domain from URL or set to "color" for color entries, or "text" for text entries
     let domain = "";
@@ -179,6 +150,21 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Trigger background metadata fetch for URL content type
+    if (content_type === "url" && data.id) {
+      // Fire-and-forget: don't wait for metadata fetch
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      fetch(`${baseUrl}/api/links/${data.id}/metadata`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Internal-Request': 'true'
+        },
+      }).catch(err => {
+        console.error('Background metadata fetch failed:', err);
+      });
     }
 
     return NextResponse.json({ link: data }, { status: 201 });

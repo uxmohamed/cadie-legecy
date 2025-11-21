@@ -12,18 +12,19 @@
     "activeTab",
     "contextMenus",
     "storage",
-    "notifications"
+    "notifications",
+    "cookies"
   ],
   "host_permissions": [
     "http://localhost:3000/*",
-    "https://caddy-theta-lac.vercel.app/*",
+    "https://caddy-space.vercel.app/*",
     "https://*.yourdomain.com/*"
   ],
   "content_scripts": [
     {
       "matches": [
         "http://localhost:3000/*",
-        "https://caddy-theta-lac.vercel.app/*",
+        "https://caddy-space.vercel.app/*",
         "https://*.yourdomain.com/*"
       ],
       "js": ["content.js"],
