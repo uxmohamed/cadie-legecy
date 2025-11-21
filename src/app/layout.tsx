@@ -11,10 +11,10 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Vault",
+  title: "Caddy",
   description: "Personal read-it-later app",
   icons: {
-    icon: "/icon.svg",
+    icon: "/icon.png",
   },
 };
 

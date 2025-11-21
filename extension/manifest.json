@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Vault - Save Anything",
+  "name": "Caddy - Save Anything",
   "version": "1.0.0",
-  "description": "Save links, text, and colors to your Vault with one click",
+  "description": "Save links, text, and colors to your Caddy with one click",
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",
@@ -16,14 +16,14 @@
   ],
   "host_permissions": [
     "http://localhost:3000/*",
-    "https://vault-theta-lac.vercel.app/*",
+    "https://caddy-theta-lac.vercel.app/*",
     "https://*.yourdomain.com/*"
   ],
   "content_scripts": [
     {
       "matches": [
         "http://localhost:3000/*",
-        "https://vault-theta-lac.vercel.app/*",
+        "https://caddy-theta-lac.vercel.app/*",
         "https://*.yourdomain.com/*"
       ],
       "js": ["content.js"],
@@ -45,7 +45,7 @@
       "48": "icons/icon-48.png",
       "128": "icons/icon-128.png"
     },
-    "default_title": "Save to Vault"
+    "default_title": "Save to Caddy"
   },
   "options_page": "options.html",
   "commands": {
@@ -59,4 +59,3 @@
     "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }
-

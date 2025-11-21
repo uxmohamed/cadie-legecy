@@ -1,62 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vault</title>
-  <link rel="stylesheet" href="popup.css">
-</head>
-<body>
-  <div class="container">
-    <!-- Header -->
-    <div class="header">
-      <h1 class="title">Vault</h1>
-      <button id="settingsBtn" class="icon-btn" title="Settings">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Caddy</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <h1 class="title">Caddy</h1>
+        <button id="settingsBtn" class="icon-btn" title="Settings">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Current Page Info -->
+      <div class="page-info">
+        <div class="page-title" id="pageTitle">Loading...</div>
+        <div class="page-url" id="pageUrl"></div>
+      </div>
+
+      <!-- Status Message -->
+      <div id="statusMessage" class="status-message" style="display: none">
+        <span id="statusText"></span>
+      </div>
+
+      <!-- Save Button -->
+      <button id="saveBtn" class="save-btn" disabled>
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"
+          ></path>
+          <polyline points="17 21 17 13 7 13 7 21"></polyline>
+          <polyline points="7 3 7 8 15 8"></polyline>
         </svg>
+        <span id="saveBtnText">Save to Caddy</span>
       </button>
-    </div>
 
-    <!-- Current Page Info -->
-    <div class="page-info">
-      <div class="page-title" id="pageTitle">Loading...</div>
-      <div class="page-url" id="pageUrl"></div>
-    </div>
-
-    <!-- Status Message -->
-    <div id="statusMessage" class="status-message" style="display: none;">
-      <span id="statusText"></span>
-    </div>
-
-    <!-- Save Button -->
-    <button id="saveBtn" class="save-btn" disabled>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-        <polyline points="17 21 17 13 7 13 7 21"></polyline>
-        <polyline points="7 3 7 8 15 8"></polyline>
-      </svg>
-      <span id="saveBtnText">Save to Vault</span>
-    </button>
-
-    <!-- Quick Actions -->
-    <div class="actions">
-      <button id="openVaultBtn" class="action-btn">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-          <polyline points="15 3 21 3 21 9"></polyline>
-          <line x1="10" y1="14" x2="21" y2="3"></line>
-        </svg>
-        Open Vault
-      </button>
-      <div class="keyboard-hint">
-        <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>S</kbd>
+      <!-- Quick Actions -->
+      <div class="actions">
+        <button id="openCaddyBtn" class="action-btn">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+            ></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+          Open Caddy
+        </button>
+        <div class="keyboard-hint"><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>S</kbd></div>
       </div>
     </div>
-  </div>
 
-  <script src="popup.js"></script>
-</body>
+    <script src="popup.js"></script>
+  </body>
 </html>
-

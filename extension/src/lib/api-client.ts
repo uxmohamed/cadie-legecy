@@ -1,8 +1,8 @@
 /**
- * Vault API client for Chrome extension
+ * Caddy API client for Chrome extension
  */
 
-import { getApiToken, getVaultUrl } from "./storage";
+import { getApiToken, getCaddyUrl } from "./storage";
 
 export interface SaveLinkRequest {
   url: string;
@@ -23,7 +23,7 @@ export interface ApiResponse<T = any> {
 }
 
 /**
- * Save a link to Vault
+ * Save a link to Caddy
  */
 export async function saveLink(request: SaveLinkRequest): Promise<ApiResponse> {
   try {
@@ -35,8 +35,8 @@ export async function saveLink(request: SaveLinkRequest): Promise<ApiResponse> {
       };
     }
 
-    const vaultUrl = await getVaultUrl();
-    const response = await fetch(`${vaultUrl}/api/links`, {
+    const caddyUrl = await getCaddyUrl();
+    const response = await fetch(`${caddyUrl}/api/links`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -58,7 +58,7 @@ export async function saveLink(request: SaveLinkRequest): Promise<ApiResponse> {
     // Check if this was a duplicate
     const isDuplicate = data.duplicate === true;
     if (isDuplicate) {
-      console.log("Link already exists in Vault");
+      console.log("Link already exists in Caddy");
     }
     
     return {
@@ -88,8 +88,8 @@ export async function testConnection(): Promise<ApiResponse> {
       };
     }
 
-    const vaultUrl = await getVaultUrl();
-    const response = await fetch(`${vaultUrl}/api/links`, {
+    const caddyUrl = await getCaddyUrl();
+    const response = await fetch(`${caddyUrl}/api/links`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,

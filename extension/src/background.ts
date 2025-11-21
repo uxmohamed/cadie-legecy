@@ -1,5 +1,5 @@
 /**
- * Background service worker for Vault extension
+ * Background service worker for Caddy extension
  * Handles context menus, keyboard shortcuts, and notifications
  */
 
@@ -15,10 +15,10 @@ const savesInProgress = new Set<string>();
 
 // Install listener - Create context menu
 chrome.runtime.onInstalled.addListener(() => {
-  console.log("Vault extension installed");
+  console.log("Caddy extension installed");
   chrome.contextMenus.create({
-    id: "save-to-vault",
-    title: "Save to Vault",
+    id: "save-to-caddy",
+    title: "Save to Caddy",
     contexts: ["page", "link", "selection"],
   });
 });
@@ -26,7 +26,7 @@ chrome.runtime.onInstalled.addListener(() => {
 // Context menu click listener
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   console.log("🖱️ Context menu clicked:", info.menuItemId);
-  if (info.menuItemId === "save-to-vault" && tab?.id) {
+  if (info.menuItemId === "save-to-caddy" && tab?.id) {
     await saveCurrentTab(tab.id);
   }
 });
@@ -63,26 +63,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   // Handle authorization success from content script
-  if (request.type === "VAULT_AUTH_SUCCESS" && request.data) {
-    const { token, email, url, vaultUrl, state } = request.data;
+  if (request.type === "CADDY_AUTH_SUCCESS" && request.data) {
+    const { token, email, url, caddyUrl, state } = request.data;
     
     // Use the provided URL, or try to get it from the sender tab
-    let vaultUrlToUse = url || vaultUrl;
+    let caddyUrlToUse = url || caddyUrl;
     
     // If no URL provided, try to get it from the sender tab
-    if (!vaultUrlToUse && sender?.tab?.url) {
+    if (!caddyUrlToUse && sender?.tab?.url) {
       try {
         const tabUrl = new URL(sender.tab.url);
-        vaultUrlToUse = `${tabUrl.protocol}//${tabUrl.host}`;
+        caddyUrlToUse = `${tabUrl.protocol}//${tabUrl.host}`;
       } catch (e) {
         console.error("Error parsing sender URL:", e);
       }
     }
     
     // Fallback to localhost only if we really can't determine the URL
-    if (!vaultUrlToUse) {
-      console.warn("No vault URL provided, using localhost fallback");
-      vaultUrlToUse = "http://localhost:3000";
+    if (!caddyUrlToUse) {
+      console.warn("No caddy URL provided, using localhost fallback");
+      caddyUrlToUse = "http://localhost:3000";
     }
     
     // Construct options page URL with auth params
@@ -90,7 +90,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       authorized: "true",
       token: token,
       email: email || "",
-      url: vaultUrlToUse,
+      url: caddyUrlToUse,
       state: state || "",
     });
     
@@ -101,8 +101,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     // Also notify the options page if it's open
     chrome.runtime.sendMessage({
-      type: "VAULT_AUTH_COMPLETE",
-      data: { vaultUrl: vaultUrlToUse },
+      type: "CADDY_AUTH_COMPLETE",
+      data: { caddyUrl: caddyUrlToUse },
     }).catch(() => {
       // Options page might not be listening, that's okay
     });
@@ -117,7 +117,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // ============================================================================
 
 /**
- * Save the current tab to Vault
+ * Save the current tab to Caddy
  */
 async function saveCurrentTab(tabId: number): Promise<void> {
   console.log("💾 saveCurrentTab called for tab:", tabId);
@@ -170,7 +170,7 @@ async function saveCurrentTab(tabId: number): Promise<void> {
     console.log("📤 Showing loading overlay for tab:", tabId);
     showOverlayInTab(tabId, "loading");
 
-    // Save to Vault
+    // Save to Caddy
     const response = await saveLink({
       url: tab.url,
       title: tab.title,
@@ -230,9 +230,9 @@ function showOverlayInTab(
     console.error("❌ Could not show overlay, error:", error);
     console.log("🔔 Falling back to notification");
     if (state === "success") {
-      showNotification("Saved to Vault! ✨", "Page saved successfully", "success");
+      showNotification("Saved to Caddy! ✨", "Page saved successfully", "success");
     } else if (state === "duplicate") {
-      showNotification("Already in Vault!", "This page was already saved", "info");
+      showNotification("Already in Caddy!", "This page was already saved", "info");
     } else if (state === "error") {
       showNotification("Error", message || "Failed to save", "error");
     }
@@ -248,7 +248,7 @@ function showNotification(
   type: "info" | "success" | "error" = "info"
 ): string {
   const iconUrl = chrome.runtime.getURL("icons/icon-48.png");
-  const notificationId = `vault-${Date.now()}`;
+  const notificationId = `caddy-${Date.now()}`;
 
   chrome.notifications.create(notificationId, {
     type: "basic",
@@ -272,7 +272,7 @@ function showNotification(
 // STARTUP / DIAGNOSTICS
 // ============================================================================
 
-console.log("🔥 Vault background service worker loaded - VERSION 3");
+console.log("🔥 Caddy background service worker loaded - VERSION 3");
 
 // Log registered commands for debugging
 if (chrome.commands) {

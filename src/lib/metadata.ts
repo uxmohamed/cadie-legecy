@@ -13,7 +13,7 @@ export async function extractMetadata(url: string): Promise<LinkMetadata> {
     const response = await fetch(url, {
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (compatible; VaultBot/1.0; +https://vault.app)",
+          "Mozilla/5.0 (compatible; CaddyBot/1.0; +https://caddy.app)",
       },
       next: { revalidate: 3600 }, // Cache for 1 hour
     });

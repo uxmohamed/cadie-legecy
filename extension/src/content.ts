@@ -5,7 +5,7 @@
  * - Capture selected text
  */
 
-console.log("🚀 Vault extension content script loaded on:", window.location.href);
+console.log("🚀 Caddy extension content script loaded on:", window.location.href);
 
 // Track overlay element
 let overlayElement: HTMLElement | null = null;
@@ -26,10 +26,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const { state, message } = request;
     if (state === "loading") {
       console.log("⏳ Showing loading overlay");
-      showOverlay("Saving to Vault...", "loading");
+      showOverlay("Saving to Caddy...", "loading");
     } else if (state === "success") {
       console.log("✅ Showing success overlay");
-      showOverlay("Saved to Vault ✨", "success");
+      showOverlay("Saved to Caddy ✨", "success");
       // Auto-hide after 2.5 seconds
       hideTimeout = window.setTimeout(() => {
         console.log("⏱️ Auto-hiding success overlay");
@@ -37,7 +37,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }, 2500);
     } else if (state === "duplicate") {
       console.log("🔄 Showing duplicate overlay");
-      showOverlay("Already in Vault!", "duplicate");
+      showOverlay("Already in Caddy!", "duplicate");
       // Auto-hide after 2.5 seconds
       hideTimeout = window.setTimeout(() => {
         console.log("⏱️ Auto-hiding duplicate overlay");
@@ -78,18 +78,18 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
 
   // Create overlay
   overlayElement = document.createElement("div");
-  overlayElement.id = "vault-save-overlay";
+  overlayElement.id = "caddy-save-overlay";
   
   const content = document.createElement("div");
-  content.className = "vault-overlay-content";
+  content.className = "caddy-overlay-content";
   
   // Icon
   const icon = document.createElement("div");
-  icon.className = "vault-overlay-icon";
+  icon.className = "caddy-overlay-icon";
   
   if (state === "loading") {
     const spinner = document.createElement("div");
-    spinner.className = "vault-spinner";
+    spinner.className = "caddy-spinner";
     icon.appendChild(spinner);
     icon.style.background = "#f3f4f6";
   } else if (state === "success") {
@@ -119,7 +119,7 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
   
   // Text
   const textEl = document.createElement("div");
-  textEl.className = "vault-overlay-text";
+  textEl.className = "caddy-overlay-text";
   textEl.textContent = text;
   
   content.appendChild(icon);
@@ -147,7 +147,7 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
  */
 function hideOverlay() {
   if (overlayElement) {
-    overlayElement.classList.add("vault-hiding");
+    overlayElement.classList.add("caddy-hiding");
     setTimeout(() => {
       if (overlayElement) {
         overlayElement.remove();
@@ -158,18 +158,18 @@ function hideOverlay() {
 }
 
 // Listen for authorization success events
-window.addEventListener("vaultAuthSuccess", (event: any) => {
+window.addEventListener("caddyAuthSuccess", (event: any) => {
   const detail = event.detail;
   if (detail && detail.token) {
-    console.log("Vault auth success event received", detail);
+    console.log("Caddy auth success event received", detail);
     // Send auth data to background script
     chrome.runtime.sendMessage({
-      type: "VAULT_AUTH_SUCCESS",
+      type: "CADDY_AUTH_SUCCESS",
       data: {
         token: detail.token,
         email: detail.email,
-        url: detail.url || detail.vaultUrl,
-        vaultUrl: detail.url || detail.vaultUrl,
+        url: detail.url || detail.caddyUrl,
+        caddyUrl: detail.url || detail.caddyUrl,
         state: detail.state,
       },
     }, (response) => {
@@ -199,19 +199,19 @@ if (window.location.pathname.includes("/extension/authorize")) {
 }
 
 function checkForAuthData(): boolean {
-  const authDataElement = document.getElementById("vault-auth-data");
+  const authDataElement = document.getElementById("caddy-auth-data");
   if (authDataElement) {
     try {
       const authData = JSON.parse(authDataElement.getAttribute("data-auth") || "{}");
       if (authData.token) {
         console.log("Found auth data in DOM, sending to background", authData);
         chrome.runtime.sendMessage({
-          type: "VAULT_AUTH_SUCCESS",
+          type: "CADDY_AUTH_SUCCESS",
           data: {
             token: authData.token,
             email: authData.email,
             url: authData.url,
-            vaultUrl: authData.url,
+            caddyUrl: authData.url,
             state: authData.state,
           },
         }, (response) => {

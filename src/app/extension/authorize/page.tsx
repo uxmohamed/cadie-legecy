@@ -65,13 +65,13 @@ export default function ExtensionAuthorizePage() {
       const state = params.get("state");
 
       // Use production URL - prefer NEXT_PUBLIC_SITE_URL if available, otherwise use current origin
-      const vaultUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      const caddyUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
 
       // Construct authorization response
       const authData = {
         token: data.token,
         email: user.email,
-        vaultUrl: vaultUrl,
+        caddyUrl: caddyUrl,
         state: state || "",
       };
 
@@ -93,24 +93,24 @@ export default function ExtensionAuthorizePage() {
     // Store auth data in a data attribute on the page so content script can read it
     // This avoids the chrome-extension:// redirect issue
     const authDataElement = document.createElement("div");
-    authDataElement.id = "vault-auth-data";
+    authDataElement.id = "caddy-auth-data";
     authDataElement.setAttribute("data-auth", JSON.stringify({
       token: authData.token,
       email: authData.email || "",
-      url: authData.vaultUrl,
+      url: authData.caddyUrl,
       state: authData.state || "",
     }));
     authDataElement.style.display = "none";
     document.body.appendChild(authDataElement);
 
     // Dispatch a custom event that the content script can listen for
-    const event = new CustomEvent("vaultAuthSuccess", {
+    const event = new CustomEvent("caddyAuthSuccess", {
       detail: {
         extensionId,
         token: authData.token,
         email: authData.email || "",
-        url: authData.vaultUrl,
-        vaultUrl: authData.vaultUrl,
+        url: authData.caddyUrl,
+        caddyUrl: authData.caddyUrl,
         state: authData.state || "",
       },
     });
@@ -182,7 +182,7 @@ export default function ExtensionAuthorizePage() {
           </div>
           <h1 className="text-xl font-bold text-neutral-900 mb-2">Authorization Failed</h1>
           <p className="text-neutral-600 mb-4">{error}</p>
-          <Button onClick={() => router.push("/")}>Return to Vault</Button>
+          <Button onClick={() => router.push("/")}>Return to Caddy</Button>
         </div>
       </div>
     );
@@ -200,10 +200,10 @@ export default function ExtensionAuthorizePage() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-neutral-900 mb-2">
-            Authorize Vault Extension
+            Authorize Caddy Extension
           </h1>
           <p className="text-neutral-600">
-            Connect your Chrome extension to your Vault account
+            Connect your Chrome extension to your Caddy account
           </p>
         </div>
 
@@ -223,7 +223,7 @@ export default function ExtensionAuthorizePage() {
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-600 flex-shrink-0">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
-              <span>Save links to your Vault</span>
+              <span>Save links to your Caddy</span>
             </li>
             <li className="flex items-start gap-2 text-sm text-neutral-600">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-600 flex-shrink-0">
@@ -244,7 +244,7 @@ export default function ExtensionAuthorizePage() {
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6">
           <p className="text-xs text-yellow-800">
             ⚠️ Only authorize if you installed the extension yourself. 
-            You can revoke access anytime from your Vault settings.
+            You can revoke access anytime from your Caddy settings.
           </p>
         </div>
 
@@ -281,7 +281,7 @@ export default function ExtensionAuthorizePage() {
 
         {/* Footer */}
         <p className="text-xs text-neutral-500 text-center mt-6">
-          This will create an API token for the extension to access your Vault.
+          This will create an API token for the extension to access your Caddy.
         </p>
       </div>
     </div>

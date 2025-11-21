@@ -61,7 +61,7 @@ export function AuthForm() {
         </svg>
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
-            Welcome to Vault
+            Welcome to Caddy
           </h1>
           <p className="text-base text-slate-600 dark:text-slate-400">
             Sign in with your email to continue

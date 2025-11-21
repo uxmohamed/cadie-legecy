@@ -11,14 +11,14 @@ const connectedView = document.getElementById("connectedView") as HTMLDivElement
 const connectBtn = document.getElementById("connectBtn") as HTMLButtonElement;
 const disconnectBtn = document.getElementById("disconnectBtn") as HTMLButtonElement;
 const testConnectionBtn = document.getElementById("testConnectionBtn") as HTMLButtonElement;
-const openVaultBtn = document.getElementById("openVaultBtn") as HTMLAnchorElement;
+const openCaddyBtn = document.getElementById("openCaddyBtn") as HTMLAnchorElement;
 const statusMessage = document.getElementById("statusMessage") as HTMLDivElement;
 const statusText = document.getElementById("statusText") as HTMLSpanElement;
 const connectedEmail = document.getElementById("connectedEmail") as HTMLParagraphElement;
 const connectedUrl = document.getElementById("connectedUrl") as HTMLParagraphElement;
 
 // Manual config elements
-const manualVaultUrl = document.getElementById("manualVaultUrl") as HTMLInputElement;
+const manualCaddyUrl = document.getElementById("manualCaddyUrl") as HTMLInputElement;
 const manualApiToken = document.getElementById("manualApiToken") as HTMLInputElement;
 const manualToggleTokenBtn = document.getElementById("manualToggleTokenBtn") as HTMLButtonElement;
 const manualToggleTokenText = document.getElementById("manualToggleTokenText") as HTMLSpanElement;
@@ -28,7 +28,7 @@ const manualTestBtn = document.getElementById("manualTestBtn") as HTMLButtonElem
 // State
 let currentSettings = {
   apiToken: "",
-  vaultUrl: "https://vault-theta-lac.vercel.app", // Default to production
+  caddyUrl: "https://caddy-theta-lac.vercel.app", // Default to production
   userEmail: "",
 };
 
@@ -43,8 +43,8 @@ async function init() {
   // Update UI based on connection status
   updateView();
 
-  // Update Open Vault link
-  openVaultBtn.href = currentSettings.vaultUrl || "https://vault-theta-lac.vercel.app";
+  // Update Open Caddy link
+  openCaddyBtn.href = currentSettings.caddyUrl || "https://caddy-theta-lac.vercel.app";
 }
 
 /**
@@ -61,7 +61,7 @@ function checkAuthorizationParams() {
     // Save settings
     saveSettings({
       apiToken: token,
-      vaultUrl: url || "https://vault-theta-lac.vercel.app",
+      caddyUrl: url || "https://caddy-theta-lac.vercel.app",
       userEmail: email || "",
     }).then(() => {
       // Clear URL params
@@ -70,7 +70,7 @@ function checkAuthorizationParams() {
       // Reload to show connected state
       init();
       
-      showStatus("Successfully connected to Vault!", "success");
+      showStatus("Successfully connected to Caddy!", "success");
     });
   }
 }
@@ -80,23 +80,23 @@ function checkAuthorizationParams() {
  */
 async function loadSettings() {
   const settings = await getSettings();
-  let vaultUrl = settings.vaultUrl || "https://vault-theta-lac.vercel.app";
+  let caddyUrl = settings.caddyUrl || "https://caddy-theta-lac.vercel.app";
   
-  // If vaultUrl is localhost, replace with production URL
-  if (vaultUrl === "http://localhost:3000" || vaultUrl.startsWith("http://localhost")) {
-    vaultUrl = "https://vault-theta-lac.vercel.app";
+  // If caddyUrl is localhost, replace with production URL
+  if (caddyUrl === "http://localhost:3000" || caddyUrl.startsWith("http://localhost")) {
+    caddyUrl = "https://caddy-theta-lac.vercel.app";
     // Save the corrected URL
-    await saveSettings({ vaultUrl });
+    await saveSettings({ caddyUrl });
   }
   
   currentSettings = {
     apiToken: settings.apiToken || "",
-    vaultUrl: vaultUrl,
+    caddyUrl: caddyUrl,
     userEmail: settings.userEmail || "",
   };
 
   // Update manual config fields
-  if (manualVaultUrl) manualVaultUrl.value = currentSettings.vaultUrl;
+  if (manualCaddyUrl) manualCaddyUrl.value = currentSettings.caddyUrl;
 }
 
 /**
@@ -115,7 +115,7 @@ function updateView() {
       connectedEmail.textContent = currentSettings.userEmail || "Connected";
     }
     if (connectedUrl) {
-      connectedUrl.textContent = currentSettings.vaultUrl;
+      connectedUrl.textContent = currentSettings.caddyUrl;
     }
   } else {
     // Show not connected view
@@ -135,29 +135,29 @@ async function handleConnect() {
     // Get the extension ID
     const extensionId = chrome.runtime.id;
 
-    // Determine vault URL - always default to production, never localhost
-    let vaultUrl = currentSettings.vaultUrl;
+    // Determine Caddy URL - always default to production, never localhost
+    let caddyUrl = currentSettings.caddyUrl;
     
     // If no URL set, or if it's localhost, use production
-    if (!vaultUrl || vaultUrl === "http://localhost:3000" || vaultUrl.startsWith("http://localhost")) {
-      vaultUrl = "https://vault-theta-lac.vercel.app";
+    if (!caddyUrl || caddyUrl === "http://localhost:3000" || caddyUrl.startsWith("http://localhost")) {
+      caddyUrl = "https://caddy-theta-lac.vercel.app";
     }
     
-    // Try to detect if user is on a Vault page and use that URL (async)
+    // Try to detect if user is on a Caddy page and use that URL (async)
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tabs[0]?.url) {
       try {
         const tabUrl = new URL(tabs[0].url);
-        // Check if this is a Vault domain (production)
-        if (tabUrl.hostname.includes("vault") || tabUrl.hostname.includes("vercel.app")) {
-          vaultUrl = `${tabUrl.protocol}//${tabUrl.host}`;
+        // Check if this is a Caddy domain (production)
+        if (tabUrl.hostname.includes("caddy") || tabUrl.hostname.includes("vercel.app")) {
+          caddyUrl = `${tabUrl.protocol}//${tabUrl.host}`;
         }
       } catch (e) {
         // Invalid URL, use default
       }
     }
     
-    const authUrl = `${vaultUrl}/extension/authorize?extensionId=${extensionId}`;
+    const authUrl = `${caddyUrl}/extension/authorize?extensionId=${extensionId}`;
     console.log("Opening authorize URL:", authUrl);
 
     // Open authorization page in new tab
@@ -171,7 +171,7 @@ async function handleConnect() {
     
     // Listen for messages from background script when auth completes
     const messageListener = (message: any) => {
-      if (message.type === "VAULT_AUTH_COMPLETE") {
+      if (message.type === "CADDY_AUTH_COMPLETE") {
         chrome.runtime.onMessage.removeListener(messageListener);
         if (checkInterval) clearInterval(checkInterval);
         loadSettings().then(() => {
@@ -225,11 +225,11 @@ async function handleConnect() {
  * Handle authorization message from web app
  */
 function handleAuthMessage(message: any, sender: any, sendResponse: any) {
-  if (message.type === "VAULT_AUTH") {
+  if (message.type === "CADDY_AUTH") {
     // Save authorization data
     saveSettings({
       apiToken: message.token,
-      vaultUrl: message.vaultUrl,
+      caddyUrl: message.caddyUrl,
       userEmail: message.email,
     }).then(async () => {
       await loadSettings();
@@ -242,13 +242,13 @@ function handleAuthMessage(message: any, sender: any, sendResponse: any) {
     return true; // Keep message channel open
   }
   
-  if (message.type === "VAULT_AUTH_COMPLETE") {
+  if (message.type === "CADDY_AUTH_COMPLETE") {
     // Background script notified us that auth completed
     loadSettings().then(() => {
       updateView();
       connectBtn.classList.remove("loading");
       connectBtn.disabled = false;
-      showStatus("Successfully connected to Vault!", "success");
+      showStatus("Successfully connected to Caddy!", "success");
     });
     sendResponse({ success: true });
     return true;
@@ -270,13 +270,13 @@ async function handleDisconnect() {
     await clearSettings();
     currentSettings = {
       apiToken: "",
-      vaultUrl: "https://vault-theta-lac.vercel.app",
+      caddyUrl: "https://caddy-theta-lac.vercel.app",
       userEmail: "",
     };
 
     // Update view
     updateView();
-    showStatus("Disconnected from Vault", "info");
+    showStatus("Disconnected from Caddy", "info");
   } catch (error) {
     console.error("Error disconnecting:", error);
     showStatus("Failed to disconnect", "error");
@@ -313,11 +313,11 @@ async function handleTestConnection() {
  * Handle manual save (advanced config)
  */
 async function handleManualSave() {
-  const vaultUrl = manualVaultUrl.value.trim();
+  const caddyUrl = manualCaddyUrl.value.trim();
   const apiToken = manualApiToken.value.trim();
 
-  if (!vaultUrl) {
-    showStatus("Please enter a Vault URL", "error");
+  if (!caddyUrl) {
+    showStatus("Please enter a Caddy URL", "error");
     return;
   }
 
@@ -328,7 +328,7 @@ async function handleManualSave() {
 
   // Validate URL
   try {
-    new URL(vaultUrl);
+    new URL(caddyUrl);
   } catch {
     showStatus("Please enter a valid URL", "error");
     return;
@@ -338,7 +338,7 @@ async function handleManualSave() {
     manualSaveBtn.disabled = true;
     manualSaveBtn.classList.add("loading");
 
-    await saveSettings({ vaultUrl, apiToken });
+    await saveSettings({ caddyUrl, apiToken });
     await loadSettings();
     updateView();
 
@@ -412,7 +412,7 @@ manualTestBtn?.addEventListener("click", handleManualTest);
 manualToggleTokenBtn?.addEventListener("click", toggleManualTokenVisibility);
 
 // Save on Enter key in manual inputs
-manualVaultUrl?.addEventListener("keydown", (e) => {
+manualCaddyUrl?.addEventListener("keydown", (e) => {
   if (e.key === "Enter") handleManualSave();
 });
 

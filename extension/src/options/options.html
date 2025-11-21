@@ -1,158 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vault Extension Settings</title>
-  <link rel="stylesheet" href="options.css">
-</head>
-<body>
-  <div class="container">
-    <!-- Header -->
-    <div class="header">
-      <h1>Vault Extension</h1>
-      <p class="subtitle">Connect your Vault account to start saving links from anywhere</p>
-    </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Caddy Extension Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <h1>Caddy Extension</h1>
+        <p class="subtitle">
+          Connect your Caddy account to start saving links from anywhere
+        </p>
+      </div>
 
-    <!-- Main Content -->
-    <div class="content">
-      
-      <!-- Not Connected State -->
-      <div id="notConnectedView" class="view">
-        <div class="card connect-card">
-          <div class="connect-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-            </svg>
-          </div>
-          
-          <h2>Not Connected</h2>
-          <p class="connect-description">
-            Connect your Vault account with one click to start saving links, text, and more from any webpage.
-          </p>
-
-          <button id="connectBtn" class="btn btn-primary btn-large">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-            </svg>
-            Connect with Vault
-          </button>
-
-          <p class="help-text">
-            You'll be redirected to your Vault account to authorize the extension
-          </p>
-        </div>
-
-        <!-- Advanced Section (collapsed by default) -->
-        <details class="advanced-section">
-          <summary>Advanced: Manual Configuration</summary>
-          <div class="card">
-            <div class="form-group">
-              <label for="manualVaultUrl">Vault URL</label>
-              <input 
-                type="text" 
-                id="manualVaultUrl" 
-                placeholder="http://localhost:3000"
-                class="input"
+      <!-- Main Content -->
+      <div class="content">
+        <!-- Not Connected State -->
+        <div id="notConnectedView" class="view">
+          <div class="card connect-card">
+            <div class="connect-icon">
+              <svg
+                width="48"
+                height="48"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
               >
-              <p class="help-text">For self-hosted or custom Vault installations</p>
+                <path
+                  d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+                ></path>
+                <path
+                  d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+                ></path>
+              </svg>
             </div>
 
-            <div class="form-group">
-              <label for="manualApiToken">API Token</label>
-              <input 
-                type="password" 
-                id="manualApiToken" 
-                placeholder="Paste your API token here"
-                class="input"
+            <h2>Not Connected</h2>
+            <p class="connect-description">
+              Connect your Caddy account with one click to start saving links,
+              text, and more from any webpage.
+            </p>
+
+            <button id="connectBtn" class="btn btn-primary btn-large">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
               >
-              <button type="button" id="manualToggleTokenBtn" class="text-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                <span id="manualToggleTokenText">Show</span>
-              </button>
+                <path
+                  d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+                ></path>
+                <path
+                  d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+                ></path>
+              </svg>
+              Connect with Caddy
+            </button>
+
+            <p class="help-text">
+              You'll be redirected to your Caddy account to authorize the
+              extension
+            </p>
+          </div>
+
+          <!-- Advanced Section (collapsed by default) -->
+          <details class="advanced-section">
+            <summary>Advanced: Manual Configuration</summary>
+            <div class="card">
+              <div class="form-group">
+                <label for="manualCaddyUrl">Caddy URL</label>
+                <input
+                  type="text"
+                  id="manualCaddyUrl"
+                  placeholder="http://localhost:3000"
+                  class="input"
+                />
+                <p class="help-text">
+                  For self-hosted or custom Caddy installations
+                </p>
+              </div>
+
+              <div class="form-group">
+                <label for="manualApiToken">API Token</label>
+                <input
+                  type="password"
+                  id="manualApiToken"
+                  placeholder="Paste your API token here"
+                  class="input"
+                />
+                <button
+                  type="button"
+                  id="manualToggleTokenBtn"
+                  class="text-btn"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                    ></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <span id="manualToggleTokenText">Show</span>
+                </button>
+              </div>
+
+              <div class="button-group">
+                <button id="manualSaveBtn" class="btn btn-primary">
+                  Save Settings
+                </button>
+                <button id="manualTestBtn" class="btn btn-secondary">
+                  Test Connection
+                </button>
+              </div>
+            </div>
+          </details>
+        </div>
+
+        <!-- Connected State -->
+        <div id="connectedView" class="view" style="display: none">
+          <div class="card status-card connected">
+            <div class="status-icon success">
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+
+            <h2>✅ Connected</h2>
+            <div class="user-info">
+              <p class="user-email" id="connectedEmail">user@example.com</p>
+              <p class="caddy-url" id="connectedUrl">http://localhost:3000</p>
             </div>
 
             <div class="button-group">
-              <button id="manualSaveBtn" class="btn btn-primary">
-                Save Settings
-              </button>
-              <button id="manualTestBtn" class="btn btn-secondary">
+              <button id="testConnectionBtn" class="btn btn-secondary">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
                 Test Connection
+              </button>
+              <button id="disconnectBtn" class="btn btn-destructive-outline">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                Disconnect
               </button>
             </div>
           </div>
-        </details>
-      </div>
 
-      <!-- Connected State -->
-      <div id="connectedView" class="view" style="display: none;">
-        <div class="card status-card connected">
-          <div class="status-icon success">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-          </div>
-          
-          <h2>✅ Connected</h2>
-          <div class="user-info">
-            <p class="user-email" id="connectedEmail">user@example.com</p>
-            <p class="vault-url" id="connectedUrl">http://localhost:3000</p>
-          </div>
-
-          <div class="button-group">
-            <button id="testConnectionBtn" class="btn btn-secondary">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-              </svg>
-              Test Connection
-            </button>
-            <button id="disconnectBtn" class="btn btn-destructive-outline">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-              Disconnect
-            </button>
+          <!-- Usage Info -->
+          <div class="card info-card-small">
+            <h3>How to Use</h3>
+            <ul class="usage-list">
+              <li>
+                <strong>Click extension icon</strong> - Quick save from popup
+              </li>
+              <li>
+                <strong>Right-click page</strong> - Select "Save to Caddy"
+              </li>
+              <li>
+                <strong>Keyboard shortcut</strong> - <kbd>⌘</kbd> <kbd>⇧</kbd>
+                <kbd>S</kbd> (Mac) or <kbd>Ctrl</kbd> <kbd>⇧</kbd>
+                <kbd>S</kbd> (Windows/Linux)
+              </li>
+            </ul>
           </div>
         </div>
 
-        <!-- Usage Info -->
-        <div class="card info-card-small">
-          <h3>How to Use</h3>
-          <ul class="usage-list">
-            <li>
-              <strong>Click extension icon</strong> - Quick save from popup
-            </li>
-            <li>
-              <strong>Right-click page</strong> - Select "Save to Vault"
-            </li>
-            <li>
-              <strong>Keyboard shortcut</strong> - 
-              <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>S</kbd> (Mac) or 
-              <kbd>Ctrl</kbd> <kbd>⇧</kbd> <kbd>S</kbd> (Windows/Linux)
-            </li>
-          </ul>
+        <!-- Status Message -->
+        <div id="statusMessage" class="status-message" style="display: none">
+          <span id="statusText"></span>
         </div>
       </div>
 
-      <!-- Status Message -->
-      <div id="statusMessage" class="status-message" style="display: none;">
-        <span id="statusText"></span>
+      <!-- Footer -->
+      <div class="footer">
+        <p>Caddy Extension v1.0.0</p>
+        <a href="#" id="openCaddyBtn" class="footer-link">Open Caddy Web App</a>
       </div>
     </div>
 
-    <!-- Footer -->
-    <div class="footer">
-      <p>Vault Extension v1.0.0</p>
-      <a href="#" id="openVaultBtn" class="footer-link">Open Vault Web App</a>
-    </div>
-  </div>
-
-  <script src="options.js"></script>
-</body>
+    <script src="options.js"></script>
+  </body>
 </html>

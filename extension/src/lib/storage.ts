@@ -4,12 +4,12 @@
 
 export interface ExtensionSettings {
   apiToken?: string;
-  vaultUrl?: string;
+  caddyUrl?: string;
   userEmail?: string;
 }
 
 // Default to production URL
-const DEFAULT_VAULT_URL = "https://vault-theta-lac.vercel.app";
+const DEFAULT_CADDY_URL = "https://caddy-theta-lac.vercel.app";
 
 /**
  * Get extension settings from Chrome storage
@@ -19,7 +19,7 @@ export async function getSettings(): Promise<ExtensionSettings> {
     chrome.storage.sync.get(
       {
         apiToken: "",
-        vaultUrl: DEFAULT_VAULT_URL,
+        caddyUrl: DEFAULT_CADDY_URL,
         userEmail: "",
       },
       (items) => {
@@ -60,10 +60,10 @@ export async function getApiToken(): Promise<string | undefined> {
 }
 
 /**
- * Get Vault URL
+ * Get Caddy URL
  */
-export async function getVaultUrl(): Promise<string> {
+export async function getCaddyUrl(): Promise<string> {
   const settings = await getSettings();
-  return settings.vaultUrl || DEFAULT_VAULT_URL;
+  return settings.caddyUrl || DEFAULT_CADDY_URL;
 }
 

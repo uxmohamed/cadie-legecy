@@ -1,20 +1,21 @@
-/* Vault Save Overlay */
-#vault-save-overlay {
+/* Caddy Save Overlay */
+#caddy-save-overlay {
   position: fixed !important;
   top: 24px !important;
   right: 24px !important;
   z-index: 2147483647 !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
-  animation: vaultSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif !important;
+  animation: caddySlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
   pointer-events: none !important;
 }
 
-#vault-save-overlay.vault-hiding {
-  animation: vaultSlideOut 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+#caddy-save-overlay.caddy-hiding {
+  animation: caddySlideOut 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   opacity: 0;
 }
 
-.vault-overlay-content {
+.caddy-overlay-content {
   background: white !important;
   border-radius: 16px !important;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1) !important;
@@ -26,7 +27,7 @@
   pointer-events: auto !important;
 }
 
-.vault-overlay-icon {
+.caddy-overlay-icon {
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -38,21 +39,21 @@
   transition: background-color 0.3s ease;
 }
 
-.vault-overlay-icon svg {
+.caddy-overlay-icon svg {
   width: 28px;
   height: 28px;
 }
 
-.vault-spinner {
+.caddy-spinner {
   width: 28px;
   height: 28px;
   border: 3px solid #e5e7eb;
   border-top-color: #3b82f6;
   border-radius: 50%;
-  animation: vaultSpin 0.7s linear infinite;
+  animation: caddySpin 0.7s linear infinite;
 }
 
-.vault-overlay-text {
+.caddy-overlay-text {
   font-size: 17px;
   font-weight: 600;
   color: #111827;
@@ -60,7 +61,7 @@
   letter-spacing: -0.01em;
 }
 
-@keyframes vaultSlideIn {
+@keyframes caddySlideIn {
   from {
     opacity: 0;
     transform: translateX(8px);
@@ -71,7 +72,7 @@
   }
 }
 
-@keyframes vaultSlideOut {
+@keyframes caddySlideOut {
   from {
     opacity: 1;
     transform: translateX(0);
@@ -82,9 +83,8 @@
   }
 }
 
-@keyframes vaultSpin {
+@keyframes caddySpin {
   to {
     transform: rotate(360deg);
   }
 }
-
