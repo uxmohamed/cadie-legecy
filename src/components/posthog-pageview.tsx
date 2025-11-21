@@ -26,7 +26,7 @@ export function PostHogPageView() {
         posthog.init(key, {
           api_host: host || 'https://eu.i.posthog.com',
           defaults: '2025-05-24',
-          loaded: (posthog) => {
+          loaded: () => {
             if (process.env.NODE_ENV === 'development') {
               console.log('[PostHog] Initialized successfully');
             }
