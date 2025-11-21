@@ -55,6 +55,19 @@ export default function Home() {
     return () => subscription.unsubscribe();
   }, [router]);
 
+  // Reusable function to refresh links from server
+  const refreshLinks = React.useCallback(async () => {
+    try {
+      const response = await fetch("/api/links?is_archived=false");
+      if (response.ok) {
+        const data = await response.json();
+        setLinks(data.links || []);
+      }
+    } catch (error) {
+      console.error("Error refreshing links:", error);
+    }
+  }, []);
+
   React.useEffect(() => {
     if (!user) return;
 
@@ -120,19 +133,9 @@ export default function Home() {
     } catch (error) {
       console.error("Error deleting link:", error);
       showToast("Failed to delete link", "error");
-      
-      // Refresh links on error to restore the item
-      try {
-        const response = await fetch("/api/links?is_archived=false");
-        if (response.ok) {
-          const data = await response.json();
-          setLinks(data.links || []);
-        }
-      } catch (refreshError) {
-        console.error("Error refreshing links:", refreshError);
-      }
+      await refreshLinks();
     }
-  }, [showToast]);
+  }, [showToast, refreshLinks]);
 
   const handleArchiveLink = React.useCallback(async (id: string) => {
     // Optimistic update - remove immediately
@@ -153,19 +156,9 @@ export default function Home() {
     } catch (error) {
       console.error("Error archiving link:", error);
       showToast("Failed to archive link", "error");
-      
-      // Refresh links on error to restore the item
-      try {
-        const response = await fetch("/api/links?is_archived=false");
-        if (response.ok) {
-          const data = await response.json();
-          setLinks(data.links || []);
-        }
-      } catch (refreshError) {
-        console.error("Error refreshing links:", refreshError);
-      }
+      await refreshLinks();
     }
-  }, [showToast]);
+  }, [showToast, refreshLinks]);
 
   const handleCopyUrl = async (url: string) => {
     try {
@@ -238,19 +231,9 @@ export default function Home() {
     } catch (error) {
       console.error("Error pinning link:", error);
       showToast("Failed to pin link", "error");
-
-      // Refresh links on error to restore the item
-      try {
-        const response = await fetch("/api/links?is_archived=false");
-        if (response.ok) {
-          const data = await response.json();
-          setLinks(data.links || []);
-        }
-      } catch (refreshError) {
-        console.error("Error refreshing links:", refreshError);
-      }
+      await refreshLinks();
     }
-  }, [showToast]);
+  }, [showToast, refreshLinks]);
 
   const handleUnpinLink = React.useCallback(async (id: string) => {
     // Optimistic update
@@ -275,19 +258,9 @@ export default function Home() {
     } catch (error) {
       console.error("Error unpinning link:", error);
       showToast("Failed to unpin link", "error");
-
-      // Refresh links on error to restore the item
-      try {
-        const response = await fetch("/api/links?is_archived=false");
-        if (response.ok) {
-          const data = await response.json();
-          setLinks(data.links || []);
-        }
-      } catch (refreshError) {
-        console.error("Error refreshing links:", refreshError);
-      }
+      await refreshLinks();
     }
-  }, [showToast]);
+  }, [showToast, refreshLinks]);
 
   const handleSubmit = async (items: DetectedContent[]) => {
     if (items.length === 0) return;

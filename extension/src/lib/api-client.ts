@@ -55,16 +55,10 @@ export async function saveLink(request: SaveLinkRequest): Promise<ApiResponse> {
 
     const data = await response.json();
     
-    // Check if this was a duplicate
-    const isDuplicate = data.duplicate === true;
-    if (isDuplicate) {
-      console.log("Link already exists in Caddy");
-    }
-    
     return {
       success: true,
       data,
-      duplicate: isDuplicate,
+      duplicate: data.duplicate === true,
     };
   } catch (error) {
     console.error("API Error:", error);

@@ -113,34 +113,3 @@ export async function extractMetadata(url: string): Promise<LinkMetadata> {
   }
 }
 
-export function cleanUrl(url: string): string {
-  try {
-    const urlObj = new URL(url);
-    
-    // Remove common tracking parameters
-    const trackingParams = [
-      "utm_source",
-      "utm_medium",
-      "utm_campaign",
-      "utm_term",
-      "utm_content",
-      "fbclid",
-      "gclid",
-      "msclkid",
-      "mc_cid",
-      "mc_eid",
-      "_ga",
-      "ref",
-      "source",
-    ];
-
-    trackingParams.forEach((param) => {
-      urlObj.searchParams.delete(param);
-    });
-
-    return urlObj.toString();
-  } catch {
-    return url;
-  }
-}
-

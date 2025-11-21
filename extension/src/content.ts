@@ -5,56 +5,43 @@
  * - Capture selected text
  */
 
-console.log("🚀 Caddy extension content script loaded on:", window.location.href);
-
 // Track overlay element
 let overlayElement: HTMLElement | null = null;
 let hideTimeout: number | null = null;
 
 // Listen for messages from background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log("📬 Content script received message:", request);
-  
   if (request.action === "getSelectedText") {
     const selectedText = window.getSelection()?.toString() || "";
-    console.log("📝 Selected text requested:", selectedText);
     sendResponse({ selectedText });
   }
-  
+
   if (request.action === "showSaveOverlay") {
-    console.log("🎨 showSaveOverlay triggered with state:", request.state);
     const { state, message } = request;
     if (state === "loading") {
-      console.log("⏳ Showing loading overlay");
       showOverlay("Saving to Caddy...", "loading");
     } else if (state === "success") {
-      console.log("✅ Showing success overlay");
       showOverlay("Saved to Caddy ✨", "success");
       // Auto-hide after 2.5 seconds
       hideTimeout = window.setTimeout(() => {
-        console.log("⏱️ Auto-hiding success overlay");
         hideOverlay();
       }, 2500);
     } else if (state === "duplicate") {
-      console.log("🔄 Showing duplicate overlay");
       showOverlay("Already in Caddy!", "duplicate");
       // Auto-hide after 2.5 seconds
       hideTimeout = window.setTimeout(() => {
-        console.log("⏱️ Auto-hiding duplicate overlay");
         hideOverlay();
       }, 2500);
     } else if (state === "error") {
-      console.error("❌ Showing error overlay:", message);
       showOverlay(message || "Failed to save", "error");
       // Auto-hide after 3 seconds
       hideTimeout = window.setTimeout(() => {
-        console.log("⏱️ Auto-hiding error overlay");
         hideOverlay();
       }, 3000);
     }
     sendResponse({ success: true });
   }
-  
+
   return true; // Keep message channel open for async response
 });
 
@@ -62,8 +49,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
  * Show the save overlay
  */
 function showOverlay(text: string, state: "loading" | "success" | "error" | "duplicate") {
-  console.log("🖼️ showOverlay function called:", text, state);
-  
   // Clear any existing hide timeout
   if (hideTimeout) {
     clearTimeout(hideTimeout);
@@ -72,21 +57,20 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
 
   // Remove existing overlay if present
   if (overlayElement) {
-    console.log("🗑️ Removing existing overlay");
     overlayElement.remove();
   }
 
   // Create overlay
   overlayElement = document.createElement("div");
   overlayElement.id = "caddy-save-overlay";
-  
+
   const content = document.createElement("div");
   content.className = "caddy-overlay-content";
-  
+
   // Icon
   const icon = document.createElement("div");
   icon.className = "caddy-overlay-icon";
-  
+
   if (state === "loading") {
     const spinner = document.createElement("div");
     spinner.className = "caddy-spinner";
@@ -116,29 +100,26 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
     `;
     icon.style.background = "#fee2e2";
   }
-  
+
   // Text
   const textEl = document.createElement("div");
   textEl.className = "caddy-overlay-text";
   textEl.textContent = text;
-  
+
   content.appendChild(icon);
   content.appendChild(textEl);
   overlayElement.appendChild(content);
-  
-  console.log("✨ Appending overlay to document.body");
+
   try {
     // Try appending to body first
     if (document.body) {
       document.body.appendChild(overlayElement);
-      console.log("✅ Overlay successfully added to body");
     } else {
       // Fallback to documentElement if body doesn't exist
       document.documentElement.appendChild(overlayElement);
-      console.log("✅ Overlay successfully added to documentElement");
     }
   } catch (error) {
-    console.error("❌ Failed to add overlay to DOM:", error);
+    console.error("Failed to add overlay to DOM:", error);
   }
 }
 
@@ -161,7 +142,6 @@ function hideOverlay() {
 window.addEventListener("caddyAuthSuccess", (event: any) => {
   const detail = event.detail;
   if (detail && detail.token) {
-    console.log("Caddy auth success event received", detail);
     // Send auth data to background script
     chrome.runtime.sendMessage({
       type: "CADDY_AUTH_SUCCESS",
@@ -175,8 +155,6 @@ window.addEventListener("caddyAuthSuccess", (event: any) => {
     }, (response) => {
       if (chrome.runtime.lastError) {
         console.error("Error sending auth message:", chrome.runtime.lastError);
-      } else {
-        console.log("Auth message sent successfully", response);
       }
     });
   }
@@ -186,14 +164,14 @@ window.addEventListener("caddyAuthSuccess", (event: any) => {
 if (window.location.pathname.includes("/extension/authorize")) {
   // Check immediately
   checkForAuthData();
-  
+
   // Also poll in case content script loads after the event
   const pollInterval = setInterval(() => {
     if (checkForAuthData()) {
       clearInterval(pollInterval);
     }
   }, 500);
-  
+
   // Stop polling after 10 seconds
   setTimeout(() => clearInterval(pollInterval), 10000);
 }
@@ -204,7 +182,6 @@ function checkForAuthData(): boolean {
     try {
       const authData = JSON.parse(authDataElement.getAttribute("data-auth") || "{}");
       if (authData.token) {
-        console.log("Found auth data in DOM, sending to background", authData);
         chrome.runtime.sendMessage({
           type: "CADDY_AUTH_SUCCESS",
           data: {
@@ -217,8 +194,6 @@ function checkForAuthData(): boolean {
         }, (response) => {
           if (chrome.runtime.lastError) {
             console.error("Error sending auth message:", chrome.runtime.lastError);
-          } else {
-            console.log("Auth message sent successfully", response);
           }
         });
         return true;
@@ -229,6 +204,3 @@ function checkForAuthData(): boolean {
   }
   return false;
 }
-
-// Future: Add selection handlers, image detection, etc.
-
