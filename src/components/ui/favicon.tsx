@@ -21,7 +21,8 @@ interface FaviconProps {
  */
 export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
   const [currentSource, setCurrentSource] = React.useState(0);
-  const [hasError, setHasError] = React.useState(false);
+  const [isLoaded, setIsLoaded] = React.useState(false);
+  const [allFailed, setAllFailed] = React.useState(false);
 
   // Build fallback chain with multiple high-quality sources
   const sources = React.useMemo(() => {
@@ -32,19 +33,19 @@ export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
       fallbacks.push(url);
     }
     
-    // 2. Try Clearbit Logo API (very high quality, supports many domains)
-    fallbacks.push(`https://logo.clearbit.com/${domain}`);
-    
-    // 3. Google favicon with maximum size (256x256)
-    fallbacks.push(`https://www.google.com/s2/favicons?domain=${domain}&sz=256`);
-    
-    // 4. Try direct favicon.ico
+    // 2. Try direct favicon.ico first (most reliable for standard sites)
     try {
       const urlObj = new URL(`https://${domain}`);
       fallbacks.push(`${urlObj.protocol}//${urlObj.host}/favicon.ico`);
     } catch {
       // If domain is invalid, skip this fallback
     }
+    
+    // 3. Google favicon with maximum size (256x256) - very reliable
+    fallbacks.push(`https://www.google.com/s2/favicons?domain=${domain}&sz=256`);
+    
+    // 4. Try Clearbit Logo API (very high quality, supports many domains)
+    fallbacks.push(`https://logo.clearbit.com/${domain}`);
     
     // 5. DuckDuckGo icon service
     fallbacks.push(`https://icons.duckduckgo.com/ip3/${domain}.ico`);
@@ -58,47 +59,75 @@ export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
   // Reset state when URL/domain changes
   React.useEffect(() => {
     setCurrentSource(0);
-    setHasError(false);
+    setIsLoaded(false);
+    setAllFailed(false);
   }, [url, domain]);
 
   const handleError = React.useCallback(() => {
-    // Try next source in the fallback chain
-    if (currentSource < sources.length - 1) {
+    // Try next source in the fallback chain, but limit retries to 3 attempts
+    if (currentSource < Math.min(2, sources.length - 1)) {
       setCurrentSource((prev) => prev + 1);
     } else {
-      // All sources failed, show error state
-      setHasError(true);
+      // Max retries reached, keep showing placeholder
+      setAllFailed(true);
     }
   }, [currentSource, sources.length]);
 
-  // If all sources failed, show placeholder
-  if (hasError || sources.length === 0) {
+  const handleLoad = React.useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    // Verify the image actually loaded (not a broken image icon)
+    const img = e.currentTarget;
+    if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+      setIsLoaded(true);
+    } else {
+      handleError();
+    }
+  }, [handleError]);
+
+  // If all attempts failed, just show placeholder
+  if (allFailed) {
     return (
       <div 
         className={cn(
-          "h-5 w-5 flex-shrink-0 rounded bg-gradient-to-br from-neutral-200 to-neutral-300",
+          "h-5 w-5 flex-shrink-0 rounded bg-gray-200",
           className
         )} 
       />
     );
   }
 
+  // Show placeholder while loading, then fade in image once loaded
   return (
-    <img
-      src={sources[currentSource]}
-      alt={alt}
-      className={cn("h-5 w-5 flex-shrink-0 rounded object-cover antialiased", className)}
-      onError={handleError}
-      loading="lazy"
-      style={{ 
-        // High quality image rendering
-        imageRendering: "-webkit-optimize-contrast",
-        // Hardware acceleration for smoother rendering
-        transform: "translateZ(0)",
-        // Ensure image is scaled smoothly
-        backfaceVisibility: "hidden",
-      }}
-    />
+    <div className="relative h-5 w-5 flex-shrink-0">
+      {/* Always show placeholder, hide when image loads */}
+      <div 
+        className={cn(
+          "absolute inset-0 rounded bg-gray-300",
+          isLoaded && "hidden",
+          className
+        )} 
+      />
+      <img
+        key={`${domain}-${currentSource}`}
+        src={sources[currentSource]}
+        alt={alt}
+        className={cn(
+          "h-5 w-5 flex-shrink-0 rounded object-cover antialiased transition-opacity duration-200",
+          isLoaded ? "opacity-100" : "opacity-0",
+          className
+        )}
+        onError={handleError}
+        onLoad={handleLoad}
+        loading="eager"
+        style={{ 
+          // High quality image rendering
+          imageRendering: "-webkit-optimize-contrast",
+          // Hardware acceleration for smoother rendering
+          transform: "translateZ(0)",
+          // Ensure image is scaled smoothly
+          backfaceVisibility: "hidden",
+        }}
+      />
+    </div>
   );
 }
 
