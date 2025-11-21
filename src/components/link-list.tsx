@@ -36,14 +36,14 @@ interface LinkListProps {
   onUnpin?: (id: string) => void;
 }
 
-export function LinkList({ 
-  links, 
-  onDelete, 
-  onArchive, 
-  onEdit, 
+export function LinkList({
+  links,
+  onDelete,
+  onArchive,
+  onEdit,
   onCopyUrl,
   onPin,
-  onUnpin
+  onUnpin,
 }: LinkListProps) {
   const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null);
   const [contextMenu, setContextMenu] = React.useState<{
@@ -51,18 +51,24 @@ export function LinkList({
     y: number;
     link: Link;
   } | null>(null);
-  
+
   // Selection state
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [isDragging, setIsDragging] = React.useState(false);
-  const [dragStartIndex, setDragStartIndex] = React.useState<number | null>(null);
-  const [dragCurrentIndex, setDragCurrentIndex] = React.useState<number | null>(null);
-  const [lastSelectedIndex, setLastSelectedIndex] = React.useState<number | null>(null);
-  
-  const mouseDownPos = React.useRef<{ x: number, y: number } | null>(null);
+  const [dragStartIndex, setDragStartIndex] = React.useState<number | null>(
+    null
+  );
+  const [dragCurrentIndex, setDragCurrentIndex] = React.useState<number | null>(
+    null
+  );
+  const [lastSelectedIndex, setLastSelectedIndex] = React.useState<
+    number | null
+  >(null);
+
+  const mouseDownPos = React.useRef<{ x: number; y: number } | null>(null);
   const wasDraggingRef = React.useRef(false);
   const shouldOpenRef = React.useRef(false);
-  
+
   const linkRefs = React.useRef<(HTMLAnchorElement | null)[]>([]);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
@@ -70,31 +76,34 @@ export function LinkList({
 
   // Helper to get flattened list of links for index calculation
   const displayLinks = React.useMemo(() => {
-    const pinned = links.filter(l => l.is_pinned);
-    const unpinned = links.filter(l => !l.is_pinned);
+    const pinned = links.filter((l) => l.is_pinned);
+    const unpinned = links.filter((l) => !l.is_pinned);
     return [...pinned, ...unpinned];
   }, [links]);
 
   React.useEffect(() => {
     linkRefs.current = linkRefs.current.slice(0, displayLinks.length);
-    
-    if (displayLinks.length < previousLengthRef.current && focusedIndex !== null) {
+
+    if (
+      displayLinks.length < previousLengthRef.current &&
+      focusedIndex !== null
+    ) {
       const newFocusIndex = Math.min(focusedIndex, displayLinks.length - 1);
       setFocusedIndex(newFocusIndex);
     }
 
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const next = new Set(prev);
       let changed = false;
       for (const id of next) {
-        if (!displayLinks.find(l => l.id === id)) {
+        if (!displayLinks.find((l) => l.id === id)) {
           next.delete(id);
           changed = true;
         }
       }
       return changed ? next : prev;
     });
-    
+
     previousLengthRef.current = displayLinks.length;
   }, [displayLinks.length, focusedIndex, displayLinks]);
 
@@ -121,33 +130,33 @@ export function LinkList({
         setDragStartIndex(null);
         setDragCurrentIndex(null);
         setTimeout(() => {
-            wasDraggingRef.current = false;
+          wasDraggingRef.current = false;
         }, 0);
       } else {
-          wasDraggingRef.current = false;
+        wasDraggingRef.current = false;
       }
     };
 
     const handleMouseDown = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (
-        selectedIds.size > 0 && 
-        !target.closest('.group') &&
-        !target.closest('.fixed.bottom-8') &&
+        selectedIds.size > 0 &&
+        !target.closest(".group") &&
+        !target.closest(".fixed.bottom-8") &&
         !target.closest('[role="menu"]')
       ) {
         setSelectedIds(new Set());
       }
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    window.addEventListener('mousedown', handleMouseDown);
-    
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("mousedown", handleMouseDown);
+
     return () => {
-        window.removeEventListener('mousemove', handleMouseMove);
-        window.removeEventListener('mouseup', handleMouseUp);
-        window.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("mousedown", handleMouseDown);
     };
   }, [isDragging, selectedIds.size]);
 
@@ -165,7 +174,7 @@ export function LinkList({
     e.preventDefault();
     if (!selectedIds.has(link.id)) {
       if (!e.shiftKey && !e.metaKey && !e.ctrlKey) {
-         setSelectedIds(new Set());
+        setSelectedIds(new Set());
       }
       setContextMenu({ x: e.clientX, y: e.clientY, link });
     } else {
@@ -173,28 +182,32 @@ export function LinkList({
     }
   };
 
-  const handleRowClick = (e: React.MouseEvent<HTMLDivElement>, link: Link, index: number) => {
+  const handleRowClick = (
+    e: React.MouseEvent<HTMLDivElement>,
+    link: Link,
+    index: number
+  ) => {
     // Don't handle click if it's on a button or menu
     if ((e.target as HTMLElement).closest('button, [role="menuitem"]')) {
-        return;
+      return;
     }
 
     const isColor = link.content_type === "color";
     const isRichText = link.content_type === "text";
-    
+
     // If modifiers or drag: handle selection only
     if (e.metaKey || e.shiftKey || wasDraggingRef.current) {
       e.preventDefault();
-      
+
       if (wasDraggingRef.current) return;
 
       if (e.metaKey) {
         const newSet = new Set(selectedIds);
         if (newSet.has(link.id)) {
-            newSet.delete(link.id);
+          newSet.delete(link.id);
         } else {
-            newSet.add(link.id);
-            setLastSelectedIndex(index);
+          newSet.add(link.id);
+          setLastSelectedIndex(index);
         }
         setSelectedIds(newSet);
       } else if (e.shiftKey && lastSelectedIndex !== null) {
@@ -202,11 +215,11 @@ export function LinkList({
         const end = Math.max(lastSelectedIndex, index);
         const newSet = new Set(selectedIds);
         if (!e.metaKey) {
-           newSet.clear();
+          newSet.clear();
         }
-        
+
         for (let i = start; i <= end; i++) {
-            newSet.add(displayLinks[i].id);
+          newSet.add(displayLinks[i].id);
         }
         setSelectedIds(newSet);
       }
@@ -215,103 +228,103 @@ export function LinkList({
 
     // Single click with no modifiers and no drag: Open
     if (shouldOpenRef.current) {
-        if (isColor) {
-            copyToClipboard(link.color_value || link.title);
-        } else if (isRichText) {
-            onEdit?.(link);
-        } else {
-            window.open(link.url, '_blank', 'noopener,noreferrer');
-        }
+      if (isColor) {
+        copyToClipboard(link.color_value || link.title);
+      } else if (isRichText) {
+        onEdit?.(link);
+      } else {
+        window.open(link.url, "_blank", "noopener,noreferrer");
+      }
     }
-    
+
     shouldOpenRef.current = false;
   };
 
   const handleMouseDown = (index: number, e: React.MouseEvent) => {
     // Don't start interactions if clicking buttons
-     if ((e.target as HTMLElement).closest('button, [role="menuitem"]')) return;
+    if ((e.target as HTMLElement).closest('button, [role="menuitem"]')) return;
 
     if (e.shiftKey || e.metaKey || e.ctrlKey) {
-        e.preventDefault(); 
+      e.preventDefault();
     }
-    
+
     mouseDownPos.current = { x: e.clientX, y: e.clientY };
     setDragStartIndex(index);
     setDragCurrentIndex(index);
-    
+
     // If no modifiers, mark that we should potentially open on click
     if (!e.shiftKey && !e.metaKey && !e.ctrlKey) {
-        shouldOpenRef.current = true;
+      shouldOpenRef.current = true;
     } else {
-        shouldOpenRef.current = false;
+      shouldOpenRef.current = false;
     }
-    
+
     // Handle immediate modifier selection logic
     if (e.shiftKey || e.metaKey) {
-         if (e.shiftKey) {
-            if (lastSelectedIndex !== null) {
-                const start = Math.min(lastSelectedIndex, index);
-                const end = Math.max(lastSelectedIndex, index);
-                const newSet = new Set(selectedIds);
-                if (!e.metaKey) newSet.clear();
-                for (let i = start; i <= end; i++) {
-                    newSet.add(displayLinks[i].id);
-                }
-                setSelectedIds(newSet);
-            } else {
-                 const newSet = new Set(selectedIds);
-                 newSet.add(displayLinks[index].id);
-                 setSelectedIds(newSet);
-                 setLastSelectedIndex(index);
-            }
-        } else if (e.metaKey) {
-            const id = displayLinks[index].id;
-            const newSet = new Set(selectedIds);
-            if (newSet.has(id)) newSet.delete(id);
-            else {
-                newSet.add(id);
-                setLastSelectedIndex(index);
-            }
-            setSelectedIds(newSet);
+      if (e.shiftKey) {
+        if (lastSelectedIndex !== null) {
+          const start = Math.min(lastSelectedIndex, index);
+          const end = Math.max(lastSelectedIndex, index);
+          const newSet = new Set(selectedIds);
+          if (!e.metaKey) newSet.clear();
+          for (let i = start; i <= end; i++) {
+            newSet.add(displayLinks[i].id);
+          }
+          setSelectedIds(newSet);
+        } else {
+          const newSet = new Set(selectedIds);
+          newSet.add(displayLinks[index].id);
+          setSelectedIds(newSet);
+          setLastSelectedIndex(index);
         }
-    } 
-    
+      } else if (e.metaKey) {
+        const id = displayLinks[index].id;
+        const newSet = new Set(selectedIds);
+        if (newSet.has(id)) newSet.delete(id);
+        else {
+          newSet.add(id);
+          setLastSelectedIndex(index);
+        }
+        setSelectedIds(newSet);
+      }
+    }
+
     setFocusedIndex(index);
   };
 
   const handleMouseEnter = (index: number) => {
     if (isDragging && dragStartIndex !== null) {
-        setDragCurrentIndex(index);
-        
-        const start = Math.min(dragStartIndex, index);
-        const end = Math.max(dragStartIndex, index);
-        
-        const newSet = new Set<string>();
-        for (let i = start; i <= end; i++) {
-            newSet.add(displayLinks[i].id);
-        }
-        setSelectedIds(newSet);
+      setDragCurrentIndex(index);
+
+      const start = Math.min(dragStartIndex, index);
+      const end = Math.max(dragStartIndex, index);
+
+      const newSet = new Set<string>();
+      for (let i = start; i <= end; i++) {
+        newSet.add(displayLinks[i].id);
+      }
+      setSelectedIds(newSet);
     }
     setFocusedIndex(index);
   };
 
   // Batch Actions
   const handleBatchArchive = () => {
-    selectedIds.forEach(id => onArchive?.(id));
+    selectedIds.forEach((id) => onArchive?.(id));
     setSelectedIds(new Set());
   };
 
   const handleBatchDelete = () => {
-    selectedIds.forEach(id => onDelete?.(id));
+    selectedIds.forEach((id) => onDelete?.(id));
     setSelectedIds(new Set());
   };
-  
+
   const handleBatchPin = () => {
-      selectedIds.forEach(id => onPin?.(id));
+    selectedIds.forEach((id) => onPin?.(id));
   };
 
   const handleBatchUnpin = () => {
-      selectedIds.forEach(id => onUnpin?.(id));
+    selectedIds.forEach((id) => onUnpin?.(id));
   };
 
   const clearSelection = () => {
@@ -321,33 +334,36 @@ export function LinkList({
   React.useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      const isInputFocused = target.tagName === "INPUT" || target.tagName === "TEXTAREA";
-      
-      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
-          return; 
+      const isInputFocused =
+        target.tagName === "INPUT" || target.tagName === "TEXTAREA";
+
+      if ((e.metaKey || e.ctrlKey) && e.key === "f") {
+        return;
       }
 
       if ((e.key === "ArrowDown" || e.key === "ArrowUp") && !isInputFocused) {
         e.preventDefault();
-        
+
         if (focusedIndex === null) {
           setFocusedIndex(0);
           linkRefs.current[0]?.focus();
         } else {
           if (e.key === "ArrowDown") {
-            const nextIndex = focusedIndex < displayLinks.length - 1 ? focusedIndex + 1 : 0;
+            const nextIndex =
+              focusedIndex < displayLinks.length - 1 ? focusedIndex + 1 : 0;
             setFocusedIndex(nextIndex);
             linkRefs.current[nextIndex]?.focus();
           } else if (e.key === "ArrowUp") {
-            const prevIndex = focusedIndex > 0 ? focusedIndex - 1 : displayLinks.length - 1;
+            const prevIndex =
+              focusedIndex > 0 ? focusedIndex - 1 : displayLinks.length - 1;
             setFocusedIndex(prevIndex);
             linkRefs.current[prevIndex]?.focus();
           }
         }
       }
-      
+
       if (e.key === "Escape") {
-          clearSelection();
+        clearSelection();
       }
 
       if (e.key === "Home" && !isInputFocused) {
@@ -362,17 +378,17 @@ export function LinkList({
       }
 
       if (e.metaKey && selectedIds.size > 0) {
-          if (e.key === 'Backspace') {
-             e.preventDefault();
-             if (e.shiftKey) handleBatchDelete();
-             else handleBatchArchive();
-          }
-          
-          if (e.key === 'a') {
-              e.preventDefault();
-              const newSet = new Set(displayLinks.map(l => l.id));
-              setSelectedIds(newSet);
-          }
+        if (e.key === "Backspace") {
+          e.preventDefault();
+          if (e.shiftKey) handleBatchDelete();
+          else handleBatchArchive();
+        }
+
+        if (e.key === "a") {
+          e.preventDefault();
+          const newSet = new Set(displayLinks.map((l) => l.id));
+          setSelectedIds(newSet);
+        }
       }
     };
 
@@ -444,20 +460,20 @@ export function LinkList({
     );
   }
 
-  const pinnedLinks = links.filter(link => link.is_pinned);
-  const unpinnedLinks = links.filter(link => !link.is_pinned);
+  const pinnedLinks = links.filter((link) => link.is_pinned);
+  const unpinnedLinks = links.filter((link) => !link.is_pinned);
 
   const renderLink = (link: Link, index: number, isPinned: boolean) => {
     const isColor = link.content_type === "color";
     const isRichText = link.content_type === "text";
     const isSelected = selectedIds.has(link.id);
-    
-    const richTextPreview = isRichText 
+
+    const richTextPreview = isRichText
       ? extractTextFromRichText(link.rich_text_content) || link.title
       : null;
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if ((e.metaKey || e.ctrlKey)) {
+      if (e.metaKey || e.ctrlKey) {
         if (e.key === "c") {
           e.preventDefault();
           onCopyUrl?.(link.url);
@@ -492,11 +508,11 @@ export function LinkList({
         onContextMenu={(e) => handleContextMenu(e, link)}
         className={cn(
           "group grid grid-cols-[1fr_auto_auto] items-center gap-4 rounded-lg px-3 py-2 transition-colors select-none cursor-pointer",
-          isSelected 
-            ? "bg-neutral-200" 
-            : focusedIndex === index 
-              ? "bg-neutral-100" 
-              : "hover:bg-neutral-100"
+          isSelected
+            ? "bg-neutral-200"
+            : focusedIndex === index
+            ? "bg-neutral-100"
+            : "hover:bg-neutral-100"
         )}
       >
         <a
@@ -507,8 +523,8 @@ export function LinkList({
           target={isColor || isRichText ? undefined : "_blank"}
           rel={isColor || isRichText ? undefined : "noopener noreferrer"}
           onClick={(e) => {
-              // Prevent anchor default to let parent handle all navigation
-              e.preventDefault();
+            // Prevent anchor default to let parent handle all navigation
+            e.preventDefault();
           }}
           onFocus={() => setFocusedIndex(index)}
           className={cn(
@@ -527,14 +543,13 @@ export function LinkList({
               <FileText className="h-3.5 w-3.5 text-neutral-500" />
             </div>
           ) : (
-            <Favicon 
-              url={link.favicon_url || ""}
-              domain={link.domain}
-            />
+            <Favicon url={link.favicon_url || ""} domain={link.domain} />
           )}
           <div className="min-w-0 flex-1 select-none">
             <div className="truncate text-[15px] text-neutral-900 select-none">
-              {isRichText && richTextPreview ? richTextPreview : (link.title || link.url)}
+              {isRichText && richTextPreview
+                ? richTextPreview
+                : link.title || link.url}
             </div>
             <div className="truncate text-sm text-neutral-400 select-none">
               {isRichText ? "Rich text" : link.domain}
@@ -544,10 +559,12 @@ export function LinkList({
         <div className="text-sm text-neutral-400 select-none">
           {formatDate(new Date(link.created_at))}
         </div>
-        <div className={cn(
-          "flex items-center gap-1 transition-opacity",
-          (focusedIndex === index || isSelected) ? "opacity-100" : "opacity-0"
-        )}>
+        <div
+          className={cn(
+            "flex items-center gap-1 transition-opacity",
+            focusedIndex === index || isSelected ? "opacity-100" : "opacity-0"
+          )}
+        >
           {isPinned && (
             <button
               onClick={(e) => {
@@ -563,13 +580,11 @@ export function LinkList({
           )}
           <Menu>
             <MenuTrigger>
-              <button className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-300 transition-colors">
-                <MoreHorizontal className="h-4 w-4" />
-              </button>
+              {/* <button className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-300 transition-colors"> */}
+              <MoreHorizontal className="h-4 w-4" />
+              {/* </button> */}
             </MenuTrigger>
-            <MenuPopup>
-              {renderMenuContent(link)}
-            </MenuPopup>
+            <MenuPopup>{renderMenuContent(link)}</MenuPopup>
           </Menu>
         </div>
       </div>
@@ -584,7 +599,7 @@ export function LinkList({
         <div className="w-10"></div>
         <div className="absolute -bottom-4 left-0 right-0 h-4 bg-gradient-to-b from-[#fafafa] to-transparent pointer-events-none" />
       </div>
-      <div className="space-y-0.5 pt-4 relative">
+      <div className="space-y-0.5 py-4 relative">
         {pinnedLinks.length > 0 && (
           <>
             <div className="mb-4 mt-4 text-xs font-semibold text-neutral-500 uppercase tracking-wider select-none">
@@ -600,15 +615,20 @@ export function LinkList({
                 All Links
               </div>
             )}
-            {unpinnedLinks.map((link, index) => renderLink(link, pinnedLinks.length + index, false))}
+            {unpinnedLinks.map((link, index) =>
+              renderLink(link, pinnedLinks.length + index, false)
+            )}
           </>
         )}
       </div>
-      
+
       {contextMenu && (
-        <Menu open={true} onOpenChange={(open) => !open && setContextMenu(null)}>
-          <MenuTrigger 
-            className="fixed w-0 h-0 p-0 m-0 opacity-0 overflow-hidden pointer-events-none" 
+        <Menu
+          open={true}
+          onOpenChange={(open) => !open && setContextMenu(null)}
+        >
+          <MenuTrigger
+            className="fixed w-0 h-0 p-0 m-0 opacity-0 overflow-hidden pointer-events-none"
             style={{ left: contextMenu.x, top: contextMenu.y }}
             aria-hidden="true"
             tabIndex={-1}
@@ -623,52 +643,52 @@ export function LinkList({
 
       {selectedIds.size > 0 && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-white border border-neutral-200 shadow-xl rounded-lg p-1.5 animate-in fade-in slide-in-from-bottom-4 duration-200">
-            <div className="flex items-center gap-2 px-2 border-r border-neutral-200 pr-3 mr-1">
-                <span className="text-sm font-medium text-neutral-900 select-none">
-                    {selectedIds.size} selected
-                </span>
-                <button 
-                    onClick={clearSelection}
-                    className="text-neutral-400 hover:text-neutral-900 transition-colors"
-                >
-                    <X className="h-4 w-4" />
-                </button>
-            </div>
-            
-            <button 
-                onClick={handleBatchArchive}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors select-none"
+          <div className="flex items-center gap-2 px-2 border-r border-neutral-200 pr-3 mr-1">
+            <span className="text-sm font-medium text-neutral-900 select-none">
+              {selectedIds.size} selected
+            </span>
+            <button
+              onClick={clearSelection}
+              className="text-neutral-400 hover:text-neutral-900 transition-colors"
             >
-                <Archive className="h-4 w-4" />
-                Archive
+              <X className="h-4 w-4" />
             </button>
-            
-             <button 
-                onClick={handleBatchDelete}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors select-none"
-            >
-                <Trash className="h-4 w-4" />
-                Delete
-            </button>
-            
-            <Menu>
-                <MenuTrigger>
-                     <button className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors select-none">
-                         <MoreHorizontal className="h-4 w-4" />
-                         Actions
-                     </button>
-                </MenuTrigger>
-                <MenuPopup align="center" side="top">
-                    <MenuItem onClick={handleBatchPin}>
-                         <Pin className="h-4 w-4" />
-                         Pin Selected
-                    </MenuItem>
-                     <MenuItem onClick={handleBatchUnpin}>
-                         <PinOff className="h-4 w-4" />
-                         Unpin Selected
-                    </MenuItem>
-                </MenuPopup>
-            </Menu>
+          </div>
+
+          <button
+            onClick={handleBatchArchive}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors select-none"
+          >
+            <Archive className="h-4 w-4" />
+            Archive
+          </button>
+
+          <button
+            onClick={handleBatchDelete}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors select-none"
+          >
+            <Trash className="h-4 w-4" />
+            Delete
+          </button>
+
+          <Menu>
+            <MenuTrigger>
+              {/* <button className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors select-none"> */}
+              <MoreHorizontal className="h-4 w-4" />
+              Actions
+              {/* </button> */}
+            </MenuTrigger>
+            <MenuPopup align="center" side="top">
+              <MenuItem onClick={handleBatchPin}>
+                <Pin className="h-4 w-4" />
+                Pin Selected
+              </MenuItem>
+              <MenuItem onClick={handleBatchUnpin}>
+                <PinOff className="h-4 w-4" />
+                Unpin Selected
+              </MenuItem>
+            </MenuPopup>
+          </Menu>
         </div>
       )}
     </div>
