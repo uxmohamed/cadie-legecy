@@ -3,11 +3,7 @@
 import * as React from "react";
 import type { Link } from "@/types";
 import { useToast } from "@/components/ui/toast";
-import {
-  Menu,
-  MenuPopup,
-  MenuTrigger,
-} from "@/components/ui/menu";
+import { Menu, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 
 import { useSelection } from "./use-selection";
 import { useKeyboardNavigation } from "./use-keyboard-navigation";
@@ -27,7 +23,9 @@ export function LinkList({
   onUnpin,
 }: LinkListProps) {
   const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null);
-  const [contextMenu, setContextMenu] = React.useState<ContextMenuState | null>(null);
+  const [contextMenu, setContextMenu] = React.useState<ContextMenuState | null>(
+    null
+  );
 
   const linkRefs = React.useRef<(HTMLAnchorElement | null)[]>([]);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -102,7 +100,9 @@ export function LinkList({
     try {
       await navigator.clipboard.writeText(text);
       showToast(
-        type === "color" ? "Color copied to clipboard" : "URL copied to clipboard",
+        type === "color"
+          ? "Color copied to clipboard"
+          : "URL copied to clipboard",
         "success"
       );
     } catch (error) {
@@ -131,7 +131,7 @@ export function LinkList({
       if (isColor) {
         copyToClipboard(link.color_value || link.title, "color");
       } else if (isRichText) {
-        onEdit?.(link);
+        // Do nothing on click for text items
       } else {
         window.open(link.url, "_blank", "noopener,noreferrer");
       }
@@ -174,7 +174,8 @@ export function LinkList({
                 onClick={handleItemClick}
                 onMouseEnter={handleItemMouseEnter}
                 onMouseLeave={(idx) => {
-                  if (focusedIndex === idx && !isDragging) setFocusedIndex(null);
+                  if (focusedIndex === idx && !isDragging)
+                    setFocusedIndex(null);
                 }}
                 onFocus={setFocusedIndex}
                 onContextMenu={handleContextMenu}
@@ -213,7 +214,8 @@ export function LinkList({
                   onClick={handleItemClick}
                   onMouseEnter={handleItemMouseEnter}
                   onMouseLeave={(idx) => {
-                    if (focusedIndex === idx && !isDragging) setFocusedIndex(null);
+                    if (focusedIndex === idx && !isDragging)
+                      setFocusedIndex(null);
                   }}
                   onFocus={setFocusedIndex}
                   onContextMenu={handleContextMenu}

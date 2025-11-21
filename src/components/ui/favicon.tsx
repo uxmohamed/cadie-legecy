@@ -71,15 +71,29 @@ export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
     }
   }, [currentSource, sources.length]);
 
-  // If all sources failed, show placeholder
+  // If all sources failed, show placeholder with globe icon
   if (hasError || sources.length === 0) {
     return (
-      <div 
+      <div
         className={cn(
-          "h-5 w-5 flex-shrink-0 rounded bg-gradient-to-br from-neutral-200 to-neutral-300",
+          "h-5 w-5 flex-shrink-0 rounded bg-neutral-100 flex items-center justify-center",
           className
-        )} 
-      />
+        )}
+      >
+        <svg
+          className="h-3 w-3 text-neutral-400"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <line x1="2" y1="12" x2="22" y2="12" />
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
+      </div>
     );
   }
 

@@ -170,13 +170,8 @@ export default function Home() {
     }
   };
 
-  const handleEditLink = (link: Link) => {
-    if (link.content_type === "text") {
-      setEditingLink(link);
-      setRichTextModalOpen(true);
-    } else {
-      showToast("Edit functionality coming soon", "info");
-    }
+  const handleEditLink = () => {
+    showToast("Edit functionality coming soon", "info");
   };
 
   const handleSaveRichText = async (content: SerializedEditorState) => {
