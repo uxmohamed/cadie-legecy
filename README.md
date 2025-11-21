@@ -228,6 +228,112 @@ caddy/
 - **No Third-party Trackers** - Your data is only stored in your Supabase instance
 - **Environment Variables** - Sensitive data never committed to git
 
+## 📊 Analytics with PostHog
+
+Caddy includes PostHog analytics integration for both client-side and server-side tracking. All analytics data is sent to your own PostHog project.
+
+### Setup
+
+1. **Create a PostHog account** at [posthog.com](https://posthog.com) (free tier available)
+
+2. **Add environment variables** to `.env.local`:
+
+```env
+NEXT_PUBLIC_POSTHOG_KEY=your-posthog-project-key
+NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com  # or your PostHog instance URL
+```
+
+3. **Deploy environment variables** to your hosting provider (Vercel, Netlify, etc.)
+
+### Client-Side Tracking
+
+PostHog is initialized automatically via `instrumentation-client.ts` using Next.js 15.3+ instrumentation API. It captures pageviews, page leaves, and custom events.
+
+**What Gets Tracked Automatically:**
+- Page views and navigation
+- Page leave events (for time-on-page metrics)
+- Link actions (archive, delete, pin)
+- User interactions with relevant metadata
+
+**Manual Event Tracking:**
+
+Import `posthog` directly from `posthog-js` or use the helper functions:
+
+```typescript
+import posthog from 'posthog-js';
+
+// Direct usage
+posthog.capture('button_clicked', { button_name: 'save' });
+
+// Or use typed helpers
+import { trackLinkSaved } from '@/lib/posthog-client';
+
+trackLinkSaved({
+  link_id: link.id,
+  url: link.url,
+  domain: link.domain,
+  content_type: link.content_type,
+});
+```
+
+**Available Client-Side Helpers:**
+- `trackLinkSaved()`, `trackLinkArchived()`, `trackLinkDeleted()`
+- `trackLinkFavorited()`, `trackLinkUpdated()`
+- `trackCategoryCreated()`, `trackSearch()`
+- `trackExtensionAuthStarted()`, `trackExtensionAuthCompleted()`
+- `identifyUser()` - Identify a user with properties
+- `trackEvent()` - Generic event tracking
+
+### Server-Side Analytics
+
+Use the `posthog-node` SDK for server-side tracking in API routes and server components:
+
+```typescript
+import { PostHogClient } from '@/lib/posthog-server';
+
+export async function GET(request: Request) {
+  const posthog = PostHogClient();
+  
+  try {
+    // Capture server-side event
+    posthog.capture({
+      distinctId: 'user_123',
+      event: 'api_called',
+      properties: { endpoint: '/api/example' }
+    });
+
+    // Fetch feature flags
+    const flags = await posthog.getAllFlags('user_123');
+    
+    // Always shutdown to flush events
+    await posthog.shutdown();
+    
+    return Response.json({ success: true });
+  } catch (error) {
+    await posthog.shutdown();
+    throw error;
+  }
+}
+```
+
+**Important:** Always call `await posthog.shutdown()` after capturing events to ensure they're sent before the serverless function terminates.
+
+### Verification
+
+1. **Start the dev server**: `npm run dev`
+2. **Check browser console** - Look for PostHog initialization
+3. **Interact with the app** - Archive or delete a link
+4. **Visit PostHog dashboard** - Check Live View for real-time events
+5. **Test server-side** - Visit `/api/analytics/example` to see server tracking
+
+### Privacy & Data Control
+
+- Analytics only runs when `NEXT_PUBLIC_POSTHOG_KEY` is set
+- All data is stored in your PostHog instance
+- No data is sent to third parties
+- You have full control over what events are tracked
+- PostHog respects user privacy preferences and GDPR compliance
+
 ## 🎯 API Tokens
 
 The app includes API token management for secure extension authentication:

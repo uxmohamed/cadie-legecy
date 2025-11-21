@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ToastProvider } from "@/components/ui/toast";
 import { ErrorBoundary } from "@/components/error-boundary";
+import "@/instrumentation-client";
 import "./globals.css";
 
 const inter = Inter({
