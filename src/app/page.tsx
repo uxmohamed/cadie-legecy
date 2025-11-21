@@ -7,6 +7,7 @@ import { LinkList } from "@/components/link-list";
 import { LinkListSkeleton } from "@/components/link-list-skeleton";
 import { UserMenu } from "@/components/user-menu";
 import { Logo } from "@/components/logo";
+import { LandingPage } from "@/components/landing-page";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
 import { canonicalizeContent } from "@/lib/canonicalize";
@@ -23,6 +24,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [fetchingLinks, setFetchingLinks] = React.useState(true);
   const [user, setUser] = React.useState<User | null>(null);
+  const [authChecked, setAuthChecked] = React.useState(false);
   const [richTextModalOpen, setRichTextModalOpen] = React.useState(false);
   const [editingLink, setEditingLink] = React.useState<Link | null>(null);
   const { showToast } = useToast();
@@ -33,23 +35,15 @@ export default function Home() {
     
     async function checkAuth() {
       const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        router.push("/auth");
-        return;
-      }
-      
       setUser(user);
+      setAuthChecked(true);
     }
 
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
-        router.push("/auth");
-      } else {
-        setUser(session.user);
-      }
+      setUser(session?.user || null);
+      setAuthChecked(true);
     });
 
     return () => subscription.unsubscribe();
@@ -477,12 +471,18 @@ export default function Home() {
     }
   };
 
-  if (!user) {
+  // Show loading state while checking auth
+  if (!authChecked) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#fafafa]">
         <p className="text-sm text-neutral-400">Loading...</p>
       </div>
     );
+  }
+
+  // Show landing page for unauthenticated users
+  if (!user) {
+    return <LandingPage />;
   }
 
   return (
