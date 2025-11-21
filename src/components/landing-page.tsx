@@ -60,17 +60,20 @@ export function LandingPage() {
 
           {/* Product Screenshot */}
           <div className="mt-20 relative mx-auto w-full max-w-4xl ">
-            <div className="relative w-full overflow-hidden rounded-2xl" style={{ boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.15)' }}>
-              <Image
-                src="/product-landing.png"
-                alt="Caddy Interface"
-                width={1200}
-                height={800}
-                className="w-full h-auto"
-                priority
-              />
-              {/* Gradient mask overlay */}
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent from-70% to-white to-100%"></div>
+            {/* Gradient border wrapper */}
+            <div className="relative rounded-2xl p-[1px] bg-gradient-to-b from-neutral-200 from-60% to-transparent to-100%">
+              <div className="relative w-full overflow-hidden rounded-2xl bg-white">
+                <Image
+                  src="/product-landing.png"
+                  alt="Caddy Interface"
+                  width={1200}
+                  height={800}
+                  className="w-full h-auto"
+                  priority
+                />
+                {/* Gradient mask overlay */}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent from-60% to-white to-100%"></div>
+              </div>
             </div>
           </div>
         </div>
