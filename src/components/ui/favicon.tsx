@@ -81,7 +81,7 @@ export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
   }, [currentSource, sources.length]);
 
   // If all sources failed, show placeholder with globe icon
-  if (hasError || sources.length === 0) {
+  if (allFailed || sources.length === 0) {
     return (
       <div
         className={cn(
