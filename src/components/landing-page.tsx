@@ -17,9 +17,13 @@ export function LandingPage() {
             <Link href="#" className="hover:text-neutral-900 transition-colors">
               Changelog
             </Link>
-            <Link href="#" className="hover:text-neutral-900 transition-colors">
+            <a
+              href="https://x.com/caddyapp_"
+              target="_blank"
+              className="hover:text-neutral-900 transition-colors"
+            >
               X (Twitter)
-            </Link>
+            </a>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -40,9 +44,10 @@ export function LandingPage() {
       <main className="flex-1 pt-20 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
           <h1 className="text-5xl font-bold tracking-tight text-neutral-900 sm:text-5xl md:text-6xl mb-6 font-custom leading-snug">
-          Simple way to <br/> <span className="bg-brand/10 text-brand px-1">save links</span>
+            Simple way to <br />{" "}
+            <span className="bg-brand/10 text-brand px-1">save links</span>
           </h1>
-          
+
           <p className="mx-auto max-w-xs text-lg font-medium text-neutral-400 mb-8 leading-7">
             Save links from anywhere and keep everything in one place.
           </p>
@@ -78,8 +83,6 @@ export function LandingPage() {
           </div>
         </div>
       </main>
-
-
     </div>
   );
 }
