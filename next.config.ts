@@ -16,11 +16,6 @@ const nextConfig: NextConfig = {
 
   // Optimize for production
   reactStrictMode: true,
-
-  // Cloudflare Pages compatibility
-  // Note: Keep output commented for now to maintain Vercel compatibility
-  // Uncomment when ready to deploy to Cloudflare
-  // output: 'standalone',
 };
 
 export default nextConfig;
