@@ -2,14 +2,39 @@
 
 import * as React from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/logo";
+// Google Logo SVG Component
+function GoogleLogo() {
+  return (
+    <svg className="size-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+        fill="#4285F4"
+      />
+      <path
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+        fill="#34A853"
+      />
+      <path
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+        fill="#EA4335"
+      />
+    </svg>
+  );
+}
 
 export function AuthForm() {
   const [email, setEmail] = React.useState("");
   const [loading, setLoading] = React.useState(false);
+  const [googleLoading, setGoogleLoading] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [showEmailForm, setShowEmailForm] = React.useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,133 +69,180 @@ export function AuthForm() {
     }
   }
 
+  async function handleGoogleSignIn() {
+    setGoogleLoading(true);
+    setError("");
+    setSuccess(false);
+
+    const supabase = createClient();
+
+    try {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${siteUrl}/auth/callback`,
+        },
+      });
+
+      if (error) throw error;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An error occurred. Please try again.");
+      }
+      setGoogleLoading(false);
+    }
+  }
+
   return (
     <div className="w-full max-w-[400px] space-y-8">
       {/* Logo/Icon Section */}
       <div className="flex flex-col items-center space-y-4">
-        <svg
-          className="size-12 text-neutral-200 dark:text-neutral-800"
-          fill="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            fillRule="evenodd"
-            d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z"
-            clipRule="evenodd"
-          />
-        </svg>
+        <Logo className="h-7 mb-8 w-auto text-neutral-200" />
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
             Welcome to Caddy
           </h1>
-          <p className="text-base text-slate-600 dark:text-slate-400">
-            Sign in with your email to continue
+          <p className="text-base text-neutral-500">
+            Log in or sign up to get started.
           </p>
         </div>
       </div>
 
-      {/* Error State */}
-      {error && (
-        <div className="animate-in fade-in slide-in-from-top-2 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/50">
-          <div className="flex items-start gap-3">
-            <svg
-              className="mt-0.5 size-5 shrink-0 text-red-600 dark:text-red-400"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <div>
-              <p className="text-sm font-medium text-red-900 dark:text-red-50">
-                {error}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <label htmlFor="email" className="sr-only">
-            Email address
-          </label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="name@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            disabled={loading}
+      {/* Auth Options */}
+      {!showEmailForm ? (
+        <div className="space-y-3">
+          {/* Google Sign In Button - Primary */}
+          <Button
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={googleLoading}
             size="lg"
-            className="w-full"
-          />
+            className="w-full py-3 bg-neutral-100 border-0 text-neutral-900 text-base rounded-xl shadow-none hover:bg-neutral-200 transition-colors duration-150"
+          >
+            {googleLoading ? (
+              <>
+                <svg
+                  className="size-4 animate-spin"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                Signing in with Google...
+              </>
+            ) : (
+              <>
+                <GoogleLogo />
+                Continue with Google
+              </>
+            )}
+          </Button>
+
+          {/* Email Button - Ghost */}
+          <Button
+            type="button"
+            onClick={() => setShowEmailForm(true)}
+            disabled={googleLoading}
+            size="lg"
+            className="w-full py-3 bg-0 border-0 text-neutral-900 text-base rounded-xl shadow-none hover:bg-neutral-200 transition-colors duration-150"
+          >
+            Continue with Email
+          </Button>
         </div>
-
-        <Button
-          type="submit"
-          disabled={loading}
-          size="lg"
-          className="w-full bg-neutral-900 text-white hover:bg-neutral-900/90 border-neutral-900 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-50/90 dark:border-neutral-50"
-        >
-          {loading ? (
-            <>
-              <svg
-                className="size-4 animate-spin"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
-              Sending magic link...
-            </>
-          ) : (
-            "Continue with Email"
-          )}
-        </Button>
-      </form>
-
-      {/* Success State */}
-      {success && (
-        <div className="animate-in fade-in slide-in-from-top-2 rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/50">
-          <div className="flex items-start gap-3">
-            <svg
-              className="mt-0.5 size-5 shrink-0 text-emerald-600 dark:text-emerald-400"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-                clipRule="evenodd"
+      ) : (
+        <div className="space-y-4">
+          {/* Email Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="email" className="sr-only">
+                Email address
+              </label>
+              <input
+                id="email"
+                type="email"
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={loading}
+                className="w-full px-4 py-3 bg-neutral-100 border border-neutral-100 text-neutral-900 text-base rounded-xl shadow-none focus:outline-none focus:ring-0 focus:border-neutral-400 placeholder:text-neutral-500"
               />
-            </svg>
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-emerald-900 dark:text-emerald-50">
-                Check your email
-              </p>
-              <p className="text-sm text-emerald-700 dark:text-emerald-300">
-                We&apos;ve sent you a magic link. Click the link in your email to sign in.
-              </p>
+              {error && (
+                <p className="text-sm text-red-600">
+                  {error}
+                </p>
+              )}
+              {success && (
+                <p className="text-sm text-neutral-500">
+                  Check your email. We&apos;ve sent you a magic link.
+                </p>
+              )}
             </div>
-          </div>
+
+            <Button
+              type="submit"
+              disabled={loading}
+              size="lg"
+              className="w-full py-3 bg-neutral-100 border-0 text-neutral-900 text-base rounded-xl shadow-none hover:bg-neutral-200 transition-colors duration-150"
+              >
+              {loading ? (
+                <>
+                  <svg
+                    className="size-4 animate-spin"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Sending...
+                </>
+              ) : (
+                "Continue"
+              )}
+            </Button>
+          </form>
+
+          {/* Back Button - Ghost */}
+          <Button
+            type="button"
+            onClick={() => {
+              setShowEmailForm(false);
+              setError("");
+              setSuccess(false);
+            }}
+            size="lg"
+            className="w-full py-3 bg-0 border-0 text-neutral-900 text-base rounded-xl shadow-none hover:bg-neutral-200 transition-colors duration-150"
+          >
+            Back to sign in
+          </Button>
         </div>
       )}
     </div>

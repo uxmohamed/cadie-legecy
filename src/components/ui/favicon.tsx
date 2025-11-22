@@ -21,7 +21,8 @@ interface FaviconProps {
  */
 export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
   const [currentSource, setCurrentSource] = React.useState(0);
-  const [hasError, setHasError] = React.useState(false);
+  const [isLoaded, setIsLoaded] = React.useState(false);
+  const [allFailed, setAllFailed] = React.useState(false);
 
   // Build fallback chain with multiple high-quality sources
   const sources = React.useMemo(() => {
@@ -65,16 +66,17 @@ export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
   // Reset state when URL/domain changes
   React.useEffect(() => {
     setCurrentSource(0);
-    setHasError(false);
+    setIsLoaded(false);
+    setAllFailed(false);
   }, [url, domain]);
 
   const handleError = React.useCallback(() => {
-    // Try next source in the fallback chain
-    if (currentSource < sources.length - 1) {
+    // Try next source in the fallback chain, but limit retries to 3 attempts
+    if (currentSource < Math.min(2, sources.length - 1)) {
       setCurrentSource((prev) => prev + 1);
     } else {
-      // All sources failed, show error state
-      setHasError(true);
+      // Max retries reached, keep showing placeholder
+      setAllFailed(true);
     }
   }, [currentSource, sources.length]);
 
@@ -104,6 +106,7 @@ export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
     );
   }
 
+  // Show placeholder while loading, then fade in image once loaded
   return (
     <img
       src={sources[currentSource]}
