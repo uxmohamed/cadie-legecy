@@ -1,0 +1,9 @@
+name = "caddy"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = ".vercel/output/static"
+
+[build]
+command = "npx @cloudflare/next-on-pages@1"
+
+[build.environment]
+NODE_VERSION = "20"
