@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createHash } from "crypto";
 
 export interface AuthenticatedRequest extends NextRequest {
   userId?: string;
@@ -47,7 +46,7 @@ async function authenticateWithToken(token: string): Promise<string | null> {
 
   try {
     // Hash the token using SHA-256 (matching the hash we store)
-    const tokenHash = hashToken(token);
+    const tokenHash = await hashToken(token);
     
     // Use service role to query api_tokens table
     // We need to use service role because RLS won't let us query without auth
@@ -91,21 +90,30 @@ async function updateTokenLastUsed(tokenId: string): Promise<void> {
 }
 
 /**
- * Hashes a token using SHA-256
+ * Hashes a token using SHA-256 (Web Crypto API for Edge Runtime compatibility)
  * @param token - The plaintext token
  * @returns The hashed token
  */
-export function hashToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
+export async function hashToken(token: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(token);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 /**
- * Generates a cryptographically secure random token
+ * Generates a cryptographically secure random token (Web Crypto API)
  * @param length - The length of the token in bytes (default 32)
  * @returns A random token string
  */
 export function generateToken(length: number = 32): string {
-  const crypto = require("crypto");
-  return crypto.randomBytes(length).toString("base64url");
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  return btoa(String.fromCharCode(...array))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
 }
+
 

@@ -4,6 +4,8 @@ import { createInitialRichTextState } from "@/lib/rich-text-utils";
 import { authenticateRequest } from "@/lib/auth-middleware";
 import { extractMetadata } from "@/lib/metadata";
 
+export const runtime = 'edge';
+
 export async function GET(request: NextRequest) {
   try {
     const userId = await authenticateRequest(request);
