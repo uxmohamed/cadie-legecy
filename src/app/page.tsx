@@ -32,16 +32,20 @@ export default function Home() {
 
   React.useEffect(() => {
     const supabase = createClient();
-    
+
     async function checkAuth() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setUser(user);
       setAuthChecked(true);
     }
 
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
       setAuthChecked(true);
     });
@@ -103,7 +107,7 @@ export default function Home() {
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
-      
+
       return searchableText.includes(lowerQuery);
     });
   }, [links, searchQuery]);
@@ -112,47 +116,53 @@ export default function Home() {
     setSearchQuery(query);
   }, []);
 
-  const handleDeleteLink = React.useCallback(async (id: string) => {
-    // Optimistic update - remove immediately
-    setLinks((prev) => prev.filter((link) => link.id !== id));
-    
-    try {
-      const response = await fetch(`/api/links/${id}`, { method: "DELETE" });
-      
-      if (!response.ok) {
-        throw new Error("Failed to delete link");
+  const handleDeleteLink = React.useCallback(
+    async (id: string) => {
+      // Optimistic update - remove immediately
+      setLinks((prev) => prev.filter((link) => link.id !== id));
+
+      try {
+        const response = await fetch(`/api/links/${id}`, { method: "DELETE" });
+
+        if (!response.ok) {
+          throw new Error("Failed to delete link");
+        }
+
+        showToast("Link deleted", "success");
+      } catch (error) {
+        console.error("Error deleting link:", error);
+        showToast("Failed to delete link", "error");
+        await refreshLinks();
       }
-      
-      showToast("Link deleted", "success");
-    } catch (error) {
-      console.error("Error deleting link:", error);
-      showToast("Failed to delete link", "error");
-      await refreshLinks();
-    }
-  }, [showToast, refreshLinks]);
+    },
+    [showToast, refreshLinks]
+  );
 
-  const handleArchiveLink = React.useCallback(async (id: string) => {
-    // Optimistic update - remove immediately
-    setLinks((prev) => prev.filter((link) => link.id !== id));
+  const handleArchiveLink = React.useCallback(
+    async (id: string) => {
+      // Optimistic update - remove immediately
+      setLinks((prev) => prev.filter((link) => link.id !== id));
 
-    try {
-      const response = await fetch(`/api/links/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_archived: true }),
-      });
+      try {
+        const response = await fetch(`/api/links/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ is_archived: true }),
+        });
 
-      if (!response.ok) {
-        throw new Error("Failed to archive link");
+        if (!response.ok) {
+          throw new Error("Failed to archive link");
+        }
+
+        showToast("Link archived", "success");
+      } catch (error) {
+        console.error("Error archiving link:", error);
+        showToast("Failed to archive link", "error");
+        await refreshLinks();
       }
-      
-      showToast("Link archived", "success");
-    } catch (error) {
-      console.error("Error archiving link:", error);
-      showToast("Failed to archive link", "error");
-      await refreshLinks();
-    }
-  }, [showToast, refreshLinks]);
+    },
+    [showToast, refreshLinks]
+  );
 
   const handleCopyUrl = async (url: string) => {
     try {
@@ -183,7 +193,7 @@ export default function Home() {
       }
 
       const { link: updatedLink } = await response.json();
-      
+
       // Update the link in the list
       setLinks((prev) =>
         prev.map((l) => (l.id === editingLink.id ? updatedLink : l))
@@ -197,71 +207,77 @@ export default function Home() {
     }
   };
 
-  const handlePinLink = React.useCallback(async (id: string) => {
-    // Optimistic update
-    setLinks((prev) =>
-      prev.map((link) =>
-        link.id === id ? { ...link, is_pinned: true } : link
-      )
-    );
+  const handlePinLink = React.useCallback(
+    async (id: string) => {
+      // Optimistic update
+      setLinks((prev) =>
+        prev.map((link) =>
+          link.id === id ? { ...link, is_pinned: true } : link
+        )
+      );
 
-    try {
-      const response = await fetch(`/api/links/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_pinned: true }),
-      });
+      try {
+        const response = await fetch(`/api/links/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ is_pinned: true }),
+        });
 
-      if (!response.ok) {
-        throw new Error("Failed to pin link");
+        if (!response.ok) {
+          throw new Error("Failed to pin link");
+        }
+
+        showToast("Link pinned", "success");
+      } catch (error) {
+        console.error("Error pinning link:", error);
+        showToast("Failed to pin link", "error");
+        await refreshLinks();
       }
+    },
+    [showToast, refreshLinks]
+  );
 
-      showToast("Link pinned", "success");
-    } catch (error) {
-      console.error("Error pinning link:", error);
-      showToast("Failed to pin link", "error");
-      await refreshLinks();
-    }
-  }, [showToast, refreshLinks]);
+  const handleUnpinLink = React.useCallback(
+    async (id: string) => {
+      // Optimistic update
+      setLinks((prev) =>
+        prev.map((link) =>
+          link.id === id ? { ...link, is_pinned: false } : link
+        )
+      );
 
-  const handleUnpinLink = React.useCallback(async (id: string) => {
-    // Optimistic update
-    setLinks((prev) =>
-      prev.map((link) =>
-        link.id === id ? { ...link, is_pinned: false } : link
-      )
-    );
+      try {
+        const response = await fetch(`/api/links/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ is_pinned: false }),
+        });
 
-    try {
-      const response = await fetch(`/api/links/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_pinned: false }),
-      });
+        if (!response.ok) {
+          throw new Error("Failed to unpin link");
+        }
 
-      if (!response.ok) {
-        throw new Error("Failed to unpin link");
+        showToast("Link unpinned", "success");
+      } catch (error) {
+        console.error("Error unpinning link:", error);
+        showToast("Failed to unpin link", "error");
+        await refreshLinks();
       }
-
-      showToast("Link unpinned", "success");
-    } catch (error) {
-      console.error("Error unpinning link:", error);
-      showToast("Failed to unpin link", "error");
-      await refreshLinks();
-    }
-  }, [showToast, refreshLinks]);
+    },
+    [showToast, refreshLinks]
+  );
 
   const handleSubmit = async (items: DetectedContent[]) => {
     if (items.length === 0) return;
-    
+
     setIsLoading(true);
-    
+
     try {
       // Track results for summary message
       let successCount = 0;
       let duplicateCount = 0;
       let failureCount = 0;
-      
+
       // Process ALL links in parallel with two-phase approach:
       // Phase 1: Immediate DB insert (collect all links first)
       // Phase 2: Batch UI update, then background metadata fetching
@@ -269,7 +285,7 @@ export default function Home() {
         items.map(async ({ value, type }) => {
           // Check for duplicates using smart canonicalization
           const canonicalValue = canonicalizeContent(value, type);
-          
+
           const isDuplicate = links.some((link) => {
             if (link.content_type !== type) return false;
 
@@ -315,7 +331,12 @@ export default function Home() {
 
           const { link } = await response.json();
 
-          return { status: "success" as const, link, originalValue: value, contentType: type };
+          return {
+            status: "success" as const,
+            link,
+            originalValue: value,
+            contentType: type,
+          };
         })
       );
 
@@ -333,7 +354,7 @@ export default function Home() {
           failureCount++;
         }
       });
-      
+
       // PHASE 2: Batch UI update - Add all new links at once (no race condition!)
       if (newLinks.length > 0) {
         setLinks((prev) => [...newLinks, ...prev]);
@@ -341,9 +362,13 @@ export default function Home() {
 
       // PHASE 3: Background metadata enrichment for URLs (non-blocking)
       results.forEach((result) => {
-        if (result.status === "fulfilled" && result.value.status === "success" && result.value.contentType === "url") {
+        if (
+          result.status === "fulfilled" &&
+          result.value.status === "success" &&
+          result.value.contentType === "url"
+        ) {
           const { link, originalValue } = result.value;
-          
+
           // Fetch metadata async - don't await, let it run in background
           (async () => {
             try {
@@ -352,11 +377,11 @@ export default function Home() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ url: originalValue }),
               });
-              
+
               if (metadataResponse.ok) {
                 const data = await metadataResponse.json();
                 const metadata = data.metadata;
-                
+
                 // Update DB with metadata
                 const updateResponse = await fetch(`/api/links/${link.id}`, {
                   method: "PUT",
@@ -368,30 +393,36 @@ export default function Home() {
                     description: metadata?.description || null,
                   }),
                 });
-                
+
                 if (updateResponse.ok) {
                   const { link: updatedLink } = await updateResponse.json();
                   // Update UI with enriched data
-                  setLinks((prev) => 
+                  setLinks((prev) =>
                     prev.map((l) => (l.id === link.id ? updatedLink : l))
                   );
                 }
               }
             } catch (error) {
-              console.error("Error fetching metadata for", originalValue, error);
+              console.error(
+                "Error fetching metadata for",
+                originalValue,
+                error
+              );
               // Silent fail - link is already saved and displayed
             }
           })();
         }
       });
-      
+
       // Show summary toast message
       if (items.length === 1) {
         // Single item - use simple messages
         if (successCount === 1) {
           const type = items[0].type;
           showToast(
-            type === "color" ? "Color saved successfully" : "Link saved successfully",
+            type === "color"
+              ? "Color saved successfully"
+              : "Link saved successfully",
             "success"
           );
         } else if (duplicateCount === 1) {
@@ -400,8 +431,8 @@ export default function Home() {
             type === "color"
               ? "This color is already in your list"
               : type === "url"
-                ? "This link is already in your list"
-                : "This item is already in your list";
+              ? "This link is already in your list"
+              : "This item is already in your list";
           showToast(message, "info");
         } else {
           showToast("Failed to save", "error");
@@ -409,18 +440,34 @@ export default function Home() {
       } else {
         // Multiple items - show summary
         if (successCount > 0 && duplicateCount === 0 && failureCount === 0) {
-          showToast(`${successCount} ${successCount === 1 ? "link" : "links"} added successfully`, "success");
+          showToast(
+            `${successCount} ${
+              successCount === 1 ? "link" : "links"
+            } added successfully`,
+            "success"
+          );
         } else if (successCount > 0 && duplicateCount > 0) {
           showToast(
-            `${successCount} ${successCount === 1 ? "link" : "links"} added, ${duplicateCount} ${duplicateCount === 1 ? "was" : "were"} already in your list`,
+            `${successCount} ${
+              successCount === 1 ? "link" : "links"
+            } added, ${duplicateCount} ${
+              duplicateCount === 1 ? "was" : "were"
+            } already in your list`,
             "success"
           );
         } else if (duplicateCount > 0 && successCount === 0) {
-          showToast(`${duplicateCount} ${duplicateCount === 1 ? "link was" : "links were"} already in your list`, "info");
+          showToast(
+            `${duplicateCount} ${
+              duplicateCount === 1 ? "link was" : "links were"
+            } already in your list`,
+            "info"
+          );
         } else if (failureCount > 0) {
           if (successCount > 0) {
             showToast(
-              `${successCount} ${successCount === 1 ? "link" : "links"} added, ${failureCount} failed`,
+              `${successCount} ${
+                successCount === 1 ? "link" : "links"
+              } added, ${failureCount} failed`,
               "success"
             );
           } else {
@@ -463,16 +510,16 @@ export default function Home() {
         <div className="flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-4xl px-8">
             <div className="sticky top-0 z-20 bg-[#fafafa] pt-8 pb-4 relative">
-              <CaptureInput 
-                onSubmit={handleSubmit} 
+              <CaptureInput
+                onSubmit={handleSubmit}
                 onSearch={handleSearch}
-                isLoading={isLoading} 
+                isLoading={isLoading}
               />
             </div>
             {fetchingLinks ? (
               <LinkListSkeleton />
             ) : (
-              <LinkList 
+              <LinkList
                 links={filteredLinks}
                 onDelete={handleDeleteLink}
                 onArchive={handleArchiveLink}
@@ -493,7 +540,10 @@ export default function Home() {
             setEditingLink(null);
           }}
           onSave={handleSaveRichText}
-          initialContent={(editingLink.rich_text_content as SerializedEditorState | null) || undefined}
+          initialContent={
+            (editingLink.rich_text_content as SerializedEditorState | null) ||
+            undefined
+          }
           linkId={editingLink.id}
         />
       )}
