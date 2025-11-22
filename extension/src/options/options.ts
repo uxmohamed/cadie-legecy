@@ -158,7 +158,6 @@ async function handleConnect() {
     }
     
     const authUrl = `${caddyUrl}/extension/authorize?extensionId=${extensionId}`;
-    console.log("Opening authorize URL:", authUrl);
 
     // Open authorization page in new tab
     const tab = await chrome.tabs.create({ url: authUrl });
@@ -214,7 +213,6 @@ async function handleConnect() {
     }, 300000);
 
   } catch (error) {
-    console.error("Error connecting:", error);
     showStatus("Failed to open authorization page", "error");
     connectBtn.classList.remove("loading");
     connectBtn.disabled = false;
@@ -278,7 +276,6 @@ async function handleDisconnect() {
     updateView();
     showStatus("Disconnected from Caddy", "info");
   } catch (error) {
-    console.error("Error disconnecting:", error);
     showStatus("Failed to disconnect", "error");
   } finally {
     disconnectBtn.disabled = false;
@@ -301,7 +298,6 @@ async function handleTestConnection() {
       showStatus(response.error || "Connection failed", "error");
     }
   } catch (error) {
-    console.error("Error testing connection:", error);
     showStatus("Connection test failed", "error");
   } finally {
     testConnectionBtn.disabled = false;
@@ -344,7 +340,6 @@ async function handleManualSave() {
 
     showStatus("Settings saved successfully!", "success");
   } catch (error) {
-    console.error("Error saving settings:", error);
     showStatus("Failed to save settings", "error");
   } finally {
     manualSaveBtn.disabled = false;
@@ -368,7 +363,6 @@ async function handleManualTest() {
       showStatus(response.error || "Connection failed", "error");
     }
   } catch (error) {
-    console.error("Error testing connection:", error);
     showStatus("Connection test failed", "error");
   } finally {
     manualTestBtn.disabled = false;

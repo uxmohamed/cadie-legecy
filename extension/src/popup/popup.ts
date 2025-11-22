@@ -79,7 +79,6 @@ async function savePage() {
 
   // Prevent duplicate saves
   if (isSaving) {
-    console.log("Already saving, ignoring duplicate request");
     return;
   }
 

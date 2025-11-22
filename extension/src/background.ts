@@ -15,7 +15,6 @@ const savesInProgress = new Set<string>();
 
 // Install listener - Create context menu
 chrome.runtime.onInstalled.addListener(() => {
-  console.log("Caddy extension installed");
   chrome.contextMenus.create({
     id: "save-to-caddy",
     title: "Save to Caddy",
@@ -25,7 +24,6 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Context menu click listener
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  console.log("🖱️ Context menu clicked:", info.menuItemId);
   if (info.menuItemId === "save-to-caddy" && tab?.id) {
     await saveCurrentTab(tab.id);
   }
@@ -33,12 +31,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
 // Extension icon/keyboard shortcut click listener - save page directly
 chrome.action.onClicked.addListener(async (tab) => {
-  console.log("🎯 Extension activated (icon click or keyboard shortcut)");
   if (tab?.id) {
-    console.log("🚀 Saving current tab:", tab.id);
     await saveCurrentTab(tab.id);
-  } else {
-    console.error("❌ No active tab found");
   }
 });
 
@@ -65,10 +59,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Handle authorization success from content script
   if (request.type === "CADDY_AUTH_SUCCESS" && request.data) {
     const { token, email, url, caddyUrl, state } = request.data;
-    
+
     // Use the provided URL, or try to get it from the sender tab
     let caddyUrlToUse = url || caddyUrl;
-    
+
     // If no URL provided, try to get it from the sender tab
     if (!caddyUrlToUse && sender?.tab?.url) {
       try {
@@ -78,13 +72,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         console.error("Error parsing sender URL:", e);
       }
     }
-    
+
     // Fallback to localhost only if we really can't determine the URL
     if (!caddyUrlToUse) {
-      console.warn("No caddy URL provided, using localhost fallback");
       caddyUrlToUse = "http://localhost:3000";
     }
-    
+
     // Construct options page URL with auth params
     const params = new URLSearchParams({
       authorized: "true",
@@ -93,12 +86,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       url: caddyUrlToUse,
       state: state || "",
     });
-    
+
     const optionsUrl = chrome.runtime.getURL(`options.html?${params.toString()}`);
-    
+
     // Open options page with auth data
     chrome.tabs.create({ url: optionsUrl });
-    
+
     // Also notify the options page if it's open
     chrome.runtime.sendMessage({
       type: "CADDY_AUTH_COMPLETE",
@@ -106,7 +99,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }).catch(() => {
       // Options page might not be listening, that's okay
     });
-    
+
     sendResponse({ success: true });
     return true;
   }
@@ -120,13 +113,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
  * Save the current tab to Caddy
  */
 async function saveCurrentTab(tabId: number): Promise<void> {
-  console.log("💾 saveCurrentTab called for tab:", tabId);
   try {
     // Check if token is configured
     const token = await getApiToken();
-    console.log("🔑 API Token check:", token ? "✅ Found" : "❌ Missing");
     if (!token) {
-      console.warn("⚠️ No API token, opening settings");
       showNotification(
         "Configuration Required",
         "Please configure your API token in extension settings",
@@ -138,19 +128,18 @@ async function saveCurrentTab(tabId: number): Promise<void> {
 
     // Get tab information
     const tab = await chrome.tabs.get(tabId);
-    
+
     // Create a unique key for this save operation
     const saveKey = `${tab.url}`;
-    
+
     // Check if we're already saving this URL
     if (savesInProgress.has(saveKey)) {
-      console.log("Already saving this URL, skipping duplicate request");
       return;
     }
-    
+
     // Mark this URL as being saved
     savesInProgress.add(saveKey);
-    
+
     if (!tab.url || !tab.title) {
       showOverlayInTab(tabId, "error", "Could not get page information");
       return;
@@ -167,7 +156,6 @@ async function saveCurrentTab(tabId: number): Promise<void> {
     }
 
     // Show loading overlay immediately (fast feedback)
-    console.log("📤 Showing loading overlay for tab:", tabId);
     showOverlayInTab(tabId, "loading");
 
     // Save to Caddy
@@ -201,7 +189,7 @@ async function saveCurrentTab(tabId: number): Promise<void> {
     if (tab?.url) {
       const saveKey = `${tab.url}`;
       savesInProgress.delete(saveKey);
-      
+
       // Auto-clear after 5 seconds as a safety measure
       setTimeout(() => {
         savesInProgress.delete(saveKey);
@@ -218,17 +206,12 @@ function showOverlayInTab(
   state: "loading" | "success" | "error" | "duplicate",
   message?: string
 ): void {
-  console.log(`📨 Sending message to tab ${tabId}:`, { action: "showSaveOverlay", state, message });
   chrome.tabs.sendMessage(tabId, {
     action: "showSaveOverlay",
     state,
     message,
-  }).then(() => {
-    console.log("✅ Message sent successfully to tab:", tabId);
-  }).catch((error) => {
+  }).catch(() => {
     // Content script might not be loaded, fall back to notification
-    console.error("❌ Could not show overlay, error:", error);
-    console.log("🔔 Falling back to notification");
     if (state === "success") {
       showNotification("Saved to Caddy! ✨", "Page saved successfully", "success");
     } else if (state === "duplicate") {
@@ -266,17 +249,4 @@ function showNotification(
   }
 
   return notificationId;
-}
-
-// ============================================================================
-// STARTUP / DIAGNOSTICS
-// ============================================================================
-
-console.log("🔥 Caddy background service worker loaded - VERSION 3");
-
-// Log registered commands for debugging
-if (chrome.commands) {
-  chrome.commands.getAll((commands) => {
-    console.log("📋 Registered keyboard shortcuts:", commands);
-  });
 }

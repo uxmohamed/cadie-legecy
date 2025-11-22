@@ -58,12 +58,3 @@ export function formatDate(date: Date): string {
     year: "numeric",
   });
 }
-
-export function getDomain(url: string): string {
-  try {
-    const urlObj = new URL(url);
-    return urlObj.hostname.replace("www.", "");
-  } catch {
-    return url;
-  }
-}

@@ -121,9 +121,6 @@ export default function ExtensionAuthorizePage() {
       window.dispatchEvent(event);
     }, 100);
 
-    // Show success message - extension will handle opening options page
-    console.log("Authorization successful! Extension should open automatically...");
-    
     // Set success state
     setIsAuthorizing(false);
     setIsAuthorized(true);

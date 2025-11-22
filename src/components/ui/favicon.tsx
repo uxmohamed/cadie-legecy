@@ -27,32 +27,39 @@ export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
   // Build fallback chain with multiple high-quality sources
   const sources = React.useMemo(() => {
     const fallbacks: string[] = [];
-    
+
     // 1. Provided favicon URL (if available and not already a low-res Google fallback)
-    if (url && !url.includes("google.com/s2/favicons?") && !url.includes("&sz=16") && !url.includes("&sz=32")) {
+    if (
+      url &&
+      !url.includes("google.com/s2/favicons?") &&
+      !url.includes("&sz=16") &&
+      !url.includes("&sz=32")
+    ) {
       fallbacks.push(url);
     }
-    
-    // 2. Try direct favicon.ico first (most reliable for standard sites)
+
+    // 2. Try Clearbit Logo API (very high quality, supports many domains)
+    fallbacks.push(`https://logo.clearbit.com/${domain}`);
+
+    // 3. Google favicon with maximum size (256x256)
+    fallbacks.push(
+      `https://www.google.com/s2/favicons?domain=${domain}&sz=256`
+    );
+
+    // 4. Try direct favicon.ico
     try {
       const urlObj = new URL(`https://${domain}`);
       fallbacks.push(`${urlObj.protocol}//${urlObj.host}/favicon.ico`);
     } catch {
       // If domain is invalid, skip this fallback
     }
-    
-    // 3. Google favicon with maximum size (256x256) - very reliable
-    fallbacks.push(`https://www.google.com/s2/favicons?domain=${domain}&sz=256`);
-    
-    // 4. Try Clearbit Logo API (very high quality, supports many domains)
-    fallbacks.push(`https://logo.clearbit.com/${domain}`);
-    
+
     // 5. DuckDuckGo icon service
     fallbacks.push(`https://icons.duckduckgo.com/ip3/${domain}.ico`);
-    
+
     // 6. Favicon.io service (another reliable option)
     fallbacks.push(`https://api.faviconkit.com/${domain}/256`);
-    
+
     return fallbacks;
   }, [url, domain]);
 
@@ -73,61 +80,51 @@ export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
     }
   }, [currentSource, sources.length]);
 
-  const handleLoad = React.useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
-    // Verify the image actually loaded (not a broken image icon)
-    const img = e.currentTarget;
-    if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-      setIsLoaded(true);
-    } else {
-      handleError();
-    }
-  }, [handleError]);
-
-  // If all attempts failed, just show placeholder
-  if (allFailed) {
+  // If all sources failed, show placeholder with globe icon
+  if (hasError || sources.length === 0) {
     return (
-      <div 
+      <div
         className={cn(
-          "h-5 w-5 flex-shrink-0 rounded bg-gray-200",
+          "h-5 w-5 flex-shrink-0 rounded bg-neutral-100 flex items-center justify-center",
           className
-        )} 
-      />
+        )}
+      >
+        <svg
+          className="h-3 w-3 text-neutral-400"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <line x1="2" y1="12" x2="22" y2="12" />
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
+      </div>
     );
   }
 
   // Show placeholder while loading, then fade in image once loaded
   return (
-    <div className="relative h-5 w-5 flex-shrink-0">
-      {/* Always show placeholder, hide when image loads */}
-      <div 
-        className={cn(
-          "absolute inset-0 rounded bg-gray-200",
-          isLoaded && "hidden",
-          className
-        )} 
-      />
-      <img
-        key={`${domain}-${currentSource}`}
-        src={sources[currentSource]}
-        alt={alt}
-        className={cn(
-          "h-5 w-5 flex-shrink-0 rounded object-cover antialiased transition-opacity duration-200",
-          isLoaded ? "opacity-100" : "opacity-0",
-          className
-        )}
-        onError={handleError}
-        onLoad={handleLoad}
-        loading="eager"
-        style={{ 
-          // High quality image rendering
-          imageRendering: "-webkit-optimize-contrast",
-          // Hardware acceleration for smoother rendering
-          transform: "translateZ(0)",
-          // Ensure image is scaled smoothly
-          backfaceVisibility: "hidden",
-        }}
-      />
-    </div>
+    <img
+      src={sources[currentSource]}
+      alt={alt}
+      className={cn(
+        "h-5 w-5 flex-shrink-0 rounded object-cover antialiased",
+        className
+      )}
+      onError={handleError}
+      loading="lazy"
+      style={{
+        // High quality image rendering
+        imageRendering: "-webkit-optimize-contrast",
+        // Hardware acceleration for smoother rendering
+        transform: "translateZ(0)",
+        // Ensure image is scaled smoothly
+        backfaceVisibility: "hidden",
+      }}
+    />
   );
 }
-

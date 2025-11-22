@@ -2,7 +2,10 @@
 
 import * as React from "react";
 import { Input } from "@/components/ui/input";
-import { detectMultipleContentTypes, type DetectedContent } from "@/lib/content-detector";
+import {
+  detectMultipleContentTypes,
+  type DetectedContent,
+} from "@/lib/content-detector";
 
 interface CaptureInputProps {
   onSubmit: (items: DetectedContent[]) => void;
@@ -10,7 +13,11 @@ interface CaptureInputProps {
   isLoading?: boolean;
 }
 
-export function CaptureInput({ onSubmit, onSearch, isLoading }: CaptureInputProps) {
+export function CaptureInput({
+  onSubmit,
+  onSearch,
+  isLoading,
+}: CaptureInputProps) {
   const [value, setValue] = React.useState("");
   const [showFocusAnimation, setShowFocusAnimation] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -54,8 +61,14 @@ export function CaptureInput({ onSubmit, onSearch, isLoading }: CaptureInputProp
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full">
-      <div className={`relative transition-shadow duration-300 rounded-lg ${showFocusAnimation ? 'shadow-[0_0_40px_8px_rgba(0,0,0,0.2),0_0_20px_4px_rgba(0,0,0,0.15)]' : ''}`}>
+    <form onSubmit={handleSubmit} autoComplete="off" className="w-full">
+      <div
+        className={`relative transition-shadow duration-300 rounded-lg ${
+          showFocusAnimation
+            ? "shadow-[0_0_40px_8px_rgba(0,0,0,0.2),0_0_20px_4px_rgba(0,0,0,0.15)]"
+            : ""
+        }`}
+      >
         <Input
           ref={inputRef}
           type="text"
@@ -77,4 +90,3 @@ export function CaptureInput({ onSubmit, onSearch, isLoading }: CaptureInputProp
     </form>
   );
 }
-
