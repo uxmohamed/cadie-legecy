@@ -1,7 +1,26 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Optimize images for Cloudflare
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+  },
+
+  // Disable x-powered-by header for security
+  poweredByHeader: false,
+
+  // Enable compression
+  compress: true,
+
+  // Optimize for production
+  reactStrictMode: true,
+
+  // Cloudflare Pages compatibility
+  // Note: Keep output commented for now to maintain Vercel compatibility
+  // Uncomment when ready to deploy to Cloudflare
+  // output: 'standalone',
 };
 
 export default nextConfig;

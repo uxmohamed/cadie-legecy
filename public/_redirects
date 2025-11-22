@@ -1,0 +1,9 @@
+# Cloudflare Pages Redirects
+# Format: source destination [status]
+
+# Example redirects (uncomment and modify as needed)
+# /old-path /new-path 301
+# /blog/* /news/:splat 301
+
+# Fallback for SPA routing (if needed)
+# /* /index.html 200
