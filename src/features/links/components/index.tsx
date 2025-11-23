@@ -10,6 +10,7 @@ import { LinkListEmpty } from "./link-list-empty";
 import { LinkListItem } from "./link-list-item";
 import { SelectionToolbar } from "./selection-toolbar";
 import type { ContextMenuState, LinkListProps } from "./types";
+import { LinkDetailSheet } from "./link-detail-sheet";
 import { useKeyboardNavigation } from "./use-keyboard-navigation";
 import { useSelection } from "./use-selection";
 
@@ -24,8 +25,10 @@ export function LinkList({
 }: LinkListProps) {
   const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null);
   const [contextMenu, setContextMenu] = React.useState<ContextMenuState | null>(
-    null,
+    null
   );
+  const [selectedLink, setSelectedLink] = React.useState<Link | null>(null);
+  const [sheetOpen, setSheetOpen] = React.useState(false);
 
   const linkRefs = React.useRef<(HTMLAnchorElement | null)[]>([]);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -131,9 +134,17 @@ export function LinkList({
       if (isColor) {
         copyToClipboard(link.color_value || link.title, "color");
       } else if (isRichText) {
-        // Do nothing on click for text items
+        // Open sheet for rich text
+        setSelectedLink(link);
+        setSheetOpen(true);
       } else {
-        window.open(link.url, "_blank", "noopener,noreferrer");
+        // Open sheet for links too (or maybe just open URL? Teammate's diff showed opening sheet)
+        // Teammate's diff:
+        // +      // Open sheet with link details
+        // +      setSelectedLink(link);
+        // +      setSheetOpen(true);
+        setSelectedLink(link);
+        setSheetOpen(true);
       }
     });
   };
@@ -267,6 +278,32 @@ export function LinkList({
         onBatchDelete={handleBatchDelete}
         onBatchPin={handleBatchPin}
         onBatchUnpin={handleBatchUnpin}
+      />
+
+      <LinkDetailSheet
+        link={selectedLink}
+        links={displayLinks}
+        currentIndex={
+          selectedLink
+            ? displayLinks.findIndex((l) => l.id === selectedLink.id)
+            : -1
+        }
+        open={sheetOpen}
+        onOpenChange={(open) => {
+          setSheetOpen(open);
+          if (!open) {
+            setSelectedLink(null);
+          }
+        }}
+        onLinkChange={(link) => {
+          setSelectedLink(link);
+        }}
+        onEdit={onEdit}
+        onCopyUrl={onCopyUrl}
+        onPin={onPin}
+        onUnpin={onUnpin}
+        onArchive={onArchive}
+        onDelete={onDelete}
       />
     </div>
   );

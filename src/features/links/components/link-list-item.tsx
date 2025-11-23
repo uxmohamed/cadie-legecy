@@ -1,5 +1,4 @@
 import { Favicon } from "@/components/ui/favicon";
-import { Menu, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 import { extractTextFromRichText } from "@/lib/rich-text-utils";
 import { cn, formatDate } from "@/lib/utils";
 import type { Link } from "@/types";
@@ -84,23 +83,22 @@ export function LinkListItem({
   };
 
   return (
-    <div className="flex items-center justify-center">
-      <div
-        onMouseDown={(e) => onMouseDown(index, e)}
-        onClick={(e) => onClick(e, link, index)}
-        onMouseEnter={() => onMouseEnter(index)}
-        onMouseLeave={() => onMouseLeave(index)}
-        onKeyDown={handleKeyDown}
-        onContextMenu={(e) => onContextMenu(e, link)}
-        className={cn(
-          "group w-full grid grid-cols-[1fr_auto_auto] ease-in will-change-transform duration-100 items-center gap-2 rounded-lg px-3 py-2 select-none cursor-pointer active:scale-[0.99] transition-transform",
-          isSelected
-            ? "bg-neutral-200"
-            : isFocused
-              ? "bg-neutral-100"
-              : "hover:bg-neutral-100",
-        )}
-      >
+    <div
+      onMouseDown={(e) => onMouseDown(index, e)}
+      onClick={(e) => onClick(e, link, index)}
+      onMouseEnter={() => onMouseEnter(index)}
+      onMouseLeave={() => onMouseLeave(index)}
+      onKeyDown={handleKeyDown}
+      onContextMenu={(e) => onContextMenu(e, link)}
+      className={cn(
+        "group relative w-full grid grid-cols-[1fr_auto] ease-in will-change-transform duration-100 items-center gap-2 rounded-lg px-3 py-2 select-none cursor-pointer active:scale-[0.99] transition-transform",
+        isSelected
+          ? "bg-neutral-200"
+          : isFocused
+          ? "bg-neutral-100"
+          : "hover:bg-neutral-100"
+      )}
+    >
         <a
           ref={linkRef}
           href={isColor || isRichText ? "#" : link.url}
@@ -160,25 +158,5 @@ export function LinkListItem({
           )}
         </div>
       </div>
-      <Menu>
-        <MenuTrigger
-          className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-300 transition-colors"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <MoreVertical className="h-4 w-4" />
-        </MenuTrigger>
-        <MenuPopup>
-          <LinkContextMenu
-            link={link}
-            onCopyUrl={onCopyUrl}
-            onEdit={onEdit}
-            onPin={onPin}
-            onUnpin={onUnpin}
-            onArchive={onArchive}
-            onDelete={onDelete}
-          />
-        </MenuPopup>
-      </Menu>
-    </div>
   );
 }

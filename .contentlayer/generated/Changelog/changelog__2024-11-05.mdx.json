@@ -1,0 +1,20 @@
+{
+  "date": "2024-11-05T00:00:00.000Z",
+  "title": "Initial Launch",
+  "changeType": "added",
+  "body": {
+    "raw": "\nWelcome to Caddy! We're excited to launch our personal knowledge management system.\n\nCaddy helps you save and organize links, colors, and notes in one beautiful, minimal interface. Built with privacy in mind, all your data stays in your own Supabase database.\n\n**Core features:**\n- Save links with automatic metadata extraction\n- Store color palettes with visual previews\n- Create rich text notes with our powerful editor\n- Secure authentication with Supabase\n- Fast, keyboard-friendly interface\n\nWe're just getting started, and we have many exciting features planned. Thank you for being an early user!\n",
+    "code": "var Component=(()=>{var u=Object.create;var r=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var m=Object.getOwnPropertyNames;var p=Object.getPrototypeOf,g=Object.prototype.hasOwnProperty;var y=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),f=(n,e)=>{for(var a in e)r(n,a,{get:e[a],enumerable:!0})},l=(n,e,a,o)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let i of m(e))!g.call(n,i)&&i!==a&&r(n,i,{get:()=>e[i],enumerable:!(o=h(e,i))||o.enumerable});return n};var x=(n,e,a)=>(a=n!=null?u(p(n)):{},l(e||!n||!n.__esModule?r(a,\"default\",{value:n,enumerable:!0}):a,n)),w=n=>l(r({},\"__esModule\",{value:!0}),n);var c=y((k,s)=>{s.exports=_jsx_runtime});var v={};f(v,{default:()=>_,frontmatter:()=>b});var t=x(c()),b={date:new Date(17307648e5),title:\"Initial Launch\",changeType:\"added\"};function d(n){let e=Object.assign({p:\"p\",strong:\"strong\",ul:\"ul\",li:\"li\"},n.components);return(0,t.jsxs)(t.Fragment,{children:[(0,t.jsx)(e.p,{children:\"Welcome to Caddy! We're excited to launch our personal knowledge management system.\"}),`\n`,(0,t.jsx)(e.p,{children:\"Caddy helps you save and organize links, colors, and notes in one beautiful, minimal interface. Built with privacy in mind, all your data stays in your own Supabase database.\"}),`\n`,(0,t.jsx)(e.p,{children:(0,t.jsx)(e.strong,{children:\"Core features:\"})}),`\n`,(0,t.jsxs)(e.ul,{children:[`\n`,(0,t.jsx)(e.li,{children:\"Save links with automatic metadata extraction\"}),`\n`,(0,t.jsx)(e.li,{children:\"Store color palettes with visual previews\"}),`\n`,(0,t.jsx)(e.li,{children:\"Create rich text notes with our powerful editor\"}),`\n`,(0,t.jsx)(e.li,{children:\"Secure authentication with Supabase\"}),`\n`,(0,t.jsx)(e.li,{children:\"Fast, keyboard-friendly interface\"}),`\n`]}),`\n`,(0,t.jsx)(e.p,{children:\"We're just getting started, and we have many exciting features planned. Thank you for being an early user!\"})]})}function j(n={}){let{wrapper:e}=n.components||{};return e?(0,t.jsx)(e,Object.assign({},n,{children:(0,t.jsx)(d,n)})):d(n)}var _=j;return w(v);})();\n;return Component;"
+  },
+  "_id": "changelog/2024-11-05.mdx",
+  "_raw": {
+    "sourceFilePath": "changelog/2024-11-05.mdx",
+    "sourceFileName": "2024-11-05.mdx",
+    "sourceFileDir": "changelog",
+    "contentType": "mdx",
+    "flattenedPath": "changelog/2024-11-05"
+  },
+  "type": "Changelog",
+  "formattedDate": "November 5, 2024",
+  "url": "/changelog#2024-11-05"
+}

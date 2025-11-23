@@ -1,0 +1,108 @@
+[
+  {
+    "date": "2024-11-05T00:00:00.000Z",
+    "title": "Initial Launch",
+    "changeType": "added",
+    "body": {
+      "raw": "\nWelcome to Caddy! We're excited to launch our personal knowledge management system.\n\nCaddy helps you save and organize links, colors, and notes in one beautiful, minimal interface. Built with privacy in mind, all your data stays in your own Supabase database.\n\n**Core features:**\n- Save links with automatic metadata extraction\n- Store color palettes with visual previews\n- Create rich text notes with our powerful editor\n- Secure authentication with Supabase\n- Fast, keyboard-friendly interface\n\nWe're just getting started, and we have many exciting features planned. Thank you for being an early user!\n",
+      "code": "var Component=(()=>{var u=Object.create;var r=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var m=Object.getOwnPropertyNames;var p=Object.getPrototypeOf,g=Object.prototype.hasOwnProperty;var y=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),f=(n,e)=>{for(var a in e)r(n,a,{get:e[a],enumerable:!0})},l=(n,e,a,o)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let i of m(e))!g.call(n,i)&&i!==a&&r(n,i,{get:()=>e[i],enumerable:!(o=h(e,i))||o.enumerable});return n};var x=(n,e,a)=>(a=n!=null?u(p(n)):{},l(e||!n||!n.__esModule?r(a,\"default\",{value:n,enumerable:!0}):a,n)),w=n=>l(r({},\"__esModule\",{value:!0}),n);var c=y((k,s)=>{s.exports=_jsx_runtime});var v={};f(v,{default:()=>_,frontmatter:()=>b});var t=x(c()),b={date:new Date(17307648e5),title:\"Initial Launch\",changeType:\"added\"};function d(n){let e=Object.assign({p:\"p\",strong:\"strong\",ul:\"ul\",li:\"li\"},n.components);return(0,t.jsxs)(t.Fragment,{children:[(0,t.jsx)(e.p,{children:\"Welcome to Caddy! We're excited to launch our personal knowledge management system.\"}),`\n`,(0,t.jsx)(e.p,{children:\"Caddy helps you save and organize links, colors, and notes in one beautiful, minimal interface. Built with privacy in mind, all your data stays in your own Supabase database.\"}),`\n`,(0,t.jsx)(e.p,{children:(0,t.jsx)(e.strong,{children:\"Core features:\"})}),`\n`,(0,t.jsxs)(e.ul,{children:[`\n`,(0,t.jsx)(e.li,{children:\"Save links with automatic metadata extraction\"}),`\n`,(0,t.jsx)(e.li,{children:\"Store color palettes with visual previews\"}),`\n`,(0,t.jsx)(e.li,{children:\"Create rich text notes with our powerful editor\"}),`\n`,(0,t.jsx)(e.li,{children:\"Secure authentication with Supabase\"}),`\n`,(0,t.jsx)(e.li,{children:\"Fast, keyboard-friendly interface\"}),`\n`]}),`\n`,(0,t.jsx)(e.p,{children:\"We're just getting started, and we have many exciting features planned. Thank you for being an early user!\"})]})}function j(n={}){let{wrapper:e}=n.components||{};return e?(0,t.jsx)(e,Object.assign({},n,{children:(0,t.jsx)(d,n)})):d(n)}var _=j;return w(v);})();\n;return Component;"
+    },
+    "_id": "changelog/2024-11-05.mdx",
+    "_raw": {
+      "sourceFilePath": "changelog/2024-11-05.mdx",
+      "sourceFileName": "2024-11-05.mdx",
+      "sourceFileDir": "changelog",
+      "contentType": "mdx",
+      "flattenedPath": "changelog/2024-11-05"
+    },
+    "type": "Changelog",
+    "formattedDate": "November 5, 2024",
+    "url": "/changelog#2024-11-05"
+  },
+  {
+    "date": "2024-11-10T00:00:00.000Z",
+    "title": "URL Cleaning and Metadata Extraction",
+    "changeType": "added",
+    "body": {
+      "raw": "\nWe've added automatic URL cleaning and enhanced metadata extraction to make your saved links more useful.\n\nWhen you save a link, Caddy now automatically removes tracking parameters and extracts rich metadata including titles, descriptions, and Open Graph images. This keeps your links clean and provides better context at a glance.\n\n**Features:**\n- Automatic tracking parameter removal\n- Enhanced metadata extraction\n- Favicon and image previews\n- Improved link previews in your dashboard\n- Better organization with extracted data\n\nYour saved links are now cleaner and more informative, making it easier to find and reference content later.\n",
+      "code": "var Component=(()=>{var m=Object.create;var i=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var u=Object.getOwnPropertyNames;var p=Object.getPrototypeOf,g=Object.prototype.hasOwnProperty;var x=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),v=(n,e)=>{for(var t in e)i(n,t,{get:e[t],enumerable:!0})},o=(n,e,t,d)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let r of u(e))!g.call(n,r)&&r!==t&&i(n,r,{get:()=>e[r],enumerable:!(d=h(e,r))||d.enumerable});return n};var k=(n,e,t)=>(t=n!=null?m(p(n)):{},o(e||!n||!n.__esModule?i(t,\"default\",{value:n,enumerable:!0}):t,n)),f=n=>o(i({},\"__esModule\",{value:!0}),n);var s=x((C,c)=>{c.exports=_jsx_runtime});var _={};v(_,{default:()=>w,frontmatter:()=>y});var a=k(s()),y={date:new Date(17311968e5),title:\"URL Cleaning and Metadata Extraction\",changeType:\"added\"};function l(n){let e=Object.assign({p:\"p\",strong:\"strong\",ul:\"ul\",li:\"li\"},n.components);return(0,a.jsxs)(a.Fragment,{children:[(0,a.jsx)(e.p,{children:\"We've added automatic URL cleaning and enhanced metadata extraction to make your saved links more useful.\"}),`\n`,(0,a.jsx)(e.p,{children:\"When you save a link, Caddy now automatically removes tracking parameters and extracts rich metadata including titles, descriptions, and Open Graph images. This keeps your links clean and provides better context at a glance.\"}),`\n`,(0,a.jsx)(e.p,{children:(0,a.jsx)(e.strong,{children:\"Features:\"})}),`\n`,(0,a.jsxs)(e.ul,{children:[`\n`,(0,a.jsx)(e.li,{children:\"Automatic tracking parameter removal\"}),`\n`,(0,a.jsx)(e.li,{children:\"Enhanced metadata extraction\"}),`\n`,(0,a.jsx)(e.li,{children:\"Favicon and image previews\"}),`\n`,(0,a.jsx)(e.li,{children:\"Improved link previews in your dashboard\"}),`\n`,(0,a.jsx)(e.li,{children:\"Better organization with extracted data\"}),`\n`]}),`\n`,(0,a.jsx)(e.p,{children:\"Your saved links are now cleaner and more informative, making it easier to find and reference content later.\"})]})}function j(n={}){let{wrapper:e}=n.components||{};return e?(0,a.jsx)(e,Object.assign({},n,{children:(0,a.jsx)(l,n)})):l(n)}var w=j;return f(_);})();\n;return Component;"
+    },
+    "_id": "changelog/2024-11-10.mdx",
+    "_raw": {
+      "sourceFilePath": "changelog/2024-11-10.mdx",
+      "sourceFileName": "2024-11-10.mdx",
+      "sourceFileDir": "changelog",
+      "contentType": "mdx",
+      "flattenedPath": "changelog/2024-11-10"
+    },
+    "type": "Changelog",
+    "formattedDate": "November 10, 2024",
+    "url": "/changelog#2024-11-10"
+  },
+  {
+    "date": "2024-11-15T00:00:00.000Z",
+    "title": "Search and Filter Enhancements",
+    "changeType": "changed",
+    "body": {
+      "raw": "\nWe've improved search functionality to make finding your saved content faster and more intuitive.\n\nThe search now supports filtering by content type (links, colors, notes), date ranges, and tags. Results are displayed instantly as you type, with highlighted matching terms.\n\n**Improvements:**\n- Real-time search results\n- Filter by content type\n- Date range filtering\n- Improved search result highlighting\n- Keyboard shortcuts for quick access\n\nYou can now quickly find any saved link, color, or note with just a few keystrokes. The search bar is always accessible from the top of your dashboard.\n",
+      "code": "var Component=(()=>{var d=Object.create;var s=Object.defineProperty;var u=Object.getOwnPropertyDescriptor;var g=Object.getOwnPropertyNames;var m=Object.getPrototypeOf,p=Object.prototype.hasOwnProperty;var y=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),f=(n,e)=>{for(var r in e)s(n,r,{get:e[r],enumerable:!0})},o=(n,e,r,a)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let i of g(e))!p.call(n,i)&&i!==r&&s(n,i,{get:()=>e[i],enumerable:!(a=u(e,i))||a.enumerable});return n};var x=(n,e,r)=>(r=n!=null?d(m(n)):{},o(e||!n||!n.__esModule?s(r,\"default\",{value:n,enumerable:!0}):r,n)),b=n=>o(s({},\"__esModule\",{value:!0}),n);var l=y((D,c)=>{c.exports=_jsx_runtime});var v={};f(v,{default:()=>k,frontmatter:()=>j});var t=x(l()),j={date:new Date(17316288e5),title:\"Search and Filter Enhancements\",changeType:\"changed\"};function h(n){let e=Object.assign({p:\"p\",strong:\"strong\",ul:\"ul\",li:\"li\"},n.components);return(0,t.jsxs)(t.Fragment,{children:[(0,t.jsx)(e.p,{children:\"We've improved search functionality to make finding your saved content faster and more intuitive.\"}),`\n`,(0,t.jsx)(e.p,{children:\"The search now supports filtering by content type (links, colors, notes), date ranges, and tags. Results are displayed instantly as you type, with highlighted matching terms.\"}),`\n`,(0,t.jsx)(e.p,{children:(0,t.jsx)(e.strong,{children:\"Improvements:\"})}),`\n`,(0,t.jsxs)(e.ul,{children:[`\n`,(0,t.jsx)(e.li,{children:\"Real-time search results\"}),`\n`,(0,t.jsx)(e.li,{children:\"Filter by content type\"}),`\n`,(0,t.jsx)(e.li,{children:\"Date range filtering\"}),`\n`,(0,t.jsx)(e.li,{children:\"Improved search result highlighting\"}),`\n`,(0,t.jsx)(e.li,{children:\"Keyboard shortcuts for quick access\"}),`\n`]}),`\n`,(0,t.jsx)(e.p,{children:\"You can now quickly find any saved link, color, or note with just a few keystrokes. The search bar is always accessible from the top of your dashboard.\"})]})}function w(n={}){let{wrapper:e}=n.components||{};return e?(0,t.jsx)(e,Object.assign({},n,{children:(0,t.jsx)(h,n)})):h(n)}var k=w;return b(v);})();\n;return Component;"
+    },
+    "_id": "changelog/2024-11-15.mdx",
+    "_raw": {
+      "sourceFilePath": "changelog/2024-11-15.mdx",
+      "sourceFileName": "2024-11-15.mdx",
+      "sourceFileDir": "changelog",
+      "contentType": "mdx",
+      "flattenedPath": "changelog/2024-11-15"
+    },
+    "type": "Changelog",
+    "formattedDate": "November 15, 2024",
+    "url": "/changelog#2024-11-15"
+  },
+  {
+    "date": "2024-11-20T00:00:00.000Z",
+    "title": "Rich Text Editor Improvements",
+    "changeType": "changed",
+    "body": {
+      "raw": "\nWe've enhanced the rich text editor with new formatting options and improved performance.\n\nThe editor now supports additional markdown shortcuts, better code block syntax highlighting, and smoother auto-save functionality. We've also improved the overall editing experience with better keyboard navigation and cleaner UI.\n\n**What's new:**\n- Enhanced code block support with language detection\n- Improved markdown shortcuts for faster editing\n- Better auto-save reliability\n- Smoother scrolling and performance\n- Updated toolbar design for better accessibility\n\nThese improvements make it easier to create and edit rich text notes, whether you're writing quick thoughts or detailed documentation.\n",
+      "code": "var Component=(()=>{var h=Object.create;var o=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var p=Object.getOwnPropertyNames;var g=Object.getPrototypeOf,u=Object.prototype.hasOwnProperty;var x=(t,e)=>()=>(e||t((e={exports:{}}).exports,e),e.exports),f=(t,e)=>{for(var r in e)o(t,r,{get:e[r],enumerable:!0})},c=(t,e,r,a)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let i of p(e))!u.call(t,i)&&i!==r&&o(t,i,{get:()=>e[i],enumerable:!(a=m(e,i))||a.enumerable});return t};var w=(t,e,r)=>(r=t!=null?h(g(t)):{},c(e||!t||!t.__esModule?o(r,\"default\",{value:t,enumerable:!0}):r,t)),b=t=>c(o({},\"__esModule\",{value:!0}),t);var s=x((T,d)=>{d.exports=_jsx_runtime});var k={};f(k,{default:()=>j,frontmatter:()=>v});var n=w(s()),v={date:new Date(17320608e5),title:\"Rich Text Editor Improvements\",changeType:\"changed\"};function l(t){let e=Object.assign({p:\"p\",strong:\"strong\",ul:\"ul\",li:\"li\"},t.components);return(0,n.jsxs)(n.Fragment,{children:[(0,n.jsx)(e.p,{children:\"We've enhanced the rich text editor with new formatting options and improved performance.\"}),`\n`,(0,n.jsx)(e.p,{children:\"The editor now supports additional markdown shortcuts, better code block syntax highlighting, and smoother auto-save functionality. We've also improved the overall editing experience with better keyboard navigation and cleaner UI.\"}),`\n`,(0,n.jsx)(e.p,{children:(0,n.jsx)(e.strong,{children:\"What's new:\"})}),`\n`,(0,n.jsxs)(e.ul,{children:[`\n`,(0,n.jsx)(e.li,{children:\"Enhanced code block support with language detection\"}),`\n`,(0,n.jsx)(e.li,{children:\"Improved markdown shortcuts for faster editing\"}),`\n`,(0,n.jsx)(e.li,{children:\"Better auto-save reliability\"}),`\n`,(0,n.jsx)(e.li,{children:\"Smoother scrolling and performance\"}),`\n`,(0,n.jsx)(e.li,{children:\"Updated toolbar design for better accessibility\"}),`\n`]}),`\n`,(0,n.jsx)(e.p,{children:\"These improvements make it easier to create and edit rich text notes, whether you're writing quick thoughts or detailed documentation.\"})]})}function y(t={}){let{wrapper:e}=t.components||{};return e?(0,n.jsx)(e,Object.assign({},t,{children:(0,n.jsx)(l,t)})):l(t)}var j=y;return b(k);})();\n;return Component;"
+    },
+    "_id": "changelog/2024-11-20.mdx",
+    "_raw": {
+      "sourceFilePath": "changelog/2024-11-20.mdx",
+      "sourceFileName": "2024-11-20.mdx",
+      "sourceFileDir": "changelog",
+      "contentType": "mdx",
+      "flattenedPath": "changelog/2024-11-20"
+    },
+    "type": "Changelog",
+    "formattedDate": "November 20, 2024",
+    "url": "/changelog#2024-11-20"
+  },
+  {
+    "date": "2024-11-23T00:00:00.000Z",
+    "title": "Chrome Extension Launch",
+    "version": "0.2.0",
+    "changeType": "added",
+    "tags": [
+      "Feature",
+      "Extension"
+    ],
+    "description": "Save links directly from any webpage with our new Chrome extension",
+    "body": {
+      "raw": "\nWe've launched our Chrome extension! Now you can save links directly from any webpage with a single click, without ever leaving the page you're browsing.\n\nThe extension integrates seamlessly with your Caddy workspace, allowing you to capture links, images, and text instantly. Simply click the extension icon in your browser toolbar or use the context menu to save content with a right-click.\n\n**One-click saving** makes it effortless to build your personal knowledge base. Whether you're researching, reading articles, or discovering interesting content, you can save it to Caddy in seconds.\n\n**Context menu integration** provides quick access from anywhere on the web. Right-click on any link, image, or selected text to save it directly to your workspace.\n\nThe extension automatically extracts metadata, removes tracking parameters, and syncs everything to your dashboard in real-time. All your saved content appears instantly, ready to organize and reference later.\n\n**Secure authentication** uses API tokens, so your credentials stay safe. Generate a token in your settings, and the extension will remember it for seamless access.\n\nThe extension is available for all Chromium-based browsers including Chrome, Edge, and Brave. Get started by installing the extension and generating an API token in your settings.\n",
+      "code": "var Component=(()=>{var h=Object.create;var a=Object.defineProperty;var g=Object.getOwnPropertyDescriptor;var u=Object.getOwnPropertyNames;var y=Object.getPrototypeOf,m=Object.prototype.hasOwnProperty;var p=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),x=(n,e)=>{for(var r in e)a(n,r,{get:e[r],enumerable:!0})},s=(n,e,r,i)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let o of u(e))!m.call(n,o)&&o!==r&&a(n,o,{get:()=>e[o],enumerable:!(i=g(e,o))||i.enumerable});return n};var w=(n,e,r)=>(r=n!=null?h(y(n)):{},s(e||!n||!n.__esModule?a(r,\"default\",{value:n,enumerable:!0}):r,n)),k=n=>s(a({},\"__esModule\",{value:!0}),n);var l=p((_,c)=>{c.exports=_jsx_runtime});var C={};x(C,{default:()=>f,frontmatter:()=>v});var t=w(l()),v={date:new Date(173232e7),title:\"Chrome Extension Launch\",changeType:\"added\",tags:[\"Feature\",\"Extension\"],description:\"Save links directly from any webpage with our new Chrome extension\",version:\"0.2.0\"};function d(n){let e=Object.assign({p:\"p\",strong:\"strong\"},n.components);return(0,t.jsxs)(t.Fragment,{children:[(0,t.jsx)(e.p,{children:\"We've launched our Chrome extension! Now you can save links directly from any webpage with a single click, without ever leaving the page you're browsing.\"}),`\n`,(0,t.jsx)(e.p,{children:\"The extension integrates seamlessly with your Caddy workspace, allowing you to capture links, images, and text instantly. Simply click the extension icon in your browser toolbar or use the context menu to save content with a right-click.\"}),`\n`,(0,t.jsxs)(e.p,{children:[(0,t.jsx)(e.strong,{children:\"One-click saving\"}),\" makes it effortless to build your personal knowledge base. Whether you're researching, reading articles, or discovering interesting content, you can save it to Caddy in seconds.\"]}),`\n`,(0,t.jsxs)(e.p,{children:[(0,t.jsx)(e.strong,{children:\"Context menu integration\"}),\" provides quick access from anywhere on the web. Right-click on any link, image, or selected text to save it directly to your workspace.\"]}),`\n`,(0,t.jsx)(e.p,{children:\"The extension automatically extracts metadata, removes tracking parameters, and syncs everything to your dashboard in real-time. All your saved content appears instantly, ready to organize and reference later.\"}),`\n`,(0,t.jsxs)(e.p,{children:[(0,t.jsx)(e.strong,{children:\"Secure authentication\"}),\" uses API tokens, so your credentials stay safe. Generate a token in your settings, and the extension will remember it for seamless access.\"]}),`\n`,(0,t.jsx)(e.p,{children:\"The extension is available for all Chromium-based browsers including Chrome, Edge, and Brave. Get started by installing the extension and generating an API token in your settings.\"})]})}function b(n={}){let{wrapper:e}=n.components||{};return e?(0,t.jsx)(e,Object.assign({},n,{children:(0,t.jsx)(d,n)})):d(n)}var f=b;return k(C);})();\n;return Component;"
+    },
+    "_id": "changelog/2024-11-23.mdx",
+    "_raw": {
+      "sourceFilePath": "changelog/2024-11-23.mdx",
+      "sourceFileName": "2024-11-23.mdx",
+      "sourceFileDir": "changelog",
+      "contentType": "mdx",
+      "flattenedPath": "changelog/2024-11-23"
+    },
+    "type": "Changelog",
+    "formattedDate": "November 23, 2024",
+    "url": "/changelog#2024-11-23"
+  }
+]

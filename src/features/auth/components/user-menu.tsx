@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
@@ -40,9 +42,12 @@ export function UserMenu({ user }: UserMenuProps) {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2.5 rounded-lg hover:bg-neutral-100 px-3 py-2"
       >
-        <div className="h-8 w-8 rounded-full bg-neutral-900 flex items-center justify-center text-white text-sm font-medium">
-          {user.email?.charAt(0).toUpperCase() || "U"}
-        </div>
+        <Avatar className="h-8 w-8">
+          <AvatarImage src={user.user_metadata?.avatar_url || user.user_metadata?.picture} alt={user.email} />
+          <AvatarFallback className="bg-neutral-900 text-white">
+            {user.email?.charAt(0).toUpperCase() || "U"}
+          </AvatarFallback>
+        </Avatar>
       </button>
 
       {isOpen && (

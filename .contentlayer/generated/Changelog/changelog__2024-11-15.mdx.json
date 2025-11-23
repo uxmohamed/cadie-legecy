@@ -1,0 +1,20 @@
+{
+  "date": "2024-11-15T00:00:00.000Z",
+  "title": "Search and Filter Enhancements",
+  "changeType": "changed",
+  "body": {
+    "raw": "\nWe've improved search functionality to make finding your saved content faster and more intuitive.\n\nThe search now supports filtering by content type (links, colors, notes), date ranges, and tags. Results are displayed instantly as you type, with highlighted matching terms.\n\n**Improvements:**\n- Real-time search results\n- Filter by content type\n- Date range filtering\n- Improved search result highlighting\n- Keyboard shortcuts for quick access\n\nYou can now quickly find any saved link, color, or note with just a few keystrokes. The search bar is always accessible from the top of your dashboard.\n",
+    "code": "var Component=(()=>{var d=Object.create;var s=Object.defineProperty;var u=Object.getOwnPropertyDescriptor;var g=Object.getOwnPropertyNames;var m=Object.getPrototypeOf,p=Object.prototype.hasOwnProperty;var y=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),f=(n,e)=>{for(var r in e)s(n,r,{get:e[r],enumerable:!0})},o=(n,e,r,a)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let i of g(e))!p.call(n,i)&&i!==r&&s(n,i,{get:()=>e[i],enumerable:!(a=u(e,i))||a.enumerable});return n};var x=(n,e,r)=>(r=n!=null?d(m(n)):{},o(e||!n||!n.__esModule?s(r,\"default\",{value:n,enumerable:!0}):r,n)),b=n=>o(s({},\"__esModule\",{value:!0}),n);var l=y((D,c)=>{c.exports=_jsx_runtime});var v={};f(v,{default:()=>k,frontmatter:()=>j});var t=x(l()),j={date:new Date(17316288e5),title:\"Search and Filter Enhancements\",changeType:\"changed\"};function h(n){let e=Object.assign({p:\"p\",strong:\"strong\",ul:\"ul\",li:\"li\"},n.components);return(0,t.jsxs)(t.Fragment,{children:[(0,t.jsx)(e.p,{children:\"We've improved search functionality to make finding your saved content faster and more intuitive.\"}),`\n`,(0,t.jsx)(e.p,{children:\"The search now supports filtering by content type (links, colors, notes), date ranges, and tags. Results are displayed instantly as you type, with highlighted matching terms.\"}),`\n`,(0,t.jsx)(e.p,{children:(0,t.jsx)(e.strong,{children:\"Improvements:\"})}),`\n`,(0,t.jsxs)(e.ul,{children:[`\n`,(0,t.jsx)(e.li,{children:\"Real-time search results\"}),`\n`,(0,t.jsx)(e.li,{children:\"Filter by content type\"}),`\n`,(0,t.jsx)(e.li,{children:\"Date range filtering\"}),`\n`,(0,t.jsx)(e.li,{children:\"Improved search result highlighting\"}),`\n`,(0,t.jsx)(e.li,{children:\"Keyboard shortcuts for quick access\"}),`\n`]}),`\n`,(0,t.jsx)(e.p,{children:\"You can now quickly find any saved link, color, or note with just a few keystrokes. The search bar is always accessible from the top of your dashboard.\"})]})}function w(n={}){let{wrapper:e}=n.components||{};return e?(0,t.jsx)(e,Object.assign({},n,{children:(0,t.jsx)(h,n)})):h(n)}var k=w;return b(v);})();\n;return Component;"
+  },
+  "_id": "changelog/2024-11-15.mdx",
+  "_raw": {
+    "sourceFilePath": "changelog/2024-11-15.mdx",
+    "sourceFileName": "2024-11-15.mdx",
+    "sourceFileDir": "changelog",
+    "contentType": "mdx",
+    "flattenedPath": "changelog/2024-11-15"
+  },
+  "type": "Changelog",
+  "formattedDate": "November 15, 2024",
+  "url": "/changelog#2024-11-15"
+}

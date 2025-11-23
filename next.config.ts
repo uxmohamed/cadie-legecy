@@ -1,7 +1,33 @@
 import type { NextConfig } from "next";
+import { withContentlayer } from "next-contentlayer";
+import path from "path";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Optimize images for Cloudflare
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+  },
+
+  // Disable x-powered-by header for security
+  poweredByHeader: false,
+
+  // Enable compression
+  compress: true,
+
+  // Optimize for production
+  reactStrictMode: true,
+
+  // Webpack configuration for Contentlayer
+  webpack: (config, { isServer }) => {
+    // Add alias for contentlayer/generated
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'contentlayer/generated': path.join(process.cwd(), '.contentlayer/generated'),
+    };
+    return config;
+  },
 };
 
-export default nextConfig;
+export default withContentlayer(nextConfig);

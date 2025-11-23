@@ -1,0 +1,26 @@
+{
+  "date": "2024-11-23T00:00:00.000Z",
+  "title": "Chrome Extension Launch",
+  "version": "0.2.0",
+  "changeType": "added",
+  "tags": [
+    "Feature",
+    "Extension"
+  ],
+  "description": "Save links directly from any webpage with our new Chrome extension",
+  "body": {
+    "raw": "\nWe've launched our Chrome extension! Now you can save links directly from any webpage with a single click, without ever leaving the page you're browsing.\n\nThe extension integrates seamlessly with your Caddy workspace, allowing you to capture links, images, and text instantly. Simply click the extension icon in your browser toolbar or use the context menu to save content with a right-click.\n\n**One-click saving** makes it effortless to build your personal knowledge base. Whether you're researching, reading articles, or discovering interesting content, you can save it to Caddy in seconds.\n\n**Context menu integration** provides quick access from anywhere on the web. Right-click on any link, image, or selected text to save it directly to your workspace.\n\nThe extension automatically extracts metadata, removes tracking parameters, and syncs everything to your dashboard in real-time. All your saved content appears instantly, ready to organize and reference later.\n\n**Secure authentication** uses API tokens, so your credentials stay safe. Generate a token in your settings, and the extension will remember it for seamless access.\n\nThe extension is available for all Chromium-based browsers including Chrome, Edge, and Brave. Get started by installing the extension and generating an API token in your settings.\n",
+    "code": "var Component=(()=>{var h=Object.create;var a=Object.defineProperty;var g=Object.getOwnPropertyDescriptor;var u=Object.getOwnPropertyNames;var y=Object.getPrototypeOf,m=Object.prototype.hasOwnProperty;var p=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),x=(n,e)=>{for(var r in e)a(n,r,{get:e[r],enumerable:!0})},s=(n,e,r,i)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let o of u(e))!m.call(n,o)&&o!==r&&a(n,o,{get:()=>e[o],enumerable:!(i=g(e,o))||i.enumerable});return n};var w=(n,e,r)=>(r=n!=null?h(y(n)):{},s(e||!n||!n.__esModule?a(r,\"default\",{value:n,enumerable:!0}):r,n)),k=n=>s(a({},\"__esModule\",{value:!0}),n);var l=p((_,c)=>{c.exports=_jsx_runtime});var C={};x(C,{default:()=>f,frontmatter:()=>v});var t=w(l()),v={date:new Date(173232e7),title:\"Chrome Extension Launch\",changeType:\"added\",tags:[\"Feature\",\"Extension\"],description:\"Save links directly from any webpage with our new Chrome extension\",version:\"0.2.0\"};function d(n){let e=Object.assign({p:\"p\",strong:\"strong\"},n.components);return(0,t.jsxs)(t.Fragment,{children:[(0,t.jsx)(e.p,{children:\"We've launched our Chrome extension! Now you can save links directly from any webpage with a single click, without ever leaving the page you're browsing.\"}),`\n`,(0,t.jsx)(e.p,{children:\"The extension integrates seamlessly with your Caddy workspace, allowing you to capture links, images, and text instantly. Simply click the extension icon in your browser toolbar or use the context menu to save content with a right-click.\"}),`\n`,(0,t.jsxs)(e.p,{children:[(0,t.jsx)(e.strong,{children:\"One-click saving\"}),\" makes it effortless to build your personal knowledge base. Whether you're researching, reading articles, or discovering interesting content, you can save it to Caddy in seconds.\"]}),`\n`,(0,t.jsxs)(e.p,{children:[(0,t.jsx)(e.strong,{children:\"Context menu integration\"}),\" provides quick access from anywhere on the web. Right-click on any link, image, or selected text to save it directly to your workspace.\"]}),`\n`,(0,t.jsx)(e.p,{children:\"The extension automatically extracts metadata, removes tracking parameters, and syncs everything to your dashboard in real-time. All your saved content appears instantly, ready to organize and reference later.\"}),`\n`,(0,t.jsxs)(e.p,{children:[(0,t.jsx)(e.strong,{children:\"Secure authentication\"}),\" uses API tokens, so your credentials stay safe. Generate a token in your settings, and the extension will remember it for seamless access.\"]}),`\n`,(0,t.jsx)(e.p,{children:\"The extension is available for all Chromium-based browsers including Chrome, Edge, and Brave. Get started by installing the extension and generating an API token in your settings.\"})]})}function b(n={}){let{wrapper:e}=n.components||{};return e?(0,t.jsx)(e,Object.assign({},n,{children:(0,t.jsx)(d,n)})):d(n)}var f=b;return k(C);})();\n;return Component;"
+  },
+  "_id": "changelog/2024-11-23.mdx",
+  "_raw": {
+    "sourceFilePath": "changelog/2024-11-23.mdx",
+    "sourceFileName": "2024-11-23.mdx",
+    "sourceFileDir": "changelog",
+    "contentType": "mdx",
+    "flattenedPath": "changelog/2024-11-23"
+  },
+  "type": "Changelog",
+  "formattedDate": "November 23, 2024",
+  "url": "/changelog#2024-11-23"
+}

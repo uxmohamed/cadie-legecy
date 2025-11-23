@@ -1,0 +1,20 @@
+{
+  "date": "2024-11-20T00:00:00.000Z",
+  "title": "Rich Text Editor Improvements",
+  "changeType": "changed",
+  "body": {
+    "raw": "\nWe've enhanced the rich text editor with new formatting options and improved performance.\n\nThe editor now supports additional markdown shortcuts, better code block syntax highlighting, and smoother auto-save functionality. We've also improved the overall editing experience with better keyboard navigation and cleaner UI.\n\n**What's new:**\n- Enhanced code block support with language detection\n- Improved markdown shortcuts for faster editing\n- Better auto-save reliability\n- Smoother scrolling and performance\n- Updated toolbar design for better accessibility\n\nThese improvements make it easier to create and edit rich text notes, whether you're writing quick thoughts or detailed documentation.\n",
+    "code": "var Component=(()=>{var h=Object.create;var o=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var p=Object.getOwnPropertyNames;var g=Object.getPrototypeOf,u=Object.prototype.hasOwnProperty;var x=(t,e)=>()=>(e||t((e={exports:{}}).exports,e),e.exports),f=(t,e)=>{for(var r in e)o(t,r,{get:e[r],enumerable:!0})},c=(t,e,r,a)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let i of p(e))!u.call(t,i)&&i!==r&&o(t,i,{get:()=>e[i],enumerable:!(a=m(e,i))||a.enumerable});return t};var w=(t,e,r)=>(r=t!=null?h(g(t)):{},c(e||!t||!t.__esModule?o(r,\"default\",{value:t,enumerable:!0}):r,t)),b=t=>c(o({},\"__esModule\",{value:!0}),t);var s=x((T,d)=>{d.exports=_jsx_runtime});var k={};f(k,{default:()=>j,frontmatter:()=>v});var n=w(s()),v={date:new Date(17320608e5),title:\"Rich Text Editor Improvements\",changeType:\"changed\"};function l(t){let e=Object.assign({p:\"p\",strong:\"strong\",ul:\"ul\",li:\"li\"},t.components);return(0,n.jsxs)(n.Fragment,{children:[(0,n.jsx)(e.p,{children:\"We've enhanced the rich text editor with new formatting options and improved performance.\"}),`\n`,(0,n.jsx)(e.p,{children:\"The editor now supports additional markdown shortcuts, better code block syntax highlighting, and smoother auto-save functionality. We've also improved the overall editing experience with better keyboard navigation and cleaner UI.\"}),`\n`,(0,n.jsx)(e.p,{children:(0,n.jsx)(e.strong,{children:\"What's new:\"})}),`\n`,(0,n.jsxs)(e.ul,{children:[`\n`,(0,n.jsx)(e.li,{children:\"Enhanced code block support with language detection\"}),`\n`,(0,n.jsx)(e.li,{children:\"Improved markdown shortcuts for faster editing\"}),`\n`,(0,n.jsx)(e.li,{children:\"Better auto-save reliability\"}),`\n`,(0,n.jsx)(e.li,{children:\"Smoother scrolling and performance\"}),`\n`,(0,n.jsx)(e.li,{children:\"Updated toolbar design for better accessibility\"}),`\n`]}),`\n`,(0,n.jsx)(e.p,{children:\"These improvements make it easier to create and edit rich text notes, whether you're writing quick thoughts or detailed documentation.\"})]})}function y(t={}){let{wrapper:e}=t.components||{};return e?(0,n.jsx)(e,Object.assign({},t,{children:(0,n.jsx)(l,t)})):l(t)}var j=y;return b(k);})();\n;return Component;"
+  },
+  "_id": "changelog/2024-11-20.mdx",
+  "_raw": {
+    "sourceFilePath": "changelog/2024-11-20.mdx",
+    "sourceFileName": "2024-11-20.mdx",
+    "sourceFileDir": "changelog",
+    "contentType": "mdx",
+    "flattenedPath": "changelog/2024-11-20"
+  },
+  "type": "Changelog",
+  "formattedDate": "November 20, 2024",
+  "url": "/changelog#2024-11-20"
+}

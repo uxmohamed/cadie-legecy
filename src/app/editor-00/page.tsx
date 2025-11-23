@@ -5,29 +5,19 @@ import { useState } from "react";
 
 import { Editor } from "@/features/editor/components/blocks/editor-00/editor";
 
-export const initialValue = {
+const initialValue = {
   root: {
     children: [
       {
-        children: [
-          {
-            detail: 0,
-            format: 0,
-            mode: "normal",
-            style: "",
-            text: "Hello World 🚀",
-            type: "text",
-            version: 1,
-          },
-        ],
-        direction: "ltr",
+        children: [],
+        direction: null,
         format: "",
         indent: 0,
         type: "paragraph",
         version: 1,
       },
     ],
-    direction: "ltr",
+    direction: null,
     format: "",
     indent: 0,
     type: "root",

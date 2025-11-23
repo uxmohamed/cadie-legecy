@@ -1,0 +1,20 @@
+{
+  "date": "2024-11-10T00:00:00.000Z",
+  "title": "URL Cleaning and Metadata Extraction",
+  "changeType": "added",
+  "body": {
+    "raw": "\nWe've added automatic URL cleaning and enhanced metadata extraction to make your saved links more useful.\n\nWhen you save a link, Caddy now automatically removes tracking parameters and extracts rich metadata including titles, descriptions, and Open Graph images. This keeps your links clean and provides better context at a glance.\n\n**Features:**\n- Automatic tracking parameter removal\n- Enhanced metadata extraction\n- Favicon and image previews\n- Improved link previews in your dashboard\n- Better organization with extracted data\n\nYour saved links are now cleaner and more informative, making it easier to find and reference content later.\n",
+    "code": "var Component=(()=>{var m=Object.create;var i=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var u=Object.getOwnPropertyNames;var p=Object.getPrototypeOf,g=Object.prototype.hasOwnProperty;var x=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),v=(n,e)=>{for(var t in e)i(n,t,{get:e[t],enumerable:!0})},o=(n,e,t,d)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let r of u(e))!g.call(n,r)&&r!==t&&i(n,r,{get:()=>e[r],enumerable:!(d=h(e,r))||d.enumerable});return n};var k=(n,e,t)=>(t=n!=null?m(p(n)):{},o(e||!n||!n.__esModule?i(t,\"default\",{value:n,enumerable:!0}):t,n)),f=n=>o(i({},\"__esModule\",{value:!0}),n);var s=x((C,c)=>{c.exports=_jsx_runtime});var _={};v(_,{default:()=>w,frontmatter:()=>y});var a=k(s()),y={date:new Date(17311968e5),title:\"URL Cleaning and Metadata Extraction\",changeType:\"added\"};function l(n){let e=Object.assign({p:\"p\",strong:\"strong\",ul:\"ul\",li:\"li\"},n.components);return(0,a.jsxs)(a.Fragment,{children:[(0,a.jsx)(e.p,{children:\"We've added automatic URL cleaning and enhanced metadata extraction to make your saved links more useful.\"}),`\n`,(0,a.jsx)(e.p,{children:\"When you save a link, Caddy now automatically removes tracking parameters and extracts rich metadata including titles, descriptions, and Open Graph images. This keeps your links clean and provides better context at a glance.\"}),`\n`,(0,a.jsx)(e.p,{children:(0,a.jsx)(e.strong,{children:\"Features:\"})}),`\n`,(0,a.jsxs)(e.ul,{children:[`\n`,(0,a.jsx)(e.li,{children:\"Automatic tracking parameter removal\"}),`\n`,(0,a.jsx)(e.li,{children:\"Enhanced metadata extraction\"}),`\n`,(0,a.jsx)(e.li,{children:\"Favicon and image previews\"}),`\n`,(0,a.jsx)(e.li,{children:\"Improved link previews in your dashboard\"}),`\n`,(0,a.jsx)(e.li,{children:\"Better organization with extracted data\"}),`\n`]}),`\n`,(0,a.jsx)(e.p,{children:\"Your saved links are now cleaner and more informative, making it easier to find and reference content later.\"})]})}function j(n={}){let{wrapper:e}=n.components||{};return e?(0,a.jsx)(e,Object.assign({},n,{children:(0,a.jsx)(l,n)})):l(n)}var w=j;return f(_);})();\n;return Component;"
+  },
+  "_id": "changelog/2024-11-10.mdx",
+  "_raw": {
+    "sourceFilePath": "changelog/2024-11-10.mdx",
+    "sourceFileName": "2024-11-10.mdx",
+    "sourceFileDir": "changelog",
+    "contentType": "mdx",
+    "flattenedPath": "changelog/2024-11-10"
+  },
+  "type": "Changelog",
+  "formattedDate": "November 10, 2024",
+  "url": "/changelog#2024-11-10"
+}
