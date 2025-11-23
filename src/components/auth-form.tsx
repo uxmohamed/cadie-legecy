@@ -45,8 +45,11 @@ export function AuthForm() {
     const supabase = createClient();
 
     try {
-      // Use NEXT_PUBLIC_SITE_URL if available, otherwise fall back to window.location.origin
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      // Use NEXT_PUBLIC_SITE_URL if available and not localhost, otherwise fall back to window.location.origin
+      let siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+      if (!siteUrl || siteUrl.includes('localhost')) {
+        siteUrl = window.location.origin;
+      }
       
       const { error } = await supabase.auth.signInWithOtp({
         email,
@@ -77,7 +80,10 @@ export function AuthForm() {
     const supabase = createClient();
 
     try {
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      let siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+      if (!siteUrl || siteUrl.includes('localhost')) {
+        siteUrl = window.location.origin;
+      }
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",

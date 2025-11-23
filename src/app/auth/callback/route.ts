@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
+export const runtime = 'edge';
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
@@ -17,9 +19,10 @@ export async function GET(request: Request) {
       
       let redirectUrl: string;
       
-      // Priority: 1. Environment variable, 2. Forwarded host, 3. Origin
-      if (process.env.NEXT_PUBLIC_SITE_URL) {
-        redirectUrl = `${process.env.NEXT_PUBLIC_SITE_URL}${next}`;
+      // Priority: 1. Environment variable (if not localhost), 2. Forwarded host, 3. Origin
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+      if (siteUrl && !siteUrl.includes('localhost')) {
+        redirectUrl = `${siteUrl}${next}`;
       } else if (forwardedHost) {
         redirectUrl = `${forwardedProto}://${forwardedHost}${next}`;
       } else {
@@ -36,8 +39,9 @@ export async function GET(request: Request) {
   const forwardedProto = request.headers.get("x-forwarded-proto") ?? "https";
   
   let authUrl: string;
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    authUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/auth`;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (siteUrl && !siteUrl.includes('localhost')) {
+    authUrl = `${siteUrl}/auth`;
   } else if (forwardedHost) {
     authUrl = `${forwardedProto}://${forwardedHost}/auth`;
   } else {

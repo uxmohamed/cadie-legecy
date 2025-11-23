@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
     // Trigger background metadata fetch for URL content type
     if (content_type === "url" && data.id) {
       // Fire-and-forget: don't wait for metadata fetch
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
       fetch(`${baseUrl}/api/links/${data.id}/metadata`, {
         method: 'POST',
         headers: { 
