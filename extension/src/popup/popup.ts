@@ -11,8 +11,12 @@ const pageUrl = document.getElementById("pageUrl") as HTMLDivElement;
 const saveBtn = document.getElementById("saveBtn") as HTMLButtonElement;
 const saveBtnText = document.getElementById("saveBtnText") as HTMLSpanElement;
 const settingsBtn = document.getElementById("settingsBtn") as HTMLButtonElement;
-const openCaddyBtn = document.getElementById("openCaddyBtn") as HTMLButtonElement;
-const statusMessage = document.getElementById("statusMessage") as HTMLDivElement;
+const openCaddyBtn = document.getElementById(
+  "openCaddyBtn",
+) as HTMLButtonElement;
+const statusMessage = document.getElementById(
+  "statusMessage",
+) as HTMLDivElement;
 const statusText = document.getElementById("statusText") as HTMLSpanElement;
 
 let currentTab: chrome.tabs.Tab | null = null;
@@ -31,13 +35,13 @@ async function init() {
     pageUrl.textContent = "Connect your Caddy account to start saving links";
     saveBtn.disabled = true;
     saveBtnText.textContent = "Open Settings";
-    
+
     // Change save button to open settings
     saveBtn.onclick = () => {
       chrome.runtime.openOptionsPage();
     };
     saveBtn.disabled = false;
-    
+
     showStatus("Click above to connect your account", "info");
     return;
   }
@@ -84,7 +88,7 @@ async function savePage() {
 
   try {
     isSaving = true;
-    
+
     // Update button state
     saveBtn.disabled = true;
     saveBtn.classList.add("saving");
@@ -126,7 +130,7 @@ async function savePage() {
     isSaving = false;
     showStatus(
       error instanceof Error ? error.message : "Failed to save",
-      "error"
+      "error",
     );
   }
 }
@@ -167,4 +171,3 @@ if (!openCaddyBtn.onclick) {
 
 // Initialize on load
 init();
-

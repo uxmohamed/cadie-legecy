@@ -1,7 +1,7 @@
 "use client";
 
-import * as React from "react";
 import { cn } from "@/lib/utils";
+import * as React from "react";
 
 interface FaviconProps {
   url: string;
@@ -43,7 +43,7 @@ export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
 
     // 3. Google favicon with maximum size (256x256)
     fallbacks.push(
-      `https://www.google.com/s2/favicons?domain=${domain}&sz=256`
+      `https://www.google.com/s2/favicons?domain=${domain}&sz=256`,
     );
 
     // 4. Try direct favicon.ico
@@ -86,7 +86,7 @@ export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
       <div
         className={cn(
           "h-5 w-5 flex-shrink-0 rounded bg-neutral-100 flex items-center justify-center",
-          className
+          className,
         )}
       >
         <svg
@@ -113,7 +113,7 @@ export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
       alt={alt}
       className={cn(
         "h-5 w-5 flex-shrink-0 rounded object-cover antialiased",
-        className
+        className,
       )}
       onError={handleError}
       loading="lazy"

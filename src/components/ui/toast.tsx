@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { Toast } from "@base-ui-components/react/toast";
 import {
   CircleAlertIcon,
@@ -9,9 +8,10 @@ import {
   LoaderCircleIcon,
   TriangleAlertIcon,
 } from "lucide-react";
+import * as React from "react";
 
-import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const toastManager = Toast.createToastManager();
 
@@ -171,14 +171,14 @@ function useToast() {
     (
       message: string,
       type: "success" | "error" | "info" | "warning" | "loading" = "info",
-      duration = 5000
+      duration = 5000,
     ) => {
       toastManager.add({
         title: message,
         type,
       });
     },
-    []
+    [],
   );
 
   return { showToast };

@@ -12,7 +12,7 @@ export async function extractMetadata(url: string): Promise<LinkMetadata> {
   // Create timeout for metadata extraction (10 seconds max)
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000);
-  
+
   try {
     const response = await fetch(url, {
       headers: {
@@ -76,7 +76,7 @@ export async function extractMetadata(url: string): Promise<LinkMetadata> {
     // Fallback options - use Clearbit for best quality
     if (!favicon) {
       const domain = new URL(url).hostname;
-      
+
       // Use Clearbit Logo API as primary fallback (high quality, well-maintained)
       // The frontend Favicon component will handle additional fallbacks if this fails
       favicon = `https://logo.clearbit.com/${domain}`;
@@ -94,14 +94,14 @@ export async function extractMetadata(url: string): Promise<LinkMetadata> {
     };
   } catch (error) {
     clearTimeout(timeoutId);
-    
+
     // Log different error types
-    if (error instanceof Error && error.name === 'AbortError') {
+    if (error instanceof Error && error.name === "AbortError") {
       console.error("Metadata extraction timeout for:", url);
     } else {
       console.error("Error extracting metadata:", error);
     }
-    
+
     // Return fallback metadata
     const urlObj = new URL(url);
     const domain = urlObj.hostname.replace("www.", "");
@@ -112,4 +112,3 @@ export async function extractMetadata(url: string): Promise<LinkMetadata> {
     };
   }
 }
-

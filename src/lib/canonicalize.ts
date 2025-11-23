@@ -7,7 +7,7 @@
  * Converts a color to its canonical format for comparison
  * - Legacy formats (hex, rgb, hsl, named) -> normalized hex
  * - Modern formats (oklch, oklab, lab, lch, color()) -> normalized functional notation
- * 
+ *
  * Examples:
  * - #F53 -> #ff5533
  * - #FF5733 -> #ff5733
@@ -51,7 +51,7 @@ export function canonicalizeColor(color: string): string {
 
   // Handle rgb/rgba
   const rgbMatch = trimmed.match(
-    /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/
+    /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/,
   );
   if (rgbMatch) {
     const [, r, g, b] = rgbMatch;
@@ -60,14 +60,14 @@ export function canonicalizeColor(color: string): string {
 
   // Handle hsl/hsla - convert to RGB then to hex
   const hslMatch = trimmed.match(
-    /hsla?\((\d+),\s*(\d+)%,\s*(\d+)%(?:,\s*[\d.]+)?\)/
+    /hsla?\((\d+),\s*(\d+)%,\s*(\d+)%(?:,\s*[\d.]+)?\)/,
   );
   if (hslMatch) {
     const [, h, s, l] = hslMatch;
     const rgb = hslToRgb(
       Number.parseInt(h),
       Number.parseInt(s),
-      Number.parseInt(l)
+      Number.parseInt(l),
     );
     return rgbToHex(rgb.r, rgb.g, rgb.b);
   }
@@ -112,7 +112,7 @@ function normalizeColorFunction(color: string, functionName: string): string {
     .replace(/\(\s*/g, "(")
     .replace(/\s*\)/g, ")")
     .replace(/\s*\/\s*/g, " / ");
-  
+
   return normalized;
 }
 
@@ -135,7 +135,7 @@ function rgbToHex(r: number, g: number, b: number): string {
 function hslToRgb(
   h: number,
   s: number,
-  l: number
+  l: number,
 ): { r: number; g: number; b: number } {
   h = h / 360;
   s = s / 100;
@@ -244,7 +244,7 @@ export function canonicalizeUrl(url: string): string {
  */
 export function canonicalizeContent(
   value: string,
-  type: "url" | "color" | "text"
+  type: "url" | "color" | "text",
 ): string {
   switch (type) {
     case "color":
@@ -258,4 +258,3 @@ export function canonicalizeContent(
       return value.trim().toLowerCase();
   }
 }
-

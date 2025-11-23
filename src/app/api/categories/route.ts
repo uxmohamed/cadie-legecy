@@ -1,11 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -20,7 +22,7 @@ export async function GET() {
     if (categoriesError) {
       return NextResponse.json(
         { error: categoriesError.message },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -32,10 +34,7 @@ export async function GET() {
       .eq("is_archived", false);
 
     if (countsError) {
-      return NextResponse.json(
-        { error: countsError.message },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: countsError.message }, { status: 500 });
     }
 
     // Count links per category
@@ -57,7 +56,7 @@ export async function GET() {
     console.error("Error fetching categories:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -65,8 +64,10 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
     if (!name || !color) {
       return NextResponse.json(
         { error: "Name and color are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -102,8 +103,7 @@ export async function POST(request: NextRequest) {
     console.error("Error creating category:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

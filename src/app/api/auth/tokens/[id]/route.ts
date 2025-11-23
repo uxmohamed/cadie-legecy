@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 /**
  * DELETE /api/auth/tokens/[id]
@@ -7,12 +7,14 @@ import { createClient } from "@/lib/supabase/server";
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -22,7 +24,7 @@ export async function DELETE(
     if (!id) {
       return NextResponse.json(
         { error: "Token ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -37,7 +39,7 @@ export async function DELETE(
       console.error("Error deleting token:", error);
       return NextResponse.json(
         { error: "Failed to delete token" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -46,8 +48,7 @@ export async function DELETE(
     console.error("Error in DELETE /api/auth/tokens/[id]:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

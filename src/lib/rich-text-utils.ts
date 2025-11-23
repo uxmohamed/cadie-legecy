@@ -3,7 +3,9 @@ import type { SerializedEditorState } from "lexical";
 /**
  * Creates an initial Lexical editor state from plain text
  */
-export function createInitialRichTextState(text: string): SerializedEditorState {
+export function createInitialRichTextState(
+  text: string,
+): SerializedEditorState {
   return {
     root: {
       children: [
@@ -39,7 +41,7 @@ export function createInitialRichTextState(text: string): SerializedEditorState 
  * Extracts plain text from Lexical editor state for preview
  */
 export function extractTextFromRichText(
-  state: SerializedEditorState | null | undefined
+  state: SerializedEditorState | null | undefined,
 ): string {
   if (!state?.root?.children) return "";
 
@@ -55,4 +57,3 @@ export function extractTextFromRichText(
 
   return state.root.children.map(extractText).join(" ").trim();
 }
-

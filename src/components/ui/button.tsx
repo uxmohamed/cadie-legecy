@@ -1,6 +1,6 @@
 import { mergeProps } from "@base-ui-components/react/merge-props";
 import { useRender } from "@base-ui-components/react/use-render";
-import { cva, type VariantProps } from "class-variance-authority";
+import { type VariantProps, cva } from "class-variance-authority";
 import type * as React from "react";
 
 import { cn } from "@/lib/utils";
@@ -34,7 +34,8 @@ const buttonVariants = cva(
           "not-disabled:inset-shadow-[0_1px_--theme(--color-white/16%)] border-red-500 bg-red-500 text-white shadow-destructive/24 shadow-xs hover:bg-red-500/90 [&:is(:active,[data-pressed])]:inset-shadow-[0_1px_--theme(--color-black/8%)] [&:is(:disabled,:active,[data-pressed])]:shadow-none dark:border-red-900 dark:bg-red-900 dark:hover:bg-red-900/90",
         "destructive-outline":
           "border-slate-200 bg-transparent text-slate-50 shadow-xs not-disabled:not-active:not-data-pressed:before:shadow-[0_1px_--theme(--color-black/4%)] dark:bg-slate-200/32 dark:not-in-data-[slot=group]:bg-clip-border dark:not-disabled:before:shadow-[0_-1px_--theme(--color-white/4%)] dark:not-disabled:not-active:not-data-pressed:before:shadow-[0_-1px_--theme(--color-white/8%)] [&:is(:disabled,:active,[data-pressed])]:shadow-none [&:is(:hover,[data-pressed])]:border-red-500/32 [&:is(:hover,[data-pressed])]:bg-red-500/4 dark:border-slate-800 dark:text-slate-50 dark:dark:bg-slate-800/32 dark:[&:is(:hover,[data-pressed])]:border-red-900/32 dark:[&:is(:hover,[data-pressed])]:bg-red-900/4",
-        ghost: "border-transparent hover:bg-slate-100 data-pressed:bg-slate-100 dark:hover:bg-slate-800 dark:data-pressed:bg-slate-800",
+        ghost:
+          "border-transparent hover:bg-slate-100 data-pressed:bg-slate-100 dark:hover:bg-slate-800 dark:data-pressed:bg-slate-800",
         link: "border-transparent underline-offset-4 hover:underline",
         outline:
           "border-slate-200 bg-white shadow-xs not-disabled:not-active:not-data-pressed:before:shadow-[0_1px_--theme(--color-black/4%)] dark:bg-slate-200/32 dark:not-in-data-[slot=group]:bg-clip-border dark:not-disabled:before:shadow-[0_-1px_--theme(--color-white/4%)] dark:not-disabled:not-active:not-data-pressed:before:shadow-[0_-1px_--theme(--color-white/8%)] [&:is(:disabled,:active,[data-pressed])]:shadow-none [&:is(:hover,[data-pressed])]:bg-slate-100/50 dark:[&:is(:hover,[data-pressed])]:bg-slate-200/64 dark:border-slate-800 dark:bg-slate-950 dark:dark:bg-slate-800/32 dark:[&:is(:hover,[data-pressed])]:bg-slate-800/50 dark:dark:[&:is(:hover,[data-pressed])]:bg-slate-800/64",

@@ -3,27 +3,55 @@
  */
 
 import { testConnection } from "../lib/api-client";
-import { getSettings, saveSettings, clearSettings } from "../lib/storage";
+import { clearSettings, getSettings, saveSettings } from "../lib/storage";
 
 // DOM elements
-const notConnectedView = document.getElementById("notConnectedView") as HTMLDivElement;
-const connectedView = document.getElementById("connectedView") as HTMLDivElement;
+const notConnectedView = document.getElementById(
+  "notConnectedView",
+) as HTMLDivElement;
+const connectedView = document.getElementById(
+  "connectedView",
+) as HTMLDivElement;
 const connectBtn = document.getElementById("connectBtn") as HTMLButtonElement;
-const disconnectBtn = document.getElementById("disconnectBtn") as HTMLButtonElement;
-const testConnectionBtn = document.getElementById("testConnectionBtn") as HTMLButtonElement;
-const openCaddyBtn = document.getElementById("openCaddyBtn") as HTMLAnchorElement;
-const statusMessage = document.getElementById("statusMessage") as HTMLDivElement;
+const disconnectBtn = document.getElementById(
+  "disconnectBtn",
+) as HTMLButtonElement;
+const testConnectionBtn = document.getElementById(
+  "testConnectionBtn",
+) as HTMLButtonElement;
+const openCaddyBtn = document.getElementById(
+  "openCaddyBtn",
+) as HTMLAnchorElement;
+const statusMessage = document.getElementById(
+  "statusMessage",
+) as HTMLDivElement;
 const statusText = document.getElementById("statusText") as HTMLSpanElement;
-const connectedEmail = document.getElementById("connectedEmail") as HTMLParagraphElement;
-const connectedUrl = document.getElementById("connectedUrl") as HTMLParagraphElement;
+const connectedEmail = document.getElementById(
+  "connectedEmail",
+) as HTMLParagraphElement;
+const connectedUrl = document.getElementById(
+  "connectedUrl",
+) as HTMLParagraphElement;
 
 // Manual config elements
-const manualCaddyUrl = document.getElementById("manualCaddyUrl") as HTMLInputElement;
-const manualApiToken = document.getElementById("manualApiToken") as HTMLInputElement;
-const manualToggleTokenBtn = document.getElementById("manualToggleTokenBtn") as HTMLButtonElement;
-const manualToggleTokenText = document.getElementById("manualToggleTokenText") as HTMLSpanElement;
-const manualSaveBtn = document.getElementById("manualSaveBtn") as HTMLButtonElement;
-const manualTestBtn = document.getElementById("manualTestBtn") as HTMLButtonElement;
+const manualCaddyUrl = document.getElementById(
+  "manualCaddyUrl",
+) as HTMLInputElement;
+const manualApiToken = document.getElementById(
+  "manualApiToken",
+) as HTMLInputElement;
+const manualToggleTokenBtn = document.getElementById(
+  "manualToggleTokenBtn",
+) as HTMLButtonElement;
+const manualToggleTokenText = document.getElementById(
+  "manualToggleTokenText",
+) as HTMLSpanElement;
+const manualSaveBtn = document.getElementById(
+  "manualSaveBtn",
+) as HTMLButtonElement;
+const manualTestBtn = document.getElementById(
+  "manualTestBtn",
+) as HTMLButtonElement;
 
 // State
 let currentSettings = {
@@ -44,7 +72,8 @@ async function init() {
   updateView();
 
   // Update Open Caddy link
-  openCaddyBtn.href = currentSettings.caddyUrl || "https://caddy-space.vercel.app";
+  openCaddyBtn.href =
+    currentSettings.caddyUrl || "https://caddy-space.vercel.app";
 }
 
 /**
@@ -66,10 +95,10 @@ function checkAuthorizationParams() {
     }).then(() => {
       // Clear URL params
       window.history.replaceState({}, document.title, window.location.pathname);
-      
+
       // Reload to show connected state
       init();
-      
+
       showStatus("Successfully connected to Caddy!", "success");
     });
   }
@@ -81,14 +110,17 @@ function checkAuthorizationParams() {
 async function loadSettings() {
   const settings = await getSettings();
   let caddyUrl = settings.caddyUrl || "https://caddy-space.vercel.app";
-  
+
   // If caddyUrl is localhost, replace with production URL
-  if (caddyUrl === "http://localhost:3000" || caddyUrl.startsWith("http://localhost")) {
+  if (
+    caddyUrl === "http://localhost:3000" ||
+    caddyUrl.startsWith("http://localhost")
+  ) {
     caddyUrl = "https://caddy-space.vercel.app";
     // Save the corrected URL
     await saveSettings({ caddyUrl });
   }
-  
+
   currentSettings = {
     apiToken: settings.apiToken || "",
     caddyUrl: caddyUrl,
@@ -137,26 +169,33 @@ async function handleConnect() {
 
     // Determine Caddy URL - always default to production, never localhost
     let caddyUrl = currentSettings.caddyUrl;
-    
+
     // If no URL set, or if it's localhost, use production
-    if (!caddyUrl || caddyUrl === "http://localhost:3000" || caddyUrl.startsWith("http://localhost")) {
+    if (
+      !caddyUrl ||
+      caddyUrl === "http://localhost:3000" ||
+      caddyUrl.startsWith("http://localhost")
+    ) {
       caddyUrl = "https://caddy-space.vercel.app";
     }
-    
+
     // Try to detect if user is on a Caddy page and use that URL (async)
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tabs[0]?.url) {
       try {
         const tabUrl = new URL(tabs[0].url);
         // Check if this is a Caddy domain (production)
-        if (tabUrl.hostname.includes("caddy") || tabUrl.hostname.includes("vercel.app")) {
+        if (
+          tabUrl.hostname.includes("caddy") ||
+          tabUrl.hostname.includes("vercel.app")
+        ) {
           caddyUrl = `${tabUrl.protocol}//${tabUrl.host}`;
         }
       } catch (e) {
         // Invalid URL, use default
       }
     }
-    
+
     const authUrl = `${caddyUrl}/extension/authorize?extensionId=${extensionId}`;
 
     // Open authorization page in new tab
@@ -167,7 +206,7 @@ async function handleConnect() {
 
     // Also poll the tab to see if it closes (user completed auth)
     let checkInterval: number | undefined;
-    
+
     // Listen for messages from background script when auth completes
     const messageListener = (message: any) => {
       if (message.type === "CADDY_AUTH_COMPLETE") {
@@ -211,7 +250,6 @@ async function handleConnect() {
       connectBtn.classList.remove("loading");
       connectBtn.disabled = false;
     }, 300000);
-
   } catch (error) {
     showStatus("Failed to open authorization page", "error");
     connectBtn.classList.remove("loading");
@@ -239,7 +277,7 @@ function handleAuthMessage(message: any, sender: any, sendResponse: any) {
     });
     return true; // Keep message channel open
   }
-  
+
   if (message.type === "CADDY_AUTH_COMPLETE") {
     // Background script notified us that auth completed
     loadSettings().then(() => {
@@ -257,7 +295,11 @@ function handleAuthMessage(message: any, sender: any, sendResponse: any) {
  * Handle disconnect
  */
 async function handleDisconnect() {
-  if (!confirm("Are you sure you want to disconnect? You'll need to reconnect to save links.")) {
+  if (
+    !confirm(
+      "Are you sure you want to disconnect? You'll need to reconnect to save links.",
+    )
+  ) {
     return;
   }
 
@@ -293,7 +335,10 @@ async function handleTestConnection() {
     const response = await testConnection();
 
     if (response.success) {
-      showStatus("Connection successful! Extension is ready to use.", "success");
+      showStatus(
+        "Connection successful! Extension is ready to use.",
+        "success",
+      );
     } else {
       showStatus(response.error || "Connection failed", "error");
     }

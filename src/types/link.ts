@@ -49,4 +49,3 @@ export interface Category {
   updated_at: string;
   count?: number;
 }
-

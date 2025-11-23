@@ -48,7 +48,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 /**
  * Show the save overlay
  */
-function showOverlay(text: string, state: "loading" | "success" | "error" | "duplicate") {
+function showOverlay(
+  text: string,
+  state: "loading" | "success" | "error" | "duplicate",
+) {
   // Clear any existing hide timeout
   if (hideTimeout) {
     clearTimeout(hideTimeout);
@@ -143,20 +146,26 @@ window.addEventListener("caddyAuthSuccess", (event: any) => {
   const detail = event.detail;
   if (detail && detail.token) {
     // Send auth data to background script
-    chrome.runtime.sendMessage({
-      type: "CADDY_AUTH_SUCCESS",
-      data: {
-        token: detail.token,
-        email: detail.email,
-        url: detail.url || detail.caddyUrl,
-        caddyUrl: detail.url || detail.caddyUrl,
-        state: detail.state,
+    chrome.runtime.sendMessage(
+      {
+        type: "CADDY_AUTH_SUCCESS",
+        data: {
+          token: detail.token,
+          email: detail.email,
+          url: detail.url || detail.caddyUrl,
+          caddyUrl: detail.url || detail.caddyUrl,
+          state: detail.state,
+        },
       },
-    }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.error("Error sending auth message:", chrome.runtime.lastError);
-      }
-    });
+      (response) => {
+        if (chrome.runtime.lastError) {
+          console.error(
+            "Error sending auth message:",
+            chrome.runtime.lastError,
+          );
+        }
+      },
+    );
   }
 });
 
@@ -180,22 +189,30 @@ function checkForAuthData(): boolean {
   const authDataElement = document.getElementById("caddy-auth-data");
   if (authDataElement) {
     try {
-      const authData = JSON.parse(authDataElement.getAttribute("data-auth") || "{}");
+      const authData = JSON.parse(
+        authDataElement.getAttribute("data-auth") || "{}",
+      );
       if (authData.token) {
-        chrome.runtime.sendMessage({
-          type: "CADDY_AUTH_SUCCESS",
-          data: {
-            token: authData.token,
-            email: authData.email,
-            url: authData.url,
-            caddyUrl: authData.url,
-            state: authData.state,
+        chrome.runtime.sendMessage(
+          {
+            type: "CADDY_AUTH_SUCCESS",
+            data: {
+              token: authData.token,
+              email: authData.email,
+              url: authData.url,
+              caddyUrl: authData.url,
+              state: authData.state,
+            },
           },
-        }, (response) => {
-          if (chrome.runtime.lastError) {
-            console.error("Error sending auth message:", chrome.runtime.lastError);
-          }
-        });
+          (response) => {
+            if (chrome.runtime.lastError) {
+              console.error(
+                "Error sending auth message:",
+                chrome.runtime.lastError,
+              );
+            }
+          },
+        );
         return true;
       }
     } catch (e) {

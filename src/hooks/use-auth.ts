@@ -1,8 +1,8 @@
 "use client";
 
-import * as React from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import * as React from "react";
 
 export function useAuth() {
   const [user, setUser] = React.useState<User | null>(null);

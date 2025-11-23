@@ -3,9 +3,9 @@
 import { Autocomplete as AutocompletePrimitive } from "@base-ui-components/react/autocomplete";
 import { ChevronsUpDownIcon, XIcon } from "lucide-react";
 
-import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 const Autocomplete = AutocompletePrimitive.Root;
 
@@ -116,7 +116,10 @@ function AutocompleteSeparator({
 }: AutocompletePrimitive.Separator.Props) {
   return (
     <AutocompletePrimitive.Separator
-      className={cn("mx-2 my-1 h-px bg-slate-200 last:hidden dark:bg-slate-800", className)}
+      className={cn(
+        "mx-2 my-1 h-px bg-slate-200 last:hidden dark:bg-slate-800",
+        className,
+      )}
       data-slot="autocomplete-separator"
       {...props}
     />

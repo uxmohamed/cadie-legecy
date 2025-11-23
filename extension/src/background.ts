@@ -87,18 +87,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       state: state || "",
     });
 
-    const optionsUrl = chrome.runtime.getURL(`options.html?${params.toString()}`);
+    const optionsUrl = chrome.runtime.getURL(
+      `options.html?${params.toString()}`,
+    );
 
     // Open options page with auth data
     chrome.tabs.create({ url: optionsUrl });
 
     // Also notify the options page if it's open
-    chrome.runtime.sendMessage({
-      type: "CADDY_AUTH_COMPLETE",
-      data: { caddyUrl: caddyUrlToUse },
-    }).catch(() => {
-      // Options page might not be listening, that's okay
-    });
+    chrome.runtime
+      .sendMessage({
+        type: "CADDY_AUTH_COMPLETE",
+        data: { caddyUrl: caddyUrlToUse },
+      })
+      .catch(() => {
+        // Options page might not be listening, that's okay
+      });
 
     sendResponse({ success: true });
     return true;
@@ -120,7 +124,7 @@ async function saveCurrentTab(tabId: number): Promise<void> {
       showNotification(
         "Configuration Required",
         "Please configure your API token in extension settings",
-        "error"
+        "error",
       );
       chrome.runtime.openOptionsPage();
       return;
@@ -174,14 +178,18 @@ async function saveCurrentTab(tabId: number): Promise<void> {
       }
     } else {
       // Show error overlay
-      showOverlayInTab(tabId, "error", response.error || "Unknown error occurred");
+      showOverlayInTab(
+        tabId,
+        "error",
+        response.error || "Unknown error occurred",
+      );
     }
   } catch (error) {
     console.error("Error saving tab:", error);
     showOverlayInTab(
       tabId,
       "error",
-      error instanceof Error ? error.message : "Failed to save"
+      error instanceof Error ? error.message : "Failed to save",
     );
   } finally {
     // Always remove the save lock, even if there was an error
@@ -204,22 +212,32 @@ async function saveCurrentTab(tabId: number): Promise<void> {
 function showOverlayInTab(
   tabId: number,
   state: "loading" | "success" | "error" | "duplicate",
-  message?: string
+  message?: string,
 ): void {
-  chrome.tabs.sendMessage(tabId, {
-    action: "showSaveOverlay",
-    state,
-    message,
-  }).catch(() => {
-    // Content script might not be loaded, fall back to notification
-    if (state === "success") {
-      showNotification("Saved to Caddy! ✨", "Page saved successfully", "success");
-    } else if (state === "duplicate") {
-      showNotification("Already in Caddy!", "This page was already saved", "info");
-    } else if (state === "error") {
-      showNotification("Error", message || "Failed to save", "error");
-    }
-  });
+  chrome.tabs
+    .sendMessage(tabId, {
+      action: "showSaveOverlay",
+      state,
+      message,
+    })
+    .catch(() => {
+      // Content script might not be loaded, fall back to notification
+      if (state === "success") {
+        showNotification(
+          "Saved to Caddy! ✨",
+          "Page saved successfully",
+          "success",
+        );
+      } else if (state === "duplicate") {
+        showNotification(
+          "Already in Caddy!",
+          "This page was already saved",
+          "info",
+        );
+      } else if (state === "error") {
+        showNotification("Error", message || "Failed to save", "error");
+      }
+    });
 }
 
 /**
@@ -228,7 +246,7 @@ function showOverlayInTab(
 function showNotification(
   title: string,
   message: string,
-  type: "info" | "success" | "error" = "info"
+  type: "info" | "success" | "error" = "info",
 ): string {
   const iconUrl = chrome.runtime.getURL("icons/icon-48.png");
   const notificationId = `caddy-${Date.now()}`;

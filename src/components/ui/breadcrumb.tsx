@@ -38,7 +38,10 @@ function BreadcrumbLink({
   ...props
 }: useRender.ComponentProps<"a">) {
   const defaultProps = {
-    className: cn("transition-colors hover:text-slate-950 dark:hover:text-slate-50", className),
+    className: cn(
+      "transition-colors hover:text-slate-950 dark:hover:text-slate-50",
+      className,
+    ),
     "data-slot": "breadcrumb-link",
   };
 
@@ -51,7 +54,7 @@ function BreadcrumbLink({
 
 function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {
   return (
-    // biome-ignore lint(a11y/useFocusableInteractive): known
+    // biome-ignore lint/a11y/useFocusableInteractive: known
     <span
       aria-current="page"
       aria-disabled="true"

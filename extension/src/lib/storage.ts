@@ -30,7 +30,7 @@ export async function getSettings(): Promise<ExtensionSettings> {
       },
       (items) => {
         resolve(items as ExtensionSettings);
-      }
+      },
     );
   });
 }
@@ -38,7 +38,9 @@ export async function getSettings(): Promise<ExtensionSettings> {
 /**
  * Save extension settings to Chrome storage
  */
-export async function saveSettings(settings: Partial<ExtensionSettings>): Promise<void> {
+export async function saveSettings(
+  settings: Partial<ExtensionSettings>,
+): Promise<void> {
   return new Promise((resolve) => {
     chrome.storage.sync.set(settings, () => {
       resolve();
@@ -72,4 +74,3 @@ export async function getCaddyUrl(): Promise<string> {
   const settings = await getSettings();
   return settings.caddyUrl || DEFAULT_CADDY_URL;
 }
-

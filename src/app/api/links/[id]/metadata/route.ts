@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { extractMetadata } from "@/lib/metadata";
+import { createClient } from "@/lib/supabase/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 interface RouteParams {
   params: Promise<{
@@ -8,21 +8,18 @@ interface RouteParams {
   }>;
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
-    
+
     // This is an internal endpoint for background processing
     // Check if this is an internal request
-    const isInternal = request.headers.get('X-Internal-Request') === 'true';
-    
+    const isInternal = request.headers.get("X-Internal-Request") === "true";
+
     if (!isInternal) {
       return NextResponse.json(
         { error: "This endpoint is for internal use only" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -37,18 +34,15 @@ export async function POST(
 
     if (fetchError || !link) {
       console.error("Link not found for metadata fetch:", id);
-      return NextResponse.json(
-        { error: "Link not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Link not found" }, { status: 404 });
     }
 
     // Skip if already has complete metadata
     if (link.favicon_url && link.og_image_url && link.description) {
       console.log("Link already has complete metadata:", id);
-      return NextResponse.json({ 
+      return NextResponse.json({
         message: "Link already has metadata",
-        updated: false 
+        updated: false,
       });
     }
 
@@ -58,7 +52,7 @@ export async function POST(
 
     // Update the link with fetched metadata
     const updates: any = {};
-    
+
     if (!link.favicon_url && metadata.favicon) {
       updates.favicon_url = metadata.favicon;
     }
@@ -76,9 +70,9 @@ export async function POST(
     // Only update if we have new data
     if (Object.keys(updates).length === 0) {
       console.log("No new metadata to update for link:", id);
-      return NextResponse.json({ 
+      return NextResponse.json({
         message: "No new metadata available",
-        updated: false 
+        updated: false,
       });
     }
 
@@ -91,21 +85,25 @@ export async function POST(
       console.error("Failed to update link metadata:", updateError);
       return NextResponse.json(
         { error: "Failed to update metadata" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
-    console.log("Successfully updated link metadata:", id, Object.keys(updates));
-    return NextResponse.json({ 
+    console.log(
+      "Successfully updated link metadata:",
+      id,
+      Object.keys(updates),
+    );
+    return NextResponse.json({
       message: "Metadata updated successfully",
       updated: true,
-      fields: Object.keys(updates)
+      fields: Object.keys(updates),
     });
   } catch (error) {
     console.error("Error in background metadata fetch:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

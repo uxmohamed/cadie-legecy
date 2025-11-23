@@ -31,7 +31,8 @@ export async function saveLink(request: SaveLinkRequest): Promise<ApiResponse> {
     if (!token) {
       return {
         success: false,
-        error: "No API token configured. Please set up your token in extension settings.",
+        error:
+          "No API token configured. Please set up your token in extension settings.",
       };
     }
 
@@ -49,12 +50,13 @@ export async function saveLink(request: SaveLinkRequest): Promise<ApiResponse> {
       const errorData = await response.json().catch(() => ({}));
       return {
         success: false,
-        error: errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+        error:
+          errorData.error || `HTTP ${response.status}: ${response.statusText}`,
       };
     }
 
     const data = await response.json();
-    
+
     return {
       success: true,
       data,
@@ -115,4 +117,3 @@ export async function testConnection(): Promise<ApiResponse> {
     };
   }
 }
-

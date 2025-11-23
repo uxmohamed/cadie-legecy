@@ -174,4 +174,3 @@ export interface Database {
     };
   };
 }
-

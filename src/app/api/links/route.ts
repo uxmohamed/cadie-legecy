@@ -1,13 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { createInitialRichTextState } from "@/lib/rich-text-utils";
 import { authenticateRequest } from "@/lib/auth-middleware";
 import { extractMetadata } from "@/lib/metadata";
+import { createInitialRichTextState } from "@/lib/rich-text-utils";
+import { createClient } from "@/lib/supabase/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
     const userId = await authenticateRequest(request);
-    
+
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const categoryId = searchParams.get("category_id");
     const isArchived = searchParams.get("is_archived") === "true";
-    
+
     let query = supabase
       .from("links")
       .select("*")
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching links:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const userId = await authenticateRequest(request);
-    
+
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -57,12 +57,22 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     const body = await request.json();
-    let { url, title, content_type = "url", category_id, color_value, favicon_url, og_image_url, description, rich_text_content } = body;
+    const {
+      url,
+      title,
+      content_type = "url",
+      category_id,
+      color_value,
+      favicon_url,
+      og_image_url,
+      description,
+      rich_text_content,
+    } = body;
 
     if (!url || !title) {
       return NextResponse.json(
         { error: "URL and title are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -88,7 +98,7 @@ export async function POST(request: NextRequest) {
     try {
       const urlObj = new URL(url);
       // Remove trailing slash, hash, and some query params for comparison
-      normalizedUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname.replace(/\/$/, '')}`;
+      normalizedUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname.replace(/\/$/, "")}`;
     } catch {
       // If URL parsing fails, use original
       normalizedUrl = url;
@@ -103,13 +113,13 @@ export async function POST(request: NextRequest) {
       .eq("is_archived", false);
 
     // Check if any existing link matches
-    const existingLink = existingLinks?.find(link => {
+    const existingLink = existingLinks?.find((link) => {
       if (link.url === url) return true;
-      
+
       // Also check normalized URLs
       try {
         const existingUrlObj = new URL(link.url);
-        const existingNormalized = `${existingUrlObj.protocol}//${existingUrlObj.host}${existingUrlObj.pathname.replace(/\/$/, '')}`;
+        const existingNormalized = `${existingUrlObj.protocol}//${existingUrlObj.host}${existingUrlObj.pathname.replace(/\/$/, "")}`;
         return existingNormalized === normalizedUrl;
       } catch {
         return false;
@@ -118,8 +128,14 @@ export async function POST(request: NextRequest) {
 
     if (existingLink) {
       // Link already exists, return it instead of creating duplicate
-      console.log("Duplicate link detected:", { existing: existingLink.url, new: url });
-      return NextResponse.json({ link: existingLink, duplicate: true }, { status: 200 });
+      console.log("Duplicate link detected:", {
+        existing: existingLink.url,
+        new: url,
+      });
+      return NextResponse.json(
+        { link: existingLink, duplicate: true },
+        { status: 200 },
+      );
     }
 
     // For text content type, create initial rich text state if not provided
@@ -155,15 +171,16 @@ export async function POST(request: NextRequest) {
     // Trigger background metadata fetch for URL content type
     if (content_type === "url" && data.id) {
       // Fire-and-forget: don't wait for metadata fetch
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
       fetch(`${baseUrl}/api/links/${data.id}/metadata`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-Internal-Request': 'true'
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Internal-Request": "true",
         },
-      }).catch(err => {
-        console.error('Background metadata fetch failed:', err);
+      }).catch((err) => {
+        console.error("Background metadata fetch failed:", err);
       });
     }
 
@@ -172,8 +189,7 @@ export async function POST(request: NextRequest) {
     console.error("Error creating link:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

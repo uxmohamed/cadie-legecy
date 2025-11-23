@@ -15,16 +15,15 @@ const RGB_VALUE = "(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])";
 
 const RGB_COLOR_PATTERN = new RegExp(
   `^rgb\\(${RGB_VALUE},\\s*${RGB_VALUE},\\s*${RGB_VALUE}\\)$`,
-  "i"
+  "i",
 );
 
 const RGBA_COLOR_PATTERN = new RegExp(
   `^rgba\\(${RGB_VALUE},\\s*${RGB_VALUE},\\s*${RGB_VALUE},\\s*([\\d.]+)\\)$`,
-  "i"
+  "i",
 );
 
-const HSL_COLOR_PATTERN =
-  /^hsl\((\d{1,3}),\s*(\d{1,3})%,\s*(\d{1,3})%\)$/i;
+const HSL_COLOR_PATTERN = /^hsl\((\d{1,3}),\s*(\d{1,3})%,\s*(\d{1,3})%\)$/i;
 
 const HSLA_COLOR_PATTERN =
   /^hsla\((\d{1,3}),\s*(\d{1,3})%,\s*(\d{1,3})%,\s*([\d.]+)\)$/i;
@@ -165,11 +164,9 @@ export function splitMultipleContent(input: string): string[] {
   // Split by whitespace only (spaces, tabs, newlines)
   // Don't split by commas - they can appear in URLs (e.g. https://cubic-bezier.com/#.27,.82,.78,.6)
   const items = input.split(/\s+/);
-  
+
   // Filter out empty strings and trim each item
-  return items
-    .map(item => item.trim())
-    .filter(item => item.length > 0);
+  return items.map((item) => item.trim()).filter((item) => item.length > 0);
 }
 
 /**
@@ -178,17 +175,16 @@ export function splitMultipleContent(input: string): string[] {
  */
 export function detectMultipleContentTypes(input: string): DetectedContent[] {
   const items = splitMultipleContent(input);
-  
+
   if (items.length === 0) {
     return [];
   }
-  
+
   // If only one item, return single detection
   if (items.length === 1) {
     return [detectContentType(items[0])];
   }
-  
-  // Detect type for each item
-  return items.map(item => detectContentType(item));
-}
 
+  // Detect type for each item
+  return items.map((item) => detectContentType(item));
+}

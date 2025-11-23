@@ -1,11 +1,11 @@
 "use client";
 
-import * as React from "react";
 import { useToast } from "@/components/ui/toast";
 import { canonicalizeContent } from "@/lib/canonicalize";
-import type { Link } from "@/types";
 import type { DetectedContent } from "@/lib/content-detector";
+import type { Link } from "@/types";
 import type { SerializedEditorState } from "lexical";
+import * as React from "react";
 
 export function useLinks(isAuthenticated: boolean) {
   const [isLoading, setIsLoading] = React.useState(false);
@@ -96,7 +96,7 @@ export function useLinks(isAuthenticated: boolean) {
         await refreshLinks();
       }
     },
-    [showToast, refreshLinks]
+    [showToast, refreshLinks],
   );
 
   const handleArchiveLink = React.useCallback(
@@ -121,7 +121,7 @@ export function useLinks(isAuthenticated: boolean) {
         await refreshLinks();
       }
     },
-    [showToast, refreshLinks]
+    [showToast, refreshLinks],
   );
 
   const handleCopyUrl = async (url: string) => {
@@ -140,7 +140,7 @@ export function useLinks(isAuthenticated: boolean) {
 
   const handleSaveRichText = async (
     editingLink: Link,
-    content: SerializedEditorState
+    content: SerializedEditorState,
   ) => {
     try {
       const response = await fetch(`/api/links/${editingLink.id}`, {
@@ -156,7 +156,7 @@ export function useLinks(isAuthenticated: boolean) {
       const { link: updatedLink } = await response.json();
 
       setLinks((prev) =>
-        prev.map((l) => (l.id === editingLink.id ? updatedLink : l))
+        prev.map((l) => (l.id === editingLink.id ? updatedLink : l)),
       );
     } catch (error) {
       console.error("Error saving rich text:", error);
@@ -169,8 +169,8 @@ export function useLinks(isAuthenticated: boolean) {
     async (id: string) => {
       setLinks((prev) =>
         prev.map((link) =>
-          link.id === id ? { ...link, is_pinned: true } : link
-        )
+          link.id === id ? { ...link, is_pinned: true } : link,
+        ),
       );
 
       try {
@@ -191,15 +191,15 @@ export function useLinks(isAuthenticated: boolean) {
         await refreshLinks();
       }
     },
-    [showToast, refreshLinks]
+    [showToast, refreshLinks],
   );
 
   const handleUnpinLink = React.useCallback(
     async (id: string) => {
       setLinks((prev) =>
         prev.map((link) =>
-          link.id === id ? { ...link, is_pinned: false } : link
-        )
+          link.id === id ? { ...link, is_pinned: false } : link,
+        ),
       );
 
       try {
@@ -220,7 +220,7 @@ export function useLinks(isAuthenticated: boolean) {
         await refreshLinks();
       }
     },
-    [showToast, refreshLinks]
+    [showToast, refreshLinks],
   );
 
   const handleSubmit = async (items: DetectedContent[]) => {
@@ -286,7 +286,7 @@ export function useLinks(isAuthenticated: boolean) {
             originalValue: value,
             contentType: type,
           };
-        })
+        }),
       );
 
       const newLinks: Link[] = [];
@@ -342,7 +342,7 @@ export function useLinks(isAuthenticated: boolean) {
                 if (updateResponse.ok) {
                   const { link: updatedLink } = await updateResponse.json();
                   setLinks((prev) =>
-                    prev.map((l) => (l.id === link.id ? updatedLink : l))
+                    prev.map((l) => (l.id === link.id ? updatedLink : l)),
                   );
                 }
               }
@@ -350,7 +350,7 @@ export function useLinks(isAuthenticated: boolean) {
               console.error(
                 "Error fetching metadata for",
                 originalValue,
-                error
+                error,
               );
             }
           })();
@@ -365,7 +365,7 @@ export function useLinks(isAuthenticated: boolean) {
             type === "color"
               ? "Color saved successfully"
               : "Link saved successfully",
-            "success"
+            "success",
           );
         } else if (duplicateCount === 1) {
           const type = items[0].type;
@@ -373,8 +373,8 @@ export function useLinks(isAuthenticated: boolean) {
             type === "color"
               ? "This color is already in your list"
               : type === "url"
-              ? "This link is already in your list"
-              : "This item is already in your list";
+                ? "This link is already in your list"
+                : "This item is already in your list";
           showToast(message, "info");
         } else {
           showToast("Failed to save", "error");
@@ -385,7 +385,7 @@ export function useLinks(isAuthenticated: boolean) {
             `${successCount} ${
               successCount === 1 ? "link" : "links"
             } added successfully`,
-            "success"
+            "success",
           );
         } else if (successCount > 0 && duplicateCount > 0) {
           showToast(
@@ -394,14 +394,14 @@ export function useLinks(isAuthenticated: boolean) {
             } added, ${duplicateCount} ${
               duplicateCount === 1 ? "was" : "were"
             } already in your list`,
-            "success"
+            "success",
           );
         } else if (duplicateCount > 0 && successCount === 0) {
           showToast(
             `${duplicateCount} ${
               duplicateCount === 1 ? "link was" : "links were"
             } already in your list`,
-            "info"
+            "info",
           );
         } else if (failureCount > 0) {
           if (successCount > 0) {
@@ -409,7 +409,7 @@ export function useLinks(isAuthenticated: boolean) {
               `${successCount} ${
                 successCount === 1 ? "link" : "links"
               } added, ${failureCount} failed`,
-              "success"
+              "success",
             );
           } else {
             showToast("Failed to add links", "error");
@@ -420,7 +420,7 @@ export function useLinks(isAuthenticated: boolean) {
       console.error("Error creating links:", error);
       showToast(
         error instanceof Error ? error.message : "Failed to save",
-        "error"
+        "error",
       );
     } finally {
       setIsLoading(false);

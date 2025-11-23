@@ -3,8 +3,8 @@
 import { Select as SelectPrimitive } from "@base-ui-components/react/select";
 import {
   ChevronDownIcon,
-  ChevronsUpDownIcon,
   ChevronUpIcon,
+  ChevronsUpDownIcon,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";

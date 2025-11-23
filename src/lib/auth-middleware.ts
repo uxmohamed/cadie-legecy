@@ -1,6 +1,6 @@
-import { NextRequest } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createHash } from "crypto";
+import { createClient } from "@/lib/supabase/server";
+import type { NextRequest } from "next/server";
 
 export interface AuthenticatedRequest extends NextRequest {
   userId?: string;
@@ -10,16 +10,16 @@ export interface AuthenticatedRequest extends NextRequest {
  * Authenticates a request using either:
  * 1. Bearer token from Authorization header (for extension/API)
  * 2. Session cookie (for web app)
- * 
+ *
  * @param request - The incoming request
  * @returns The user ID if authenticated, null otherwise
  */
 export async function authenticateRequest(
-  request: NextRequest
+  request: NextRequest,
 ): Promise<string | null> {
   // First, try Bearer token authentication
   const authHeader = request.headers.get("authorization");
-  
+
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.substring(7);
     const userId = await authenticateWithToken(token);
@@ -30,8 +30,10 @@ export async function authenticateRequest(
 
   // Fall back to session-based authentication
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return user?.id || null;
 }
 
@@ -48,11 +50,11 @@ async function authenticateWithToken(token: string): Promise<string | null> {
   try {
     // Hash the token using SHA-256 (matching the hash we store)
     const tokenHash = hashToken(token);
-    
+
     // Use service role to query api_tokens table
     // We need to use service role because RLS won't let us query without auth
     const supabase = await createClient();
-    
+
     // Look up token in database
     const { data: tokenRecord, error } = await supabase
       .from("api_tokens")
@@ -83,7 +85,7 @@ async function authenticateWithToken(token: string): Promise<string | null> {
  */
 async function updateTokenLastUsed(tokenId: string): Promise<void> {
   const supabase = await createClient();
-  
+
   await supabase
     .from("api_tokens")
     .update({ last_used_at: new Date().toISOString() })
@@ -104,8 +106,7 @@ export function hashToken(token: string): string {
  * @param length - The length of the token in bytes (default 32)
  * @returns A random token string
  */
-export function generateToken(length: number = 32): string {
+export function generateToken(length = 32): string {
   const crypto = require("crypto");
   return crypto.randomBytes(length).toString("base64url");
 }
-

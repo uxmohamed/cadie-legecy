@@ -1,10 +1,10 @@
 "use client";
 
-import * as React from "react";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
+import * as React from "react";
 
 export default function ExtensionAuthorizePage() {
   const router = useRouter();
@@ -21,8 +21,10 @@ export default function ExtensionAuthorizePage() {
   async function checkAuth() {
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
         // Redirect to login with return URL
         router.push(`/auth?redirect=/extension/authorize`);
@@ -65,7 +67,8 @@ export default function ExtensionAuthorizePage() {
       const state = params.get("state");
 
       // Use production URL - prefer NEXT_PUBLIC_SITE_URL if available, otherwise use current origin
-      const caddyUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      const caddyUrl =
+        process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
 
       // Construct authorization response
       const authData = {
@@ -94,12 +97,15 @@ export default function ExtensionAuthorizePage() {
     // This avoids the chrome-extension:// redirect issue
     const authDataElement = document.createElement("div");
     authDataElement.id = "caddy-auth-data";
-    authDataElement.setAttribute("data-auth", JSON.stringify({
-      token: authData.token,
-      email: authData.email || "",
-      url: authData.caddyUrl,
-      state: authData.state || "",
-    }));
+    authDataElement.setAttribute(
+      "data-auth",
+      JSON.stringify({
+        token: authData.token,
+        email: authData.email || "",
+        url: authData.caddyUrl,
+        state: authData.state || "",
+      }),
+    );
     authDataElement.style.display = "none";
     document.body.appendChild(authDataElement);
 
@@ -128,7 +134,9 @@ export default function ExtensionAuthorizePage() {
 
   function showManualCopyOption(authData: any) {
     // For now, just show success and let user close
-    alert("Authorization successful! You can close this tab and return to the extension.");
+    alert(
+      "Authorization successful! You can close this tab and return to the extension.",
+    );
     window.close();
   }
 
@@ -152,13 +160,24 @@ export default function ExtensionAuthorizePage() {
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white rounded-lg border border-green-200 p-6 text-center">
           <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-600">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="text-green-600"
+            >
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
           </div>
-          <h1 className="text-xl font-bold text-neutral-900 mb-2">Authorization Successful!</h1>
+          <h1 className="text-xl font-bold text-neutral-900 mb-2">
+            Authorization Successful!
+          </h1>
           <p className="text-neutral-600 mb-4">
-            The extension should open automatically. If it doesn't, check your extension settings.
+            The extension should open automatically. If it doesn't, check your
+            extension settings.
           </p>
           <Button onClick={() => window.close()}>Close</Button>
         </div>
@@ -171,13 +190,23 @@ export default function ExtensionAuthorizePage() {
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white rounded-lg border border-red-200 p-6 text-center">
           <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-600">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="text-red-600"
+            >
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="15" y1="9" x2="9" y2="15"></line>
               <line x1="9" y1="9" x2="15" y2="15"></line>
             </svg>
           </div>
-          <h1 className="text-xl font-bold text-neutral-900 mb-2">Authorization Failed</h1>
+          <h1 className="text-xl font-bold text-neutral-900 mb-2">
+            Authorization Failed
+          </h1>
           <p className="text-neutral-600 mb-4">{error}</p>
           <Button onClick={() => router.push("/")}>Return to Caddy</Button>
         </div>
@@ -191,7 +220,14 @@ export default function ExtensionAuthorizePage() {
         {/* Header */}
         <div className="text-center mb-6">
           <div className="w-16 h-16 rounded-full bg-neutral-900 flex items-center justify-center mx-auto mb-4">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="white"
+              strokeWidth="2"
+            >
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
             </svg>
@@ -217,19 +253,43 @@ export default function ExtensionAuthorizePage() {
           </p>
           <ul className="space-y-2">
             <li className="flex items-start gap-2 text-sm text-neutral-600">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-600 flex-shrink-0">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="text-green-600 flex-shrink-0"
+              >
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
               <span>Save links to your Caddy</span>
             </li>
             <li className="flex items-start gap-2 text-sm text-neutral-600">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-600 flex-shrink-0">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="text-green-600 flex-shrink-0"
+              >
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
               <span>Access your saved links</span>
             </li>
             <li className="flex items-start gap-2 text-sm text-neutral-600">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-600 flex-shrink-0">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="text-green-600 flex-shrink-0"
+              >
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
               <span>Work with your categories</span>
@@ -240,8 +300,8 @@ export default function ExtensionAuthorizePage() {
         {/* Warning */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6">
           <p className="text-xs text-yellow-800">
-            ⚠️ Only authorize if you installed the extension yourself. 
-            You can revoke access anytime from your Caddy settings.
+            ⚠️ Only authorize if you installed the extension yourself. You can
+            revoke access anytime from your Caddy settings.
           </p>
         </div>
 
@@ -267,7 +327,15 @@ export default function ExtensionAuthorizePage() {
               </>
             ) : (
               <>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="mr-2"
+                >
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
                 Authorize Extension
@@ -284,4 +352,3 @@ export default function ExtensionAuthorizePage() {
     </div>
   );
 }
-

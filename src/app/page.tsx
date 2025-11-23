@@ -1,8 +1,8 @@
 "use client";
 
+import { Dashboard } from "@/features/dashboard/components/dashboard";
+import { LandingPage } from "@/features/landing/components/landing-page";
 import { useAuth } from "@/hooks/use-auth";
-import { LandingPage } from "@/components/landing-page";
-import { Dashboard } from "@/components/dashboard";
 
 export default function Home() {
   const { user, authChecked } = useAuth();
