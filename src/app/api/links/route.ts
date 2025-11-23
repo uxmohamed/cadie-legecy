@@ -4,6 +4,7 @@ import { createInitialRichTextState } from "@/lib/rich-text-utils";
 import { createClient } from "@/lib/supabase/server";
 import { type NextRequest, NextResponse } from "next/server";
 
+export const runtime = 'edge';
 export async function GET(request: NextRequest) {
   try {
     const userId = await authenticateRequest(request);

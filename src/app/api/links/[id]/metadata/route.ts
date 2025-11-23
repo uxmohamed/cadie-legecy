@@ -2,6 +2,7 @@ import { extractMetadata } from "@/lib/metadata";
 import { createClient } from "@/lib/supabase/server";
 import { type NextRequest, NextResponse } from "next/server";
 
+export const runtime = 'edge';
 interface RouteParams {
   params: Promise<{
     id: string;

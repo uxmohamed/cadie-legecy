@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { type NextRequest, NextResponse } from "next/server";
 
+export const runtime = 'edge';
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },

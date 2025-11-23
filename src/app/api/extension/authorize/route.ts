@@ -2,6 +2,7 @@ import { generateToken, hashToken } from "@/lib/auth-middleware";
 import { createClient } from "@/lib/supabase/server";
 import { type NextRequest, NextResponse } from "next/server";
 
+export const runtime = 'edge';
 /**
  * POST /api/extension/authorize
  * Generate API token for extension authorization (one-click flow)

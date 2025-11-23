@@ -1,6 +1,7 @@
 import { PostHogClient } from "@/lib/posthog-server";
 import { NextResponse } from "next/server";
 
+export const runtime = 'edge';
 /**
  * Example API route demonstrating server-side PostHog usage.
  *
