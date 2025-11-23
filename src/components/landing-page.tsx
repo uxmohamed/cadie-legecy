@@ -4,41 +4,47 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
-import { ChevronDown } from "lucide-react";
 
 export function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-white selection:bg-brand/10 selection:text-brand">
-      {/* Navigation */}
-      <nav className="flex items-center justify-between px-6 py-6 bg-white">
-        <div className="flex items-center gap-8">
-          <Logo className="h-6 w-auto text-neutral-900" />
-          <div className="hidden md:flex items-center gap-6 text-sm font-medium text-neutral-600">
-            <Link href="#" className="hover:text-neutral-900 transition-colors">
-              Changelog
-            </Link>
-            <a
-              href="https://x.com/caddyapp_"
-              target="_blank"
-              className="hover:text-neutral-900 transition-colors"
-            >
-              X (Twitter)
-            </a>
+      {/* Header */}
+      <div>
+        <div className="max-w-5xl mx-auto relative">
+          <div className="p-3 flex items-center justify-between">
+            <div className="flex items-center gap-8">
+              <Link href="/">
+                <Logo className="h-6 w-auto text-neutral-900" />
+              </Link>
+              <div className="hidden md:flex items-center gap-6 text-sm font-medium text-neutral-600">
+                <Link href="/changelog" className="text-neutral-900 font-medium">
+                  Changelog
+                </Link>
+                <a
+                  href="https://x.com/caddyapp_"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-neutral-900 transition-colors"
+                >
+                  X (Twitter)
+                </a>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link href="/auth">
+                <Button className="py-2 px-4 bg-transparent border-0 text-neutral-600 text-sm font-medium rounded-xl shadow-none hover:bg-neutral-100 transition-colors duration-150">
+                  Log In
+                </Button>
+              </Link>
+              <Link href="/auth">
+                <Button className="py-2 px-4 bg-neutral-800 border-0 text-white text-sm font-medium rounded-xl shadow-none hover:bg-neutral-800 transition-colors duration-150">
+                  Get Started
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Link href="/auth">
-            <Button className="py-2 px-4 bg-transparent border-0 text-neutral-600 text-sm font-medium rounded-xl shadow-none hover:bg-neutral-100 transition-colors duration-150">
-              Log In
-            </Button>
-          </Link>
-          <Link href="/auth">
-            <Button className="py-2 px-4 bg-neutral-800 border-0 text-white text-sm font-medium rounded-xl shadow-none hover:bg-neutral-800 transition-colors duration-150">
-              Get Started
-            </Button>
-          </Link>
-        </div>
-      </nav>
+      </div>
 
       {/* Hero Section */}
       <main className="flex-1 pt-20 pb-20 px-4 sm:px-6 lg:px-8">

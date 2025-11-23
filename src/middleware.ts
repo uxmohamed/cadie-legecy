@@ -48,8 +48,11 @@ export async function middleware(request: NextRequest) {
       return supabaseResponse
     }
 
-    // Protected routes (except root which shows landing page)
-    if (!user && !request.nextUrl.pathname.startsWith('/auth') && request.nextUrl.pathname !== '/') {
+    // Protected routes (except root, changelog, and auth pages)
+    const publicRoutes = ['/', '/changelog']
+    const isPublicRoute = publicRoutes.includes(request.nextUrl.pathname) || request.nextUrl.pathname.startsWith('/auth')
+    
+    if (!user && !isPublicRoute) {
       const url = request.nextUrl.clone()
       url.pathname = '/auth'
       return NextResponse.redirect(url)
