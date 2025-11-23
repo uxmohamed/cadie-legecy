@@ -11,6 +11,7 @@ import { LinkListEmpty } from "./link-list-empty";
 import { LinkListItem } from "./link-list-item";
 import { LinkContextMenu } from "./link-context-menu";
 import { SelectionToolbar } from "./selection-toolbar";
+import { LinkDetailSheet } from "./link-detail-sheet";
 import type { LinkListProps, ContextMenuState } from "./types";
 
 export function LinkList({
@@ -26,6 +27,8 @@ export function LinkList({
   const [contextMenu, setContextMenu] = React.useState<ContextMenuState | null>(
     null
   );
+  const [selectedLink, setSelectedLink] = React.useState<Link | null>(null);
+  const [sheetOpen, setSheetOpen] = React.useState(false);
 
   const linkRefs = React.useRef<(HTMLAnchorElement | null)[]>([]);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -124,17 +127,10 @@ export function LinkList({
     link: Link,
     index: number
   ) => {
-    const isColor = link.content_type === "color";
-    const isRichText = link.content_type === "text";
-
     handleRowClick(e, link, index, () => {
-      if (isColor) {
-        copyToClipboard(link.color_value || link.title, "color");
-      } else if (isRichText) {
-        // Do nothing on click for text items
-      } else {
-        window.open(link.url, "_blank", "noopener,noreferrer");
-      }
+      // Open sheet with link details
+      setSelectedLink(link);
+      setSheetOpen(true);
     });
   };
 
@@ -267,6 +263,32 @@ export function LinkList({
         onBatchDelete={handleBatchDelete}
         onBatchPin={handleBatchPin}
         onBatchUnpin={handleBatchUnpin}
+      />
+
+      <LinkDetailSheet
+        link={selectedLink}
+        links={displayLinks}
+        currentIndex={
+          selectedLink
+            ? displayLinks.findIndex((l) => l.id === selectedLink.id)
+            : -1
+        }
+        open={sheetOpen}
+        onOpenChange={(open) => {
+          setSheetOpen(open);
+          if (!open) {
+            setSelectedLink(null);
+          }
+        }}
+        onLinkChange={(link) => {
+          setSelectedLink(link);
+        }}
+        onEdit={onEdit}
+        onCopyUrl={onCopyUrl}
+        onPin={onPin}
+        onUnpin={onUnpin}
+        onArchive={onArchive}
+        onDelete={onDelete}
       />
     </div>
   );
