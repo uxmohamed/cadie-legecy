@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   description: "Stay up to date with the latest updates and improvements to Caddy",
 };
 
+export const dynamic = 'force-dynamic';
+
 function sortEntriesByDate(entries: typeof allChangelogs) {
   return [...entries].sort((a, b) => {
     const dateA = new Date(a.date).getTime();
