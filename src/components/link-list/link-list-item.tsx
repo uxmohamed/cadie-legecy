@@ -1,10 +1,8 @@
 import type { Link } from "@/types";
 import { cn, formatDate } from "@/lib/utils";
 import { Favicon } from "@/components/ui/favicon";
-import { Menu, MenuPopup, MenuTrigger } from "@/components/ui/menu";
-import { MoreHorizontal, PinOff, FileText, MoreVertical } from "lucide-react";
+import { PinOff, FileText } from "lucide-react";
 import { extractTextFromRichText } from "@/lib/rich-text-utils";
-import { LinkContextMenu } from "./link-context-menu";
 
 interface LinkListItemProps {
   link: Link;
@@ -84,56 +82,56 @@ export function LinkListItem({
   };
 
   return (
-    <div className="flex items-center justify-center">
-      <div
-        onMouseDown={(e) => onMouseDown(index, e)}
-        onClick={(e) => onClick(e, link, index)}
-        onMouseEnter={() => onMouseEnter(index)}
-        onMouseLeave={() => onMouseLeave(index)}
-        onKeyDown={handleKeyDown}
-        onContextMenu={(e) => onContextMenu(e, link)}
-        className={cn(
-          "group w-full grid grid-cols-[1fr_auto_auto] ease-in will-change-transform duration-100 items-center gap-2 rounded-lg px-3 py-2 select-none cursor-pointer active:scale-[0.99] transition-transform",
-          isSelected
-            ? "bg-neutral-200"
-            : isFocused
-            ? "bg-neutral-100"
-            : "hover:bg-neutral-100"
-        )}
+    <div
+      onMouseDown={(e) => onMouseDown(index, e)}
+      onClick={(e) => onClick(e, link, index)}
+      onMouseEnter={() => onMouseEnter(index)}
+      onMouseLeave={() => onMouseLeave(index)}
+      onKeyDown={handleKeyDown}
+      onContextMenu={(e) => onContextMenu(e, link)}
+      className={cn(
+        "group relative w-full grid grid-cols-[1fr_auto] ease-in will-change-transform duration-100 items-center gap-2 rounded-lg px-3 py-2 select-none cursor-pointer active:scale-[0.99] transition-transform",
+        isSelected
+          ? "bg-neutral-200"
+          : isFocused
+          ? "bg-neutral-100"
+          : "hover:bg-neutral-100"
+      )}
+    >
+      <a
+        ref={linkRef}
+        href={isColor || isRichText ? "#" : link.url}
+        target={isColor || isRichText ? undefined : "_blank"}
+        rel={isColor || isRichText ? undefined : "noopener noreferrer"}
+        onClick={(e) => e.preventDefault()}
+        onFocus={() => onFocus(index)}
+        className="flex min-w-0 items-center gap-3 focus:outline-none select-none"
+        onDragStart={(e) => e.preventDefault()}
       >
-        <a
-          ref={linkRef}
-          href={isColor || isRichText ? "#" : link.url}
-          target={isColor || isRichText ? undefined : "_blank"}
-          rel={isColor || isRichText ? undefined : "noopener noreferrer"}
-          onClick={(e) => e.preventDefault()}
-          onFocus={() => onFocus(index)}
-          className="flex min-w-0 items-center gap-3 focus:outline-none select-none"
-          onDragStart={(e) => e.preventDefault()}
-        >
-          {isColor ? (
-            <div
-              className="h-5 w-5 flex-shrink-0 rounded-full border border-neutral-300"
-              style={{ backgroundColor: link.color_value || link.title }}
-            />
-          ) : isRichText ? (
-            <div className="h-5 w-5 flex-shrink-0 rounded bg-neutral-100 flex items-center justify-center">
-              <FileText className="h-3.5 w-3.5 text-neutral-500" />
-            </div>
-          ) : (
-            <Favicon url={link.favicon_url || ""} domain={link.domain} />
-          )}
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[15px] text-neutral-900">
-              {isRichText && richTextPreview
-                ? richTextPreview
-                : link.title || link.url}
-            </div>
-            <div className="truncate text-sm text-neutral-400">
-              {isRichText ? "Rich text" : link.domain}
-            </div>
+        {isColor ? (
+          <div
+            className="h-5 w-5 flex-shrink-0 rounded-full border border-neutral-300"
+            style={{ backgroundColor: link.color_value || link.title }}
+          />
+        ) : isRichText ? (
+          <div className="h-5 w-5 flex-shrink-0 rounded bg-neutral-100 flex items-center justify-center">
+            <FileText className="h-3.5 w-3.5 text-neutral-500" />
           </div>
-        </a>
+        ) : (
+          <Favicon url={link.favicon_url || ""} domain={link.domain} />
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[15px] text-neutral-900">
+            {isRichText && richTextPreview
+              ? richTextPreview
+              : link.title || link.url}
+          </div>
+          <div className="truncate text-sm text-neutral-400">
+            {isRichText ? "Rich text" : link.domain}
+          </div>
+        </div>
+      </a>
+      <div className="flex items-center gap-2">
         <div className="text-sm text-neutral-400">
           {formatDate(new Date(link.created_at))}
         </div>
@@ -160,25 +158,6 @@ export function LinkListItem({
           )}
         </div>
       </div>
-      <Menu>
-        <MenuTrigger
-          className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-300 transition-colors"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <MoreVertical className="h-4 w-4" />
-        </MenuTrigger>
-        <MenuPopup>
-          <LinkContextMenu
-            link={link}
-            onCopyUrl={onCopyUrl}
-            onEdit={onEdit}
-            onPin={onPin}
-            onUnpin={onUnpin}
-            onArchive={onArchive}
-            onDelete={onDelete}
-          />
-        </MenuPopup>
-      </Menu>
     </div>
   );
 }
