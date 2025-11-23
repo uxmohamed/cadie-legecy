@@ -11,24 +11,27 @@ export function LandingPage() {
       {/* Header */}
       <div>
         <div className="max-w-5xl mx-auto relative">
-          <div className="p-3 flex items-center justify-between">
-            <div className="flex items-center gap-8">
+          <div className="p-3 flex items-center justify-between relative">
+            <div className="flex items-center">
               <Link href="/">
                 <Logo className="h-6 w-auto text-neutral-900" />
               </Link>
-              <div className="hidden md:flex items-center gap-6 text-sm font-medium text-neutral-600">
-                <Link href="/changelog" className="text-neutral-900 font-medium">
+            </div>
+            <div className="hidden md:flex items-center gap-3 absolute left-1/2 -translate-x-1/2">
+              <Link href="/changelog">
+                <Button className="py-2 px-4 bg-transparent border-0 text-neutral-600 text-sm font-medium rounded-xl shadow-none hover:bg-neutral-100 transition-colors duration-150">
                   Changelog
-                </Link>
-                <a
-                  href="https://x.com/caddyapp_"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-neutral-900 transition-colors"
-                >
+                </Button>
+              </Link>
+              <a
+                href="https://x.com/caddyapp_"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button className="py-2 px-4 bg-transparent border-0 text-neutral-600 text-sm font-medium rounded-xl shadow-none hover:bg-neutral-100 transition-colors duration-150">
                   X (Twitter)
-                </a>
-              </div>
+                </Button>
+              </a>
             </div>
             <div className="flex items-center gap-3">
               <Link href="/auth">
