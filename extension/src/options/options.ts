@@ -160,96 +160,26 @@ async function handleConnect() {
     const authUrl = `${caddyUrl}/extension/authorize?extensionId=${extensionId}`;
 
     // Open authorization page in new tab
-    const tab = await chrome.tabs.create({ url: authUrl });
+    await chrome.tabs.create({ url: authUrl });
 
-    // Listen for authorization message (in case web app uses messaging)
-    chrome.runtime.onMessage.addListener(handleAuthMessage);
-
-    // Also poll the tab to see if it closes (user completed auth)
-    let checkInterval: number | undefined;
-    
-    // Listen for messages from background script when auth completes
+    // Listen for auth completion message from background script
     const messageListener = (message: any) => {
       if (message.type === "CADDY_AUTH_COMPLETE") {
         chrome.runtime.onMessage.removeListener(messageListener);
-        if (checkInterval) clearInterval(checkInterval);
         loadSettings().then(() => {
           updateView();
           connectBtn.classList.remove("loading");
           connectBtn.disabled = false;
+          showStatus("Successfully connected to Caddy!", "success");
         });
       }
     };
     chrome.runtime.onMessage.addListener(messageListener);
 
-    checkInterval = setInterval(async () => {
-      try {
-        const updatedTab = await chrome.tabs.get(tab.id!);
-        if (!updatedTab) {
-          // Tab closed, check if we got authorized
-          clearInterval(checkInterval);
-          chrome.runtime.onMessage.removeListener(messageListener);
-          await loadSettings();
-          updateView();
-          connectBtn.classList.remove("loading");
-          connectBtn.disabled = false;
-        }
-      } catch {
-        // Tab doesn't exist anymore
-        clearInterval(checkInterval);
-        chrome.runtime.onMessage.removeListener(messageListener);
-        await loadSettings();
-        updateView();
-        connectBtn.classList.remove("loading");
-        connectBtn.disabled = false;
-      }
-    }, 1000);
-
-    // Timeout after 5 minutes
-    setTimeout(() => {
-      clearInterval(checkInterval);
-      connectBtn.classList.remove("loading");
-      connectBtn.disabled = false;
-    }, 300000);
-
   } catch (error) {
     showStatus("Failed to open authorization page", "error");
     connectBtn.classList.remove("loading");
     connectBtn.disabled = false;
-  }
-}
-
-/**
- * Handle authorization message from web app
- */
-function handleAuthMessage(message: any, sender: any, sendResponse: any) {
-  if (message.type === "CADDY_AUTH") {
-    // Save authorization data
-    saveSettings({
-      apiToken: message.token,
-      caddyUrl: message.caddyUrl,
-      userEmail: message.email,
-    }).then(async () => {
-      await loadSettings();
-      updateView();
-      showStatus("Successfully connected!", "success");
-      connectBtn.classList.remove("loading");
-      connectBtn.disabled = false;
-      sendResponse({ success: true });
-    });
-    return true; // Keep message channel open
-  }
-  
-  if (message.type === "CADDY_AUTH_COMPLETE") {
-    // Background script notified us that auth completed
-    loadSettings().then(() => {
-      updateView();
-      connectBtn.classList.remove("loading");
-      connectBtn.disabled = false;
-      showStatus("Successfully connected to Caddy!", "success");
-    });
-    sendResponse({ success: true });
-    return true;
   }
 }
 
