@@ -63,7 +63,10 @@ export function LinkContextMenu({
         <MenuShortcut>⌘⌫</MenuShortcut>
       </MenuItem>
       <MenuSeparator />
-      <MenuItem variant="destructive" onClick={() => onDelete?.(link.id)}>
+      <MenuItem 
+        className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400" 
+        onClick={() => onDelete?.(link.id)}
+      >
         <Trash className="h-4 w-4" />
         Delete
         <MenuShortcut>⌘⇧⌫</MenuShortcut>

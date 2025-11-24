@@ -205,7 +205,7 @@ export function LinkDetailSheet({
                   <>
                     <MenuSeparator />
                     <MenuItem
-                      variant="destructive"
+                      className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
                       onClick={() => {
                         if (confirm("Are you sure you want to delete this link?")) {
                           onDelete(link.id);
