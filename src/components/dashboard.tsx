@@ -44,7 +44,7 @@ export function Dashboard({ user }: DashboardProps) {
     <div className="flex h-screen overflow-hidden">
       <main className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-16 items-center justify-between px-8 relative z-30">
-          <Logo className="text-neutral-200" />
+          <Logo />
           <UserMenu user={user} />
         </header>
         <div className="flex-1 overflow-y-auto">

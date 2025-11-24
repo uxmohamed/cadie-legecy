@@ -107,7 +107,7 @@ export function AuthForm() {
     <div className="w-full max-w-[400px] space-y-8">
       {/* Logo/Icon Section */}
       <div className="flex flex-col items-center space-y-4">
-        <Logo className="h-7 mb-8 w-auto text-neutral-200" />
+        <Logo variant="neutral-200" className="h-7 mb-8 w-auto" />
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
             Welcome to Caddy
@@ -127,7 +127,7 @@ export function AuthForm() {
             onClick={handleGoogleSignIn}
             disabled={googleLoading}
             variant="secondary"
-            size="lg"
+            size="xl"
             className="w-full"
           >
             {googleLoading ? (
@@ -167,7 +167,7 @@ export function AuthForm() {
             onClick={() => setShowEmailForm(true)}
             disabled={googleLoading}
             variant="ghost"
-            size="lg"
+            size="xl"
             className="w-full"
           >
             Continue with Email
@@ -207,7 +207,7 @@ export function AuthForm() {
               type="submit"
               disabled={loading}
               variant="secondary"
-              size="lg"
+              size="xl"
               className="w-full"
               >
               {loading ? (
@@ -248,7 +248,7 @@ export function AuthForm() {
               setSuccess(false);
             }}
             variant="ghost"
-            size="lg"
+            size="xl"
             className="w-full"
           >
             Back to sign in

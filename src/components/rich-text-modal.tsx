@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { SerializedEditorState } from "lexical";
-import { X } from "lucide-react";
+import { Icon } from "@iconify/react";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "./ui/dialog";
 import { RichTextEditor } from "./rich-text-editor";
 import { Button } from "./ui/button";
@@ -101,7 +101,7 @@ export function RichTextModal({
           className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-md border-0 bg-transparent text-neutral-500 hover:bg-neutral-100 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-1 focus-visible:outline-neutral-900 pointer-events-auto"
           aria-label="Close"
         >
-          <X className="h-5 w-5" />
+          <Icon icon="tabler:x" className="h-5 w-5" />
         </DialogClose>
 
         {/* Header */}

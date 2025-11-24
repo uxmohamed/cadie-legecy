@@ -2,9 +2,24 @@ import { cn } from "@/lib/utils";
 
 interface LogoProps {
   className?: string;
+  variant?: "neutral-900" | "neutral-800" | "neutral-700" | "neutral-600" | "neutral-500" | "neutral-400" | "neutral-300" | "neutral-200" | "neutral-100" | "white" | "black";
 }
 
-export function Logo({ className }: LogoProps) {
+const variantClasses = {
+  "neutral-900": "text-neutral-900",
+  "neutral-800": "text-neutral-800",
+  "neutral-700": "text-neutral-700",
+  "neutral-600": "text-neutral-600",
+  "neutral-500": "text-neutral-500",
+  "neutral-400": "text-neutral-400",
+  "neutral-300": "text-neutral-300",
+  "neutral-200": "text-neutral-200",
+  "neutral-100": "text-neutral-100",
+  "white": "text-white",
+  "black": "text-black",
+} as const;
+
+export function Logo({ className, variant = "neutral-900" }: LogoProps) {
   return (
     <svg 
       width="95" 
@@ -12,7 +27,7 @@ export function Logo({ className }: LogoProps) {
       viewBox="0 0 95 31" 
       fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
-      className={cn("h-6 w-auto text-neutral-400", className)}
+      className={cn("h-6 w-auto", variantClasses[variant], className)}
     >
       <path d="M11.552 22.784C14.592 22.784 16.224 20.896 17.44 17.152H19.2L18.528 22.816C16.512 23.936 14.272 24.672 10.912 24.672C4.224 24.672 0 20.032 0 13.6C0 6.144 4.992 1.568 11.296 1.568C14.56 1.568 16.896 2.432 18.432 3.68V8.672H16.704C15.84 5.12 14.016 3.424 11.136 3.424C6.4 3.424 4.448 7.712 4.448 12.672C4.448 18.464 6.848 22.784 11.552 22.784Z" />
       <path d="M34.736 12.736C34.736 13.504 34.64 19.168 34.64 20.16C34.64 21.44 35.056 22.176 35.952 22.176C36.24 22.176 36.944 22.112 37.424 21.984L37.616 23.008C36.528 24.096 35.312 24.672 33.968 24.672C32.272 24.672 31.344 23.488 30.96 21.76C29.84 23.104 28.112 24.64 25.68 24.64C22.832 24.64 21.36 22.752 21.36 20.256C21.36 17.312 23.632 16.288 25.776 15.552L30.864 13.728V12.032C30.864 9.952 30.224 8.544 28.112 8.544C26.544 8.544 25.776 9.312 25.776 10.784C25.776 11.392 25.84 11.936 26 12.608L23.184 13.024C22.576 12.608 22.288 12 22.288 11.136C22.288 8.352 25.008 6.88 28.688 6.88C32.624 6.88 34.736 8.64 34.736 12.736ZM27.664 22.016C28.912 22.016 29.776 21.664 30.864 20.896V15.296L27.12 16.736C25.936 17.184 25.264 18.048 25.264 19.264C25.264 21.024 26.128 22.016 27.664 22.016Z" />
