@@ -183,6 +183,39 @@ export function useLinks(isAuthenticated: boolean) {
         [refreshLinks]
     );
 
+    const reorderLinks = React.useCallback(
+        async (items: { id: string; sort_order: number }[]) => {
+            // Optimistic update
+            setLinks((prev) => {
+                const newLinks = [...prev];
+                items.forEach(({ id, sort_order }) => {
+                    const link = newLinks.find((l) => l.id === id);
+                    if (link) {
+                        link.sort_order = sort_order;
+                    }
+                });
+                return newLinks.sort((a, b) => a.sort_order - b.sort_order);
+            });
+
+            try {
+                const response = await fetch("/api/links/reorder", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ items }),
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to reorder links");
+                }
+            } catch (error) {
+                console.error("Error reordering links:", error);
+                toast.error("Failed to save new order");
+                await refreshLinks();
+            }
+        },
+        [refreshLinks]
+    );
+
     const handleCopyUrl = async (url: string) => {
         try {
             await navigator.clipboard.writeText(url);
@@ -376,6 +409,7 @@ export function useLinks(isAuthenticated: boolean) {
         handleUnpinLink,
         handleBatchDeleteLinks,
         handleBatchArchiveLinks,
+        reorderLinks,
     };
 }
 

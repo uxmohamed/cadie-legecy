@@ -4,6 +4,21 @@ import * as React from "react";
 import type { Link } from "@/features/links/types";
 import { toast } from "sonner";
 import { Menu, MenuPopup, MenuTrigger } from "@/components/ui/menu";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 
 import { useSelection } from "./use-selection";
 import { useKeyboardNavigation } from "./use-keyboard-navigation";
@@ -24,6 +39,7 @@ export function LinkList({
   onUnpin,
   onBatchArchive,
   onBatchDelete,
+  onReorder,
 }: LinkListProps) {
   const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null);
   const [contextMenu, setContextMenu] = React.useState<ContextMenuState | null>(
@@ -109,6 +125,39 @@ export function LinkList({
     onBatchDelete: handleBatchDelete,
   });
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+      keyboardCodes: {
+        start: ["Space", "Enter"],
+        cancel: ["Escape"],
+        end: ["Space", "Enter"],
+      },
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = displayLinks.findIndex((l) => l.id === active.id);
+      const newIndex = displayLinks.findIndex((l) => l.id === over.id);
+
+      const newLinks = arrayMove(displayLinks, oldIndex, newIndex);
+      
+      // Calculate new sort orders
+      const updates = newLinks.map((link, index) => ({
+        id: link.id,
+        sort_order: index,
+      }));
+
+      if (onReorder) {
+        onReorder(updates);
+      }
+    }
+  };
+
   const copyToClipboard = async (text: string, type: "url" | "color") => {
     try {
       await navigator.clipboard.writeText(text);
@@ -156,62 +205,31 @@ export function LinkList({
         <div>Created at</div>
         <div className="absolute -bottom-4 left-0 right-0 h-4 bg-gradient-to-b from-[#fafafa] to-transparent pointer-events-none" />
       </div>
-      <div className="space-y-0.5 py-4 relative">
-        {pinnedLinks.length > 0 && (
-          <>
-            <div className="mb-4 mt-4 text-xs font-semibold text-neutral-500 uppercase tracking-wider select-none">
-              Pinned
-            </div>
-            {pinnedLinks.map((link, index) => (
-              <LinkListItem
-                key={link.id}
-                link={link}
-                index={index}
-                isPinned={true}
-                isSelected={selectedIds.has(link.id)}
-                isFocused={focusedIndex === index}
-                linkRef={(el) => {
-                  linkRefs.current[index] = el;
-                }}
-                onMouseDown={handleItemMouseDown}
-                onClick={handleItemClick}
-                onMouseEnter={handleItemMouseEnter}
-                onMouseLeave={(idx) => {
-                  if (focusedIndex === idx && !isDragging)
-                    setFocusedIndex(null);
-                }}
-                onFocus={setFocusedIndex}
-                onContextMenu={handleContextMenu}
-                onCopyUrl={onCopyUrl}
-                onEdit={onEdit}
-                onPin={onPin}
-                onUnpin={onUnpin}
-                onArchive={onArchive}
-                onDelete={onDelete}
-                isDragging={isDragging}
-              />
-            ))}
-          </>
-        )}
-        {unpinnedLinks.length > 0 && (
-          <>
-            {pinnedLinks.length > 0 && (
-              <div className="mb-4 mt-8 text-xs font-semibold text-neutral-500 uppercase tracking-wider select-none">
-                All Links
+      
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="space-y-0.5 py-4 relative">
+          {pinnedLinks.length > 0 && (
+            <>
+              <div className="mb-4 mt-4 text-xs font-semibold text-neutral-500 uppercase tracking-wider select-none">
+                Pinned
               </div>
-            )}
-            {unpinnedLinks.map((link, index) => {
-              const actualIndex = pinnedLinks.length + index;
-              return (
+              {/* Pinned links are not sortable for now, or should be a separate sortable context? 
+                  Let's assume only unpinned links are reorderable for this iteration to avoid complexity with mixed lists.
+              */}
+              {pinnedLinks.map((link, index) => (
                 <LinkListItem
                   key={link.id}
                   link={link}
-                  index={actualIndex}
-                  isPinned={false}
+                  index={index}
+                  isPinned={true}
                   isSelected={selectedIds.has(link.id)}
-                  isFocused={focusedIndex === actualIndex}
+                  isFocused={focusedIndex === index}
                   linkRef={(el) => {
-                    linkRefs.current[actualIndex] = el;
+                    linkRefs.current[index] = el;
                   }}
                   onMouseDown={handleItemMouseDown}
                   onClick={handleItemClick}
@@ -230,11 +248,56 @@ export function LinkList({
                   onDelete={onDelete}
                   isDragging={isDragging}
                 />
-              );
-            })}
-          </>
-        )}
-      </div>
+              ))}
+            </>
+          )}
+          
+          {unpinnedLinks.length > 0 && (
+            <SortableContext
+              items={unpinnedLinks.map((l) => l.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {pinnedLinks.length > 0 && (
+                <div className="mb-4 mt-8 text-xs font-semibold text-neutral-500 uppercase tracking-wider select-none">
+                  All Links
+                </div>
+              )}
+              {unpinnedLinks.map((link, index) => {
+                const actualIndex = pinnedLinks.length + index;
+                return (
+                  <LinkListItem
+                    key={link.id}
+                    link={link}
+                    index={actualIndex}
+                    isPinned={false}
+                    isSelected={selectedIds.has(link.id)}
+                    isFocused={focusedIndex === actualIndex}
+                    linkRef={(el) => {
+                      linkRefs.current[actualIndex] = el;
+                    }}
+                    onMouseDown={handleItemMouseDown}
+                    onClick={handleItemClick}
+                    onMouseEnter={handleItemMouseEnter}
+                    onMouseLeave={(idx) => {
+                      if (focusedIndex === idx && !isDragging)
+                        setFocusedIndex(null);
+                    }}
+                    onFocus={setFocusedIndex}
+                    onContextMenu={handleContextMenu}
+                    onCopyUrl={onCopyUrl}
+                    onEdit={onEdit}
+                    onPin={onPin}
+                    onUnpin={onUnpin}
+                    onArchive={onArchive}
+                    onDelete={onDelete}
+                    isDragging={isDragging}
+                  />
+                );
+              })}
+            </SortableContext>
+          )}
+        </div>
+      </DndContext>
 
       {contextMenu && (
         <Menu

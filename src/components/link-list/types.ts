@@ -10,6 +10,7 @@ export interface LinkListProps {
   onUnpin?: (id: string) => void;
   onBatchDelete?: (ids: string[]) => void;
   onBatchArchive?: (ids: string[]) => void;
+  onReorder?: (items: { id: string; sort_order: number }[]) => void;
 }
 
 export interface SelectionState {

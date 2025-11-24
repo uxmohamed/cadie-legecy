@@ -35,6 +35,7 @@ export function Dashboard({ user }: DashboardProps) {
     handleUnpinLink,
     handleBatchDeleteLinks,
     handleBatchArchiveLinks,
+    reorderLinks,
   } = useLinks(!!user);
 
   const onSaveRichText = async (content: SerializedEditorState) => {
@@ -71,6 +72,7 @@ export function Dashboard({ user }: DashboardProps) {
                 onUnpin={handleUnpinLink}
                 onBatchDelete={handleBatchDeleteLinks}
                 onBatchArchive={handleBatchArchiveLinks}
+                onReorder={reorderLinks}
               />
             )}
           </div>
