@@ -10,8 +10,8 @@ export interface ExtensionSettings {
 
 // Default to production URL
 export const EXTENSION_CONFIG = {
-  API_URL: "https://caddy-space.vercel.app/api",
-  BASE_URL: "https://caddy-space.vercel.app",
+  API_URL: "https://caddy-ed0.pages.dev/api",
+  BASE_URL: "https://caddy-ed0.pages.dev",
 };
 
 // Default to production URL

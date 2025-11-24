@@ -16,16 +16,12 @@
     "cookies"
   ],
   "host_permissions": [
-    "http://localhost:3000/*",
-    "https://caddy-space.vercel.app/*",
-    "https://*.yourdomain.com/*"
+    "https://caddy-ed0.pages.dev/*"
   ],
   "content_scripts": [
     {
       "matches": [
-        "http://localhost:3000/*",
-        "https://caddy-space.vercel.app/*",
-        "https://*.yourdomain.com/*"
+        "https://caddy-ed0.pages.dev/*"
       ],
       "js": ["content.js"],
       "run_at": "document_end"
