@@ -198,7 +198,7 @@ caddy/
 - **Framework**: Next.js 15 (App Router) with React 19
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS v4
-- **UI Components**: Radix UI, Base UI
+- **UI Components**: shadcn/ui (Radix UI primitives)
 - **Rich Text**: Lexical Editor
 - **Icons**: Lucide React
 - **Notifications**: Sonner (toast)
@@ -250,6 +250,7 @@ NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com  # or your PostHog instance UR
 PostHog is initialized automatically via `instrumentation-client.ts` using Next.js 15.3+ instrumentation API. It captures pageviews, page leaves, and custom events.
 
 **What Gets Tracked Automatically:**
+
 - Page views and navigation
 - Page leave events (for time-on-page metrics)
 - Link actions (archive, delete, pin)
@@ -260,13 +261,13 @@ PostHog is initialized automatically via `instrumentation-client.ts` using Next.
 Import `posthog` directly from `posthog-js` or use the helper functions:
 
 ```typescript
-import posthog from 'posthog-js';
+import posthog from "posthog-js";
 
 // Direct usage
-posthog.capture('button_clicked', { button_name: 'save' });
+posthog.capture("button_clicked", { button_name: "save" });
 
 // Or use typed helpers
-import { trackLinkSaved } from '@/lib/posthog-client';
+import { trackLinkSaved } from "@/lib/posthog-client";
 
 trackLinkSaved({
   link_id: link.id,
@@ -277,6 +278,7 @@ trackLinkSaved({
 ```
 
 **Available Client-Side Helpers:**
+
 - `trackLinkSaved()`, `trackLinkArchived()`, `trackLinkDeleted()`
 - `trackLinkFavorited()`, `trackLinkUpdated()`
 - `trackCategoryCreated()`, `trackSearch()`
@@ -289,25 +291,25 @@ trackLinkSaved({
 Use the `posthog-node` SDK for server-side tracking in API routes and server components:
 
 ```typescript
-import { PostHogClient } from '@/lib/posthog-server';
+import { PostHogClient } from "@/lib/posthog-server";
 
 export async function GET(request: Request) {
   const posthog = PostHogClient();
-  
+
   try {
     // Capture server-side event
     posthog.capture({
-      distinctId: 'user_123',
-      event: 'api_called',
-      properties: { endpoint: '/api/example' }
+      distinctId: "user_123",
+      event: "api_called",
+      properties: { endpoint: "/api/example" },
     });
 
     // Fetch feature flags
-    const flags = await posthog.getAllFlags('user_123');
-    
+    const flags = await posthog.getAllFlags("user_123");
+
     // Always shutdown to flush events
     await posthog.shutdown();
-    
+
     return Response.json({ success: true });
   } catch (error) {
     await posthog.shutdown();

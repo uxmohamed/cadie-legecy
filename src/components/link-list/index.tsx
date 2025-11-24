@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { Link } from "@/types";
-import { useToast } from "@/components/ui/toast";
+import { useToast } from "@/hooks/use-toast";
 import { Menu, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 
 import { useSelection } from "./use-selection";
@@ -32,7 +32,7 @@ export function LinkList({
 
   const linkRefs = React.useRef<(HTMLAnchorElement | null)[]>([]);
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const { showToast } = useToast();
+  const { toast } = useToast();
   const previousLengthRef = React.useRef(links.length);
 
   // Helper to get flattened list of links for index calculation
@@ -102,18 +102,18 @@ export function LinkList({
   const copyToClipboard = async (text: string, type: "url" | "color") => {
     try {
       await navigator.clipboard.writeText(text);
-      showToast(
-        type === "color"
-          ? "Color copied to clipboard"
-          : "URL copied to clipboard",
-        "success"
-      );
+      toast({
+        title:
+          type === "color"
+            ? "Color copied to clipboard"
+            : "URL copied to clipboard",
+      });
     } catch (error) {
       console.error("Failed to copy:", error);
-      showToast(
-        type === "color" ? "Failed to copy color" : "Failed to copy URL",
-        "error"
-      );
+      toast({
+        title: type === "color" ? "Failed to copy color" : "Failed to copy URL",
+        variant: "destructive",
+      });
     }
   };
 
@@ -232,7 +232,7 @@ export function LinkList({
       {contextMenu && (
         <Menu
           open={true}
-          onOpenChange={(open) => !open && setContextMenu(null)}
+          onOpenChange={(open: boolean) => !open && setContextMenu(null)}
         >
           <MenuTrigger
             className="fixed w-0 h-0 p-0 m-0 opacity-0 overflow-hidden pointer-events-none"

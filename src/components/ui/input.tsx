@@ -1,14 +1,8 @@
-"use client";
-
-import { Input as InputPrimitive } from "@base-ui-components/react/input";
-import type * as React from "react";
+import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-type InputProps = Omit<
-  InputPrimitive.Props & React.RefAttributes<HTMLInputElement>,
-  "size"
-> & {
+type InputProps = Omit<React.ComponentProps<"input">, "size"> & {
   size?: "sm" | "default" | "lg" | number;
   unstyled?: boolean;
 };
@@ -17,6 +11,7 @@ function Input({
   className,
   size = "default",
   unstyled = false,
+  type,
   ...props
 }: InputProps) {
   return (
@@ -31,19 +26,19 @@ function Input({
       data-size={size}
       data-slot="input-control"
     >
-      <InputPrimitive
+      <input
         className={cn(
           "w-full min-w-0 rounded-[inherit] px-[calc(--spacing(3)-1px)] py-[calc(--spacing(1.5)-1px)] outline-none placeholder:text-slate-500/64 dark:placeholder:text-slate-400/64",
           size === "sm" &&
             "px-[calc(--spacing(2.5)-1px)] py-[calc(--spacing(1)-1px)]",
           size === "lg" && "py-[calc(--spacing(2)-1px)]",
-          props.type === "search" &&
+          type === "search" &&
             "[&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none",
-          props.type === "file" &&
+          type === "file" &&
             "text-slate-500 file:me-3 file:bg-transparent file:font-medium file:text-slate-950 file:text-sm dark:text-slate-400 dark:file:text-slate-50",
         )}
         data-slot="input"
-        size={typeof size === "number" ? size : undefined}
+        type={type}
         {...props}
       />
     </span>

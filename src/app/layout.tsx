@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import localFont from "next/font/local";
-import { ToastProvider } from "@/components/ui/toast";
+import { Toaster } from "@/components/ui/toaster";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { PostHogPageView } from "@/components/posthog-pageview";
 import { Suspense } from "react";
@@ -52,11 +52,10 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <PostHogPageView />
         </Suspense>
-        <ToastProvider position="bottom-right">
-          <ErrorBoundary>
-            {children}
-          </ErrorBoundary>
-        </ToastProvider>
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
+        <Toaster />
       </body>
     </html>
   );

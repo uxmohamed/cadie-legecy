@@ -1,6 +1,5 @@
-import { mergeProps } from "@base-ui-components/react/merge-props";
-import { useRender } from "@base-ui-components/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
+import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -36,22 +35,18 @@ const badgeVariants = cva(
   },
 );
 
-interface BadgeProps extends useRender.ComponentProps<"span"> {
-  variant?: VariantProps<typeof badgeVariants>["variant"];
-  size?: VariantProps<typeof badgeVariants>["size"];
-}
+export interface BadgeProps
+  extends React.HTMLAttributes<HTMLSpanElement>,
+    VariantProps<typeof badgeVariants> {}
 
-function Badge({ className, variant, size, render, ...props }: BadgeProps) {
-  const defaultProps = {
-    className: cn(badgeVariants({ className, size, variant })),
-    "data-slot": "badge",
-  };
-
-  return useRender({
-    defaultTagName: "span",
-    props: mergeProps<"span">(defaultProps, props),
-    render,
-  });
+function Badge({ className, variant, size, ...props }: BadgeProps) {
+  return (
+    <span
+      className={cn(badgeVariants({ className, size, variant }))}
+      data-slot="badge"
+      {...props}
+    />
+  );
 }
 
 export { Badge, badgeVariants };

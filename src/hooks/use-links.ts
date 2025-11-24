@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useToast } from "@/components/ui/toast";
+import { useToast } from "@/hooks/use-toast";
 import { canonicalizeContent } from "@/lib/canonicalize";
 import type { Link } from "@/types";
 import type { DetectedContent } from "@/lib/content-detector";
@@ -12,7 +12,7 @@ export function useLinks(isAuthenticated: boolean) {
   const [links, setLinks] = React.useState<Link[]>([]);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [fetchingLinks, setFetchingLinks] = React.useState(true);
-  const { showToast } = useToast();
+  const { toast } = useToast();
 
   // Reusable function to refresh links from server
   const refreshLinks = React.useCallback(async () => {
@@ -38,11 +38,11 @@ export function useLinks(isAuthenticated: boolean) {
           const data = await response.json();
           setLinks(data.links || []);
         } else {
-          showToast("Failed to load links", "error");
+          toast({ title: "Failed to load links", variant: "destructive" });
         }
       } catch (error) {
         console.error("Error fetching links:", error);
-        showToast("Failed to load links", "error");
+        toast({ title: "Failed to load links", variant: "destructive" });
       } finally {
         setFetchingLinks(false);
       }
@@ -89,14 +89,14 @@ export function useLinks(isAuthenticated: boolean) {
           throw new Error("Failed to delete link");
         }
 
-        showToast("Link deleted", "success");
+        toast({ title: "Link deleted" });
       } catch (error) {
         console.error("Error deleting link:", error);
-        showToast("Failed to delete link", "error");
+        toast({ title: "Failed to delete link", variant: "destructive" });
         await refreshLinks();
       }
     },
-    [showToast, refreshLinks]
+    [toast, refreshLinks]
   );
 
   const handleArchiveLink = React.useCallback(
@@ -114,28 +114,28 @@ export function useLinks(isAuthenticated: boolean) {
           throw new Error("Failed to archive link");
         }
 
-        showToast("Link archived", "success");
+        toast({ title: "Link archived" });
       } catch (error) {
         console.error("Error archiving link:", error);
-        showToast("Failed to archive link", "error");
+        toast({ title: "Failed to archive link", variant: "destructive" });
         await refreshLinks();
       }
     },
-    [showToast, refreshLinks]
+    [toast, refreshLinks]
   );
 
   const handleCopyUrl = async (url: string) => {
     try {
       await navigator.clipboard.writeText(url);
-      showToast("URL copied to clipboard", "success");
+      toast({ title: "URL copied to clipboard" });
     } catch (error) {
       console.error("Failed to copy URL:", error);
-      showToast("Failed to copy URL", "error");
+      toast({ title: "Failed to copy URL", variant: "destructive" });
     }
   };
 
   const handleEditLink = () => {
-    showToast("Edit functionality coming soon", "info");
+    toast({ title: "Edit functionality coming soon" });
   };
 
   const handleSaveRichText = async (
@@ -160,7 +160,7 @@ export function useLinks(isAuthenticated: boolean) {
       );
     } catch (error) {
       console.error("Error saving rich text:", error);
-      showToast("Failed to save rich text", "error");
+      toast({ title: "Failed to save rich text", variant: "destructive" });
       throw error;
     }
   };
@@ -184,14 +184,14 @@ export function useLinks(isAuthenticated: boolean) {
           throw new Error("Failed to pin link");
         }
 
-        showToast("Link pinned", "success");
+        toast({ title: "Link pinned" });
       } catch (error) {
         console.error("Error pinning link:", error);
-        showToast("Failed to pin link", "error");
+        toast({ title: "Failed to pin link", variant: "destructive" });
         await refreshLinks();
       }
     },
-    [showToast, refreshLinks]
+    [toast, refreshLinks]
   );
 
   const handleUnpinLink = React.useCallback(
@@ -213,14 +213,14 @@ export function useLinks(isAuthenticated: boolean) {
           throw new Error("Failed to unpin link");
         }
 
-        showToast("Link unpinned", "success");
+        toast({ title: "Link unpinned" });
       } catch (error) {
         console.error("Error unpinning link:", error);
-        showToast("Failed to unpin link", "error");
+        toast({ title: "Failed to unpin link", variant: "destructive" });
         await refreshLinks();
       }
     },
-    [showToast, refreshLinks]
+    [toast, refreshLinks]
   );
 
   const handleSubmit = async (items: DetectedContent[]) => {
@@ -361,12 +361,11 @@ export function useLinks(isAuthenticated: boolean) {
       if (items.length === 1) {
         if (successCount === 1) {
           const type = items[0].type;
-          showToast(
-            type === "color"
+          toast({
+            title: type === "color"
               ? "Color saved successfully"
               : "Link saved successfully",
-            "success"
-          );
+          });
         } else if (duplicateCount === 1) {
           const type = items[0].type;
           const message =
@@ -375,53 +374,49 @@ export function useLinks(isAuthenticated: boolean) {
               : type === "url"
               ? "This link is already in your list"
               : "This item is already in your list";
-          showToast(message, "info");
+          toast({ title: message });
         } else {
-          showToast("Failed to save", "error");
+          toast({ title: "Failed to save", variant: "destructive" });
         }
       } else {
         if (successCount > 0 && duplicateCount === 0 && failureCount === 0) {
-          showToast(
-            `${successCount} ${
+          toast({
+            title: `${successCount} ${
               successCount === 1 ? "link" : "links"
             } added successfully`,
-            "success"
-          );
+          });
         } else if (successCount > 0 && duplicateCount > 0) {
-          showToast(
-            `${successCount} ${
+          toast({
+            title: `${successCount} ${
               successCount === 1 ? "link" : "links"
             } added, ${duplicateCount} ${
               duplicateCount === 1 ? "was" : "were"
             } already in your list`,
-            "success"
-          );
+          });
         } else if (duplicateCount > 0 && successCount === 0) {
-          showToast(
-            `${duplicateCount} ${
+          toast({
+            title: `${duplicateCount} ${
               duplicateCount === 1 ? "link was" : "links were"
             } already in your list`,
-            "info"
-          );
+          });
         } else if (failureCount > 0) {
           if (successCount > 0) {
-            showToast(
-              `${successCount} ${
+            toast({
+              title: `${successCount} ${
                 successCount === 1 ? "link" : "links"
               } added, ${failureCount} failed`,
-              "success"
-            );
+            });
           } else {
-            showToast("Failed to add links", "error");
+            toast({ title: "Failed to add links", variant: "destructive" });
           }
         }
       }
     } catch (error) {
       console.error("Error creating links:", error);
-      showToast(
-        error instanceof Error ? error.message : "Failed to save",
-        "error"
-      );
+      toast({
+        title: error instanceof Error ? error.message : "Failed to save",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

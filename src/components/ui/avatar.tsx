@@ -1,10 +1,11 @@
 "use client";
 
-import { Avatar as AvatarPrimitive } from "@base-ui-components/react/avatar";
+import * as AvatarPrimitive from "@radix-ui/react-avatar";
+import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-function Avatar({ className, ...props }: AvatarPrimitive.Root.Props) {
+function Avatar({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Root>) {
   return (
     <AvatarPrimitive.Root
       className={cn(
@@ -17,7 +18,7 @@ function Avatar({ className, ...props }: AvatarPrimitive.Root.Props) {
   );
 }
 
-function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
+function AvatarImage({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Image>) {
   return (
     <AvatarPrimitive.Image
       className={cn("size-full object-cover", className)}
@@ -30,7 +31,7 @@ function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
 function AvatarFallback({
   className,
   ...props
-}: AvatarPrimitive.Fallback.Props) {
+}: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
   return (
     <AvatarPrimitive.Fallback
       className={cn(
