@@ -7,10 +7,6 @@ import type { User } from "@supabase/supabase-js";
 
 export default function ExtensionAuthorizePage() {
   const router = useRouter();
-  const [user, setUser] = React.useState<User | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [isAuthorized, setIsAuthorized] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
   const hasAuthorized = React.useRef(false);
 
   React.useEffect(() => {
@@ -29,18 +25,16 @@ export default function ExtensionAuthorizePage() {
         return;
       }
 
-      setUser(user);
-      setIsLoading(false);
-      
       // Auto-authorize immediately
       if (!hasAuthorized.current) {
         hasAuthorized.current = true;
         await performAuthorization(user);
       }
     } catch (error) {
-      console.error("Error checking auth:", error);
-      setError("Failed to check authentication");
-      setIsLoading(false);
+      console.error("Error:", error);
+      // Redirect to app even on error
+      const caddyUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      window.location.href = caddyUrl;
     }
   }
 
@@ -54,8 +48,7 @@ export default function ExtensionAuthorizePage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to authorize");
+        throw new Error("Failed to authorize");
       }
 
       const data = await response.json();
@@ -106,77 +99,24 @@ export default function ExtensionAuthorizePage() {
         window.dispatchEvent(event);
       }, 100);
 
-      setIsAuthorized(true);
-      
-      // Redirect to app after 2 seconds
-      setTimeout(() => {
-        window.location.href = caddyUrl;
-        // Also try to close the tab
-        setTimeout(() => window.close(), 500);
-      }, 2000);
+      // Redirect to app immediately
+      window.location.href = caddyUrl;
 
     } catch (error) {
       console.error("Error authorizing:", error);
-      setError(error instanceof Error ? error.message : "Failed to authorize");
+      // Redirect to app even on error
+      const caddyUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      window.location.href = caddyUrl;
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-neutral-900 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-neutral-600">Loading...</p>
-        </div>
+  // Minimal loading state
+  return (
+    <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-12 h-12 border-4 border-neutral-900 border-t-transparent rounded-full animate-spin mx-auto"></div>
       </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white rounded-lg border border-red-200 p-8 text-center">
-          <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-600">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="15" y1="9" x2="9" y2="15"></line>
-              <line x1="9" y1="9" x2="15" y2="15"></line>
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-neutral-900 mb-2">Authorization Failed</h1>
-          <p className="text-neutral-600 mb-6">{error}</p>
-          <button
-            onClick={() => window.close()}
-            className="px-4 py-2 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (isAuthorized) {
-    return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white rounded-lg border border-green-200 p-8 text-center">
-          <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-600">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-neutral-900 mb-2">Connected! ✨</h1>
-          <p className="text-neutral-600 mb-2">
-            Your Chrome extension is now connected to Caddy
-          </p>
-          <p className="text-sm text-neutral-500">
-            Redirecting to app...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return null;
+    </div>
+  );
 }
 
