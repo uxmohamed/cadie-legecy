@@ -39,8 +39,8 @@ export function useKeyboardNavigation({
   // Register shortcuts for documentation purposes
   React.useEffect(() => {
     const shortcuts = [
-      { key: "j", description: "Move selection down", category: "Navigation", action: () => { } },
-      { key: "k", description: "Move selection up", category: "Navigation", action: () => { } },
+      { key: "j", description: "Move selection up", category: "Navigation", action: () => { } },
+      { key: "k", description: "Move selection down", category: "Navigation", action: () => { } },
       { key: "Enter", description: "Open selected link", category: "Navigation", action: () => { } },
       { key: "e", description: "Edit selected link", category: "Actions", action: () => { } },
       { key: "d", description: "Delete selected link", category: "Actions", action: () => { } },
@@ -61,7 +61,7 @@ export function useKeyboardNavigation({
       if (isInputFocused) return;
 
       // Navigation
-      if (e.key === "ArrowDown" || e.key === "j") {
+      if (e.key === "ArrowDown" || e.key === "k") {
         e.preventDefault();
         if (focusedIndex === null) {
           setFocusedIndex(0);
@@ -72,7 +72,7 @@ export function useKeyboardNavigation({
           setFocusedIndex(nextIndex);
           linkRefs.current[nextIndex]?.focus();
         }
-      } else if (e.key === "ArrowUp" || e.key === "k") {
+      } else if (e.key === "ArrowUp" || e.key === "j") {
         e.preventDefault();
         if (focusedIndex === null) {
           setFocusedIndex(displayLinks.length - 1);
