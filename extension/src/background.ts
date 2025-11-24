@@ -78,26 +78,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       caddyUrlToUse = "https://caddy-ed0.pages.dev";
     }
 
-    // Construct options page URL with auth params
-    const params = new URLSearchParams({
-      authorized: "true",
-      token: token,
-      email: email || "",
-      url: caddyUrlToUse,
-      state: state || "",
-    });
-
-    const optionsUrl = chrome.runtime.getURL(`options.html?${params.toString()}`);
-
-    // Open options page with auth data
-    chrome.tabs.create({ url: optionsUrl });
-
-    // Also notify the options page if it's open
-    chrome.runtime.sendMessage({
-      type: "CADDY_AUTH_COMPLETE",
-      data: { caddyUrl: caddyUrlToUse },
-    }).catch(() => {
-      // Options page might not be listening, that's okay
+    // Save settings directly to storage
+    chrome.storage.sync.set({
+      apiToken: token,
+      caddyUrl: caddyUrlToUse,
+      userEmail: email || "",
+    }, () => {
+      // Notify any open options pages that auth completed
+      chrome.runtime.sendMessage({
+        type: "CADDY_AUTH_COMPLETE",
+        data: { caddyUrl: caddyUrlToUse },
+      }).catch(() => {
+        // Options page might not be listening, that's okay
+      });
     });
 
     sendResponse({ success: true });
