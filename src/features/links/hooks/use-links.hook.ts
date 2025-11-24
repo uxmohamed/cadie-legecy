@@ -6,6 +6,7 @@ import type { Link, CreateLinkDTO } from "@/features/links/types";
 import type { DetectedContent } from "@/lib/content-detector";
 import type { SerializedEditorState } from "lexical";
 
+
 /**
  * Hook for managing links
  * Refactored to follow Single Responsibility Principle
@@ -18,6 +19,7 @@ export function useLinks(isAuthenticated: boolean) {
     const [fetchingLinks, setFetchingLinks] = React.useState(true);
 
     // Fetch links on mount
+    // Removed router navigation on 401 to prevent redirect loop
     React.useEffect(() => {
         if (!isAuthenticated) return;
 
@@ -27,6 +29,9 @@ export function useLinks(isAuthenticated: boolean) {
                 if (response.ok) {
                     const data = await response.json();
                     setLinks(data.links || []);
+                } else if (response.status === 401) {
+                    // Unauthorized: show error toast
+                    toast.error('Unauthorized - please log in');
                 } else {
                     toast.error("Failed to load links");
                 }
@@ -48,6 +53,9 @@ export function useLinks(isAuthenticated: boolean) {
             if (response.ok) {
                 const data = await response.json();
                 setLinks(data.links || []);
+            } else if (response.status === 401) {
+                // Unauthorized: show error toast
+                toast.error('Unauthorized - please log in');
             }
         } catch (error) {
             console.error("Error refreshing links:", error);

@@ -50,8 +50,10 @@ export async function middleware(request: NextRequest) {
 
     // Protected routes (except root, changelog, and auth pages)
     const publicRoutes = ['/', '/changelog']
-    const isPublicRoute = publicRoutes.includes(request.nextUrl.pathname) || request.nextUrl.pathname.startsWith('/auth')
-    
+    const isPublicRoute = publicRoutes.includes(request.nextUrl.pathname) ||
+      request.nextUrl.pathname.startsWith('/auth') ||
+      request.nextUrl.pathname.startsWith('/api')
+
     if (!user && !isPublicRoute) {
       const url = request.nextUrl.clone()
       url.pathname = '/auth'
