@@ -1,0 +1,31 @@
+import type { Link } from "@/features/links/types";
+
+export interface LinkListProps {
+  links: Link[];
+  onDelete?: (id: string) => void;
+  onArchive?: (id: string) => void;
+  onEdit?: (link: Link) => void;
+  onCopyUrl?: (url: string) => void;
+  onPin?: (id: string) => void;
+  onUnpin?: (id: string) => void;
+}
+
+export interface SelectionState {
+  selectedIds: Set<string>;
+  setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
+  lastSelectedIndex: number | null;
+  setLastSelectedIndex: React.Dispatch<React.SetStateAction<number | null>>;
+  isDragging: boolean;
+  setIsDragging: React.Dispatch<React.SetStateAction<boolean>>;
+  dragStartIndex: number | null;
+  setDragStartIndex: React.Dispatch<React.SetStateAction<number | null>>;
+  dragCurrentIndex: number | null;
+  setDragCurrentIndex: React.Dispatch<React.SetStateAction<number | null>>;
+  clearSelection: () => void;
+}
+
+export interface ContextMenuState {
+  x: number;
+  y: number;
+  link: Link;
+}
