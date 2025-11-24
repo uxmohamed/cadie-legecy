@@ -83,6 +83,14 @@ export function Dashboard({ user }: DashboardProps) {
           />
         </div>
       )}
+      {!sidebarOpen && (
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="hidden md:flex fixed top-4 left-4 z-50 items-center gap-1 text-xs text-neutral-400 bg-neutral-100 px-2 py-1.5 rounded border border-neutral-300 hover:bg-neutral-200 transition-colors"
+        >
+          <kbd className="font-sans font-medium">[</kbd> to toggle
+        </button>
+      )}
       <main className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-16 items-center justify-between px-8 relative z-30">
           <Logo />
