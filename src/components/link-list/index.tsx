@@ -141,10 +141,9 @@ export function LinkList({
 
   return (
     <div className="w-full" ref={containerRef}>
-      <div className="sticky top-[104px] z-10 grid grid-cols-[1fr_auto_auto] gap-4 bg-[#fafafa] py-4 text-xs font-medium text-neutral-400 relative select-none">
+      <div className="sticky top-[104px] px-6 z-10 flex justify-between gap-4 bg-[#fafafa] py-4 text-xs font-medium text-neutral-400 relative select-none">
         <div>Title</div>
         <div>Created at</div>
-        <div className="w-10"></div>
         <div className="absolute -bottom-4 left-0 right-0 h-4 bg-gradient-to-b from-[#fafafa] to-transparent pointer-events-none" />
       </div>
       <div className="space-y-0.5 py-4 relative">
