@@ -196,7 +196,7 @@ export function LinkDetailSheet({
                         onOpenChange(false);
                       }}
                     >
-                      <Archive className="h-4 w-4" />
+                      {/* <Archive className="h-4 w-4" /> */}
                       Archive
                     </MenuItem>
                   </>

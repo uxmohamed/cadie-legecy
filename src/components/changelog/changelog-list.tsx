@@ -36,7 +36,7 @@ export function ChangelogList({ entries }: ChangelogListProps) {
 
   return (
     <div className="relative">
-      {sortedEntries.map((entry) => {
+      {sortedEntries.map((entry, index) => {
         const date = new Date(entry.date);
         const formattedDate = formatDate(date);
 
@@ -45,7 +45,7 @@ export function ChangelogList({ entries }: ChangelogListProps) {
             <div className="flex flex-col md:flex-row gap-y-6">
               {/* Left column - Date */}
               <div className="md:w-48 flex-shrink-0">
-                <div className="md:sticky md:top-8 pb-10">
+                <div className="md:sticky md:top-8">
                   <time className="text-sm font-medium text-neutral-500 block mb-3">
                     {formattedDate}
                   </time>
@@ -53,11 +53,15 @@ export function ChangelogList({ entries }: ChangelogListProps) {
               </div>
 
               {/* Right column - Content with Timeline */}
-              <div className="flex-1 md:pl-8 relative pb-10">
+              <div className="flex-1 justify-start md:pl-8 relative pb-10">
                 {/* Vertical timeline line */}
                 <div className="hidden md:block absolute top-2 left-0 w-px h-full bg-neutral-200">
                   {/* Timeline dot */}
-                  <div className="hidden md:block absolute top-0 -translate-x-1/2 size-3 bg-neutral-900 rounded-full z-10" />
+                  <div
+                    className={`hidden md:block absolute top-0 -translate-x-1/2 size-1.5 ml-[0.5px] rounded-full z-10 ${
+                      index === 0 ? "bg-blue-600" : "bg-neutral-900"
+                    }`}
+                  />
                 </div>
 
                 <ChangelogEntryComponent entry={entry} />
