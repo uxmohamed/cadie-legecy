@@ -91,6 +91,11 @@ export function CaptureInput({
 
   return (
     <form onSubmit={handleSubmit} autoComplete="off" className="w-full">
+      <div className="flex justify-end mb-2">
+        <span className="text-xs text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-full border border-neutral-200">
+          Press <kbd className="font-sans font-medium">?</kbd> for shortcuts
+        </span>
+      </div>
       <div
         className={`relative transition-shadow duration-300 rounded-lg ${
           showFocusAnimation
