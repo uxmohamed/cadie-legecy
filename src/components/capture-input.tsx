@@ -92,7 +92,7 @@ export function CaptureInput({
   return (
     <form onSubmit={handleSubmit} autoComplete="off" className="w-full">
       <div className="flex justify-center mb-3">
-        <span className="text-xs text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-full border border-neutral-300">
+        <span className="text-xs text-neutral-400 bg-neutral-100 mb-2 px-2 py-0.5 rounded-full border border-neutral-300">
           Press <kbd className="font-sans font-medium">?</kbd> for shortcuts
         </span>
       </div>

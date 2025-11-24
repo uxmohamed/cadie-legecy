@@ -9,6 +9,7 @@ import { Logo } from "@/components/logo";
 import { RichTextModal } from "@/components/rich-text-modal";
 import { Sidebar } from "@/components/sidebar";
 import { useCategories } from "@/hooks/use-categories";
+import { useShortcuts } from "@/components/shortcut-context";
 import { useLinks } from "@/features/links/hooks";
 import type { User } from "@supabase/supabase-js";
 import type { Link } from "@/features/links/types";
@@ -23,7 +24,23 @@ export function Dashboard({ user }: DashboardProps) {
   const [editingLink, setEditingLink] = React.useState<Link | null>(null);
 
   const [selectedCategoryId, setSelectedCategoryId] = React.useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = React.useState(true);
   const { categories } = useCategories(!!user);
+  const { registerShortcut, unregisterShortcut } = useShortcuts();
+
+  // Register sidebar toggle shortcut
+  React.useEffect(() => {
+    registerShortcut({
+      key: "[",
+      description: "Toggle sidebar",
+      category: "Global",
+      action: () => setSidebarOpen((prev) => !prev),
+    });
+
+    return () => {
+      unregisterShortcut("[");
+    };
+  }, [registerShortcut, unregisterShortcut]);
 
   const filters = React.useMemo(() => {
     if (selectedCategoryId === "archive") return { is_archived: true };
@@ -57,13 +74,15 @@ export function Dashboard({ user }: DashboardProps) {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <div className="hidden md:block">
-        <Sidebar
-          categories={categories}
-          selectedCategoryId={selectedCategoryId}
-          onCategorySelect={setSelectedCategoryId}
-        />
-      </div>
+      {sidebarOpen && (
+        <div className="hidden md:block">
+          <Sidebar
+            categories={categories}
+            selectedCategoryId={selectedCategoryId}
+            onCategorySelect={setSelectedCategoryId}
+          />
+        </div>
+      )}
       <main className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-16 items-center justify-between px-8 relative z-30">
           <Logo />
