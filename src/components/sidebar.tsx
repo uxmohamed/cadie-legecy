@@ -3,6 +3,7 @@
 import * as React from "react";
 import type { Category } from "@/types";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface SidebarProps {
   categories: Category[];
@@ -64,36 +65,38 @@ export function Sidebar({
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 py-3" aria-label="Categories">
-        <button
+        <Button
           ref={(el) => {
             categoryRefs.current[0] = el;
           }}
           onClick={() => onCategorySelect(null)}
           onKeyDown={(e) => handleKeyDown(e, 0)}
+          variant="ghost"
           className={cn(
-            "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm transition-colors focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-800",
+            "w-full justify-start gap-2 h-auto px-2 py-1.5 text-sm font-normal",
             selectedCategoryId === null
               ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
               : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
           )}
         >
           <span className="text-xs">All</span>
-        </button>
+        </Button>
 
         {categories.map((category, index) => {
           const isSelected = selectedCategoryId === category.id;
           const buttonIndex = index + 1;
 
           return (
-            <button
+            <Button
               key={category.id}
               ref={(el) => {
                 categoryRefs.current[buttonIndex] = el;
               }}
               onClick={() => onCategorySelect(category.id)}
               onKeyDown={(e) => handleKeyDown(e, buttonIndex)}
+              variant="ghost"
               className={cn(
-                "flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left text-sm transition-colors focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-800",
+                "w-full justify-between gap-2 h-auto px-2 py-1.5 text-sm font-normal",
                 isSelected
                   ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
@@ -128,28 +131,31 @@ export function Sidebar({
                   {category.count}
                 </span>
               </div>
-            </button>
+            </Button>
           );
         })}
       </nav>
 
       <div className="border-t border-gray-100 p-2 dark:border-gray-800">
-        <button
+        <Button
           ref={(el) => {
             categoryRefs.current[categories.length + 1] = el;
           }}
           onKeyDown={(e) => handleKeyDown(e, categories.length + 1)}
-          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100 dark:focus:bg-gray-800"
+          variant="ghost"
+          className="w-full justify-start gap-2 h-auto px-2 py-1.5 text-sm font-normal text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
         >
           <span>+ New Group</span>
-        </button>
-        <button
-          className="mt-1 flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100 dark:focus:bg-gray-800"
+        </Button>
+        <Button
+          variant="ghost"
+          className="mt-1 w-full justify-start gap-2 h-auto px-2 py-1.5 text-sm font-normal text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
         >
           <span>Delete Group</span>
-        </button>
+        </Button>
       </div>
     </aside>
   );
 }
+
 

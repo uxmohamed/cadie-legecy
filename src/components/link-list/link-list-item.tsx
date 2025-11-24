@@ -1,6 +1,7 @@
 import type { Link } from "@/types";
 import { cn, formatDate } from "@/lib/utils";
 import { Favicon } from "@/components/ui/favicon";
+import { Button } from "@/components/ui/button";
 import { PinOff, FileText } from "lucide-react";
 import { extractTextFromRichText } from "@/lib/rich-text-utils";
 
@@ -144,17 +145,19 @@ export function LinkListItem({
           )}
         >
           {isPinned && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 onUnpin?.(link.id);
               }}
-              className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-300 transition-colors"
+              className="h-8 w-8 hover:bg-neutral-300"
               title="Unpin"
             >
               <PinOff className="h-4 w-4" />
-            </button>
+            </Button>
           )}
         </div>
       </div>

@@ -14,8 +14,6 @@
     "extension:install": "cd extension && npm install"
   },
   "dependencies": {
-    "@iconify-json/tabler": "^1.2.23",
-    "@iconify/react": "^6.0.2",
     "@lexical/code": "^0.38.2",
     "@lexical/history": "^0.38.2",
     "@lexical/link": "^0.38.2",

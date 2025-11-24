@@ -6,7 +6,8 @@ import {
   MenuPopup,
   MenuTrigger,
 } from "@/components/ui/menu";
-import { Icon } from "@iconify/react";
+import { Button } from "@/components/ui/button";
+import { X, Archive, Trash2, MoreHorizontal, Pin, PinOff } from "lucide-react";
 
 interface SelectionToolbarProps {
   selectedCount: number;
@@ -33,42 +34,46 @@ export function SelectionToolbar({
         <span className="text-sm font-medium text-neutral-900 select-none">
           {selectedCount} selected
         </span>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={onClearSelection}
-          className="flex items-center justify-center text-neutral-400 hover:text-neutral-900 transition-colors"
+          className="h-auto w-auto p-0 text-neutral-400 hover:text-neutral-900 hover:bg-transparent"
         >
-          <Icon icon="tabler:x" width={16} height={16} />
-        </button>
+          <X className="h-4 w-4" />
+        </Button>
       </div>
 
-      <button
+      <Button
+        variant="ghost"
         onClick={onBatchArchive}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors select-none"
+        className="h-auto gap-1.5 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
       >
-        <Icon icon="tabler:archive" width={16} height={16} />
+        <Archive className="h-4 w-4" />
         Archive
-      </button>
+      </Button>
 
-      <button
+      <Button
+        variant="ghost"
         onClick={onBatchDelete}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors select-none"
+        className="h-auto gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-600"
       >
-        <Icon icon="tabler:trash" width={16} height={16} />
+        <Trash2 className="h-4 w-4" />
         Delete
-      </button>
+      </Button>
 
       <Menu>
         <MenuTrigger className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors select-none">
-          <Icon icon="tabler:dots-horizontal" width={16} height={16} />
+          <MoreHorizontal className="h-4 w-4" />
           Actions
         </MenuTrigger>
         <MenuPopup align="center" side="top">
           <MenuItem onClick={onBatchPin}>
-            <Icon icon="tabler:pin" width={16} height={16} />
+            <Pin className="h-4 w-4" />
             Pin Selected
           </MenuItem>
           <MenuItem onClick={onBatchUnpin}>
-            <Icon icon="tabler:pin-off" width={16} height={16} />
+            <PinOff className="h-4 w-4" />
             Unpin Selected
           </MenuItem>
         </MenuPopup>

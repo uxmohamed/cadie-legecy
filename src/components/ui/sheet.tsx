@@ -2,7 +2,7 @@
 
 import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Icon } from "@iconify/react";
+import { X } from "lucide-react";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
@@ -82,7 +82,7 @@ const SheetPopup = React.forwardRef<
         {children}
         {showCloseButton && (
           <SheetPrimitive.Close className="absolute end-2 top-2 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-neutral-200 border-transparent opacity-72 outline-none transition-[color,background-color,box-shadow,opacity] pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 hover:opacity-100 focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-1 focus-visible:ring-offset-white [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 dark:border-neutral-800 dark:focus-visible:ring-neutral-300 dark:focus-visible:ring-offset-neutral-950">
-            <Icon icon="tabler:x" />
+            <X />
             <span className="sr-only">Close</span>
           </SheetPrimitive.Close>
         )}

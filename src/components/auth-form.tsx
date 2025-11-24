@@ -3,6 +3,7 @@
 import * as React from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/logo";
 // Google Logo SVG Component
 function GoogleLogo() {
@@ -181,7 +182,7 @@ export function AuthForm() {
               <label htmlFor="email" className="sr-only">
                 Email address
               </label>
-              <input
+              <Input
                 id="email"
                 type="email"
                 placeholder="name@example.com"
@@ -189,7 +190,8 @@ export function AuthForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
-                className="w-full px-4 py-3 bg-neutral-100 border border-neutral-100 text-neutral-900 text-base rounded-xl shadow-none focus:outline-none focus:ring-0 focus:border-neutral-400 placeholder:text-neutral-500"
+                size="lg"
+                className="w-full px-4 py-3 bg-neutral-100 border-neutral-100 text-neutral-900 text-base rounded-xl shadow-none focus:border-neutral-400 placeholder:text-neutral-500"
               />
               {error && (
                 <p className="text-sm text-red-600">
@@ -258,4 +260,5 @@ export function AuthForm() {
     </div>
   );
 }
+
 

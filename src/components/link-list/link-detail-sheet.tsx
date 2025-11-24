@@ -31,8 +31,8 @@ import {
   PinOff,
   Archive,
   Trash2,
+  X,
 } from "lucide-react";
-import { Icon } from "@iconify/react";
 import { extractTextFromRichText } from "@/lib/rich-text-utils";
 import {
   Menu,
@@ -244,7 +244,7 @@ export function LinkDetailSheet({
               onClick={() => onOpenChange(false)}
               className="h-6 w-6 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100"
             >
-              <Icon icon="tabler:x" className="h-3.5 w-3.5" />
+              <X className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
