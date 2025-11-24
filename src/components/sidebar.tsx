@@ -62,10 +62,13 @@ export function Sidebar({
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-gray-100 bg-white dark:border-gray-800 dark:bg-[#0d0d0d]">
-      <div className="flex h-14 items-center border-b border-gray-100 px-4 dark:border-gray-800">
+      <div className="flex h-14 items-center justify-between border-b border-gray-100 px-4 dark:border-gray-800">
         <div className="flex h-7 w-7 items-center justify-center text-base font-medium text-gray-900 dark:text-gray-100">
           M
         </div>
+        <span className="text-[10px] text-neutral-400 bg-neutral-100 px-1.5 py-0.5 rounded border border-neutral-300">
+          <kbd className="font-sans font-medium">[</kbd>
+        </span>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 py-3" aria-label="Categories">
