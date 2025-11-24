@@ -45,7 +45,8 @@ export function useKeyboardNavigation({
       { key: "k", description: "Move selection down", category: "Navigation", action: () => { } },
       { key: "Enter", description: "Open selected link", category: "Navigation", action: () => { } },
       { key: "e", description: "Edit selected link", category: "Actions", action: () => { } },
-      { key: "d", description: "Delete selected link", category: "Actions", action: () => { } },
+      { key: "d", description: "Move to Recycle Bin", category: "Actions", action: () => { } },
+      { key: "q", description: "Archive selected link", category: "Actions", action: () => { } },
       { key: "Backspace", description: "Archive/Delete selection", category: "Actions", action: () => { } },
       { key: "Cmd+a", description: "Select all", category: "Actions", action: () => { } },
     ] as const;
