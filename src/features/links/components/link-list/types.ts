@@ -8,6 +8,8 @@ export interface LinkListProps {
   onCopyUrl?: (url: string) => void;
   onPin?: (id: string) => void;
   onUnpin?: (id: string) => void;
+  onBatchDelete?: (ids: string[]) => void;
+  onBatchArchive?: (ids: string[]) => void;
 }
 
 export interface SelectionState {

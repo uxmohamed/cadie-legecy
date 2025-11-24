@@ -129,6 +129,60 @@ export function useLinks(isAuthenticated: boolean) {
         [refreshLinks]
     );
 
+    const handleBatchDeleteLinks = React.useCallback(
+        async (ids: string[]) => {
+            if (ids.length === 0) return;
+
+            // Optimistic update
+            setLinks((prev) => prev.filter((link) => !ids.includes(link.id)));
+
+            try {
+                await Promise.all(
+                    ids.map(async (id) => {
+                        const response = await fetch(`/api/links/${id}`, { method: "DELETE" });
+                        if (!response.ok) throw new Error(`Failed to delete link ${id}`);
+                    })
+                );
+
+                toast.success(`${ids.length} links deleted`);
+            } catch (error) {
+                console.error("Error deleting links:", error);
+                toast.error("Failed to delete some links");
+                await refreshLinks();
+            }
+        },
+        [refreshLinks]
+    );
+
+    const handleBatchArchiveLinks = React.useCallback(
+        async (ids: string[]) => {
+            if (ids.length === 0) return;
+
+            // Optimistic update
+            setLinks((prev) => prev.filter((link) => !ids.includes(link.id)));
+
+            try {
+                await Promise.all(
+                    ids.map(async (id) => {
+                        const response = await fetch(`/api/links/${id}`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ is_archived: true }),
+                        });
+                        if (!response.ok) throw new Error(`Failed to archive link ${id}`);
+                    })
+                );
+
+                toast.success(`${ids.length} links archived`);
+            } catch (error) {
+                console.error("Error archiving links:", error);
+                toast.error("Failed to archive some links");
+                await refreshLinks();
+            }
+        },
+        [refreshLinks]
+    );
+
     const handleCopyUrl = async (url: string) => {
         try {
             await navigator.clipboard.writeText(url);
@@ -320,6 +374,8 @@ export function useLinks(isAuthenticated: boolean) {
         handleSaveRichText,
         handlePinLink,
         handleUnpinLink,
+        handleBatchDeleteLinks,
+        handleBatchArchiveLinks,
     };
 }
 

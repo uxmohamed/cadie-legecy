@@ -22,6 +22,8 @@ export function LinkList({
   onCopyUrl,
   onPin,
   onUnpin,
+  onBatchArchive,
+  onBatchDelete,
 }: LinkListProps) {
   const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null);
   const [contextMenu, setContextMenu] = React.useState<ContextMenuState | null>(
@@ -69,14 +71,22 @@ export function LinkList({
 
   // Batch Actions
   const handleBatchArchive = React.useCallback(() => {
-    selectedIds.forEach((id) => onArchive?.(id));
+    if (onBatchArchive) {
+      onBatchArchive(Array.from(selectedIds));
+    } else {
+      selectedIds.forEach((id) => onArchive?.(id));
+    }
     clearSelection();
-  }, [selectedIds, onArchive, clearSelection]);
+  }, [selectedIds, onArchive, onBatchArchive, clearSelection]);
 
   const handleBatchDelete = React.useCallback(() => {
-    selectedIds.forEach((id) => onDelete?.(id));
+    if (onBatchDelete) {
+      onBatchDelete(Array.from(selectedIds));
+    } else {
+      selectedIds.forEach((id) => onDelete?.(id));
+    }
     clearSelection();
-  }, [selectedIds, onDelete, clearSelection]);
+  }, [selectedIds, onDelete, onBatchDelete, clearSelection]);
 
   const handleBatchPin = () => {
     selectedIds.forEach((id) => onPin?.(id));
