@@ -31,6 +31,7 @@ export interface Link {
     ai_people: string[] | null;
     is_pinned: boolean;
     is_archived: boolean;
+    is_deleted: boolean;
     is_favorite: boolean;
     read_at: string | null;
     sort_order: number;
@@ -68,6 +69,7 @@ export interface UpdateLinkDTO {
     description?: string | null;
     is_pinned?: boolean;
     is_archived?: boolean;
+    is_deleted?: boolean;
 }
 
 /**
@@ -76,6 +78,7 @@ export interface UpdateLinkDTO {
 export interface LinkFilters {
     category_id?: string;
     is_archived?: boolean;
+    is_deleted?: boolean;
     is_pinned?: boolean;
     content_type?: ContentType;
 }

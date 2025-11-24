@@ -15,6 +15,7 @@ interface UseKeyboardNavigationOptions {
   onBatchDelete: () => void;
   onEdit?: (link: Link) => void;
   onDelete?: (id: string) => void;
+  onArchive?: (id: string) => void;
 }
 
 import { useShortcuts } from "@/components/shortcut-context";
@@ -33,6 +34,7 @@ export function useKeyboardNavigation({
   onBatchDelete,
   onEdit,
   onDelete,
+  onArchive,
 }: UseKeyboardNavigationOptions) {
   const { registerShortcut, unregisterShortcut } = useShortcuts();
 
@@ -114,21 +116,22 @@ export function useKeyboardNavigation({
       }
 
       // Batch / Selection actions
+      if ((e.metaKey || e.ctrlKey) && e.key === "a") {
+        e.preventDefault();
+        selectAll();
+        return;
+      }
+
       if (e.metaKey && selectedIds.size > 0) {
         if (e.key === "Backspace") {
           e.preventDefault();
           if (e.shiftKey) onBatchDelete();
           else onBatchArchive();
         }
-
-        if (e.key === "a") {
-          e.preventDefault();
-          selectAll();
-        }
       }
 
       // Single item actions (vim style)
-      if (!e.metaKey && !e.ctrlKey && focusedIndex !== null) {
+      if (!e.metaKey && !e.ctrlKey && !e.altKey && focusedIndex !== null) {
         const focusedLink = displayLinks[focusedIndex];
         if (!focusedLink) return;
 
@@ -140,6 +143,11 @@ export function useKeyboardNavigation({
         if (e.key === "d") {
           e.preventDefault();
           onDelete?.(focusedLink.id);
+        }
+
+        if (e.key === "q") {
+          e.preventDefault();
+          onArchive?.(focusedLink.id);
         }
       }
     };

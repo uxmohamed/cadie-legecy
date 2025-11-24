@@ -7,6 +7,8 @@ import { LinkListSkeleton } from "@/components/link-list-skeleton";
 import { UserMenu } from "@/components/user-menu";
 import { Logo } from "@/components/logo";
 import { RichTextModal } from "@/components/rich-text-modal";
+import { Sidebar } from "@/components/sidebar";
+import { useCategories } from "@/hooks/use-categories";
 import { useLinks } from "@/features/links/hooks";
 import type { User } from "@supabase/supabase-js";
 import type { Link } from "@/features/links/types";
@@ -19,6 +21,16 @@ interface DashboardProps {
 export function Dashboard({ user }: DashboardProps) {
   const [richTextModalOpen, setRichTextModalOpen] = React.useState(false);
   const [editingLink, setEditingLink] = React.useState<Link | null>(null);
+
+  const [selectedCategoryId, setSelectedCategoryId] = React.useState<string | null>(null);
+  const { categories } = useCategories(!!user);
+
+  const filters = React.useMemo(() => {
+    if (selectedCategoryId === "archive") return { is_archived: true };
+    if (selectedCategoryId === "trash") return { is_deleted: true };
+    if (selectedCategoryId) return { category_id: selectedCategoryId, is_archived: false };
+    return { is_archived: false };
+  }, [selectedCategoryId]);
 
   const {
     filteredLinks,
@@ -36,7 +48,7 @@ export function Dashboard({ user }: DashboardProps) {
     handleBatchDeleteLinks,
     handleBatchArchiveLinks,
     reorderLinks,
-  } = useLinks(!!user);
+  } = useLinks(!!user, filters);
 
   const onSaveRichText = async (content: SerializedEditorState) => {
     if (!editingLink) return;
@@ -45,6 +57,13 @@ export function Dashboard({ user }: DashboardProps) {
 
   return (
     <div className="flex h-screen overflow-hidden">
+      <div className="hidden md:block">
+        <Sidebar
+          categories={categories}
+          selectedCategoryId={selectedCategoryId}
+          onCategorySelect={setSelectedCategoryId}
+        />
+      </div>
       <main className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-16 items-center justify-between px-8 relative z-30">
           <Logo />

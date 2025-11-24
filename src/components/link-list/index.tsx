@@ -125,6 +125,7 @@ export function LinkList({
     onBatchDelete: handleBatchDelete,
     onEdit,
     onDelete,
+    onArchive,
   });
 
   const sensors = useSensors(

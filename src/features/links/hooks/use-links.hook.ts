@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import type { Link, CreateLinkDTO } from "@/features/links/types";
+import type { Link, CreateLinkDTO, LinkFilters } from "@/features/links/types";
 import type { DetectedContent } from "@/lib/content-detector";
 import type { SerializedEditorState } from "lexical";
 
@@ -12,20 +12,36 @@ import type { SerializedEditorState } from "lexical";
  * Refactored to follow Single Responsibility Principle
  * Uses API routes for all data operations (proper client/server separation)
  */
-export function useLinks(isAuthenticated: boolean) {
+export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
     const [isLoading, setIsLoading] = React.useState(false);
     const [links, setLinks] = React.useState<Link[]>([]);
     const [searchQuery, setSearchQuery] = React.useState("");
     const [fetchingLinks, setFetchingLinks] = React.useState(true);
 
-    // Fetch links on mount
-    // Removed router navigation on 401 to prevent redirect loop
+    // Build query string from filters
+    const buildQueryString = React.useCallback(() => {
+        const params = new URLSearchParams();
+        if (filters?.category_id) params.append("category_id", filters.category_id);
+        if (filters?.is_archived !== undefined) params.append("is_archived", String(filters.is_archived));
+        if (filters?.is_deleted !== undefined) params.append("is_deleted", String(filters.is_deleted));
+
+        // Default to active links if no specific view is requested
+        if (filters?.is_archived === undefined && filters?.is_deleted === undefined) {
+            params.append("is_archived", "false");
+        }
+
+        return params.toString();
+    }, [filters]);
+
+    // Fetch links on mount or when filters change
     React.useEffect(() => {
         if (!isAuthenticated) return;
 
         async function fetchLinks() {
+            setFetchingLinks(true);
             try {
-                const response = await fetch("/api/links?is_archived=false");
+                const queryString = buildQueryString();
+                const response = await fetch(`/api/links?${queryString}`);
                 if (response.ok) {
                     const data = await response.json();
                     setLinks(data.links || []);
@@ -44,12 +60,13 @@ export function useLinks(isAuthenticated: boolean) {
         }
 
         fetchLinks();
-    }, [isAuthenticated]);
+    }, [isAuthenticated, buildQueryString]);
 
     // Refresh links from server
     const refreshLinks = React.useCallback(async () => {
         try {
-            const response = await fetch("/api/links?is_archived=false");
+            const queryString = buildQueryString();
+            const response = await fetch(`/api/links?${queryString}`);
             if (response.ok) {
                 const data = await response.json();
                 setLinks(data.links || []);
@@ -60,7 +77,7 @@ export function useLinks(isAuthenticated: boolean) {
         } catch (error) {
             console.error("Error refreshing links:", error);
         }
-    }, []);
+    }, [buildQueryString]);
 
     // Filter links based on search query
     const filteredLinks = React.useMemo(() => {

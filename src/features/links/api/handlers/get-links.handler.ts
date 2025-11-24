@@ -35,11 +35,13 @@ export class GetLinksHandler {
             const searchParams = request.nextUrl.searchParams;
             const categoryId = searchParams.get("category_id") || undefined;
             const isArchived = searchParams.get("is_archived") === "true";
+            const isDeleted = searchParams.get("is_deleted") === "true";
 
             // Get links using service
             const links = await this.linkService.getLinks(userId, {
                 category_id: categoryId,
                 is_archived: isArchived,
+                is_deleted: isDeleted,
             });
 
             return NextResponse.json({ links });

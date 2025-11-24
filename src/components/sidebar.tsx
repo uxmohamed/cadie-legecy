@@ -20,7 +20,7 @@ export function Sidebar({
   const categoryRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
 
   React.useEffect(() => {
-    categoryRefs.current = categoryRefs.current.slice(0, categories.length + 2);
+    categoryRefs.current = categoryRefs.current.slice(0, categories.length + 4);
   }, [categories.length]);
 
   const handleKeyDown = (
@@ -29,20 +29,24 @@ export function Sidebar({
   ) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      const nextIndex = index < categories.length + 1 ? index + 1 : 0;
+      const nextIndex = index < categories.length + 3 ? index + 1 : 0;
       setFocusedIndex(nextIndex);
       categoryRefs.current[nextIndex]?.focus();
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      const prevIndex = index > 0 ? index - 1 : categories.length + 1;
+      const prevIndex = index > 0 ? index - 1 : categories.length + 3;
       setFocusedIndex(prevIndex);
       categoryRefs.current[prevIndex]?.focus();
     } else if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       if (index === 0) {
         onCategorySelect(null);
-      } else if (index <= categories.length) {
-        onCategorySelect(categories[index - 1].id);
+      } else if (index === 1) {
+        onCategorySelect("archive");
+      } else if (index === 2) {
+        onCategorySelect("trash");
+      } else if (index >= 3 && index < categories.length + 3) {
+        onCategorySelect(categories[index - 3].id);
       }
     } else if (e.key === "Home") {
       e.preventDefault();
@@ -50,7 +54,7 @@ export function Sidebar({
       categoryRefs.current[0]?.focus();
     } else if (e.key === "End") {
       e.preventDefault();
-      const lastIndex = categories.length + 1;
+      const lastIndex = categories.length + 3;
       setFocusedIndex(lastIndex);
       categoryRefs.current[lastIndex]?.focus();
     }
@@ -82,9 +86,45 @@ export function Sidebar({
           <span className="text-xs">All</span>
         </Button>
 
+        <Button
+          ref={(el) => {
+            categoryRefs.current[1] = el;
+          }}
+          onClick={() => onCategorySelect("archive")}
+          onKeyDown={(e) => handleKeyDown(e, 1)}
+          variant="ghost"
+          className={cn(
+            "w-full justify-start gap-2 h-auto px-2 py-1.5 text-sm font-normal",
+            selectedCategoryId === "archive"
+              ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
+              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+          )}
+        >
+          <span className="text-xs">Archive</span>
+        </Button>
+
+        <Button
+          ref={(el) => {
+            categoryRefs.current[2] = el;
+          }}
+          onClick={() => onCategorySelect("trash")}
+          onKeyDown={(e) => handleKeyDown(e, 2)}
+          variant="ghost"
+          className={cn(
+            "w-full justify-start gap-2 h-auto px-2 py-1.5 text-sm font-normal",
+            selectedCategoryId === "trash"
+              ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
+              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+          )}
+        >
+          <span className="text-xs">Recycle Bin</span>
+        </Button>
+
+        <div className="my-2 h-px bg-gray-100 dark:bg-gray-800" />
+
         {categories.map((category, index) => {
           const isSelected = selectedCategoryId === category.id;
-          const buttonIndex = index + 1;
+          const buttonIndex = index + 3; // Offset by All, Archive, Trash
 
           return (
             <Button
@@ -139,9 +179,9 @@ export function Sidebar({
       <div className="border-t border-gray-100 p-2 dark:border-gray-800">
         <Button
           ref={(el) => {
-            categoryRefs.current[categories.length + 1] = el;
+            categoryRefs.current[categories.length + 3] = el;
           }}
-          onKeyDown={(e) => handleKeyDown(e, categories.length + 1)}
+          onKeyDown={(e) => handleKeyDown(e, categories.length + 3)}
           variant="ghost"
           className="w-full justify-start gap-2 h-auto px-2 py-1.5 text-sm font-normal text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
         >

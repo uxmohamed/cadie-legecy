@@ -29,6 +29,13 @@ export class SupabaseLinkRepository implements ILinkRepository {
             query = query.eq("is_archived", filters.is_archived);
         }
 
+        // Default to not showing deleted items unless explicitly requested
+        if (filters?.is_deleted !== undefined) {
+            query = query.eq("is_deleted", filters.is_deleted);
+        } else {
+            query = query.eq("is_deleted", false);
+        }
+
         if (filters?.is_pinned !== undefined) {
             query = query.eq("is_pinned", filters.is_pinned);
         }
@@ -115,6 +122,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
                 description: data.description || null,
                 is_pinned: false,
                 is_archived: false,
+                is_deleted: false,
             })
             .select()
             .single();
@@ -148,14 +156,14 @@ export class SupabaseLinkRepository implements ILinkRepository {
     }
 
     /**
-     * Delete a link
+     * Delete a link (Soft Delete)
      */
     async delete(id: string, userId: string): Promise<void> {
         const supabase = await createClient();
 
         const { error } = await supabase
             .from("links")
-            .delete()
+            .update({ is_deleted: true })
             .eq("id", id)
             .eq("user_id", userId);
 
@@ -184,7 +192,8 @@ export class SupabaseLinkRepository implements ILinkRepository {
             .from("links")
             .select("*")
             .eq("user_id", userId)
-            .eq("is_archived", false);
+            .eq("is_archived", false)
+            .eq("is_deleted", false);
 
         // Check if any existing link matches
         const existingLink = links?.find(link => {
