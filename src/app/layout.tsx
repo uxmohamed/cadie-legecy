@@ -48,7 +48,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${customFont.variable} antialiased`}>
+      <body suppressHydrationWarning className={`${inter.variable} ${customFont.variable} antialiased`}>
         <Suspense fallback={null}>
           <PostHogPageView />
         </Suspense>
