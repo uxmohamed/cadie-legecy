@@ -6,6 +6,7 @@ import {
   detectMultipleContentTypes,
   type DetectedContent,
 } from "@/lib/content-detector";
+import { useShortcuts } from "@/components/shortcut-context";
 
 interface CaptureInputProps {
   onSubmit: (items: DetectedContent[]) => void;
@@ -22,19 +23,47 @@ export function CaptureInput({
   const [showFocusAnimation, setShowFocusAnimation] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
+  const { registerShortcut, unregisterShortcut } = useShortcuts();
+
   React.useEffect(() => {
+    const focusInput = () => {
+      inputRef.current?.focus();
+      setShowFocusAnimation(true);
+      setTimeout(() => setShowFocusAnimation(false), 200);
+    };
+
+    registerShortcut({
+      key: "c",
+      description: "Focus capture input",
+      category: "Global",
+      action: () => {
+        focusInput();
+      },
+    });
+
+    registerShortcut({
+      key: "/",
+      description: "Search / Capture",
+      category: "Global",
+      action: () => {
+        focusInput();
+      },
+    });
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "f") {
         e.preventDefault();
-        inputRef.current?.focus();
-        setShowFocusAnimation(true);
-        setTimeout(() => setShowFocusAnimation(false), 200);
+        focusInput();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      unregisterShortcut("c");
+      unregisterShortcut("/");
+    };
+  }, [registerShortcut, unregisterShortcut]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;

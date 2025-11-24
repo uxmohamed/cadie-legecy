@@ -123,6 +123,8 @@ export function LinkList({
     selectAll,
     onBatchArchive: handleBatchArchive,
     onBatchDelete: handleBatchDelete,
+    onEdit,
+    onDelete,
   });
 
   const sensors = useSensors(
@@ -201,7 +203,7 @@ export function LinkList({
   return (
     <div className="w-full" ref={containerRef}>
       <div className="sticky top-[104px] px-6 z-10 flex justify-between gap-4 bg-[#fafafa] py-4 text-xs font-medium text-neutral-400 relative select-none">
-        <div>Title</div>
+        <div className="ml-6">Title</div>
         <div>Created at</div>
         <div className="absolute -bottom-4 left-0 right-0 h-4 bg-gradient-to-b from-[#fafafa] to-transparent pointer-events-none" />
       </div>
