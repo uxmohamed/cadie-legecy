@@ -16,7 +16,7 @@ const SheetPortal = SheetPrimitive.Portal;
 const SheetClose = SheetPrimitive.Close;
 
 const sheetPopupVariants = cva(
-  "fixed z-50 flex flex-col gap-4 overflow-y-auto bg-white text-slate-950 shadow-lg transition-[opacity,translate] duration-300 ease-in-out will-change-transform [--sheet-inset:0px] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 dark:bg-slate-950 dark:text-slate-50",
+  "fixed z-50 flex flex-col gap-4 overflow-y-auto bg-white text-neutral-950 shadow-lg transition-[opacity,translate] duration-300 ease-in-out will-change-transform [--sheet-inset:0px] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 dark:bg-neutral-950 dark:text-neutral-50",
   {
     defaultVariants: {
       inset: false,
@@ -28,11 +28,11 @@ const sheetPopupVariants = cva(
       },
       side: {
         bottom:
-          "inset-x-[var(--sheet-inset)] bottom-[var(--sheet-inset)] h-auto max-h-[calc(100dvh-var(--sheet-inset)*2)] data-[state=closed]:translate-y-full data-[state=open]:translate-y-0",
-        left: "data-[state=closed]:-translate-x-full data-[state=open]:translate-x-0 inset-y-[var(--sheet-inset)] left-[var(--sheet-inset)] h-dvh w-[calc(100%-(--spacing(12)))] max-w-sm sm:h-[calc(100dvh-var(--sheet-inset)*2)]",
+          "inset-x-[var(--sheet-inset)] bottom-[var(--sheet-inset)] h-auto max-h-[calc(100dvh-var(--sheet-inset)*2)] data-[state=closed]:tranneutral-y-full data-[state=open]:tranneutral-y-0",
+        left: "data-[state=closed]:-tranneutral-x-full data-[state=open]:tranneutral-x-0 inset-y-[var(--sheet-inset)] left-[var(--sheet-inset)] h-dvh w-[calc(100%-(--spacing(12)))] max-w-sm sm:h-[calc(100dvh-var(--sheet-inset)*2)]",
         right:
-          "inset-y-[var(--sheet-inset)] right-[var(--sheet-inset)] h-dvh w-[calc(100%-(--spacing(12)))] max-w-sm data-[state=closed]:translate-x-full data-[state=open]:translate-x-0 sm:h-[calc(100dvh-var(--sheet-inset)*2)]",
-        top: "data-[state=closed]:-translate-y-full data-[state=open]:translate-y-0 inset-x-[var(--sheet-inset)] top-[var(--sheet-inset)] h-auto max-h-[calc(100dvh-var(--sheet-inset)*2)]",
+          "inset-y-[var(--sheet-inset)] right-[var(--sheet-inset)] h-dvh w-[calc(100%-(--spacing(12)))] max-w-sm data-[state=closed]:tranneutral-x-full data-[state=open]:tranneutral-x-0 sm:h-[calc(100dvh-var(--sheet-inset)*2)]",
+        top: "data-[state=closed]:-tranneutral-y-full data-[state=open]:tranneutral-y-0 inset-x-[var(--sheet-inset)] top-[var(--sheet-inset)] h-auto max-h-[calc(100dvh-var(--sheet-inset)*2)]",
       },
     },
   },
@@ -81,7 +81,7 @@ const SheetPopup = React.forwardRef<
       >
         {children}
         {showCloseButton && (
-          <SheetPrimitive.Close className="absolute end-2 top-2 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-slate-200 border-transparent opacity-72 outline-none transition-[color,background-color,box-shadow,opacity] pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 hover:opacity-100 focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-1 focus-visible:ring-offset-white [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 dark:border-slate-800 dark:focus-visible:ring-slate-300 dark:focus-visible:ring-offset-slate-950">
+          <SheetPrimitive.Close className="absolute end-2 top-2 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-neutral-200 border-transparent opacity-72 outline-none transition-[color,background-color,box-shadow,opacity] pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 hover:opacity-100 focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-1 focus-visible:ring-offset-white [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 dark:border-neutral-800 dark:focus-visible:ring-neutral-300 dark:focus-visible:ring-offset-neutral-950">
             <XIcon />
             <span className="sr-only">Close</span>
           </SheetPrimitive.Close>
@@ -135,7 +135,7 @@ const SheetDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SheetPrimitive.Description
     ref={ref}
-    className={cn("text-slate-500 text-sm dark:text-slate-400", className)}
+    className={cn("text-neutral-500 text-sm dark:text-neutral-400", className)}
     data-slot="sheet-description"
     {...props}
   />

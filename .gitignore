@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# internal testing and prototypes
+/internal-ui-tests
+

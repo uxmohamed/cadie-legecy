@@ -5,7 +5,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-slate-200 bg-clip-padding font-medium text-sm outline-none transition-shadow before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-1 focus-visible:ring-offset-white disabled:pointer-events-none disabled:opacity-64 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 dark:border-slate-800 dark:focus-visible:ring-slate-300 dark:focus-visible:ring-offset-slate-950",
+  "relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-colors duration-150 disabled:pointer-events-none disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     defaultVariants: {
       size: "default",
@@ -13,32 +13,32 @@ const buttonVariants = cva(
     },
     variants: {
       size: {
-        default:
-          "min-h-8 px-[calc(--spacing(3)-1px)] py-[calc(--spacing(1.5)-1px)]",
-        icon: "size-8",
-        "icon-lg": "size-9",
-        "icon-sm": "size-7",
-        "icon-xl": "size-10 [&_svg:not([class*='size-'])]:size-4.5",
-        "icon-xs":
-          "size-6 rounded-md before:rounded-[calc(var(--radius-md)-1px)]",
-        lg: "min-h-9 px-[calc(--spacing(3.5)-1px)] py-[calc(--spacing(2)-1px)]",
-        sm: "min-h-7 gap-1.5 px-[calc(--spacing(2.5)-1px)] py-[calc(--spacing(1)-1px)]",
-        xl: "min-h-10 px-[calc(--spacing(4)-1px)] py-[calc(--spacing(2)-1px)] text-base [&_svg:not([class*='size-'])]:size-4.5",
-        xs: "min-h-6 gap-1 rounded-md px-[calc(--spacing(2)-1px)] py-[calc(--spacing(1)-1px)] text-xs before:rounded-[calc(var(--radius-md)-1px)] [&_svg:not([class*='size-'])]:size-3",
+        default: "min-h-8 px-3 py-1.5 rounded-md",
+        icon: "size-8 rounded-md",
+        "icon-lg": "size-9 rounded-md",
+        "icon-sm": "size-7 rounded-md",
+        "icon-xl": "size-10 rounded-md [&_svg:not([class*='size-'])]:size-4.5",
+        "icon-xs": "size-6 rounded-md",
+        lg: "min-h-9 px-3.5 py-2 text-base rounded-md",
+        sm: "min-h-7 gap-1.5 px-2.5 py-1 rounded-md",
+        xl: "min-h-10 px-4 py-3 text-base rounded-md [&_svg:not([class*='size-'])]:size-4.5",
+        xs: "min-h-6 gap-1 px-2 py-1 text-xs rounded-md [&_svg:not([class*='size-'])]:size-3",
       },
       variant: {
         default:
-          "not-disabled:inset-shadow-[0_1px_--theme(--color-white/16%)] border-slate-900 bg-slate-900 text-slate-50 shadow-primary/24 shadow-xs hover:bg-slate-900/90 [&:is(:active,[data-pressed])]:inset-shadow-[0_1px_--theme(--color-black/8%)] [&:is(:disabled,:active,[data-pressed])]:shadow-none dark:border-slate-50 dark:bg-slate-50 dark:text-slate-900 dark:hover:bg-slate-50/90",
+          "bg-brand text-white hover:bg-brand-hover focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2",
         destructive:
-          "not-disabled:inset-shadow-[0_1px_--theme(--color-white/16%)] border-red-500 bg-red-500 text-white shadow-destructive/24 shadow-xs hover:bg-red-500/90 [&:is(:active,[data-pressed])]:inset-shadow-[0_1px_--theme(--color-black/8%)] [&:is(:disabled,:active,[data-pressed])]:shadow-none dark:border-red-900 dark:bg-red-900 dark:hover:bg-red-900/90",
+          "bg-red-500 text-white hover:bg-red-600 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2",
         "destructive-outline":
-          "border-slate-200 bg-transparent text-slate-50 shadow-xs not-disabled:not-active:not-data-pressed:before:shadow-[0_1px_--theme(--color-black/4%)] dark:bg-slate-200/32 dark:not-in-data-[slot=group]:bg-clip-border dark:not-disabled:before:shadow-[0_-1px_--theme(--color-white/4%)] dark:not-disabled:not-active:not-data-pressed:before:shadow-[0_-1px_--theme(--color-white/8%)] [&:is(:disabled,:active,[data-pressed])]:shadow-none [&:is(:hover,[data-pressed])]:border-red-500/32 [&:is(:hover,[data-pressed])]:bg-red-500/4 dark:border-slate-800 dark:text-slate-50 dark:dark:bg-slate-800/32 dark:[&:is(:hover,[data-pressed])]:border-red-900/32 dark:[&:is(:hover,[data-pressed])]:bg-red-900/4",
-        ghost: "border-transparent hover:bg-slate-100 data-pressed:bg-slate-100 dark:hover:bg-slate-800 dark:data-pressed:bg-slate-800",
-        link: "border-transparent underline-offset-4 hover:underline",
+          "border border-red-200 bg-transparent text-red-600 hover:bg-red-50 hover:border-red-300 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2",
+        ghost: 
+          "bg-transparent hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-300 focus-visible:ring-offset-2",
+        link: 
+          "bg-transparent text-brand underline-offset-4 hover:underline hover:text-brand-hover",
         outline:
-          "border-slate-200 bg-white shadow-xs not-disabled:not-active:not-data-pressed:before:shadow-[0_1px_--theme(--color-black/4%)] dark:bg-slate-200/32 dark:not-in-data-[slot=group]:bg-clip-border dark:not-disabled:before:shadow-[0_-1px_--theme(--color-white/4%)] dark:not-disabled:not-active:not-data-pressed:before:shadow-[0_-1px_--theme(--color-white/8%)] [&:is(:disabled,:active,[data-pressed])]:shadow-none [&:is(:hover,[data-pressed])]:bg-slate-100/50 dark:[&:is(:hover,[data-pressed])]:bg-slate-200/64 dark:border-slate-800 dark:bg-slate-950 dark:dark:bg-slate-800/32 dark:[&:is(:hover,[data-pressed])]:bg-slate-800/50 dark:dark:[&:is(:hover,[data-pressed])]:bg-slate-800/64",
+          "border border-neutral-200 bg-white hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-neutral-300 focus-visible:ring-offset-2 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:bg-neutral-800",
         secondary:
-          "border-slate-100 bg-slate-100 text-slate-900 hover:bg-slate-100/90 data-pressed:bg-slate-100/90 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-50 dark:hover:bg-slate-800/90 dark:data-pressed:bg-slate-800/90",
+          "bg-neutral-100 text-neutral-900 hover:bg-neutral-200 focus-visible:ring-2 focus-visible:ring-neutral-300 focus-visible:ring-offset-2 dark:bg-neutral-800 dark:text-neutral-50 dark:hover:bg-neutral-700",
       },
     },
   },

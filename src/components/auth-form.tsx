@@ -126,8 +126,9 @@ export function AuthForm() {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={googleLoading}
+            variant="secondary"
             size="lg"
-            className="w-full py-3 bg-neutral-100 border-0 text-neutral-900 text-base rounded-xl shadow-none hover:bg-neutral-200 transition-colors duration-150"
+            className="w-full"
           >
             {googleLoading ? (
               <>
@@ -165,8 +166,9 @@ export function AuthForm() {
             type="button"
             onClick={() => setShowEmailForm(true)}
             disabled={googleLoading}
+            variant="ghost"
             size="lg"
-            className="w-full py-3 bg-0 border-0 text-neutral-900 text-base rounded-xl shadow-none hover:bg-neutral-200 transition-colors duration-150"
+            className="w-full"
           >
             Continue with Email
           </Button>
@@ -204,8 +206,9 @@ export function AuthForm() {
             <Button
               type="submit"
               disabled={loading}
+              variant="secondary"
               size="lg"
-              className="w-full py-3 bg-neutral-100 border-0 text-neutral-900 text-base rounded-xl shadow-none hover:bg-neutral-200 transition-colors duration-150"
+              className="w-full"
               >
               {loading ? (
                 <>
@@ -244,8 +247,9 @@ export function AuthForm() {
               setError("");
               setSuccess(false);
             }}
+            variant="ghost"
             size="lg"
-            className="w-full py-3 bg-0 border-0 text-neutral-900 text-base rounded-xl shadow-none hover:bg-neutral-200 transition-colors duration-150"
+            className="w-full"
           >
             Back to sign in
           </Button>
