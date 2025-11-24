@@ -1,11 +1,20 @@
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
-import { LandingPage } from "@/components/landing-page";
 import { Dashboard } from "@/components/dashboard";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function Home() {
   const { user, authChecked } = useAuth();
+  const router = useRouter();
+
+  // Redirect unauthenticated users to /homepage
+  useEffect(() => {
+    if (authChecked && !user) {
+      router.push("/homepage");
+    }
+  }, [authChecked, user, router]);
 
   // Show loading state while checking auth
   if (!authChecked) {
@@ -16,9 +25,13 @@ export default function Home() {
     );
   }
 
-  // Show landing page for unauthenticated users
+  // Show loading state while redirecting unauthenticated users
   if (!user) {
-    return <LandingPage />;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#fafafa]">
+        <p className="text-sm text-neutral-400">Loading...</p>
+      </div>
+    );
   }
 
   return <Dashboard user={user} />;
