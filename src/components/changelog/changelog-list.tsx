@@ -57,7 +57,7 @@ export function ChangelogList({ entries }: ChangelogListProps) {
                 {/* Vertical timeline line */}
                 <div className="hidden md:block absolute top-2 left-0 w-px h-full bg-neutral-200">
                   {/* Timeline dot */}
-                  <div className="hidden md:block absolute top-0 -tranneutral-x-1/2 size-3 bg-neutral-900 rounded-full z-10" />
+                  <div className="hidden md:block absolute top-0 -translate-x-1/2 size-3 bg-neutral-900 rounded-full z-10" />
                 </div>
 
                 <ChangelogEntryComponent entry={entry} />
