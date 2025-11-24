@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { Link } from "@/types";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Menu, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 
 import { useSelection } from "./use-selection";
@@ -32,7 +32,7 @@ export function LinkList({
 
   const linkRefs = React.useRef<(HTMLAnchorElement | null)[]>([]);
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
+
   const previousLengthRef = React.useRef(links.length);
 
   // Helper to get flattened list of links for index calculation
@@ -102,18 +102,16 @@ export function LinkList({
   const copyToClipboard = async (text: string, type: "url" | "color") => {
     try {
       await navigator.clipboard.writeText(text);
-      toast({
-        title:
-          type === "color"
-            ? "Color copied to clipboard"
-            : "URL copied to clipboard",
-      });
+      toast.success(
+        type === "color"
+          ? "Color copied to clipboard"
+          : "URL copied to clipboard"
+      );
     } catch (error) {
       console.error("Failed to copy:", error);
-      toast({
-        title: type === "color" ? "Failed to copy color" : "Failed to copy URL",
-        variant: "destructive",
-      });
+      toast.error(
+        type === "color" ? "Failed to copy color" : "Failed to copy URL"
+      );
     }
   };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { canonicalizeContent } from "@/lib/canonicalize";
 import type { Link } from "@/types";
 import type { DetectedContent } from "@/lib/content-detector";
@@ -12,7 +12,6 @@ export function useLinks(isAuthenticated: boolean) {
   const [links, setLinks] = React.useState<Link[]>([]);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [fetchingLinks, setFetchingLinks] = React.useState(true);
-  const { toast } = useToast();
 
   // Reusable function to refresh links from server
   const refreshLinks = React.useCallback(async () => {
@@ -38,11 +37,11 @@ export function useLinks(isAuthenticated: boolean) {
           const data = await response.json();
           setLinks(data.links || []);
         } else {
-          toast({ title: "Failed to load links", variant: "destructive" });
+          toast.error("Failed to load links");
         }
       } catch (error) {
         console.error("Error fetching links:", error);
-        toast({ title: "Failed to load links", variant: "destructive" });
+        toast.error("Failed to load links");
       } finally {
         setFetchingLinks(false);
       }
@@ -89,10 +88,10 @@ export function useLinks(isAuthenticated: boolean) {
           throw new Error("Failed to delete link");
         }
 
-        toast({ title: "Link deleted" });
+        toast.success("Link deleted");
       } catch (error) {
         console.error("Error deleting link:", error);
-        toast({ title: "Failed to delete link", variant: "destructive" });
+        toast.error("Failed to delete link");
         await refreshLinks();
       }
     },
@@ -114,10 +113,10 @@ export function useLinks(isAuthenticated: boolean) {
           throw new Error("Failed to archive link");
         }
 
-        toast({ title: "Link archived" });
+        toast.success("Link archived");
       } catch (error) {
         console.error("Error archiving link:", error);
-        toast({ title: "Failed to archive link", variant: "destructive" });
+        toast.error("Failed to archive link");
         await refreshLinks();
       }
     },
@@ -127,15 +126,15 @@ export function useLinks(isAuthenticated: boolean) {
   const handleCopyUrl = async (url: string) => {
     try {
       await navigator.clipboard.writeText(url);
-      toast({ title: "URL copied to clipboard" });
+      toast.success("URL copied to clipboard");
     } catch (error) {
       console.error("Failed to copy URL:", error);
-      toast({ title: "Failed to copy URL", variant: "destructive" });
+      toast.error("Failed to copy URL");
     }
   };
 
   const handleEditLink = () => {
-    toast({ title: "Edit functionality coming soon" });
+    toast("Edit functionality coming soon");
   };
 
   const handleSaveRichText = async (
@@ -160,7 +159,7 @@ export function useLinks(isAuthenticated: boolean) {
       );
     } catch (error) {
       console.error("Error saving rich text:", error);
-      toast({ title: "Failed to save rich text", variant: "destructive" });
+      toast.error("Failed to save rich text");
       throw error;
     }
   };
@@ -184,10 +183,10 @@ export function useLinks(isAuthenticated: boolean) {
           throw new Error("Failed to pin link");
         }
 
-        toast({ title: "Link pinned" });
+        toast.success("Link pinned");
       } catch (error) {
         console.error("Error pinning link:", error);
-        toast({ title: "Failed to pin link", variant: "destructive" });
+        toast.error("Failed to pin link");
         await refreshLinks();
       }
     },
@@ -213,10 +212,10 @@ export function useLinks(isAuthenticated: boolean) {
           throw new Error("Failed to unpin link");
         }
 
-        toast({ title: "Link unpinned" });
+        toast.success("Link unpinned");
       } catch (error) {
         console.error("Error unpinning link:", error);
-        toast({ title: "Failed to unpin link", variant: "destructive" });
+        toast.error("Failed to unpin link");
         await refreshLinks();
       }
     },
@@ -361,11 +360,11 @@ export function useLinks(isAuthenticated: boolean) {
       if (items.length === 1) {
         if (successCount === 1) {
           const type = items[0].type;
-          toast({
-            title: type === "color"
+          toast.success(
+            type === "color"
               ? "Color saved successfully"
-              : "Link saved successfully",
-          });
+              : "Link saved successfully"
+          );
         } else if (duplicateCount === 1) {
           const type = items[0].type;
           const message =
@@ -374,49 +373,48 @@ export function useLinks(isAuthenticated: boolean) {
               : type === "url"
               ? "This link is already in your list"
               : "This item is already in your list";
-          toast({ title: message });
+          toast(message);
         } else {
-          toast({ title: "Failed to save", variant: "destructive" });
+          toast.error("Failed to save");
         }
       } else {
         if (successCount > 0 && duplicateCount === 0 && failureCount === 0) {
-          toast({
-            title: `${successCount} ${
+          toast.success(
+            `${successCount} ${
               successCount === 1 ? "link" : "links"
-            } added successfully`,
-          });
+            } added successfully`
+          );
         } else if (successCount > 0 && duplicateCount > 0) {
-          toast({
-            title: `${successCount} ${
+          toast(
+            `${successCount} ${
               successCount === 1 ? "link" : "links"
             } added, ${duplicateCount} ${
               duplicateCount === 1 ? "was" : "were"
-            } already in your list`,
-          });
+            } already in your list`
+          );
         } else if (duplicateCount > 0 && successCount === 0) {
-          toast({
-            title: `${duplicateCount} ${
+          toast(
+            `${duplicateCount} ${
               duplicateCount === 1 ? "link was" : "links were"
-            } already in your list`,
-          });
+            } already in your list`
+          );
         } else if (failureCount > 0) {
           if (successCount > 0) {
-            toast({
-              title: `${successCount} ${
+            toast(
+              `${successCount} ${
                 successCount === 1 ? "link" : "links"
-              } added, ${failureCount} failed`,
-            });
+              } added, ${failureCount} failed`
+            );
           } else {
-            toast({ title: "Failed to add links", variant: "destructive" });
+            toast.error("Failed to add links");
           }
         }
       }
     } catch (error) {
       console.error("Error creating links:", error);
-      toast({
-        title: error instanceof Error ? error.message : "Failed to save",
-        variant: "destructive",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save"
+      );
     } finally {
       setIsLoading(false);
     }
