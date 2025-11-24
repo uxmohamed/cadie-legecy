@@ -28,7 +28,7 @@ const manualTestBtn = document.getElementById("manualTestBtn") as HTMLButtonElem
 // State
 let currentSettings = {
   apiToken: "",
-  caddyUrl: "https://caddy-space.vercel.app", // Default to production
+  caddyUrl: "https://caddy-ed0.pages.dev", // Default to production
   userEmail: "",
 };
 
@@ -44,7 +44,7 @@ async function init() {
   updateView();
 
   // Update Open Caddy link
-  openCaddyBtn.href = currentSettings.caddyUrl || "https://caddy-space.vercel.app";
+  openCaddyBtn.href = currentSettings.caddyUrl || "https://caddy-ed0.pages.dev";
 }
 
 /**
@@ -61,7 +61,7 @@ function checkAuthorizationParams() {
     // Save settings
     saveSettings({
       apiToken: token,
-      caddyUrl: url || "https://caddy-space.vercel.app",
+      caddyUrl: url || "https://caddy-ed0.pages.dev",
       userEmail: email || "",
     }).then(() => {
       // Clear URL params
@@ -80,11 +80,11 @@ function checkAuthorizationParams() {
  */
 async function loadSettings() {
   const settings = await getSettings();
-  let caddyUrl = settings.caddyUrl || "https://caddy-space.vercel.app";
+  let caddyUrl = settings.caddyUrl || "https://caddy-ed0.pages.dev";
   
   // If caddyUrl is localhost, replace with production URL
   if (caddyUrl === "http://localhost:3000" || caddyUrl.startsWith("http://localhost")) {
-    caddyUrl = "https://caddy-space.vercel.app";
+    caddyUrl = "https://caddy-ed0.pages.dev";
     // Save the corrected URL
     await saveSettings({ caddyUrl });
   }
@@ -140,7 +140,7 @@ async function handleConnect() {
     
     // If no URL set, or if it's localhost, use production
     if (!caddyUrl || caddyUrl === "http://localhost:3000" || caddyUrl.startsWith("http://localhost")) {
-      caddyUrl = "https://caddy-space.vercel.app";
+      caddyUrl = "https://caddy-ed0.pages.dev";
     }
     
     // Try to detect if user is on a Caddy page and use that URL (async)
@@ -149,7 +149,7 @@ async function handleConnect() {
       try {
         const tabUrl = new URL(tabs[0].url);
         // Check if this is a Caddy domain (production)
-        if (tabUrl.hostname.includes("caddy") || tabUrl.hostname.includes("vercel.app")) {
+        if (tabUrl.hostname.includes("caddy-ed0.pages.dev")) {
           caddyUrl = `${tabUrl.protocol}//${tabUrl.host}`;
         }
       } catch (e) {
@@ -268,7 +268,7 @@ async function handleDisconnect() {
     await clearSettings();
     currentSettings = {
       apiToken: "",
-      caddyUrl: "https://caddy-space.vercel.app",
+      caddyUrl: "https://caddy-ed0.pages.dev",
       userEmail: "",
     };
 

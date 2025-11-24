@@ -73,9 +73,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
     }
 
-    // Fallback to localhost only if we really can't determine the URL
+    // Fallback to production URL if we really can't determine the URL
     if (!caddyUrlToUse) {
-      caddyUrlToUse = "http://localhost:3000";
+      caddyUrlToUse = "https://caddy-ed0.pages.dev";
     }
 
     // Construct options page URL with auth params
