@@ -1,4 +1,4 @@
-import type { Link } from "@/types";
+import type { Link } from "@/features/links/types";
 import { cn, formatDate } from "@/lib/utils";
 import { Favicon } from "@/components/ui/favicon";
 import { Button } from "@/components/ui/button";

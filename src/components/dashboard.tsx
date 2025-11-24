@@ -7,9 +7,9 @@ import { LinkListSkeleton } from "@/components/link-list-skeleton";
 import { UserMenu } from "@/components/user-menu";
 import { Logo } from "@/components/logo";
 import { RichTextModal } from "@/components/rich-text-modal";
-import { useLinks } from "@/hooks/use-links";
+import { useLinks } from "@/features/links/hooks";
 import type { User } from "@supabase/supabase-js";
-import type { Link } from "@/types";
+import type { Link } from "@/features/links/types";
 import type { SerializedEditorState } from "lexical";
 
 interface DashboardProps {

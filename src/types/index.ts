@@ -1,2 +1,6 @@
-export type { Link, Category, LinkMetadata } from "./link";
-
+/**
+ * Backward compatibility re-exports
+ * @deprecated Use @/features/links/types instead
+ */
+export type { Link, LinkMetadata } from "@/features/links/types";
+export type { Category } from "./link";

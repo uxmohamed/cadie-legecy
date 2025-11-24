@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { Link } from "@/types";
+import type { Link } from "@/features/links/types";
 
 interface UseKeyboardNavigationOptions {
   displayLinks: Link[];

@@ -9,6 +9,9 @@
     "lint": "eslint",
     "test": "jest",
     "test:watch": "jest --watch",
+    "clean": "rm -rf .next node_modules/.cache .contentlayer",
+    "clean:full": "rm -rf .next node_modules/.cache .contentlayer node_modules && npm install --legacy-peer-deps",
+    "dev:clean": "npm run clean && npm run dev",
     "extension:dev": "cd extension && npm run dev",
     "extension:build": "cd extension && npm run build",
     "extension:install": "cd extension && npm install"

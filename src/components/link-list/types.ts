@@ -1,4 +1,4 @@
-import type { Link } from "@/types";
+import type { Link } from "@/features/links/types";
 
 export interface LinkListProps {
   links: Link[];
