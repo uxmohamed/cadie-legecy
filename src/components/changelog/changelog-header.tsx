@@ -41,7 +41,7 @@ export function ChangelogHeader() {
             ) : user ? (
               <Link href="/">
                 <Button className="py-2 px-4 bg-neutral-800 border-0 text-white text-sm font-medium rounded-xl shadow-none hover:bg-neutral-800 transition-colors duration-150">
-                  Back to Dashboard
+                  Open App
                 </Button>
               </Link>
             ) : (
