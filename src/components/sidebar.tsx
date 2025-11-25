@@ -20,7 +20,7 @@ export function Sidebar({
   const categoryRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
 
   React.useEffect(() => {
-    categoryRefs.current = categoryRefs.current.slice(0, categories.length + 4);
+    categoryRefs.current = categoryRefs.current.slice(0, categories.length + 3);
   }, [categories.length]);
 
   const handleKeyDown = (
@@ -29,20 +29,19 @@ export function Sidebar({
   ) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      const nextIndex = index < categories.length + 3 ? index + 1 : 0;
+      const nextIndex = index < categories.length + 2 ? index + 1 : 0;
       setFocusedIndex(nextIndex);
       categoryRefs.current[nextIndex]?.focus();
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      const prevIndex = index > 0 ? index - 1 : categories.length + 3;
+      const prevIndex = index > 0 ? index - 1 : categories.length + 2;
       setFocusedIndex(prevIndex);
       categoryRefs.current[prevIndex]?.focus();
     } else if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       if (index === 0) {
         onCategorySelect(null);
-      } else if (index === 1) {
-        onCategorySelect("archive");
+
       } else if (index === 2) {
         onCategorySelect("trash");
       } else if (index >= 3 && index < categories.length + 3) {
@@ -54,7 +53,7 @@ export function Sidebar({
       categoryRefs.current[0]?.focus();
     } else if (e.key === "End") {
       e.preventDefault();
-      const lastIndex = categories.length + 3;
+      const lastIndex = categories.length + 2;
       setFocusedIndex(lastIndex);
       categoryRefs.current[lastIndex]?.focus();
     }
@@ -89,22 +88,7 @@ export function Sidebar({
           <span className="text-xs">All</span>
         </Button>
 
-        <Button
-          ref={(el) => {
-            categoryRefs.current[1] = el;
-          }}
-          onClick={() => onCategorySelect("archive")}
-          onKeyDown={(e) => handleKeyDown(e, 1)}
-          variant="ghost"
-          className={cn(
-            "w-full justify-start gap-2 h-auto px-2 py-1.5 text-sm font-normal",
-            selectedCategoryId === "archive"
-              ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
-              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
-          )}
-        >
-          <span className="text-xs">Archive</span>
-        </Button>
+
 
         <Button
           ref={(el) => {
@@ -120,7 +104,7 @@ export function Sidebar({
               : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
           )}
         >
-          <span className="text-xs">Recycle Bin</span>
+          <span className="text-xs">Trash</span>
         </Button>
 
         <div className="my-2 h-px bg-gray-100 dark:bg-gray-800" />
@@ -179,24 +163,7 @@ export function Sidebar({
         })}
       </nav>
 
-      <div className="border-t border-gray-100 p-2 dark:border-gray-800">
-        <Button
-          ref={(el) => {
-            categoryRefs.current[categories.length + 3] = el;
-          }}
-          onKeyDown={(e) => handleKeyDown(e, categories.length + 3)}
-          variant="ghost"
-          className="w-full justify-start gap-2 h-auto px-2 py-1.5 text-sm font-normal text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
-        >
-          <span>+ New Group</span>
-        </Button>
-        <Button
-          variant="ghost"
-          className="mt-1 w-full justify-start gap-2 h-auto px-2 py-1.5 text-sm font-normal text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
-        >
-          <span>Delete Group</span>
-        </Button>
-      </div>
+
     </aside>
   );
 }

@@ -14,6 +14,17 @@ export class SupabaseLinkRepository implements ILinkRepository {
     async findAll(userId: string, filters?: LinkFilters): Promise<Link[]> {
         const supabase = await createClient();
 
+        // Lazy Cleanup: Permanently delete items in trash older than 60 days
+        const sixtyDaysAgo = new Date();
+        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+        await supabase
+            .from("links")
+            .delete()
+            .eq("user_id", userId)
+            .eq("is_deleted", true)
+            .lt("deleted_at", sixtyDaysAgo.toISOString());
+
         let query = supabase
             .from("links")
             .select("*")
@@ -25,15 +36,13 @@ export class SupabaseLinkRepository implements ILinkRepository {
             query = query.eq("category_id", filters.category_id);
         }
 
-        if (filters?.is_archived !== undefined) {
-            query = query.eq("is_archived", filters.is_archived);
-        }
-
-        // Default to not showing deleted items unless explicitly requested
-        if (filters?.is_deleted !== undefined) {
-            query = query.eq("is_deleted", filters.is_deleted);
+        // If we are looking for deleted items (Trash), we also include archived items
+        // to merge the two concepts as requested.
+        if (filters?.is_deleted) {
+            query = query.or("is_deleted.eq.true,is_archived.eq.true");
         } else {
-            query = query.eq("is_deleted", false);
+            // For normal views, we exclude both deleted and archived items
+            query = query.eq("is_deleted", false).eq("is_archived", false);
         }
 
         if (filters?.is_pinned !== undefined) {
@@ -163,7 +172,11 @@ export class SupabaseLinkRepository implements ILinkRepository {
 
         const { error } = await supabase
             .from("links")
-            .update({ is_deleted: true })
+            .update({ 
+                is_deleted: true,
+                is_archived: false,
+                deleted_at: new Date().toISOString()
+            })
             .eq("id", id)
             .eq("user_id", userId);
 

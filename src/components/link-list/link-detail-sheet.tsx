@@ -29,7 +29,6 @@ import {
   Edit,
   Pin,
   PinOff,
-  Archive,
   Trash2,
   X,
 } from "lucide-react";
@@ -53,7 +52,7 @@ interface LinkDetailSheetProps {
   onCopyUrl?: (url: string) => void;
   onPin?: (id: string) => void;
   onUnpin?: (id: string) => void;
-  onArchive?: (id: string) => void;
+
   onDelete?: (id: string) => void;
 }
 
@@ -68,7 +67,7 @@ export function LinkDetailSheet({
   onCopyUrl,
   onPin,
   onUnpin,
-  onArchive,
+
   onDelete,
 }: LinkDetailSheetProps) {
   const [copied, setCopied] = React.useState(false);
@@ -187,20 +186,7 @@ export function LinkDetailSheet({
                     </MenuItem>
                   )
                 )}
-                {onArchive && (
-                  <>
-                    <MenuSeparator />
-                    <MenuItem
-                      onClick={() => {
-                        onArchive(link.id);
-                        onOpenChange(false);
-                      }}
-                    >
-                      {/* <Archive className="h-4 w-4" /> */}
-                      Archive
-                    </MenuItem>
-                  </>
-                )}
+
                 {onDelete && (
                   <>
                     <MenuSeparator />

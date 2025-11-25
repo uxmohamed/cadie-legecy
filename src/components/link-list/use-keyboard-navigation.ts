@@ -11,11 +11,11 @@ interface UseKeyboardNavigationOptions {
   selectedIds: Set<string>;
   clearSelection: () => void;
   selectAll: () => void;
-  onBatchArchive: () => void;
+
   onBatchDelete: () => void;
   onEdit?: (link: Link) => void;
   onDelete?: (id: string) => void;
-  onArchive?: (id: string) => void;
+
 }
 
 import { useShortcuts } from "@/components/shortcut-context";
@@ -30,11 +30,11 @@ export function useKeyboardNavigation({
   selectedIds,
   clearSelection,
   selectAll,
-  onBatchArchive,
+
   onBatchDelete,
   onEdit,
   onDelete,
-  onArchive,
+
 }: UseKeyboardNavigationOptions) {
   const { registerShortcut, unregisterShortcut } = useShortcuts();
 
@@ -45,9 +45,8 @@ export function useKeyboardNavigation({
       { key: "k", description: "Move selection down", category: "Navigation", action: () => { } },
       { key: "Enter", description: "Open selected link", category: "Navigation", action: () => { } },
       { key: "e", description: "Edit selected link", category: "Actions", action: () => { } },
-      { key: "d", description: "Move to Recycle Bin", category: "Actions", action: () => { } },
-      { key: "q", description: "Archive selected link", category: "Actions", action: () => { } },
-      { key: "Backspace", description: "Archive/Delete selection", category: "Actions", action: () => { } },
+      { key: "d", description: "Move to Trash", category: "Actions", action: () => { } },
+      { key: "Backspace", description: "Delete selection", category: "Actions", action: () => { } },
       { key: "Cmd+a", description: "Select all", category: "Actions", action: () => { } },
     ] as const;
 
@@ -126,8 +125,7 @@ export function useKeyboardNavigation({
       if (e.metaKey && selectedIds.size > 0) {
         if (e.key === "Backspace") {
           e.preventDefault();
-          if (e.shiftKey) onBatchDelete();
-          else onBatchArchive();
+          onBatchDelete();
         }
       }
 
@@ -146,10 +144,7 @@ export function useKeyboardNavigation({
           onDelete?.(focusedLink.id);
         }
 
-        if (e.key === "q") {
-          e.preventDefault();
-          onArchive?.(focusedLink.id);
-        }
+
       }
     };
 
@@ -161,7 +156,7 @@ export function useKeyboardNavigation({
     selectedIds,
     clearSelection,
     selectAll,
-    onBatchArchive,
+
     onBatchDelete,
     setFocusedIndex,
     linkRefs,

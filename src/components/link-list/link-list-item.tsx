@@ -32,7 +32,7 @@ interface LinkListItemProps {
   onEdit?: (link: Link) => void;
   onPin?: (id: string) => void;
   onUnpin?: (id: string) => void;
-  onArchive?: (id: string) => void;
+
   onDelete?: (id: string) => void;
   isDragging: boolean;
 }
@@ -54,7 +54,7 @@ export function LinkListItem({
   onEdit,
   onPin,
   onUnpin,
-  onArchive,
+
   onDelete,
   isDragging,
 }: LinkListItemProps) {
@@ -89,13 +89,11 @@ export function LinkListItem({
       } else if (e.key === "e") {
         e.preventDefault();
         onEdit?.(link);
-      } else if (e.key === "a") {
-        e.preventDefault();
-        onArchive?.(link.id);
+
       } else if (e.key === "Backspace") {
         if (!e.shiftKey) {
           e.preventDefault();
-          onArchive?.(link.id);
+          onDelete?.(link.id);
         } else {
           e.preventDefault();
           onDelete?.(link.id);

@@ -32,14 +32,15 @@ import type { LinkListProps, ContextMenuState } from "./types";
 export function LinkList({
   links,
   onDelete,
-  onArchive,
+
   onEdit,
   onCopyUrl,
   onPin,
   onUnpin,
-  onBatchArchive,
+
   onBatchDelete,
   onReorder,
+  isTrashView,
 }: LinkListProps) {
   const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null);
   const [contextMenu, setContextMenu] = React.useState<ContextMenuState | null>(
@@ -55,10 +56,11 @@ export function LinkList({
 
   // Helper to get flattened list of links for index calculation
   const displayLinks = React.useMemo(() => {
+    if (isTrashView) return links;
     const pinned = links.filter((l) => l.is_pinned);
     const unpinned = links.filter((l) => !l.is_pinned);
     return [...pinned, ...unpinned];
-  }, [links]);
+  }, [links, isTrashView]);
 
   const {
     selectedIds,
@@ -86,14 +88,7 @@ export function LinkList({
   }, [displayLinks.length, focusedIndex]);
 
   // Batch Actions
-  const handleBatchArchive = React.useCallback(() => {
-    if (onBatchArchive) {
-      onBatchArchive(Array.from(selectedIds));
-    } else {
-      selectedIds.forEach((id) => onArchive?.(id));
-    }
-    clearSelection();
-  }, [selectedIds, onArchive, onBatchArchive, clearSelection]);
+
 
   const handleBatchDelete = React.useCallback(() => {
     if (onBatchDelete) {
@@ -105,10 +100,12 @@ export function LinkList({
   }, [selectedIds, onDelete, onBatchDelete, clearSelection]);
 
   const handleBatchPin = () => {
+    if (isTrashView) return;
     selectedIds.forEach((id) => onPin?.(id));
   };
 
   const handleBatchUnpin = () => {
+    if (isTrashView) return;
     selectedIds.forEach((id) => onUnpin?.(id));
   };
 
@@ -121,11 +118,11 @@ export function LinkList({
     selectedIds,
     clearSelection,
     selectAll,
-    onBatchArchive: handleBatchArchive,
+
     onBatchDelete: handleBatchDelete,
     onEdit,
     onDelete,
-    onArchive,
+
   });
 
   const sensors = useSensors(
@@ -198,8 +195,8 @@ export function LinkList({
     return <LinkListEmpty />;
   }
 
-  const pinnedLinks = links.filter((link) => link.is_pinned);
-  const unpinnedLinks = links.filter((link) => !link.is_pinned);
+  const pinnedLinks = isTrashView ? [] : links.filter((link) => link.is_pinned);
+  const unpinnedLinks = isTrashView ? links : links.filter((link) => !link.is_pinned);
 
   return (
     <div className="w-full" ref={containerRef}>
@@ -245,9 +242,9 @@ export function LinkList({
                   onContextMenu={handleContextMenu}
                   onCopyUrl={onCopyUrl}
                   onEdit={onEdit}
-                  onPin={onPin}
-                  onUnpin={onUnpin}
-                  onArchive={onArchive}
+                  onPin={!isTrashView ? onPin : undefined}
+                  onUnpin={!isTrashView ? onUnpin : undefined}
+
                   onDelete={onDelete}
                   isDragging={isDragging}
                 />
@@ -289,9 +286,9 @@ export function LinkList({
                     onContextMenu={handleContextMenu}
                     onCopyUrl={onCopyUrl}
                     onEdit={onEdit}
-                    onPin={onPin}
-                    onUnpin={onUnpin}
-                    onArchive={onArchive}
+                    onPin={!isTrashView ? onPin : undefined}
+                    onUnpin={!isTrashView ? onUnpin : undefined}
+
                     onDelete={onDelete}
                     isDragging={isDragging}
                   />
@@ -320,9 +317,9 @@ export function LinkList({
               link={contextMenu.link}
               onCopyUrl={onCopyUrl}
               onEdit={onEdit}
-              onPin={onPin}
-              onUnpin={onUnpin}
-              onArchive={onArchive}
+              onPin={!isTrashView ? onPin : undefined}
+              onUnpin={!isTrashView ? onUnpin : undefined}
+
               onDelete={onDelete}
             />
           </MenuPopup>
@@ -332,10 +329,10 @@ export function LinkList({
       <SelectionToolbar
         selectedCount={selectedIds.size}
         onClearSelection={clearSelection}
-        onBatchArchive={handleBatchArchive}
+
         onBatchDelete={handleBatchDelete}
-        onBatchPin={handleBatchPin}
-        onBatchUnpin={handleBatchUnpin}
+        onBatchPin={!isTrashView ? handleBatchPin : undefined}
+        onBatchUnpin={!isTrashView ? handleBatchUnpin : undefined}
       />
 
       <LinkDetailSheet
@@ -358,9 +355,9 @@ export function LinkList({
         }}
         onEdit={onEdit}
         onCopyUrl={onCopyUrl}
-        onPin={onPin}
-        onUnpin={onUnpin}
-        onArchive={onArchive}
+        onPin={!isTrashView ? onPin : undefined}
+        onUnpin={!isTrashView ? onUnpin : undefined}
+
         onDelete={onDelete}
       />
     </div>
