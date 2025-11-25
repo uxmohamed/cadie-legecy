@@ -9,7 +9,7 @@ import {
 import {
   Copy,
   Edit,
-  Archive,
+
   Trash,
   Pin,
   PinOff,
@@ -21,7 +21,7 @@ interface LinkContextMenuProps {
   onEdit?: (link: Link) => void;
   onPin?: (id: string) => void;
   onUnpin?: (id: string) => void;
-  onArchive?: (id: string) => void;
+
   onDelete?: (id: string) => void;
 }
 
@@ -31,7 +31,7 @@ export function LinkContextMenu({
   onEdit,
   onPin,
   onUnpin,
-  onArchive,
+
   onDelete,
 }: LinkContextMenuProps) {
   return (
@@ -47,21 +47,21 @@ export function LinkContextMenu({
         <MenuShortcut>⌘E</MenuShortcut>
       </MenuItem>
       {link.is_pinned ? (
-        <MenuItem onClick={() => onUnpin?.(link.id)}>
-          <PinOff className="h-4 w-4" />
-          Unpin
-        </MenuItem>
+        onUnpin && (
+          <MenuItem onClick={() => onUnpin(link.id)}>
+            <PinOff className="h-4 w-4" />
+            Unpin
+          </MenuItem>
+        )
       ) : (
-        <MenuItem onClick={() => onPin?.(link.id)}>
-          <Pin className="h-4 w-4" />
-          Pin
-        </MenuItem>
+        onPin && (
+          <MenuItem onClick={() => onPin(link.id)}>
+            <Pin className="h-4 w-4" />
+            Pin
+          </MenuItem>
+        )
       )}
-      <MenuItem onClick={() => onArchive?.(link.id)}>
-        <Archive className="h-4 w-4" />
-        Archive
-        <MenuShortcut>⌘⌫</MenuShortcut>
-      </MenuItem>
+
       <MenuSeparator />
       <MenuItem 
         className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400" 

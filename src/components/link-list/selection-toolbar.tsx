@@ -7,21 +7,21 @@ import {
   MenuTrigger,
 } from "@/components/ui/menu";
 import { Button } from "@/components/ui/button";
-import { X, Archive, Trash2, MoreHorizontal, Pin, PinOff } from "lucide-react";
+import { X, Trash2, MoreHorizontal, Pin, PinOff } from "lucide-react";
 
 interface SelectionToolbarProps {
   selectedCount: number;
   onClearSelection: () => void;
-  onBatchArchive: () => void;
+
   onBatchDelete: () => void;
-  onBatchPin: () => void;
-  onBatchUnpin: () => void;
+  onBatchPin?: () => void;
+  onBatchUnpin?: () => void;
 }
 
 export function SelectionToolbar({
   selectedCount,
   onClearSelection,
-  onBatchArchive,
+
   onBatchDelete,
   onBatchPin,
   onBatchUnpin,
@@ -44,14 +44,7 @@ export function SelectionToolbar({
         </Button>
       </div>
 
-      <Button
-        variant="ghost"
-        onClick={onBatchArchive}
-        className="h-auto gap-1.5 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
-      >
-        <Archive className="h-4 w-4" />
-        Archive
-      </Button>
+
 
       <Button
         variant="ghost"
@@ -68,14 +61,18 @@ export function SelectionToolbar({
           Actions
         </MenuTrigger>
         <MenuPopup align="center" side="top">
-          <MenuItem onClick={onBatchPin}>
-            <Pin className="h-4 w-4" />
-            Pin Selected
-          </MenuItem>
-          <MenuItem onClick={onBatchUnpin}>
-            <PinOff className="h-4 w-4" />
-            Unpin Selected
-          </MenuItem>
+          {onBatchPin && (
+            <MenuItem onClick={onBatchPin}>
+              <Pin className="h-4 w-4" />
+              Pin Selected
+            </MenuItem>
+          )}
+          {onBatchUnpin && (
+            <MenuItem onClick={onBatchUnpin}>
+              <PinOff className="h-4 w-4" />
+              Unpin Selected
+            </MenuItem>
+          )}
         </MenuPopup>
       </Menu>
     </div>

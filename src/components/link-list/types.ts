@@ -3,14 +3,15 @@ import type { Link } from "@/features/links/types";
 export interface LinkListProps {
   links: Link[];
   onDelete?: (id: string) => void;
-  onArchive?: (id: string) => void;
+
   onEdit?: (link: Link) => void;
   onCopyUrl?: (url: string) => void;
   onPin?: (id: string) => void;
   onUnpin?: (id: string) => void;
   onBatchDelete?: (ids: string[]) => void;
-  onBatchArchive?: (ids: string[]) => void;
+
   onReorder?: (items: { id: string; sort_order: number }[]) => void;
+  isTrashView?: boolean;
 }
 
 export interface SelectionState {

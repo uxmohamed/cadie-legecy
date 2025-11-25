@@ -44,9 +44,8 @@ export function Dashboard({ user }: DashboardProps) {
   }, [registerShortcut, unregisterShortcut]);
 
   const filters = React.useMemo(() => {
-    if (selectedCategoryId === "archive") return { is_archived: true };
+
     if (selectedCategoryId === "trash") return { is_deleted: true };
-    if (selectedCategoryId) return { category_id: selectedCategoryId, is_archived: false };
     return { is_archived: false };
   }, [selectedCategoryId]);
 
@@ -57,14 +56,14 @@ export function Dashboard({ user }: DashboardProps) {
     handleSearch,
     handleSubmit,
     handleDeleteLink,
-    handleArchiveLink,
+
     handleCopyUrl,
     handleEditLink,
     handleSaveRichText,
     handlePinLink,
     handleUnpinLink,
     handleBatchDeleteLinks,
-    handleBatchArchiveLinks,
+
     reorderLinks,
   } = useLinks(!!user, filters);
 
@@ -102,18 +101,26 @@ export function Dashboard({ user }: DashboardProps) {
             {fetchingLinks ? (
               <LinkListSkeleton />
             ) : (
-              <LinkList
-                links={filteredLinks}
-                onDelete={handleDeleteLink}
-                onArchive={handleArchiveLink}
-                onEdit={handleEditLink}
-                onCopyUrl={handleCopyUrl}
-                onPin={handlePinLink}
-                onUnpin={handleUnpinLink}
-                onBatchDelete={handleBatchDeleteLinks}
-                onBatchArchive={handleBatchArchiveLinks}
-                onReorder={reorderLinks}
-              />
+              <>
+                {selectedCategoryId === "trash" && (
+                  <div className="mb-4 rounded-md bg-amber-50 p-3 text-sm text-amber-800 border border-amber-200">
+                    Items in the Trash are permanently deleted after 60 days.
+                  </div>
+                )}
+                <LinkList
+                  links={filteredLinks}
+                  onDelete={handleDeleteLink}
+
+                  onEdit={handleEditLink}
+                  onCopyUrl={handleCopyUrl}
+                  onPin={handlePinLink}
+                  onUnpin={handleUnpinLink}
+                  onBatchDelete={handleBatchDeleteLinks}
+
+                  onReorder={reorderLinks}
+                  isTrashView={selectedCategoryId === "trash"}
+                />
+              </>
             )}
           </div>
         </div>

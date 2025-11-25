@@ -22,12 +22,11 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
     const buildQueryString = React.useCallback(() => {
         const params = new URLSearchParams();
         if (filters?.category_id) params.append("category_id", filters.category_id);
-        if (filters?.is_archived !== undefined) params.append("is_archived", String(filters.is_archived));
         if (filters?.is_deleted !== undefined) params.append("is_deleted", String(filters.is_deleted));
 
         // Default to active links if no specific view is requested
-        if (filters?.is_archived === undefined && filters?.is_deleted === undefined) {
-            params.append("is_archived", "false");
+        if (filters?.is_deleted === undefined) {
+            params.append("is_deleted", "false");
         }
 
         return params.toString();
@@ -128,31 +127,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
         [refreshLinks]
     );
 
-    const handleArchiveLink = React.useCallback(
-        async (id: string) => {
-            // Optimistic update
-            setLinks((prev) => prev.filter((link) => link.id !== id));
 
-            try {
-                const response = await fetch(`/api/links/${id}`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ is_archived: true }),
-                });
-
-                if (!response.ok) {
-                    throw new Error("Failed to archive link");
-                }
-
-                toast.success("Link archived");
-            } catch (error) {
-                console.error("Error archiving link:", error);
-                toast.error("Failed to archive link");
-                await refreshLinks();
-            }
-        },
-        [refreshLinks]
-    );
 
     const handleBatchDeleteLinks = React.useCallback(
         async (ids: string[]) => {
@@ -179,34 +154,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
         [refreshLinks]
     );
 
-    const handleBatchArchiveLinks = React.useCallback(
-        async (ids: string[]) => {
-            if (ids.length === 0) return;
 
-            // Optimistic update
-            setLinks((prev) => prev.filter((link) => !ids.includes(link.id)));
-
-            try {
-                await Promise.all(
-                    ids.map(async (id) => {
-                        const response = await fetch(`/api/links/${id}`, {
-                            method: "PUT",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ is_archived: true }),
-                        });
-                        if (!response.ok) throw new Error(`Failed to archive link ${id}`);
-                    })
-                );
-
-                toast.success(`${ids.length} links archived`);
-            } catch (error) {
-                console.error("Error archiving links:", error);
-                toast.error("Failed to archive some links");
-                await refreshLinks();
-            }
-        },
-        [refreshLinks]
-    );
 
     const reorderLinks = React.useCallback(
         async (items: { id: string; sort_order: number }[]) => {
@@ -426,14 +374,12 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
         handleSearch,
         handleSubmit,
         handleDeleteLink,
-        handleArchiveLink,
         handleCopyUrl,
         handleEditLink,
         handleSaveRichText,
         handlePinLink,
         handleUnpinLink,
         handleBatchDeleteLinks,
-        handleBatchArchiveLinks,
         reorderLinks,
     };
 }
