@@ -2,6 +2,7 @@
 
 import * as React from "react";
 
+import { AddLinkModal } from "@/components/add-link-modal";
 import { CaptureInput } from "@/components/capture-input";
 import { LinkList } from "@/components/link-list";
 import { LinkListSkeleton } from "@/components/link-list-skeleton";
@@ -25,7 +26,15 @@ export function Dashboard({ user }: DashboardProps) {
   const [editingLink, setEditingLink] = React.useState<Link | null>(null);
 
   const [selectedCategoryId, setSelectedCategoryId] = React.useState<string | null>(null);
+  const [addModalOpen, setAddModalOpen] = React.useState(false);
   const { categories } = useCategories(!!user);
+
+  // Listen for custom event to open add modal
+  React.useEffect(() => {
+    const handleOpenAddModal = () => setAddModalOpen(true);
+    window.addEventListener("openAddModal", handleOpenAddModal);
+    return () => window.removeEventListener("openAddModal", handleOpenAddModal);
+  }, []);
 
   const filters = React.useMemo(() => {
 
@@ -66,11 +75,10 @@ export function Dashboard({ user }: DashboardProps) {
         <div className="flex-1 overflow-y-auto pb-24">
           <div className="mx-auto w-full max-w-4xl px-8">
             <div className="sticky top-0 z-20 bg-[#fafafa] pt-8 pb-4">
-
               <CaptureInput
-                onSubmit={handleSubmit}
                 onSearch={handleSearch}
                 isLoading={isLoading}
+                searchOnly
               />
             </div>
             {fetchingLinks ? (
@@ -100,10 +108,17 @@ export function Dashboard({ user }: DashboardProps) {
           </div>
         </div>
       </main>
+      <AddLinkModal
+        isOpen={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        onSubmit={handleSubmit}
+        isLoading={isLoading}
+      />
       <Dock
         categories={categories}
         selectedCategoryId={selectedCategoryId}
         onCategorySelect={setSelectedCategoryId}
+        onAddClick={() => setAddModalOpen(true)}
       />
       {editingLink && (
         <RichTextModal

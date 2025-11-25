@@ -11,18 +11,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useShortcuts } from "@/components/shortcut-context";
-import { Grid3x3, Trash2, Circle } from "lucide-react";
+import { Menu, Trash2, Circle, Plus } from "lucide-react";
 
 interface DockProps {
   categories: Category[];
   selectedCategoryId: string | null;
   onCategorySelect: (categoryId: string | null) => void;
+  onAddClick: () => void;
 }
 
 export function Dock({
   categories,
   selectedCategoryId,
   onCategorySelect,
+  onAddClick,
 }: DockProps) {
   const { registerShortcut, unregisterShortcut } = useShortcuts();
   const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null);
@@ -112,6 +114,29 @@ export function Dock({
           className="flex items-center gap-1 px-2 py-1.5 bg-white dark:bg-[#0d0d0d] border border-gray-200 dark:border-gray-800 rounded-lg"
           aria-label="Categories"
         >
+          {/* Add Button - Primary */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={onAddClick}
+                className="h-8 w-8 p-0 rounded-md bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <div className="flex items-center gap-2">
+                <span>Add</span>
+                <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                  C
+                </kbd>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Separator */}
+          <div className="w-px h-5 bg-gray-200 dark:bg-gray-800 mx-1" />
+
           {/* All Button */}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -129,7 +154,7 @@ export function Dock({
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-900"
                 )}
               >
-                <Grid3x3 className="h-4 w-4" />
+                <Menu className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">

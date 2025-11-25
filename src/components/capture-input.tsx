@@ -9,15 +9,19 @@ import {
 import { useShortcuts } from "@/components/shortcut-context";
 
 interface CaptureInputProps {
-  onSubmit: (items: DetectedContent[]) => void;
+  onSubmit?: (items: DetectedContent[]) => void;
   onSearch?: (query: string) => void;
   isLoading?: boolean;
+  autoFocus?: boolean;
+  searchOnly?: boolean;
 }
 
 export function CaptureInput({
   onSubmit,
   onSearch,
   isLoading,
+  autoFocus = false,
+  searchOnly = false,
 }: CaptureInputProps) {
   const [value, setValue] = React.useState("");
   const [showFocusAnimation, setShowFocusAnimation] = React.useState(false);
@@ -65,6 +69,13 @@ export function CaptureInput({
     };
   }, [registerShortcut, unregisterShortcut]);
 
+  // Auto-focus input when autoFocus is true
+  React.useEffect(() => {
+    if (autoFocus && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [autoFocus]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setValue(newValue);
@@ -73,7 +84,7 @@ export function CaptureInput({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!value.trim() || isLoading) return;
+    if (searchOnly || !value.trim() || isLoading || !onSubmit) return;
 
     const detectedItems = detectMultipleContentTypes(value);
     setValue("");
@@ -88,6 +99,10 @@ export function CaptureInput({
       inputRef.current?.blur();
     }
   };
+
+  const placeholder = searchOnly
+    ? "Search your links..."
+    : "+ Insert a link, color, or just plain text...";
 
   return (
     <form onSubmit={handleSubmit} autoComplete="off" className="w-full">
@@ -105,7 +120,7 @@ export function CaptureInput({
           value={value}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          placeholder="+ Insert a link, color, or just plain text..."
+          placeholder={placeholder}
           disabled={isLoading}
           className="w-full pr-16 text-lg py-2.5"
           aria-label="Capture input"
