@@ -105,6 +105,12 @@ export function ShortcutProvider({ children }: { children: React.ReactNode }) {
         action: toggleHelp,
       },
       {
+        key: "Cmd+/",
+        description: "Toggle keyboard shortcuts help",
+        category: "Global",
+        action: toggleHelp,
+      },
+      {
         key: "H", // Shift+h
         description: "Go to Home",
         category: "Navigation",

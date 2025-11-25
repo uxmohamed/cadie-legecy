@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+
 import { CaptureInput } from "@/components/capture-input";
 import { LinkList } from "@/components/link-list";
 import { LinkListSkeleton } from "@/components/link-list-skeleton";
@@ -91,6 +92,7 @@ export function Dashboard({ user }: DashboardProps) {
         <div className="flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-4xl px-8">
             <div className="sticky top-0 z-20 bg-[#fafafa] pt-8 pb-4">
+
               <CaptureInput
                 onSubmit={handleSubmit}
                 onSearch={handleSearch}
