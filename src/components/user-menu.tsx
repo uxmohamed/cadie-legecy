@@ -36,7 +36,7 @@ export function UserMenu({ user }: UserMenuProps) {
       }
       
       // Force a hard redirect to clear all state
-      window.location.href = "/auth";
+      window.location.href = "/";
     } catch (error) {
       console.error("Error signing out:", error);
       setIsSigningOut(false);
