@@ -4,17 +4,79 @@
 @plugin "tailwindcss-animate";
 
 :root {
+  /* Skiff UI Color Palette (RGB format) */
+  --skiff-white: 255, 255, 255;
+  --skiff-black: 0, 0, 0;
+  --skiff-grey-800: 48, 48, 48;
+  --skiff-orange-400: 255, 142, 120;
+  --skiff-orange-500: 239, 90, 60;
+  --skiff-orange-600: 199, 64, 37;
+  --skiff-green-400: 25, 199, 127;
+  --skiff-blue-400: 74, 183, 238;
+  --skiff-red-400: 255, 143, 143;
+  --skiff-red-600: 215, 40, 40;
+
+  /* Skiff UI Opacities */
+  --skiff-opacity-4: 0.04;
+  --skiff-opacity-8: 0.08;
+  --skiff-opacity-12: 0.12;
+  --skiff-opacity-32: 0.32;
+  --skiff-opacity-44: 0.44;
+  --skiff-opacity-56: 0.56;
+  --skiff-opacity-72: 0.72;
+
+  /* Legacy variables mapped to Skiff colors */
   --background: #fafafa;
   --foreground: #171717;
-  --brand: #2783de;
-  --brand-hover: #1f6bc4;
-  --destructive-foreground: var(--color-red-700);
+  --brand: rgb(var(--skiff-orange-500));
+  --brand-hover: rgb(var(--skiff-orange-600));
+  --destructive-foreground: rgb(var(--skiff-red-600));
   --info: var(--color-blue-500);
   --info-foreground: var(--color-blue-700);
   --success: var(--color-emerald-500);
   --success-foreground: var(--color-emerald-700);
   --warning: var(--color-amber-500);
   --warning-foreground: var(--color-amber-700);
+
+  /* Skiff UI Light Theme Tokens */
+  --text-primary: rgb(var(--skiff-black));
+  --text-secondary: rgba(var(--skiff-black), var(--skiff-opacity-56));
+  --text-tertiary: rgba(var(--skiff-black), var(--skiff-opacity-44));
+  --text-disabled: rgba(var(--skiff-black), var(--skiff-opacity-32));
+  --text-link: rgb(var(--skiff-orange-500));
+  --text-destructive: rgb(var(--skiff-red-600));
+
+  --bg-l0-solid: linear-gradient(
+      0deg,
+      rgba(var(--skiff-black), var(--skiff-opacity-4)),
+      rgba(var(--skiff-black), var(--skiff-opacity-4))
+    ),
+    rgb(var(--skiff-white));
+  --bg-l1-solid: linear-gradient(
+      0deg,
+      rgba(var(--skiff-black), var(--skiff-opacity-8)),
+      rgba(var(--skiff-black), var(--skiff-opacity-8))
+    ),
+    rgb(var(--skiff-white));
+  --bg-l2-solid: linear-gradient(
+      0deg,
+      rgba(var(--skiff-black), var(--skiff-opacity-12)),
+      rgba(var(--skiff-black), var(--skiff-opacity-12))
+    ),
+    rgb(var(--skiff-white));
+
+  --border-primary: rgba(var(--skiff-black), var(--skiff-opacity-12));
+  --border-secondary: rgba(var(--skiff-black), var(--skiff-opacity-8));
+
+  --cta-primary-default: rgb(var(--skiff-black));
+  --cta-primary-hover: linear-gradient(
+      0deg,
+      rgba(var(--skiff-white), 0.16),
+      rgba(var(--skiff-white), 0.16)
+    ),
+    rgb(var(--skiff-black));
+  --cta-secondary-default: rgb(var(--skiff-white));
+  --cta-secondary-hover: rgba(var(--skiff-black), var(--skiff-opacity-8));
 }
 
 body {

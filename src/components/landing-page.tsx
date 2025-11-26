@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
-import { Menu, X } from "lucide-react";
+import { IconMenu, IconX } from "@tabler/icons-react";
 import {
   Sheet,
   SheetContent,
@@ -59,7 +59,7 @@ export function LandingPage() {
               <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                 <SheetTrigger asChild>
                   <Button className="md:hidden py-2 px-2 bg-transparent border-0 text-neutral-900 rounded-xl shadow-none hover:bg-neutral-100 transition-colors duration-150">
-                    <Menu className="h-6 w-6" />
+                    <IconMenu className="h-6 w-6" />
                   </Button>
                 </SheetTrigger>
                 <SheetContent 
@@ -83,7 +83,7 @@ export function LandingPage() {
                           onClick={() => setIsMenuOpen(false)}
                           className="py-2 px-2 bg-transparent border-0 text-neutral-600 rounded-xl shadow-none hover:bg-neutral-100 transition-colors duration-150"
                         >
-                          <X className="h-5 w-5" />
+                          <IconX className="h-5 w-5" />
                         </Button>
                       </div>
                     </div>

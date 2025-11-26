@@ -11,7 +11,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useShortcuts } from "@/components/shortcut-context";
-import { Menu, Trash2, Circle, Plus } from "lucide-react";
+import { IconPlus, IconMenu, IconTrash, IconCircle } from "@tabler/icons-react";
 
 interface DockProps {
   categories: Category[];
@@ -119,9 +119,9 @@ export function Dock({
             <TooltipTrigger asChild>
               <Button
                 onClick={onAddClick}
-                className="h-8 w-8 p-0 rounded-md bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
+                className="h-8 w-8 p-0 rounded-md bg-[rgb(var(--skiff-orange-500))] hover:bg-[rgb(var(--skiff-orange-600))] text-white border-0"
               >
-                <Plus className="h-4 w-4" />
+                <IconPlus className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
@@ -154,7 +154,7 @@ export function Dock({
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-900"
                 )}
               >
-                <Menu className="h-4 w-4" />
+                <IconMenu className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
@@ -184,7 +184,7 @@ export function Dock({
                     : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-900"
                 )}
               >
-                <Trash2 className="h-4 w-4" />
+                <IconTrash className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
@@ -225,16 +225,14 @@ export function Dock({
                         : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-900"
                     )}
                   >
-                    <Circle
-                      className="h-4 w-4"
-                      fill={category.color}
-                      stroke={category.color}
-                    />
+                    <IconCircle className="h-2 w-2 text-neutral-400 fill-current" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top">
                   <div className="flex items-center gap-2">
-                    <span>{category.name}</span>
+                    <div className="flex items-center justify-center w-8 h-8">
+                      <IconCircle className="h-2 w-2 text-neutral-400 fill-current" />
+                    </div>
                     {(category.count ?? 0) > 0 && (
                       <span className="text-xs text-gray-400">
                         ({category.count})

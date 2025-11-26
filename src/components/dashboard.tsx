@@ -66,7 +66,7 @@ export function Dashboard({ user }: DashboardProps) {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen flex-col bg-[var(--bg-l0)]">
       <main className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-16 items-center justify-between px-8 relative z-30">
           <Logo />
@@ -74,7 +74,7 @@ export function Dashboard({ user }: DashboardProps) {
         </header>
         <div className="flex-1 overflow-y-auto pb-24">
           <div className="mx-auto w-full max-w-4xl px-8">
-            <div className="sticky top-0 z-20 bg-[#fafafa] pt-8 pb-4">
+            <div className="sticky top-0 z-20 bg-[var(--bg-l0)] pt-8 pb-4">
               <CaptureInput
                 onSearch={handleSearch}
                 isLoading={isLoading}
