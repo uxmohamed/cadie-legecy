@@ -14,7 +14,6 @@ interface LinkContextMenuProps {
   onEdit?: (link: Link) => void;
   onPin?: (id: string) => void;
   onUnpin?: (id: string) => void;
-
   onDelete?: (id: string) => void;
 }
 
@@ -24,7 +23,6 @@ export function LinkContextMenu({
   onEdit,
   onPin,
   onUnpin,
-
   onDelete,
 }: LinkContextMenuProps) {
   return (
@@ -56,8 +54,8 @@ export function LinkContextMenu({
       )}
 
       <MenuSeparator />
-      <MenuItem 
-        className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400" 
+      <MenuItem
+        className="text-red-600 focus:text-red-600"
         onClick={() => onDelete?.(link.id)}
       >
         <IconTrash className="h-4 w-4" />

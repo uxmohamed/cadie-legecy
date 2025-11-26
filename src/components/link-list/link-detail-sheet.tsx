@@ -35,7 +35,6 @@ interface LinkDetailSheetProps {
   onCopyUrl?: (url: string) => void;
   onPin?: (id: string) => void;
   onUnpin?: (id: string) => void;
-
   onDelete?: (id: string) => void;
 }
 
@@ -50,7 +49,6 @@ export function LinkDetailSheet({
   onCopyUrl,
   onPin,
   onUnpin,
-
   onDelete,
 }: LinkDetailSheetProps) {
   const [copied, setCopied] = React.useState(false);
@@ -94,7 +92,6 @@ export function LinkDetailSheet({
       window.open(link.url, "_blank", "noopener,noreferrer");
     }
   };
-
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -174,7 +171,7 @@ export function LinkDetailSheet({
                   <>
                     <MenuSeparator />
                     <MenuItem
-                      className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
+                      className="text-red-600 focus:text-red-600"
                       onClick={() => {
                         if (confirm("Are you sure you want to delete this link?")) {
                           onDelete(link.id);
@@ -390,7 +387,6 @@ export function LinkDetailSheet({
               </a>
             </div>
           )}
-
         </div>
       </SheetContent>
     </Sheet>

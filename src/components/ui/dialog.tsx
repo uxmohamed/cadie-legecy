@@ -43,7 +43,7 @@ const DialogPopup = React.forwardRef<
         <DialogPrimitive.Content
           ref={ref}
           className={cn(
-            "sm:-tranneutral-y-[calc(1.25rem*var(--nested-dialogs))] relative row-start-2 grid w-full min-w-0 origin-top gap-4 border border-neutral-200 bg-white bg-clip-padding p-6 text-neutral-950 shadow-lg transition-[scale,opacity,translate] duration-200 ease-in-out will-change-transform before:pointer-events-none before:absolute before:inset-0 before:shadow-[0_1px_--theme(--color-black/4%)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 max-sm:overflow-y-auto max-sm:border-none max-sm:opacity-[calc(1-min(var(--nested-dialogs),1))] max-sm:before:hidden sm:max-w-lg sm:scale-[calc(1-0.1*var(--nested-dialogs))] sm:rounded-2xl sm:before:rounded-[calc(var(--radius-2xl)-1px)] dark:bg-clip-border dark:before:shadow-[0_-1px_--theme(--color-white/8%)] dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-50",
+            "sm:-tranneutral-y-[calc(1.25rem*var(--nested-dialogs))] relative row-start-2 grid w-full min-w-0 origin-top gap-4 border border-neutral-200 bg-white bg-clip-padding p-6 text-neutral-950 shadow-lg transition-[scale,opacity,translate] duration-200 ease-in-out will-change-transform before:pointer-events-none before:absolute before:inset-0 before:shadow-[0_1px_--theme(--color-black/4%)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 max-sm:overflow-y-auto max-sm:border-none max-sm:opacity-[calc(1-min(var(--nested-dialogs),1))] max-sm:before:hidden sm:max-w-lg sm:scale-[calc(1-0.1*var(--nested-dialogs))] sm:rounded-2xl sm:before:rounded-[calc(var(--radius-2xl)-1px)]",
             className,
           )}
           data-slot="dialog-popup"
@@ -51,7 +51,7 @@ const DialogPopup = React.forwardRef<
         >
           {children}
           {showCloseButton && (
-            <DialogPrimitive.Close className="absolute end-2 top-2 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-neutral-200 border-transparent opacity-72 outline-none transition-[color,background-color,box-shadow,opacity] pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 hover:opacity-100 focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-1 focus-visible:ring-offset-white [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 dark:border-neutral-800 dark:focus-visible:ring-neutral-300 dark:focus-visible:ring-offset-neutral-950">
+            <DialogPrimitive.Close className="absolute end-2 top-2 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-neutral-200 border-transparent opacity-72 outline-none transition-[color,background-color,box-shadow,opacity] pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 hover:opacity-100 focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-1 focus-visible:ring-offset-white [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0">
               <IconX />
               <span className="sr-only">Close</span>
             </DialogPrimitive.Close>
@@ -81,7 +81,7 @@ const DialogFooter = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "sm:-mx-6 sm:-mb-6 flex flex-col-reverse gap-2 sm:mt-2 sm:flex-row sm:justify-end sm:rounded-b-xl sm:border-t sm:bg-neutral-100/50 sm:px-6 sm:py-4 dark:sm:bg-neutral-800/50",
+      "sm:-mx-6 sm:-mb-6 flex flex-col-reverse gap-2 sm:mt-2 sm:flex-row sm:justify-end sm:rounded-b-xl sm:border-t sm:bg-neutral-100/50 sm:px-6 sm:py-4",
       className,
     )}
     data-slot="dialog-footer"
@@ -109,7 +109,7 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn("text-neutral-500 text-sm dark:text-neutral-400", className)}
+    className={cn("text-neutral-500 text-sm", className)}
     data-slot="dialog-description"
     {...props}
   />

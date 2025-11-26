@@ -1,36 +1,34 @@
 @import "tailwindcss";
-
-@custom-variant dark (&:is(.dark *));
 @plugin "tailwindcss-animate";
 
 :root {
-  /* Skiff UI Color Palette (RGB format) */
-  --skiff-white: 255, 255, 255;
-  --skiff-black: 0, 0, 0;
-  --skiff-grey-800: 48, 48, 48;
-  --skiff-orange-400: 255, 142, 120;
-  --skiff-orange-500: 239, 90, 60;
-  --skiff-orange-600: 199, 64, 37;
-  --skiff-green-400: 25, 199, 127;
-  --skiff-blue-400: 74, 183, 238;
-  --skiff-red-400: 255, 143, 143;
-  --skiff-red-600: 215, 40, 40;
+  /* Caddy UI Color Palette (RGB format) */
+  --caddy-white: 255, 255, 255;
+  --caddy-black: 0, 0, 0;
+  --caddy-grey-800: 48, 48, 48;
+  --caddy-orange-400: 255, 142, 120;
+  --caddy-orange-500: 239, 90, 60;
+  --caddy-orange-600: 199, 64, 37;
+  --caddy-green-400: 25, 199, 127;
+  --caddy-blue-400: 74, 183, 238;
+  --caddy-red-400: 255, 143, 143;
+  --caddy-red-600: 215, 40, 40;
 
-  /* Skiff UI Opacities */
-  --skiff-opacity-4: 0.04;
-  --skiff-opacity-8: 0.08;
-  --skiff-opacity-12: 0.12;
-  --skiff-opacity-32: 0.32;
-  --skiff-opacity-44: 0.44;
-  --skiff-opacity-56: 0.56;
-  --skiff-opacity-72: 0.72;
+  /* Caddy UI Opacities */
+  --caddy-opacity-4: 0.04;
+  --caddy-opacity-8: 0.08;
+  --caddy-opacity-12: 0.12;
+  --caddy-opacity-32: 0.32;
+  --caddy-opacity-44: 0.44;
+  --caddy-opacity-56: 0.56;
+  --caddy-opacity-72: 0.72;
 
-  /* Legacy variables mapped to Skiff colors */
+  /* Legacy variables mapped to Caddy colors */
   --background: #fafafa;
   --foreground: #171717;
-  --brand: rgb(var(--skiff-orange-500));
-  --brand-hover: rgb(var(--skiff-orange-600));
-  --destructive-foreground: rgb(var(--skiff-red-600));
+  --brand: rgb(var(--caddy-orange-500));
+  --brand-hover: rgb(var(--caddy-orange-600));
+  --destructive-foreground: rgb(var(--caddy-red-600));
   --info: var(--color-blue-500);
   --info-foreground: var(--color-blue-700);
   --success: var(--color-emerald-500);
@@ -38,45 +36,45 @@
   --warning: var(--color-amber-500);
   --warning-foreground: var(--color-amber-700);
 
-  /* Skiff UI Light Theme Tokens */
-  --text-primary: rgb(var(--skiff-black));
-  --text-secondary: rgba(var(--skiff-black), var(--skiff-opacity-56));
-  --text-tertiary: rgba(var(--skiff-black), var(--skiff-opacity-44));
-  --text-disabled: rgba(var(--skiff-black), var(--skiff-opacity-32));
-  --text-link: rgb(var(--skiff-orange-500));
-  --text-destructive: rgb(var(--skiff-red-600));
+  /* Caddy UI Light Theme Tokens */
+  --text-primary: rgb(var(--caddy-black));
+  --text-secondary: rgba(var(--caddy-black), var(--caddy-opacity-56));
+  --text-tertiary: rgba(var(--caddy-black), var(--caddy-opacity-44));
+  --text-disabled: rgba(var(--caddy-black), var(--caddy-opacity-32));
+  --text-link: rgb(var(--caddy-orange-500));
+  --text-destructive: rgb(var(--caddy-red-600));
 
   --bg-l0-solid: linear-gradient(
       0deg,
-      rgba(var(--skiff-black), var(--skiff-opacity-4)),
-      rgba(var(--skiff-black), var(--skiff-opacity-4))
+      rgba(var(--caddy-black), var(--caddy-opacity-4)),
+      rgba(var(--caddy-black), var(--caddy-opacity-4))
     ),
-    rgb(var(--skiff-white));
+    rgb(var(--caddy-white));
   --bg-l1-solid: linear-gradient(
       0deg,
-      rgba(var(--skiff-black), var(--skiff-opacity-8)),
-      rgba(var(--skiff-black), var(--skiff-opacity-8))
+      rgba(var(--caddy-black), var(--caddy-opacity-8)),
+      rgba(var(--caddy-black), var(--caddy-opacity-8))
     ),
-    rgb(var(--skiff-white));
+    rgb(var(--caddy-white));
   --bg-l2-solid: linear-gradient(
       0deg,
-      rgba(var(--skiff-black), var(--skiff-opacity-12)),
-      rgba(var(--skiff-black), var(--skiff-opacity-12))
+      rgba(var(--caddy-black), var(--caddy-opacity-12)),
+      rgba(var(--caddy-black), var(--caddy-opacity-12))
     ),
-    rgb(var(--skiff-white));
+    rgb(var(--caddy-white));
 
-  --border-primary: rgba(var(--skiff-black), var(--skiff-opacity-12));
-  --border-secondary: rgba(var(--skiff-black), var(--skiff-opacity-8));
+  --border-primary: rgba(var(--caddy-black), var(--caddy-opacity-12));
+  --border-secondary: rgba(var(--caddy-black), var(--caddy-opacity-8));
 
-  --cta-primary-default: rgb(var(--skiff-black));
+  --cta-primary-default: rgb(var(--caddy-black));
   --cta-primary-hover: linear-gradient(
       0deg,
-      rgba(var(--skiff-white), 0.16),
-      rgba(var(--skiff-white), 0.16)
+      rgba(var(--caddy-white), 0.16),
+      rgba(var(--caddy-white), 0.16)
     ),
-    rgb(var(--skiff-black));
-  --cta-secondary-default: rgb(var(--skiff-white));
-  --cta-secondary-hover: rgba(var(--skiff-black), var(--skiff-opacity-8));
+    rgb(var(--caddy-black));
+  --cta-secondary-default: rgb(var(--caddy-white));
+  --cta-secondary-hover: rgba(var(--caddy-black), var(--caddy-opacity-8));
 }
 
 body {
@@ -131,16 +129,6 @@ body {
   }
 }
 
-.dark {
-  --destructive-foreground: var(--color-red-400);
-  --info: var(--color-blue-500);
-  --info-foreground: var(--color-blue-400);
-  --success: var(--color-emerald-500);
-  --success-foreground: var(--color-emerald-400);
-  --warning: var(--color-amber-500);
-  --warning-foreground: var(--color-amber-400);
-}
-
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -158,12 +146,4 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.3);
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
 }

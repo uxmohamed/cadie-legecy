@@ -16,7 +16,7 @@ const SheetPortal = SheetPrimitive.Portal;
 const SheetClose = SheetPrimitive.Close;
 
 const sheetPopupVariants = cva(
-  "fixed z-50 flex flex-col gap-4 overflow-y-auto bg-white text-neutral-950 shadow-lg transition-[opacity,translate] duration-300 ease-in-out will-change-transform [--sheet-inset:0px] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 dark:bg-neutral-950 dark:text-neutral-50",
+  "fixed z-50 flex flex-col gap-4 overflow-y-auto bg-white text-neutral-950 shadow-lg transition-[opacity,translate] duration-300 ease-in-out will-change-transform [--sheet-inset:0px] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
   {
     defaultVariants: {
       inset: false,
@@ -81,7 +81,7 @@ const SheetPopup = React.forwardRef<
       >
         {children}
         {showCloseButton && (
-          <SheetPrimitive.Close className="absolute end-2 top-2 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-neutral-200 border-transparent opacity-72 outline-none transition-[color,background-color,box-shadow,opacity] pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 hover:opacity-100 focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-1 focus-visible:ring-offset-white [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 dark:border-neutral-800 dark:focus-visible:ring-neutral-300 dark:focus-visible:ring-offset-neutral-950">
+          <SheetPrimitive.Close className="absolute end-2 top-2 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-neutral-200 border-transparent opacity-72 outline-none transition-[color,background-color,box-shadow,opacity] pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 hover:opacity-100 focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-1 focus-visible:ring-offset-white [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0">
             <IconX />
             <span className="sr-only">Close</span>
           </SheetPrimitive.Close>
@@ -135,7 +135,7 @@ const SheetDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SheetPrimitive.Description
     ref={ref}
-    className={cn("text-neutral-500 text-sm dark:text-neutral-400", className)}
+    className={cn("text-neutral-500 text-sm", className)}
     data-slot="sheet-description"
     {...props}
   />

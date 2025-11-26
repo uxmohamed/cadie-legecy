@@ -26,19 +26,19 @@ const buttonVariants = cva(
       },
       variant: {
         default:
-          "bg-[rgb(var(--skiff-black))] text-white hover:bg-[linear-gradient(0deg,rgba(var(--skiff-white),0.16),rgba(var(--skiff-white),0.16)),rgb(var(--skiff-black))] focus-visible:ring-2 focus-visible:ring-[rgb(var(--skiff-black))] focus-visible:ring-offset-2",
+          "bg-[rgb(var(--caddy-black))] text-white hover:bg-[linear-gradient(0deg,rgba(var(--caddy-white),0.16),rgba(var(--caddy-white),0.16)),rgb(var(--caddy-black))] focus-visible:ring-2 focus-visible:ring-[rgb(var(--caddy-black))] focus-visible:ring-offset-2",
         destructive:
-          "bg-[rgb(var(--skiff-red-600))] text-white hover:bg-[rgb(var(--skiff-red-400))] focus-visible:ring-2 focus-visible:ring-[rgb(var(--skiff-red-600))] focus-visible:ring-offset-2",
+          "bg-[rgb(var(--caddy-red-600))] text-white hover:bg-[rgb(var(--caddy-red-400))] focus-visible:ring-2 focus-visible:ring-[rgb(var(--caddy-red-600))] focus-visible:ring-offset-2",
         "destructive-outline":
-          "border border-[rgba(var(--skiff-red-400),0.12)] bg-transparent text-[rgb(var(--skiff-red-600))] hover:bg-[rgba(var(--skiff-red-400),0.12)] focus-visible:ring-2 focus-visible:ring-[rgb(var(--skiff-red-600))] focus-visible:ring-offset-2",
-        ghost: 
-          "bg-transparent hover:bg-[rgba(var(--skiff-black),var(--skiff-opacity-8))] focus-visible:ring-2 focus-visible:ring-[rgba(var(--skiff-black),var(--skiff-opacity-12))] focus-visible:ring-offset-2",
-        link: 
-          "bg-transparent text-[rgb(var(--skiff-orange-500))] underline-offset-4 hover:underline hover:text-[rgb(var(--skiff-orange-600))]",
+          "border border-[rgba(var(--caddy-red-400),0.12)] bg-transparent text-[rgb(var(--caddy-red-600))] hover:bg-[rgba(var(--caddy-red-400),0.12)] focus-visible:ring-2 focus-visible:ring-[rgb(var(--caddy-red-600))] focus-visible:ring-offset-2",
+        ghost:
+          "bg-transparent hover:bg-[rgba(var(--caddy-black),var(--caddy-opacity-8))] focus-visible:ring-2 focus-visible:ring-[rgba(var(--caddy-black),var(--caddy-opacity-12))] focus-visible:ring-offset-2",
+        link:
+          "bg-transparent text-[rgb(var(--caddy-orange-500))] underline-offset-4 hover:underline hover:text-[rgb(var(--caddy-orange-600))]",
         outline:
-          "border border-[var(--border-primary)] bg-white hover:bg-[rgba(var(--skiff-black),var(--skiff-opacity-4))] focus-visible:ring-2 focus-visible:ring-[var(--border-primary)] focus-visible:ring-offset-2",
+          "border border-[var(--border-primary)] bg-white hover:bg-[rgba(var(--caddy-black),var(--caddy-opacity-4))] focus-visible:ring-2 focus-visible:ring-[var(--border-primary)] focus-visible:ring-offset-2",
         secondary:
-          "bg-[rgba(var(--skiff-black),var(--skiff-opacity-4))] text-[var(--text-primary)] hover:bg-[rgba(var(--skiff-black),var(--skiff-opacity-8))] focus-visible:ring-2 focus-visible:ring-[var(--border-primary)] focus-visible:ring-offset-2",
+          "bg-[rgba(var(--caddy-black),var(--caddy-opacity-4))] text-[var(--text-primary)] hover:bg-[rgba(var(--caddy-black),var(--caddy-opacity-8))] focus-visible:ring-2 focus-visible:ring-[var(--border-primary)] focus-visible:ring-offset-2",
       },
     },
   },

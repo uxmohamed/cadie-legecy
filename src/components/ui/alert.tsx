@@ -4,7 +4,7 @@ import type * as React from "react";
 import { cn } from "@/lib/utils";
 
 const alertVariants = cva(
-  "relative grid w-full items-start gap-x-2 gap-y-0.5 rounded-xl border border-neutral-200 px-3.5 py-3 text-neutral-950 text-sm has-[>svg]:has-data-[slot=alert-action]:grid-cols-[calc(var(--spacing)*4)_1fr_auto] has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-data-[slot=alert-action]:grid-cols-[1fr_auto] has-[>svg]:gap-x-2 [&>svg]:h-[1lh] [&>svg]:w-4 dark:border-neutral-800 dark:text-neutral-50",
+  "relative grid w-full items-start gap-x-2 gap-y-0.5 rounded-xl border border-neutral-200 px-3.5 py-3 text-neutral-950 text-sm has-[>svg]:has-data-[slot=alert-action]:grid-cols-[calc(var(--spacing)*4)_1fr_auto] has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-data-[slot=alert-action]:grid-cols-[1fr_auto] has-[>svg]:gap-x-2 [&>svg]:h-[1lh] [&>svg]:w-4",
   {
     defaultVariants: {
       variant: "default",
@@ -12,9 +12,9 @@ const alertVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-transparent dark:bg-neutral-200/32 [&>svg]:text-neutral-500 dark:dark:bg-neutral-800/32 dark:[&>svg]:text-neutral-400",
+          "bg-transparent [&>svg]:text-neutral-500",
         error:
-          "border-red-500/32 bg-red-500/4 [&>svg]:text-red-500 dark:border-red-900/32 dark:bg-red-900/4 dark:[&>svg]:text-red-900",
+          "border-red-500/32 bg-red-500/4 [&>svg]:text-red-500",
         info: "border-info/32 bg-info/4 [&>svg]:text-info",
         success: "border-success/32 bg-success/4 [&>svg]:text-success",
         warning: "border-warning/32 bg-warning/4 [&>svg]:text-warning",
@@ -55,7 +55,7 @@ function AlertDescription({
   return (
     <div
       className={cn(
-        "flex flex-col gap-2.5 text-neutral-500 [svg~&]:col-start-2 dark:text-neutral-400",
+        "flex flex-col gap-2.5 text-neutral-500 [svg~&]:col-start-2",
         className,
       )}
       data-slot="alert-description"

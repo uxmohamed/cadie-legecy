@@ -113,7 +113,6 @@ export function LinkDetailSheet({
     }
   };
 
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -205,7 +204,7 @@ export function LinkDetailSheet({
                   <>
                     <MenuSeparator />
                     <MenuItem
-                      className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
+                      className="text-red-600 focus:text-red-600"
                       onClick={() => {
                         if (confirm("Are you sure you want to delete this link?")) {
                           onDelete(link.id);
@@ -421,7 +420,6 @@ export function LinkDetailSheet({
               </a>
             </div>
           )}
-
         </div>
       </SheetContent>
     </Sheet>
