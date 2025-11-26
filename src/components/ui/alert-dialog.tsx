@@ -17,7 +17,7 @@ const AlertDialogBackdrop = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Overlay
     className={cn(
-      "fixed inset-0 z-50 bg-black/32 backdrop-blur-sm transition-all duration-200 ease-out data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+      "fixed inset-0 z-50 bg-[var(--bg-scrim)] backdrop-blur-sm transition-all duration-200 ease-out data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
       className,
     )}
     {...props}
@@ -38,7 +38,7 @@ const AlertDialogPopup = React.forwardRef<
         <AlertDialogPrimitive.Content
           ref={ref}
           className={cn(
-            "sm:-tranneutral-y-[calc(1.25rem*var(--nested-dialogs))] row-start-2 grid w-full min-w-0 origin-top gap-4 border border-neutral-200 bg-white bg-clip-padding p-6 text-neutral-950 shadow-lg transition-[scale,opacity,translate] duration-200 ease-in-out will-change-transform data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 max-sm:overflow-y-auto max-sm:border-none max-sm:opacity-[calc(1-min(var(--nested-dialogs),1))] sm:max-w-lg sm:scale-[calc(1-0.1*var(--nested-dialogs))] sm:rounded-2xl",
+            "sm:-tranneutral-y-[calc(1.25rem*var(--nested-dialogs))] row-start-2 grid w-full min-w-0 origin-top gap-4 border border-[var(--border-primary)] bg-[var(--bg-l2-solid)] bg-clip-padding p-6 text-[var(--text-primary)] shadow-lg transition-[scale,opacity,translate] duration-200 ease-in-out will-change-transform data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 max-sm:overflow-y-auto max-sm:border-none max-sm:opacity-[calc(1-min(var(--nested-dialogs),1))] sm:max-w-lg sm:scale-[calc(1-0.1*var(--nested-dialogs))] sm:rounded-2xl",
             "relative before:pointer-events-none before:absolute before:inset-0 before:shadow-[0_1px_--theme(--color-black/4%)] max-sm:before:hidden sm:before:rounded-[calc(var(--radius-2xl)-1px)]",
             className,
           )}
@@ -97,7 +97,7 @@ const AlertDialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Description
     ref={ref}
-    className={cn("text-neutral-500 text-sm", className)}
+    className={cn("text-[var(--text-secondary)] text-sm", className)}
     data-slot="alert-dialog-description"
     {...props}
   />

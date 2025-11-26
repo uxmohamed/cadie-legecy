@@ -29,7 +29,7 @@ export default function ChangelogPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex min-h-screen flex-col bg-[var(--bg-l0-solid)]">
       {/* Header */}
       <ChangelogHeader />
 
@@ -38,7 +38,7 @@ export default function ChangelogPage() {
         {/* Timeline */}
         <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-10">
           <div className="mb-12">
-            <h1 className="text-4xl font-semibold tracking-tight text-neutral-900 font-custom">
+            <h1 className="text-4xl font-semibold tracking-tight text-[var(--text-primary)] font-custom">
               Changelog
             </h1>
           </div>

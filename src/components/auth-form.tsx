@@ -110,10 +110,10 @@ export function AuthForm() {
       <div className="flex flex-col items-center space-y-4">
         <Logo variant="neutral-200" className="h-7 mb-8 w-auto" />
         <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
             Welcome to Caddy
           </h1>
-          <p className="text-base text-neutral-500">
+          <p className="text-base text-[var(--text-secondary)]">
             Log in or sign up to get started.
           </p>
         </div>
@@ -191,15 +191,15 @@ export function AuthForm() {
                 required
                 disabled={loading}
                 size="lg"
-                className="w-full px-4 py-3 bg-neutral-100 border-neutral-100 text-neutral-900 text-base rounded-xl shadow-none focus:border-neutral-400 placeholder:text-neutral-500"
+                className="w-full px-4 py-3 bg-[var(--bg-field-default)] border-[var(--border-primary)] text-[var(--text-primary)] text-base rounded-xl shadow-none focus:border-[var(--border-active)] placeholder:text-[var(--text-tertiary)]"
               />
               {error && (
-                <p className="text-sm text-red-600">
+                <p className="text-sm text-[var(--accent-red-primary)]">
                   {error}
                 </p>
               )}
               {success && (
-                <p className="text-sm text-neutral-500">
+                <p className="text-sm text-[var(--text-secondary)]">
                   Check your email. We&apos;ve sent you a magic link.
                 </p>
               )}

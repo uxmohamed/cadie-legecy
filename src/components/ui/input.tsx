@@ -19,7 +19,7 @@ function Input({
       className={
         cn(
           !unstyled &&
-            "relative inline-flex w-full rounded-lg border border-neutral-200 bg-white bg-clip-padding text-base/5 shadow-xs ring-neutral-950/24 transition-shadow before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] not-has-disabled:not-has-focus-visible:not-has-aria-invalid:before:shadow-[0_1px_--theme(--color-black/4%)] has-focus-visible:has-aria-invalid:border-red-500/64 has-focus-visible:has-aria-invalid:ring-red-500/16 has-aria-invalid:border-red-500/36 has-focus-visible:border-neutral-950 has-disabled:opacity-64 has-[:disabled,:focus-visible,[aria-invalid]]:shadow-none has-focus-visible:ring-[3px] sm:text-sm",
+            "relative inline-flex w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-field-default)] bg-clip-padding text-base/5 shadow-xs ring-[var(--border-active)]/24 transition-shadow before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] not-has-disabled:not-has-focus-visible:not-has-aria-invalid:before:shadow-[0_1px_--theme(--color-black/4%)] has-focus-visible:has-aria-invalid:border-[var(--accent-red-primary)]/64 has-focus-visible:has-aria-invalid:ring-[var(--accent-red-primary)]/16 has-aria-invalid:border-[var(--accent-red-primary)]/36 has-focus-visible:border-[var(--border-active)] has-disabled:opacity-64 has-[:disabled,:focus-visible,[aria-invalid]]:shadow-none has-focus-visible:ring-[3px] sm:text-sm",
           className,
         ) || undefined
       }
@@ -28,14 +28,14 @@ function Input({
     >
       <input
         className={cn(
-          "w-full min-w-0 rounded-[inherit] px-[calc(--spacing(3)-1px)] py-[calc(--spacing(1.5)-1px)] outline-none placeholder:text-neutral-500/64",
+          "w-full min-w-0 rounded-[inherit] px-[calc(--spacing(3)-1px)] py-[calc(--spacing(1.5)-1px)] outline-none placeholder:text-[var(--text-tertiary)]",
           size === "sm" &&
             "px-[calc(--spacing(2.5)-1px)] py-[calc(--spacing(1)-1px)]",
           size === "lg" && "py-[calc(--spacing(2)-1px)]",
           type === "search" &&
             "[&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none",
           type === "file" &&
-            "text-neutral-500 file:me-3 file:bg-transparent file:font-medium file:text-neutral-950 file:text-sm",
+            "text-[var(--text-secondary)] file:me-3 file:bg-transparent file:font-medium file:text-[var(--text-primary)] file:text-sm",
         )}
         data-slot="input"
         type={type}

@@ -7,7 +7,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const toggleVariants = cva(
-  "relative inline-flex shrink-0 cursor-pointer select-none items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-neutral-200 font-medium text-sm outline-none transition-shadow before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 hover:bg-neutral-100/50 focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-1 focus-visible:ring-offset-white disabled:pointer-events-none disabled:opacity-64 data-[state=on]:bg-neutral-100 data-[state=on]:text-neutral-900 data-[state=on]:transition-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "relative inline-flex shrink-0 cursor-pointer select-none items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-[var(--border-primary)] font-medium text-sm outline-none transition-shadow before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 hover:bg-[var(--bg-field-hover)]/50 focus-visible:ring-2 focus-visible:ring-[var(--border-active)] focus-visible:ring-offset-1 focus-visible:ring-offset-white disabled:pointer-events-none disabled:opacity-64 data-[state=on]:bg-[var(--bg-field-hover)] data-[state=on]:text-[var(--text-primary)] data-[state=on]:transition-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     defaultVariants: {
       size: "default",
@@ -22,7 +22,7 @@ const toggleVariants = cva(
       variant: {
         default: "border-transparent",
         outline:
-          "border-neutral-200 bg-clip-padding shadow-xs not-disabled:not-active:not-data-[state=on]:before:shadow-[0_1px_--theme(--color-black/4%)] [&:is(:disabled,:active,[data-state=on])]:shadow-none",
+          "border-[var(--border-primary)] bg-clip-padding shadow-xs not-disabled:not-active:not-data-[state=on]:before:shadow-[0_1px_--theme(--color-black/4%)] [&:is(:disabled,:active,[data-state=on])]:shadow-none",
       },
     },
   },

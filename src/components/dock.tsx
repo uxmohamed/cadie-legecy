@@ -111,7 +111,7 @@ export function Dock({
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
       <TooltipProvider delayDuration={300}>
         <nav
-          className="flex items-center gap-1 px-2 py-1.5 bg-white border border-gray-200 rounded-lg"
+          className="flex items-center gap-1 px-2 py-1.5 bg-[var(--bg-l2-solid)] border border-[var(--border-primary)] rounded-lg"
           aria-label="Categories"
         >
           {/* Add Button - Primary */}
@@ -119,7 +119,7 @@ export function Dock({
             <TooltipTrigger asChild>
               <Button
                 onClick={onAddClick}
-                className="h-8 w-8 p-0 rounded-md bg-[rgb(var(--caddy-orange-500))] hover:bg-[rgb(var(--caddy-orange-600))] text-white border-0"
+                className="h-8 w-8 p-0 rounded-md bg-[var(--accent-blue-primary)] hover:bg-[var(--accent-blue-secondary)] text-[var(--text-inverse)] border-0"
               >
                 <IconPlus className="h-5 w-5" />
               </Button>
@@ -127,7 +127,7 @@ export function Dock({
             <TooltipContent side="top">
               <div className="flex items-center gap-2">
                 <span>Add</span>
-                <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 rounded">
+                <kbd className="px-1.5 py-0.5 text-xs bg-[var(--bg-l1-solid)] rounded">
                   C
                 </kbd>
               </div>
@@ -135,7 +135,7 @@ export function Dock({
           </Tooltip>
 
           {/* Separator */}
-          <div className="w-px h-5 bg-gray-200 mx-1" />
+          <div className="w-px h-5 bg-[var(--border-primary)] mx-1" />
 
           {/* All Button */}
           <Tooltip>
@@ -150,8 +150,8 @@ export function Dock({
                 className={cn(
                   "h-8 w-8 p-0 rounded-md",
                   selectedCategoryId === null
-                    ? "bg-gray-100 text-gray-900"
-                    : "text-gray-600 hover:bg-gray-50",
+                    ? "bg-[var(--bg-field-hover)] text-[var(--text-primary)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)]",
                 )}
               >
                 <IconMenu className="h-5 w-5" />
@@ -160,7 +160,7 @@ export function Dock({
             <TooltipContent side="top">
               <div className="flex items-center gap-2">
                 <span>All</span>
-                <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 rounded">
+                <kbd className="px-1.5 py-0.5 text-xs bg-[var(--bg-l1-solid)] rounded">
                   1
                 </kbd>
               </div>
@@ -180,8 +180,8 @@ export function Dock({
                 className={cn(
                   "h-8 w-8 p-0 rounded-md",
                   selectedCategoryId === "trash"
-                    ? "bg-gray-100 text-gray-900"
-                    : "text-gray-600 hover:bg-gray-50",
+                    ? "bg-[var(--bg-field-hover)] text-[var(--text-primary)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)]",
                 )}
               >
                 <IconTrash className="h-5 w-5" />
@@ -190,7 +190,7 @@ export function Dock({
             <TooltipContent side="top">
               <div className="flex items-center gap-2">
                 <span>Trash</span>
-                <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 rounded">
+                <kbd className="px-1.5 py-0.5 text-xs bg-[var(--bg-l1-solid)] rounded">
                   2
                 </kbd>
               </div>
@@ -199,7 +199,7 @@ export function Dock({
 
           {/* Separator if there are categories */}
           {categories.length > 0 && (
-            <div className="w-px h-5 bg-gray-200 mx-1" />
+            <div className="w-px h-5 bg-[var(--border-primary)] mx-1" />
           )}
 
           {/* Category Buttons */}
@@ -221,24 +221,24 @@ export function Dock({
                     className={cn(
                       "h-8 w-8 p-0 rounded-md relative",
                       isSelected
-                        ? "bg-gray-100 text-gray-900"
-                        : "text-gray-600 hover:bg-gray-50",
+                        ? "bg-[var(--bg-field-hover)] text-[var(--text-primary)]"
+                        : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)]",
                     )}
                   >
-                    <IconCircle className="h-2 w-2 text-neutral-400 fill-current" />
+                    <IconCircle className="h-2 w-2 text-[var(--text-tertiary)] fill-current" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top">
                   <div className="flex items-center gap-2">
                     <div className="flex items-center justify-center w-8 h-8">
-                      <IconCircle className="h-2 w-2 text-neutral-400 fill-current" />
+                      <IconCircle className="h-2 w-2 text-[var(--text-tertiary)] fill-current" />
                     </div>
                     {(category.count ?? 0) > 0 && (
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-[var(--text-tertiary)]">
                         ({category.count})
                       </span>
                     )}
-                    <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 rounded">
+                    <kbd className="px-1.5 py-0.5 text-xs bg-[var(--bg-l1-solid)] rounded">
                       {shortcutKey}
                     </kbd>
                   </div>

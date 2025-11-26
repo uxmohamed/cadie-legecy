@@ -200,10 +200,10 @@ export function LinkList({
 
   return (
     <div className="w-full" ref={containerRef}>
-      <div className="sticky top-[104px] px-5 z-10 flex justify-between bg-[#fafafa] py-4 text-xs font-medium text-neutral-400 relative select-none">
+      <div className="sticky top-[104px] px-5 z-10 flex justify-between bg-[var(--bg-l0-solid)] py-4 text-xs font-medium text-[var(--text-tertiary)] relative select-none">
         <div className="ml-7">Title</div>
         <div>Created at</div>
-        <div className="absolute -bottom-4 left-0 right-0 h-4 bg-gradient-to-b from-[#fafafa] to-transparent pointer-events-none" />
+        <div className="absolute -bottom-4 left-0 right-0 h-4 bg-gradient-to-b from-[var(--bg-l0-solid)] to-transparent pointer-events-none" />
       </div>
       
       <DndContext
@@ -214,7 +214,7 @@ export function LinkList({
         <div className="space-y-0.5 py-4 relative">
           {pinnedLinks.length > 0 && (
             <>
-              <div className="mb-4 mt-4 text-xs font-semibold text-neutral-500 uppercase tracking-wider select-none">
+              <div className="mb-4 mt-4 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none">
                 Pinned
               </div>
               {/* Pinned links are not sortable for now, or should be a separate sortable context? 
@@ -258,7 +258,7 @@ export function LinkList({
               strategy={verticalListSortingStrategy}
             >
               {pinnedLinks.length > 0 && (
-                <div className="mb-4 mt-8 text-xs font-semibold text-neutral-500 uppercase tracking-wider select-none">
+                <div className="mb-4 mt-8 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none">
                   All Links
                 </div>
               )}

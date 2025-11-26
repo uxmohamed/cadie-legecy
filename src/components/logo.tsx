@@ -6,17 +6,17 @@ interface LogoProps {
 }
 
 const variantClasses = {
-  "neutral-900": "text-neutral-900",
-  "neutral-800": "text-neutral-800",
-  "neutral-700": "text-neutral-700",
-  "neutral-600": "text-neutral-600",
-  "neutral-500": "text-neutral-500",
-  "neutral-400": "text-neutral-400",
-  "neutral-300": "text-neutral-300",
-  "neutral-200": "text-neutral-200",
-  "neutral-100": "text-neutral-100",
-  "white": "text-white",
-  "black": "text-black",
+  "neutral-900": "text-[var(--text-primary)]",
+  "neutral-800": "text-[var(--text-primary)]",
+  "neutral-700": "text-[var(--text-secondary)]",
+  "neutral-600": "text-[var(--text-secondary)]",
+  "neutral-500": "text-[var(--text-tertiary)]",
+  "neutral-400": "text-[var(--text-tertiary)]",
+  "neutral-300": "text-[var(--text-tertiary)]",
+  "neutral-200": "text-[var(--text-tertiary)]",
+  "neutral-100": "text-[var(--text-tertiary)]",
+  "white": "text-[var(--text-inverse)]",
+  "black": "text-[var(--text-primary)]",
 } as const;
 
 export function Logo({ className, variant = "neutral-900" }: LogoProps) {

@@ -12,8 +12,8 @@ export default function Home() {
   // Show loading state while checking auth
   if (!authChecked) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#fafafa]">
-        <p className="text-sm text-neutral-400">Loading...</p>
+      <div className="flex min-h-screen items-center justify-center bg-[var(--bg-l0-solid)]">
+        <p className="text-sm text-[var(--text-tertiary)]">Loading...</p>
       </div>
     );
   }

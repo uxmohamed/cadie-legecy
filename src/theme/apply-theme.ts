@@ -1,6 +1,4 @@
-import { theme } from "./colors";
-
-export type ThemeName = keyof typeof theme;
+import { theme, type ThemeName } from "./tokens";
 
 export function applyTheme(name: ThemeName): void {
   if (typeof document === "undefined") return;

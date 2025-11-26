@@ -1,3 +1,5 @@
+@import "./tokens.css";
+
 /* Caddy Save Overlay */
 #caddy-save-overlay {
   position: fixed !important;
@@ -16,9 +18,10 @@
 }
 
 .caddy-overlay-content {
-  background: white !important;
+  background: var(--bg-l2-solid) !important;
   border-radius: 16px !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 12px 40px oklch(0 0 0 / 0.15),
+    0 4px 12px oklch(0 0 0 / 0.1) !important;
   padding: 20px 28px !important;
   display: flex !important;
   align-items: center !important;
@@ -31,7 +34,7 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: #f3f4f6;
+  background: var(--bg-l0-glass);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -47,8 +50,12 @@
 .caddy-spinner {
   width: 28px;
   height: 28px;
-  border: 3px solid #e5e7eb;
-  border-top-color: #3b82f6;
+  border: 3px solid color-mix(
+      in oklab,
+      var(--grey-200) 100%,
+      transparent 0%
+    );
+  border-top-color: var(--accent-blue-primary);
   border-radius: 50%;
   animation: caddySpin 0.7s linear infinite;
 }
@@ -56,7 +63,7 @@
 .caddy-overlay-text {
   font-size: 17px;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-primary);
   line-height: 1.4;
   letter-spacing: -0.01em;
 }

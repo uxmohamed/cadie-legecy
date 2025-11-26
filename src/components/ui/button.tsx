@@ -26,19 +26,19 @@ const buttonVariants = cva(
       },
       variant: {
         default:
-          "bg-[rgb(var(--caddy-black))] text-white hover:bg-[linear-gradient(0deg,rgba(var(--caddy-white),0.16),rgba(var(--caddy-white),0.16)),rgb(var(--caddy-black))] focus-visible:ring-2 focus-visible:ring-[rgb(var(--caddy-black))] focus-visible:ring-offset-2",
+          "bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--border-active)] focus-visible:ring-offset-2",
         destructive:
-          "bg-[rgb(var(--caddy-red-600))] text-white hover:bg-[rgb(var(--caddy-red-400))] focus-visible:ring-2 focus-visible:ring-[rgb(var(--caddy-red-600))] focus-visible:ring-offset-2",
+          "bg-[var(--cta-destructive-default)] text-[var(--text-destructive)] hover:bg-[var(--cta-destructive-hover)] focus-visible:ring-2 focus-visible:ring-[var(--border-destructive)] focus-visible:ring-offset-2",
         "destructive-outline":
-          "border border-[rgba(var(--caddy-red-400),0.12)] bg-transparent text-[rgb(var(--caddy-red-600))] hover:bg-[rgba(var(--caddy-red-400),0.12)] focus-visible:ring-2 focus-visible:ring-[rgb(var(--caddy-red-600))] focus-visible:ring-offset-2",
+          "border border-[var(--border-destructive)] bg-transparent text-[var(--text-destructive)] hover:bg-[var(--bg-overlay-destructive)] focus-visible:ring-2 focus-visible:ring-[var(--border-destructive)] focus-visible:ring-offset-2",
         ghost:
-          "bg-transparent hover:bg-[rgba(var(--caddy-black),var(--caddy-opacity-8))] focus-visible:ring-2 focus-visible:ring-[rgba(var(--caddy-black),var(--caddy-opacity-12))] focus-visible:ring-offset-2",
+          "bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--border-secondary)] focus-visible:ring-offset-2",
         link:
-          "bg-transparent text-[rgb(var(--caddy-orange-500))] underline-offset-4 hover:underline hover:text-[rgb(var(--caddy-orange-600))]",
+          "bg-transparent text-[var(--text-link)] underline-offset-4 hover:underline hover:text-[var(--accent-blue-primary)]",
         outline:
-          "border border-[var(--border-primary)] bg-white hover:bg-[rgba(var(--caddy-black),var(--caddy-opacity-4))] focus-visible:ring-2 focus-visible:ring-[var(--border-primary)] focus-visible:ring-offset-2",
+          "border border-[var(--border-primary)] bg-[var(--bg-l2-solid)] hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--border-primary)] focus-visible:ring-offset-2",
         secondary:
-          "bg-[rgba(var(--caddy-black),var(--caddy-opacity-4))] text-[var(--text-primary)] hover:bg-[rgba(var(--caddy-black),var(--caddy-opacity-8))] focus-visible:ring-2 focus-visible:ring-[var(--border-primary)] focus-visible:ring-offset-2",
+          "bg-[var(--bg-field-default)] text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--border-primary)] focus-visible:ring-offset-2",
       },
     },
   },

@@ -98,16 +98,16 @@ export function RichTextModal({
         showCloseButton={false}
       >
         <DialogClose
-          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-md border-0 bg-transparent text-neutral-500 hover:bg-neutral-100 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-1 focus-visible:outline-neutral-900 pointer-events-auto"
+          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-md border-0 bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-1 focus-visible:outline-[var(--border-active)] pointer-events-auto"
           aria-label="Close"
         >
           <IconX className="h-5 w-5" />
         </DialogClose>
 
         {/* Header */}
-        <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-[var(--border-primary)] flex items-center justify-between">
           <DialogTitle>Edit Rich Text</DialogTitle>
-          <div className="text-sm text-neutral-500">
+          <div className="text-sm text-[var(--text-secondary)]">
             {saveStatus === "saving" && "Saving..."}
             {saveStatus === "saved" && "✓ Saved"}
           </div>
@@ -123,7 +123,7 @@ export function RichTextModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-neutral-200">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[var(--border-primary)]">
           <Button
             variant="outline"
             onClick={handleClose}

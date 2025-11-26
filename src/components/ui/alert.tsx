@@ -4,7 +4,7 @@ import type * as React from "react";
 import { cn } from "@/lib/utils";
 
 const alertVariants = cva(
-  "relative grid w-full items-start gap-x-2 gap-y-0.5 rounded-xl border border-neutral-200 px-3.5 py-3 text-neutral-950 text-sm has-[>svg]:has-data-[slot=alert-action]:grid-cols-[calc(var(--spacing)*4)_1fr_auto] has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-data-[slot=alert-action]:grid-cols-[1fr_auto] has-[>svg]:gap-x-2 [&>svg]:h-[1lh] [&>svg]:w-4",
+  "relative grid w-full items-start gap-x-2 gap-y-0.5 rounded-xl border border-[var(--border-primary)] px-3.5 py-3 text-[var(--text-primary)] text-sm has-[>svg]:has-data-[slot=alert-action]:grid-cols-[calc(var(--spacing)*4)_1fr_auto] has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-data-[slot=alert-action]:grid-cols-[1fr_auto] has-[>svg]:gap-x-2 [&>svg]:h-[1lh] [&>svg]:w-4",
   {
     defaultVariants: {
       variant: "default",
@@ -12,12 +12,12 @@ const alertVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-transparent [&>svg]:text-neutral-500",
+          "bg-transparent [&>svg]:text-[var(--text-secondary)]",
         error:
-          "border-red-500/32 bg-red-500/4 [&>svg]:text-red-500",
-        info: "border-info/32 bg-info/4 [&>svg]:text-info",
-        success: "border-success/32 bg-success/4 [&>svg]:text-success",
-        warning: "border-warning/32 bg-warning/4 [&>svg]:text-warning",
+          "border-[var(--accent-red-primary)]/32 bg-[var(--accent-red-primary)]/4 [&>svg]:text-[var(--accent-red-primary)]",
+        info: "border-[var(--accent-info-border)]/32 bg-[var(--accent-info-bg)]/4 [&>svg]:text-[var(--accent-info-fg)]",
+        success: "border-[var(--accent-success-border)]/32 bg-[var(--accent-success-bg)]/4 [&>svg]:text-[var(--accent-success-fg)]",
+        warning: "border-[var(--accent-yellow-secondary)]/32 bg-[var(--accent-yellow-secondary)]/4 [&>svg]:text-[var(--accent-yellow-primary)]",
       },
     },
   },
@@ -55,7 +55,7 @@ function AlertDescription({
   return (
     <div
       className={cn(
-        "flex flex-col gap-2.5 text-neutral-500 [svg~&]:col-start-2",
+        "flex flex-col gap-2.5 text-[var(--text-secondary)] [svg~&]:col-start-2",
         className,
       )}
       data-slot="alert-description"

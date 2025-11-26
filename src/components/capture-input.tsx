@@ -127,7 +127,7 @@ export function CaptureInput({
           size="lg"
         />
         <div className="absolute right-4 top-1/2 -translate-y-1/2">
-          <kbd className="pointer-events-none flex h-6 select-none items-center gap-1 rounded border border-neutral-200 bg-neutral-50 px-2 font-mono text-[11px] font-medium text-neutral-400">
+          <kbd className="pointer-events-none flex h-6 select-none items-center gap-1 rounded border border-[var(--border-primary)] bg-[var(--bg-l1-solid)] px-2 font-mono text-[11px] font-medium text-[var(--text-tertiary)]">
             <span className="text-xs">⌘</span>F
           </kbd>
         </div>

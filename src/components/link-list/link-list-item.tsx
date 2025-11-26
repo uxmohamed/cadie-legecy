@@ -111,7 +111,7 @@ export function LinkListItem({
       <div
         {...attributes}
         {...listeners}
-        className="opacity-0 group-hover/item:opacity-100 cursor-grab active:cursor-grabbing p-1 text-neutral-400 hover:text-neutral-600 transition-opacity flex-shrink-0"
+        className="opacity-0 group-hover/item:opacity-100 cursor-grab active:cursor-grabbing p-1 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-opacity flex-shrink-0"
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => {
           // Prevent item selection when clicking drag handle
@@ -131,10 +131,10 @@ export function LinkListItem({
         className={cn(
           "group relative flex-1 grid grid-cols-[1fr_auto] ease-in will-change-transform duration-100 items-center gap-2 rounded-lg px-3 py-2 select-none cursor-pointer active:scale-[0.99] transition-transform",
           isSelected
-            ? "bg-neutral-200"
+            ? "bg-[var(--bg-l1-solid)]"
             : isFocused
-            ? "bg-neutral-100"
-            : "hover:bg-neutral-100"
+            ? "bg-[var(--bg-l1-solid)]"
+            : "hover:bg-[var(--bg-field-hover)]"
         )}
       >
         <a
@@ -149,29 +149,29 @@ export function LinkListItem({
         >
           {isColor ? (
             <div
-              className="h-5 w-5 flex-shrink-0 rounded-full border border-neutral-300"
+              className="h-5 w-5 flex-shrink-0 rounded-full border border-[var(--border-secondary)]"
               style={{ backgroundColor: link.color_value || link.title }}
             />
           ) : isRichText ? (
-            <div className="h-5 w-5 flex-shrink-0 rounded bg-neutral-100 flex items-center justify-center">
-              <IconFile className="h-3.5 w-3.5 text-neutral-500" />
+            <div className="h-5 w-5 flex-shrink-0 rounded bg-[var(--bg-l1-solid)] flex items-center justify-center">
+              <IconFile className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
             </div>
           ) : (
             <Favicon url={link.favicon_url || ""} domain={link.domain} />
           )}
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[15px] text-neutral-900">
+            <div className="truncate text-[15px] text-[var(--text-primary)]">
               {isRichText && richTextPreview
                 ? richTextPreview
                 : link.title || link.url}
             </div>
-            <div className="truncate text-sm text-neutral-400">
+            <div className="truncate text-sm text-[var(--text-tertiary)]">
               {isRichText ? "Rich text" : link.domain}
             </div>
           </div>
         </a>
         <div className="flex items-center gap-2">
-          <div className="text-sm text-neutral-400">
+          <div className="text-sm text-[var(--text-tertiary)]">
             {formatDate(new Date(link.created_at))}
           </div>
           <div
@@ -191,7 +191,7 @@ export function LinkListItem({
                   e.stopPropagation();
                   onUnpin?.(link.id);
                 }}
-                className="h-8 w-8 hover:bg-neutral-300"
+                className="h-8 w-8 hover:bg-[var(--bg-l2-solid)]"
                 title="Unpin"
               >
                 <IconMapPin className="h-4 w-4" />

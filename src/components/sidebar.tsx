@@ -59,12 +59,12 @@ export function Sidebar({
   };
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r border-gray-100 bg-white">
-      <div className="flex h-14 items-center justify-between border-b border-gray-100 px-4">
-        <div className="flex h-7 w-7 items-center justify-center text-base font-medium text-gray-900">
+    <aside className="flex h-screen w-64 flex-col border-r border-[var(--border-primary)] bg-[var(--bg-l2-solid)]">
+      <div className="flex h-14 items-center justify-between border-b border-[var(--border-primary)] px-4">
+        <div className="flex h-7 w-7 items-center justify-center text-base font-medium text-[var(--text-primary)]">
           M
         </div>
-        <span className="text-[10px] text-neutral-400 bg-neutral-100 px-1.5 py-0.5 rounded border border-neutral-300">
+        <span className="text-[10px] text-[var(--text-tertiary)] bg-[var(--bg-l1-solid)] px-1.5 py-0.5 rounded border border-[var(--border-secondary)]">
           <kbd className="font-sans font-medium">[</kbd>
         </span>
       </div>
@@ -80,8 +80,8 @@ export function Sidebar({
           className={cn(
             "w-full justify-start gap-2 h-auto px-2 py-1.5 text-sm font-normal",
             selectedCategoryId === null
-              ? "bg-gray-100 text-gray-900"
-              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+              ? "bg-[var(--bg-field-hover)] text-[var(--text-primary)]"
+              : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)] hover:text-[var(--text-primary)]",
           )}
         >
           <span className="text-xs">All</span>
@@ -97,14 +97,14 @@ export function Sidebar({
           className={cn(
             "w-full justify-start gap-2 h-auto px-2 py-1.5 text-sm font-normal",
             selectedCategoryId === "trash"
-              ? "bg-gray-100 text-gray-900"
-              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+              ? "bg-[var(--bg-field-hover)] text-[var(--text-primary)]"
+              : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)] hover:text-[var(--text-primary)]",
           )}
         >
           <span className="text-xs">Trash</span>
         </Button>
 
-        <div className="my-2 h-px bg-gray-100" />
+        <div className="my-2 h-px bg-[var(--border-primary)]" />
 
         {categories.map((category, index) => {
           const isSelected = selectedCategoryId === category.id;
@@ -122,8 +122,8 @@ export function Sidebar({
               className={cn(
                 "w-full justify-between gap-2 h-auto px-2 py-1.5 text-sm font-normal",
                 isSelected
-                  ? "bg-gray-100 text-gray-900"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                  ? "bg-[var(--bg-field-hover)] text-[var(--text-primary)]"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)] hover:text-[var(--text-primary)]",
               )}
             >
               <div className="flex items-center gap-2">
@@ -151,7 +151,7 @@ export function Sidebar({
                     />
                   </svg>
                 )}
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-[var(--text-tertiary)]">
                   {category.count}
                 </span>
               </div>

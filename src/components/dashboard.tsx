@@ -66,7 +66,7 @@ export function Dashboard({ user }: DashboardProps) {
   };
 
   return (
-    <div className="flex h-screen flex-col bg-[var(--bg-l0)]">
+    <div className="flex h-screen flex-col bg-[var(--bg-l0-solid)]">
       <main className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-16 items-center justify-between px-8 relative z-30">
           <Logo />
@@ -74,7 +74,7 @@ export function Dashboard({ user }: DashboardProps) {
         </header>
         <div className="flex-1 overflow-y-auto pb-24">
           <div className="mx-auto w-full max-w-4xl px-8">
-            <div className="sticky top-0 z-20 bg-[var(--bg-l0)] pt-8 pb-4">
+            <div className="sticky top-0 z-20 bg-[var(--bg-l0-solid)] pt-8 pb-4">
               <CaptureInput
                 onSearch={handleSearch}
                 isLoading={isLoading}
@@ -86,7 +86,7 @@ export function Dashboard({ user }: DashboardProps) {
             ) : (
               <>
                 {selectedCategoryId === "trash" && (
-                  <div className="mb-4 rounded-md bg-amber-50 p-3 text-sm text-amber-800 border border-amber-200">
+                  <div className="mb-4 rounded-md bg-[var(--accent-yellow-secondary)]/10 p-3 text-sm text-[var(--accent-yellow-primary)] border border-[var(--accent-yellow-secondary)]/30">
                     Items in the Trash are permanently deleted after 60 days.
                   </div>
                 )}
