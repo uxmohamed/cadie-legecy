@@ -2,79 +2,411 @@
 @plugin "tailwindcss-animate";
 
 :root {
-  /* Caddy UI Color Palette (RGB format) */
-  --caddy-white: 255, 255, 255;
-  --caddy-black: 0, 0, 0;
-  --caddy-grey-800: 48, 48, 48;
-  --caddy-orange-400: 255, 142, 120;
-  --caddy-orange-500: 239, 90, 60;
-  --caddy-orange-600: 199, 64, 37;
-  --caddy-green-400: 25, 199, 127;
-  --caddy-blue-400: 74, 183, 238;
-  --caddy-red-400: 255, 143, 143;
-  --caddy-red-600: 215, 40, 40;
+  /* Base colors (OKLCH approximations) */
+  --white: oklch(1 0 0);
+  --grey-100: oklch(0.94 0 0);
+  --grey-200: oklch(0.87 0 0);
+  --grey-300: oklch(0.81 0 0);
+  --grey-400: oklch(0.69 0 0);
+  --grey-500: oklch(0.56 0 0);
+  --grey-600: oklch(0.44 0 0);
+  --grey-700: oklch(0.31 0 0);
+  --grey-800: oklch(0.23 0 0);
+  --grey-900: oklch(0.13 0 0);
+  --black: oklch(0 0 0);
 
-  /* Caddy UI Opacities */
-  --caddy-opacity-4: 0.04;
-  --caddy-opacity-8: 0.08;
-  --caddy-opacity-12: 0.12;
-  --caddy-opacity-32: 0.32;
-  --caddy-opacity-44: 0.44;
-  --caddy-opacity-56: 0.56;
-  --caddy-opacity-72: 0.72;
+  /* Orange scale */
+  --orange-100: oklch(0.94 0.06 60);
+  --orange-200: oklch(0.9 0.08 60);
+  --orange-300: oklch(0.86 0.1 60);
+  --orange-400: oklch(0.8 0.13 60);
+  --orange-500: oklch(0.76 0.16 55);
+  --orange-600: oklch(0.68 0.16 50);
+  --orange-700: oklch(0.6 0.15 45);
+  --orange-800: oklch(0.45 0.14 40);
 
-  /* Legacy variables mapped to Caddy colors */
-  --background: #fafafa;
-  --foreground: #171717;
-  --brand: rgb(var(--caddy-orange-500));
-  --brand-hover: rgb(var(--caddy-orange-600));
-  --destructive-foreground: rgb(var(--caddy-red-600));
-  --info: var(--color-blue-500);
-  --info-foreground: var(--color-blue-700);
-  --success: var(--color-emerald-500);
-  --success-foreground: var(--color-emerald-700);
-  --warning: var(--color-amber-500);
-  --warning-foreground: var(--color-amber-700);
+  /* Green scale */
+  --green-100: oklch(0.9 0.06 150);
+  --green-200: oklch(0.84 0.09 150);
+  --green-300: oklch(0.8 0.12 150);
+  --green-400: oklch(0.74 0.14 145);
+  --green-500: oklch(0.68 0.15 145);
+  --green-600: oklch(0.6 0.15 145);
+  --green-700: oklch(0.52 0.14 145);
+  --green-800: oklch(0.44 0.12 145);
 
-  /* Caddy UI Light Theme Tokens */
-  --text-primary: rgb(var(--caddy-black));
-  --text-secondary: rgba(var(--caddy-black), var(--caddy-opacity-56));
-  --text-tertiary: rgba(var(--caddy-black), var(--caddy-opacity-44));
-  --text-disabled: rgba(var(--caddy-black), var(--caddy-opacity-32));
-  --text-link: rgb(var(--caddy-orange-500));
-  --text-destructive: rgb(var(--caddy-red-600));
+  /* Pink scale */
+  --pink-100: oklch(0.96 0.04 330);
+  --pink-200: oklch(0.92 0.06 330);
+  --pink-300: oklch(0.88 0.08 330);
+  --pink-400: oklch(0.8 0.12 330);
+  --pink-500: oklch(0.7 0.15 335);
+  --pink-600: oklch(0.64 0.15 335);
+  --pink-700: oklch(0.54 0.14 335);
+  --pink-800: oklch(0.44 0.13 335);
 
-  --bg-l0-solid: linear-gradient(
-      0deg,
-      rgba(var(--caddy-black), var(--caddy-opacity-4)),
-      rgba(var(--caddy-black), var(--caddy-opacity-4))
-    ),
-    rgb(var(--caddy-white));
-  --bg-l1-solid: linear-gradient(
-      0deg,
-      rgba(var(--caddy-black), var(--caddy-opacity-8)),
-      rgba(var(--caddy-black), var(--caddy-opacity-8))
-    ),
-    rgb(var(--caddy-white));
-  --bg-l2-solid: linear-gradient(
-      0deg,
-      rgba(var(--caddy-black), var(--caddy-opacity-12)),
-      rgba(var(--caddy-black), var(--caddy-opacity-12))
-    ),
-    rgb(var(--caddy-white));
+  /* Yellow scale */
+  --yellow-100: oklch(0.96 0.09 100);
+  --yellow-200: oklch(0.93 0.1 100);
+  --yellow-300: oklch(0.9 0.12 100);
+  --yellow-400: oklch(0.84 0.13 100);
+  --yellow-500: oklch(0.78 0.13 95);
+  --yellow-600: oklch(0.72 0.12 95);
+  --yellow-700: oklch(0.65 0.11 95);
+  --yellow-800: oklch(0.56 0.09 95);
 
-  --border-primary: rgba(var(--caddy-black), var(--caddy-opacity-12));
-  --border-secondary: rgba(var(--caddy-black), var(--caddy-opacity-8));
+  /* Blue scale */
+  --blue-100: oklch(0.94 0.05 230);
+  --blue-200: oklch(0.9 0.06 230);
+  --blue-300: oklch(0.86 0.08 230);
+  --blue-400: oklch(0.8 0.1 230);
+  --blue-500: oklch(0.74 0.12 230);
+  --blue-600: oklch(0.66 0.13 230);
+  --blue-700: oklch(0.58 0.13 230);
+  --blue-800: oklch(0.48 0.12 230);
 
-  --cta-primary-default: rgb(var(--caddy-black));
-  --cta-primary-hover: linear-gradient(
-      0deg,
-      rgba(var(--caddy-white), 0.16),
-      rgba(var(--caddy-white), 0.16)
-    ),
-    rgb(var(--caddy-black));
-  --cta-secondary-default: rgb(var(--caddy-white));
-  --cta-secondary-hover: rgba(var(--caddy-black), var(--caddy-opacity-8));
+  /* Red scale */
+  --red-100: oklch(0.95 0.04 30);
+  --red-200: oklch(0.91 0.06 30);
+  --red-300: oklch(0.87 0.08 30);
+  --red-400: oklch(0.82 0.11 30);
+  --red-500: oklch(0.78 0.14 30);
+  --red-600: oklch(0.7 0.16 30);
+  --red-700: oklch(0.6 0.16 30);
+  --red-800: oklch(0.48 0.15 30);
+
+  /* Dark blue scale */
+  --dark-blue-100: oklch(0.92 0.05 260);
+  --dark-blue-200: oklch(0.88 0.06 260);
+  --dark-blue-300: oklch(0.84 0.08 260);
+  --dark-blue-400: oklch(0.78 0.1 260);
+  --dark-blue-500: oklch(0.72 0.12 260);
+  --dark-blue-600: oklch(0.64 0.13 260);
+  --dark-blue-700: oklch(0.54 0.14 260);
+  --dark-blue-800: oklch(0.44 0.14 260);
+
+  /* Opacities (kept as scalars) */
+  --opacity-2: 0.02;
+  --opacity-4: 0.04;
+  --opacity-6: 0.06;
+  --opacity-8: 0.08;
+  --opacity-10: 0.10;
+  --opacity-12: 0.12;
+  --opacity-14: 0.14;
+  --opacity-16: 0.16;
+  --opacity-20: 0.20;
+  --opacity-24: 0.24;
+  --opacity-26: 0.26;
+  --opacity-28: 0.28;
+  --opacity-32: 0.32;
+  --opacity-36: 0.36;
+  --opacity-42: 0.42;
+  --opacity-44: 0.44;
+  --opacity-48: 0.48;
+  --opacity-54: 0.54;
+  --opacity-56: 0.56;
+  --opacity-60: 0.60;
+  --opacity-64: 0.64;
+  --opacity-72: 0.72;
+  --opacity-80: 0.80;
+  --opacity-88: 0.88;
+
+  /* Text */
+  --text-primary: var(--black);
+  --text-secondary: color-mix(in oklab, var(--black) 56%, transparent 44%);
+  --text-tertiary: color-mix(in oklab, var(--black) 44%, transparent 56%);
+  --text-disabled: color-mix(in oklab, var(--black) 32%, transparent 68%);
+  --text-always-white: var(--white);
+  --text-always-black: var(--black);
+  --text-link: var(--orange-500);
+  --text-destructive: var(--red-600);
+  --text-inverse: var(--white);
+
+  /* Icons */
+  --icon-primary: var(--black);
+  --icon-secondary: color-mix(in oklab, var(--black) 56%, transparent 44%);
+  --icon-tertiary: color-mix(in oklab, var(--black) 44%, transparent 56%);
+  --icon-disabled: color-mix(in oklab, var(--black) 32%, transparent 68%);
+  --icon-always-white: var(--white);
+  --icon-always-black: var(--black);
+  --icon-link: var(--orange-500);
+  --icon-destructive: var(--red-600);
+  --icon-inverse: var(--white);
+
+  /* CTA */
+  --cta-primary-default: var(--black);
+  --cta-primary-hover: color-mix(in oklab, var(--black) 84%, var(--white) 16%);
+  --cta-primary-active: color-mix(in oklab, var(--black) 76%, var(--white) 24%);
+  --cta-primary-disabled: color-mix(
+    in oklab,
+    var(--black) 12%,
+    transparent 88%
+  );
+
+  --cta-secondary-default: var(--white);
+  --cta-secondary-hover: color-mix(
+    in oklab,
+    var(--black) 6%,
+    var(--white) 94%
+  );
+  --cta-secondary-active: color-mix(
+    in oklab,
+    var(--black) 8%,
+    var(--white) 92%
+  );
+  --cta-secondary-disabled: transparent;
+
+  --cta-tertiary-default: transparent;
+  --cta-tertiary-hover: color-mix(
+    in oklab,
+    var(--black) 8%,
+    transparent 92%
+  );
+  --cta-tertiary-active: color-mix(
+    in oklab,
+    var(--black) 8%,
+    transparent 92%
+  );
+  --cta-tertiary-disabled: transparent;
+
+  --cta-destructive-default: transparent;
+  --cta-destructive-hover: color-mix(
+    in oklab,
+    var(--red-600) 8%,
+    transparent 92%
+  );
+  --cta-destructive-active: color-mix(
+    in oklab,
+    var(--red-600) 12%,
+    transparent 88%
+  );
+  --cta-destructive-disabled: transparent;
+
+  /* Borders */
+  --border-primary: color-mix(in oklab, var(--black) 12%, transparent 88%);
+  --border-secondary: color-mix(in oklab, var(--black) 8%, transparent 92%);
+  --border-tertiary: color-mix(in oklab, var(--black) 4%, transparent 96%);
+  --border-hover: color-mix(in oklab, var(--black) 48%, transparent 52%);
+  --border-active: var(--black);
+  --border-destructive: color-mix(
+    in oklab,
+    var(--red-600) 12%,
+    transparent 88%
+  );
+
+  /* Backgrounds */
+  --bg-main-container: color-mix(
+    in oklab,
+    var(--black) 2%,
+    var(--white) 98%
+  );
+  --bg-sidepanel: color-mix(
+    in oklab,
+    var(--black) 4%,
+    var(--white) 96%
+  );
+  --bg-l0-solid: color-mix(
+    in oklab,
+    var(--black) 4%,
+    var(--white) 96%
+  );
+  --bg-l0-glass: color-mix(
+    in oklab,
+    var(--grey-100) 72%,
+    transparent 28%
+  );
+  --bg-l1-solid: color-mix(
+    in oklab,
+    var(--black) 2%,
+    var(--white) 98%
+  );
+  --bg-l1-glass: color-mix(
+    in oklab,
+    var(--white) 72%,
+    transparent 28%
+  );
+  --bg-l2-solid: var(--white);
+  --bg-l2-glass: color-mix(
+    in oklab,
+    var(--white) 72%,
+    transparent 28%
+  );
+  --bg-l3-solid: var(--white);
+  --bg-l3-glass: color-mix(
+    in oklab,
+    var(--white) 72%,
+    transparent 28%
+  );
+
+  --bg-emphasis: color-mix(
+    in oklab,
+    var(--black) 84%,
+    var(--white) 16%
+  );
+  --bg-scrim: color-mix(
+    in oklab,
+    var(--white) 80%,
+    transparent 20%
+  );
+  --bg-cell-hover: color-mix(
+    in oklab,
+    var(--black) 6%,
+    transparent 94%
+  );
+  --bg-cell-active: color-mix(
+    in oklab,
+    var(--black) 8%,
+    transparent 92%
+  );
+
+  --bg-field-default: color-mix(
+    in oklab,
+    var(--black) 6%,
+    transparent 94%
+  );
+  --bg-field-hover: color-mix(
+    in oklab,
+    var(--black) 8%,
+    transparent 92%
+  );
+
+  /* Overlays */
+  --bg-overlay-primary: color-mix(
+    in oklab,
+    var(--black) 10%,
+    transparent 90%
+  );
+  --bg-overlay-secondary: color-mix(
+    in oklab,
+    var(--black) 8%,
+    transparent 92%
+  );
+  --bg-overlay-tertiary: color-mix(
+    in oklab,
+    var(--black) 4%,
+    transparent 96%
+  );
+  --bg-overlay-destructive: color-mix(
+    in oklab,
+    var(--red-400) 24%,
+    transparent 76%
+  );
+
+  --bg-code-gutter: linear-gradient(
+    90deg,
+    var(--grey-300) 1px,
+    var(--grey-100) 1px
+  );
+
+  /* Accents */
+  --accent-orange-primary: var(--orange-600);
+  --accent-orange-secondary: color-mix(
+    in oklab,
+    var(--orange-400) 36%,
+    transparent 64%
+  );
+  --accent-green-primary: var(--green-500);
+  --accent-green-secondary: color-mix(
+    in oklab,
+    var(--green-400) 28%,
+    transparent 72%
+  );
+  --accent-pink-primary: var(--pink-600);
+  --accent-pink-secondary: color-mix(
+    in oklab,
+    var(--pink-400) 36%,
+    transparent 64%
+  );
+  --accent-yellow-primary: var(--yellow-500);
+  --accent-yellow-secondary: color-mix(
+    in oklab,
+    var(--yellow-400) 48%,
+    transparent 52%
+  );
+  --accent-blue-primary: var(--blue-600);
+  --accent-blue-secondary: color-mix(
+    in oklab,
+    var(--blue-400) 36%,
+    transparent 64%
+  );
+  --accent-red-primary: var(--red-600);
+  --accent-red-secondary: color-mix(
+    in oklab,
+    var(--red-400) 36%,
+    transparent 64%
+  );
+  --accent-dark-blue-primary: var(--dark-blue-700);
+  --accent-dark-blue-secondary: color-mix(
+    in oklab,
+    var(--dark-blue-400) 36%,
+    transparent 64%
+  );
+
+  /* Shadows */
+  --editor-page-shadow: 60 64 67 / 15 percent 0 1px 3px 1px;
+  --tab-active-shadow: 0 123 255 / 25 percent;
+  --shadow-l1: 0px 1px 3px oklch(0 0 0 / 0.1),
+    0px 0px 2px oklch(0 0 0 / 0.06);
+  --shadow-l2: 0px 10px 15px -3px oklch(0 0 0 / 0.1),
+    0px 4px 6px -2px oklch(0 0 0 / 0.05);
+  --shadow-l3: 0px 25px 50px -12px oklch(0 0 0 / 0.25);
+
+  /* Filters */
+  --filter-dark-card-bg: none;
+  --filter-dark-lock-icon: none;
+  --filter-dark-icon: none;
+  --filter-white-icon-dark: none;
+
+  /* Misc */
+  --primary-button-hover-shadow: 0 1px 0 oklch(0 0 0 / 0.1);
+  --primary-button-hover-inset-shadow: inset 0 1px 0 oklch(1 0 0 / 0.03);
+  --scrollbar-active-gray: var(--grey-300);
+  --scrollbar-inactive-gray: color-mix(
+    in oklab,
+    var(--grey-300) 50%,
+    transparent 50%
+  );
+  --scrollbar-hover-gray: color-mix(
+    in oklab,
+    var(--grey-300) 70%,
+    transparent 30%
+  );
+  --editor-text-pink: var(--pink-400);
+  --card-box-shadow: 0 0 32px 13px oklch(0 0 0 / 0.07);
+
+  --filter-red-icon: brightness(0) saturate(100 percent) invert(31 percent)
+    sepia(99 percent) saturate(2878 percent) hue-rotate(332deg)
+    brightness(96 percent) contrast(100 percent);
+  --filter-green-icon: brightness(0) saturate(100 percent) invert(50 percent)
+    sepia(12 percent) saturate(2577 percent) hue-rotate(84deg)
+    brightness(103 percent) contrast(85 percent);
+  --filter-purple-icon: brightness(0) saturate(100 percent) invert(35 percent)
+    sepia(100 percent) saturate(5693 percent) hue-rotate(252deg)
+    brightness(105 percent) contrast(101 percent);
+  --filter-orange-icon: brightness(0) saturate(100 percent) invert(77 percent)
+    sepia(19 percent) saturate(7026 percent) hue-rotate(336deg)
+    brightness(103 percent) contrast(101 percent);
+  --filter-white-icon: brightness(0) saturate(100 percent) invert(100 percent)
+    sepia(4 percent) saturate(16 percent) hue-rotate(152deg)
+    brightness(107 percent) contrast(103 percent);
+
+  /* Code mark */
+  --skiff-code-mark-color: var(--orange-400);
+  --skiff-code-mark-bg: color-mix(
+    in oklab,
+    var(--black) 6%,
+    transparent 94%
+  );
+
+  /* Thread item */
+  --bg-cell-unread: var(--white);
+  --status-bar-color: color-mix(
+    in oklab,
+    var(--black) 2%,
+    var(--white) 98%
+  );
+
+  --illustration-fill: var(--grey-100);
 }
 
 body {
