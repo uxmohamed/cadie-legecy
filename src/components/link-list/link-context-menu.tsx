@@ -6,7 +6,7 @@ import {
   MenuSeparator,
   MenuShortcut,
 } from "@/components/ui/menu";
-import { IconCopy, IconEdit, IconMapPin, IconTrash } from "@tabler/icons-react";
+import { IconCopy, IconEdit, IconPin, IconPinnedOff, IconTrash } from "@tabler/icons-react";
 
 interface LinkContextMenuProps {
   link: Link;
@@ -40,14 +40,14 @@ export function LinkContextMenu({
       {link.is_pinned ? (
         onUnpin && (
           <MenuItem onClick={() => onUnpin(link.id)}>
-            <IconMapPin className="h-4 w-4" />
+            <IconPinnedOff className="h-4 w-4" />
             Unpin
           </MenuItem>
         )
       ) : (
         onPin && (
           <MenuItem onClick={() => onPin(link.id)}>
-            <IconMapPin className="h-4 w-4" />
+            <IconPin className="h-4 w-4" />
             Pin
           </MenuItem>
         )

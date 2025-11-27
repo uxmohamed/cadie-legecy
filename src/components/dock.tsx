@@ -119,6 +119,7 @@ export function Dock({
             <TooltipTrigger asChild>
               <Button
                 onClick={onAddClick}
+                aria-label="Add link"
                 className="h-8 w-8 p-0 rounded-md bg-[var(--accent-blue-primary)] hover:bg-[var(--accent-blue-secondary)] text-[var(--text-inverse)] border-0"
               >
                 <IconPlus className="h-5 w-5" />
@@ -145,6 +146,7 @@ export function Dock({
                   categoryRefs.current[0] = el;
                 }}
                 onClick={() => onCategorySelect(null)}
+                aria-label="Show all items"
                 onKeyDown={(e) => handleKeyDown(e, 0)}
                 variant="ghost"
                 className={cn(
@@ -175,6 +177,7 @@ export function Dock({
                   categoryRefs.current[1] = el;
                 }}
                 onClick={() => onCategorySelect("trash")}
+                aria-label="Show trash"
                 onKeyDown={(e) => handleKeyDown(e, 1)}
                 variant="ghost"
                 className={cn(
@@ -216,6 +219,7 @@ export function Dock({
                       categoryRefs.current[buttonIndex] = el;
                     }}
                     onClick={() => onCategorySelect(category.id)}
+                    aria-label={category.name}
                     onKeyDown={(e) => handleKeyDown(e, buttonIndex)}
                     variant="ghost"
                     className={cn(
@@ -225,13 +229,19 @@ export function Dock({
                         : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)]",
                     )}
                   >
-                    <IconCircle className="h-2 w-2 text-[var(--text-tertiary)] fill-current" />
+                    <IconCircle
+                      className="h-2 w-2"
+                      style={{ color: category.color, fill: category.color }}
+                    />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top">
                   <div className="flex items-center gap-2">
                     <div className="flex items-center justify-center w-8 h-8">
-                      <IconCircle className="h-2 w-2 text-[var(--text-tertiary)] fill-current" />
+                      <IconCircle
+                        className="h-2 w-2"
+                        style={{ color: category.color, fill: category.color }}
+                      />
                     </div>
                     {(category.count ?? 0) > 0 && (
                       <span className="text-xs text-[var(--text-tertiary)]">

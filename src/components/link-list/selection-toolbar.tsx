@@ -7,7 +7,7 @@ import {
   MenuTrigger,
 } from "@/components/ui/menu";
 import { Button } from "@/components/ui/button";
-import { IconX, IconTrash, IconDots, IconMapPin } from "@tabler/icons-react";
+import { IconX, IconTrash, IconDots, IconPin, IconPinnedOff } from "@tabler/icons-react";
 
 interface SelectionToolbarProps {
   selectedCount: number;
@@ -38,6 +38,7 @@ export function SelectionToolbar({
           variant="ghost"
           size="icon"
           onClick={onClearSelection}
+          aria-label="Clear selection"
           className="h-auto w-auto p-0 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-transparent"
         >
           <IconX className="h-4 w-4" />
@@ -63,13 +64,13 @@ export function SelectionToolbar({
         <MenuPopup align="center" side="top">
           {onBatchPin && (
             <MenuItem onClick={onBatchPin}>
-              <IconMapPin className="h-4 w-4" />
+              <IconPin className="h-4 w-4" />
               Pin Selected
             </MenuItem>
           )}
           {onBatchUnpin && (
             <MenuItem onClick={onBatchUnpin}>
-              <IconMapPin className="h-4 w-4" />
+              <IconPinnedOff className="h-4 w-4" />
               Unpin Selected
             </MenuItem>
           )}

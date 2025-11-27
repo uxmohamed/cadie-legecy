@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Editor } from "@/components/blocks/editor-00/editor";
 import type { SerializedEditorState } from "lexical";
-import { IconDots, IconExternalLink, IconCopy, IconEdit, IconMapPin, IconTrash, IconChevronUp, IconChevronDown, IconX, IconFile, IconWorld, IconCalendar, IconClock, IconPalette } from "@tabler/icons-react";
+import { IconDots, IconExternalLink, IconCopy, IconEdit, IconPin, IconPinnedOff, IconTrash, IconChevronUp, IconChevronDown, IconX, IconFile, IconWorld, IconCalendar, IconClock, IconPalette } from "@tabler/icons-react";
 import { extractTextFromRichText } from "@/lib/rich-text-utils";
 import {
   Menu,
@@ -115,6 +115,7 @@ export function LinkDetailSheet({
             <Menu>
               <MenuTrigger
                 className="h-6 w-6 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)] flex items-center justify-center rounded-md"
+                aria-label="Open link actions"
               >
                 <IconDots className="h-3.5 w-3.5" />
               </MenuTrigger>
@@ -154,14 +155,14 @@ export function LinkDetailSheet({
                 {link.is_pinned ? (
                   onUnpin && (
                     <MenuItem onClick={() => onUnpin(link.id)}>
-                      <IconMapPin className="h-4 w-4" />
+                      <IconPinnedOff className="h-4 w-4" />
                       Unpin
                     </MenuItem>
                   )
                 ) : (
                   onPin && (
                     <MenuItem onClick={() => onPin(link.id)}>
-                      <IconMapPin className="h-4 w-4" />
+                      <IconPin className="h-4 w-4" />
                       Pin
                     </MenuItem>
                   )
@@ -191,6 +192,7 @@ export function LinkDetailSheet({
               size="icon-xs"
               onClick={handlePrevious}
               disabled={!canGoPrevious}
+              aria-label="Previous link"
               className="h-6 w-6 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)] disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <IconChevronUp className="h-3.5 w-3.5" />
@@ -200,6 +202,7 @@ export function LinkDetailSheet({
               size="icon-xs"
               onClick={handleNext}
               disabled={!canGoNext}
+              aria-label="Next link"
               className="h-6 w-6 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)] disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <IconChevronDown className="h-3.5 w-3.5" />
@@ -208,6 +211,7 @@ export function LinkDetailSheet({
               variant="ghost"
               size="icon-xs"
               onClick={() => onOpenChange(false)}
+              aria-label="Close details"
               className="h-6 w-6 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)]"
             >
               <IconX className="h-3.5 w-3.5" />

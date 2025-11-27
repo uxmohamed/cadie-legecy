@@ -8,7 +8,7 @@ import type { Link } from "@/features/links/types";
 import { cn, formatDate } from "@/lib/utils";
 import { Favicon } from "@/components/ui/favicon";
 import { Button } from "@/components/ui/button";
-import { IconGripVertical, IconFile, IconMapPin } from "@tabler/icons-react";
+import { IconGripVertical, IconFile, IconPinnedOff } from "@tabler/icons-react";
 import { extractTextFromRichText } from "@/lib/rich-text-utils";
 
 interface LinkListItemProps {
@@ -194,7 +194,7 @@ export function LinkListItem({
                 className="h-8 w-8 hover:bg-[var(--bg-l2-solid)]"
                 title="Unpin"
               >
-                <IconMapPin className="h-4 w-4" />
+                <IconPinnedOff className="h-4 w-4" />
               </Button>
             )}
           </div>
