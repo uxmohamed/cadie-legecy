@@ -125,9 +125,9 @@ export function Dock({
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 ">
                 <span>Add</span>
-                <kbd className="px-1.5 py-0.5 text-xs bg-[var(--bg-l1-solid)] rounded">
+                <kbd className="px-1.5 py-0.5 text-xs bg-[var(--bg-emphasis)] text-[var(--text-inverse)] rounded">
                   C
                 </kbd>
               </div>
@@ -160,7 +160,7 @@ export function Dock({
             <TooltipContent side="top">
               <div className="flex items-center gap-2">
                 <span>All</span>
-                <kbd className="px-1.5 py-0.5 text-xs bg-[var(--bg-l1-solid)] rounded">
+                <kbd className="px-1.5 py-0.5 text-xs bg-[var(--bg-emphasis)] text-[var(--text-inverse)] rounded">
                   1
                 </kbd>
               </div>
@@ -190,7 +190,7 @@ export function Dock({
             <TooltipContent side="top">
               <div className="flex items-center gap-2">
                 <span>Trash</span>
-                <kbd className="px-1.5 py-0.5 text-xs bg-[var(--bg-l1-solid)] rounded">
+                <kbd className="px-1.5 py-0.5 text-xs bg-[var(--bg-emphasis)] text-[var(--text-inverse)] rounded">
                   2
                 </kbd>
               </div>
@@ -238,7 +238,7 @@ export function Dock({
                         ({category.count})
                       </span>
                     )}
-                    <kbd className="px-1.5 py-0.5 text-xs bg-[var(--bg-l1-solid)] rounded">
+                    <kbd className="px-1.5 py-0.5 text-xs bg-[var(--bg-l1-solid)] text-[var(--text-primary)] rounded">
                       {shortcutKey}
                     </kbd>
                   </div>

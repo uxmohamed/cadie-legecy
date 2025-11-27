@@ -85,7 +85,7 @@ export const getSemanticTokens = (mode: ThemeMode = 'light') => {
     "bg-l3-solid": isLight ? p.base.white : mix(p.base.white, 14, p.base.black),
     "bg-l3-glass": isLight ? mix(p.base.white, 72) : mix(p.grey[700], 72),
 
-    "bg-emphasis": isLight ? mix(p.base.white, 16, p.base.black) : p.grey[800],
+    "bg-emphasis": isLight ? mix(p.base.black, 16, p.base.white) : p.grey[800],
     "bg-inverse": isLight ? p.base.black : p.base.white,
     "bg-scrim": isLight ? mix(p.base.white, 80) : mix(p.base.black, 42),
       
