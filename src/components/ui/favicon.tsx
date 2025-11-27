@@ -85,12 +85,12 @@ export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
     return (
       <div
         className={cn(
-          "h-5 w-5 flex-shrink-0 rounded bg-neutral-100 flex items-center justify-center",
+          "h-5 w-5 flex-shrink-0 rounded bg-[var(--bg-l1-solid)] flex items-center justify-center",
           className
         )}
       >
         <svg
-          className="h-3 w-3 text-neutral-400"
+          className="h-3 w-3 text-[var(--text-tertiary)]"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"

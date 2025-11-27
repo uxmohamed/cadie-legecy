@@ -19,7 +19,7 @@ export function ChangelogHeader() {
           </div>
           <div className="hidden md:flex items-center gap-3 absolute left-1/2 -translate-x-1/2">
             <Link href="/changelog">
-              <Button className="py-2 px-4 bg-transparent border-0 text-neutral-600 text-sm font-medium rounded-xl shadow-none hover:bg-neutral-100 transition-colors duration-150">
+              <Button className="py-2 px-4 bg-transparent border-0 text-[var(--text-secondary)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--bg-field-hover)] transition-colors duration-150">
                 Changelog
               </Button>
             </Link>
@@ -28,31 +28,29 @@ export function ChangelogHeader() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <Button className="py-2 px-4 bg-transparent border-0 text-neutral-600 text-sm font-medium rounded-xl shadow-none hover:bg-neutral-100 transition-colors duration-150">
+              <Button className="py-2 px-4 bg-transparent border-0 text-[var(--text-secondary)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--bg-field-hover)] transition-colors duration-150">
                 X (Twitter)
               </Button>
             </a>
           </div>
           <div className="flex items-center gap-3">
             {!authChecked ? (
-              // Loading state or empty to prevent flash?
-              // Let's show nothing or a skeleton. For now, nothing to avoid flash of wrong content.
-              <div className="w-[100px]" /> 
+              <div className="w-[100px]" />
             ) : user ? (
               <Link href="/">
-                <Button className="py-2 px-4 bg-neutral-800 border-0 text-white text-sm font-medium rounded-xl shadow-none hover:bg-neutral-800 transition-colors duration-150">
+                <Button className="py-2 px-4 bg-[var(--bg-inverse-primary)] border-0 text-[var(--text-inverse)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--bg-inverse-strong)] transition-colors duration-150">
                   Back to Dashboard
                 </Button>
               </Link>
             ) : (
               <>
                 <Link href="/auth">
-                  <Button className="py-2 px-4 bg-transparent border-0 text-neutral-600 text-sm font-medium rounded-xl shadow-none hover:bg-neutral-100 transition-colors duration-150">
+                  <Button className="py-2 px-4 bg-transparent border-0 text-[var(--text-secondary)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--bg-field-hover)] transition-colors duration-150">
                     Log In
                   </Button>
                 </Link>
                 <Link href="/auth">
-                  <Button className="py-2 px-4 bg-neutral-800 border-0 text-white text-sm font-medium rounded-xl shadow-none hover:bg-neutral-800 transition-colors duration-150">
+                  <Button className="py-2 px-4 bg-[var(--bg-inverse-primary)] border-0 text-[var(--text-inverse)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--bg-inverse-strong)] transition-colors duration-150">
                     Get Started
                   </Button>
                 </Link>

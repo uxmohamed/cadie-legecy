@@ -156,7 +156,7 @@ export function BlockMenuPlugin(): React.ReactElement | null {
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 min-w-[180px] rounded-lg border border-neutral-200 bg-white shadow-lg"
+      className="fixed z-50 min-w-[180px] rounded-lg border border-[var(--border-primary)] bg-[var(--bg-l0-solid)] shadow-lg"
       style={{
         top: `${position.top}px`,
         left: `${position.left}px`,
@@ -165,62 +165,62 @@ export function BlockMenuPlugin(): React.ReactElement | null {
       onMouseLeave={() => setIsOpen(false)}
     >
       <div className="p-1">
-        <div className="mb-1 border-b border-neutral-200 px-2 py-1.5 text-xs font-medium text-neutral-500">
+        <div className="mb-1 border-b border-[var(--border-primary)] px-2 py-1.5 text-xs font-medium text-[var(--text-secondary)]">
           Turn into
         </div>
         <button
-          className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-neutral-700 hover:bg-neutral-50"
+          className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)]"
           onClick={() => handleConvertTo("h1")}
         >
           <Heading1 className="h-4 w-4" />
           Heading 1
         </button>
         <button
-          className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-neutral-700 hover:bg-neutral-50"
+          className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)]"
           onClick={() => handleConvertTo("h2")}
         >
           <Heading2 className="h-4 w-4" />
           Heading 2
         </button>
         <button
-          className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-neutral-700 hover:bg-neutral-50"
+          className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)]"
           onClick={() => handleConvertTo("h3")}
         >
           <Heading3 className="h-4 w-4" />
           Heading 3
         </button>
         <button
-          className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-neutral-700 hover:bg-neutral-50"
+          className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)]"
           onClick={() => handleConvertTo("paragraph")}
         >
           Paragraph
         </button>
         <button
-          className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-neutral-700 hover:bg-neutral-50"
+          className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)]"
           onClick={() => handleConvertTo("quote")}
         >
           <Quote className="h-4 w-4" />
           Quote
         </button>
         <button
-          className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-neutral-700 hover:bg-neutral-50"
+          className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)]"
           onClick={() => handleConvertTo("code")}
         >
           <Code className="h-4 w-4" />
           Code Block
         </button>
         
-        <div className="my-1 border-b border-neutral-200" />
+        <div className="my-1 border-b border-[var(--border-primary)]" />
         
         <button
-          className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-neutral-700 hover:bg-neutral-50"
+          className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)]"
           onClick={handleDuplicate}
         >
           <Copy className="h-4 w-4" />
           Duplicate
         </button>
         <button
-          className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-red-600 hover:bg-red-50"
+          className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-[var(--accent-red-primary)] hover:bg-[var(--accent-red-subtle)]"
           onClick={handleDelete}
         >
           <Trash2 className="h-4 w-4" />

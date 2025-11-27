@@ -36,17 +36,17 @@ export class ErrorBoundary extends React.Component<
       }
 
       return (
-        <div className="flex min-h-screen items-center justify-center bg-[#fafafa] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--bg-l0-solid)] px-4">
           <div className="text-center">
-            <h2 className="text-lg font-medium text-neutral-900">
+            <h2 className="text-lg font-medium text-[var(--text-primary)]">
               Something went wrong
             </h2>
-            <p className="mt-2 text-sm text-neutral-400">
+            <p className="mt-2 text-sm text-[var(--text-tertiary)]">
               {this.state.error?.message || "An unexpected error occurred"}
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-6 rounded-lg bg-neutral-900 px-4 py-2 text-sm text-white hover:bg-neutral-800"
+              className="mt-6 rounded-lg bg-[var(--bg-inverse)] px-4 py-2 text-sm text-[var(--text-inverse)] hover:bg-[var(--bg-inverse)]/90"
             >
               Reload page
             </button>

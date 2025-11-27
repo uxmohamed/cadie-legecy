@@ -16,10 +16,10 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "relative z-0 flex w-fit items-center justify-center gap-x-0.5 text-neutral-500 dark:text-neutral-400",
+      "relative z-0 flex w-fit items-center justify-center gap-x-0.5 text-[var(--text-secondary)]",
       "data-[orientation=vertical]:flex-col",
       variant === "default"
-        ? "rounded-lg bg-neutral-100 p-0.5 text-neutral-500/64 dark:bg-neutral-800 dark:text-neutral-400/64"
+        ? "rounded-lg bg-[var(--bg-l0-solid)] p-0.5 text-[var(--text-tertiary)]"
         : "data-[orientation=vertical]:px-1 data-[orientation=horizontal]:py-1",
       className,
     )}
@@ -38,14 +38,14 @@ const TabsTab = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex flex-1 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap rounded-md border border-neutral-200 border-transparent font-medium text-sm outline-none transition-[color,background-color,box-shadow] focus-visible:ring-2 focus-visible:ring-neutral-950 disabled:pointer-events-none disabled:opacity-64 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 dark:border-neutral-800 dark:focus-visible:ring-neutral-300",
-      "hover:text-neutral-500 data-[state=active]:text-neutral-950 dark:hover:text-neutral-400 dark:data-[state=active]:text-neutral-50",
+      "flex flex-1 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap rounded-md border border-[var(--border-primary)] border-transparent font-medium text-sm outline-none transition-[color,background-color,box-shadow] focus-visible:ring-2 focus-visible:ring-[var(--border-active)] disabled:pointer-events-none disabled:opacity-64 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+      "hover:text-[var(--text-secondary)] data-[state=active]:text-[var(--text-primary)]",
       "gap-1.5 px-[calc(--spacing(2.5)-1px)] py-[calc(--spacing(1.5)-1px)]",
       "data-[orientation=vertical]:w-full data-[orientation=vertical]:justify-start",
       variant === "default" &&
-        "data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-neutral-950",
+        "data-[state=active]:bg-[var(--bg-l2-solid)] data-[state=active]:shadow-sm",
       variant === "underline" &&
-        "rounded-none border-b-2 border-transparent data-[state=active]:border-neutral-900 dark:data-[state=active]:border-neutral-50",
+        "rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--border-active)]",
       className,
     )}
     data-slot="tabs-trigger"

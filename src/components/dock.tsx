@@ -11,7 +11,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useShortcuts } from "@/components/shortcut-context";
-import { Menu, Trash2, Circle, Plus } from "lucide-react";
+import { IconPlus, IconMenu, IconTrash, IconCircle } from "@tabler/icons-react";
 
 interface DockProps {
   categories: Category[];
@@ -74,7 +74,7 @@ export function Dock({
 
   const handleKeyDown = (
     e: React.KeyboardEvent<HTMLButtonElement>,
-    index: number
+    index: number,
   ) => {
     if (e.key === "ArrowRight") {
       e.preventDefault();
@@ -111,7 +111,7 @@ export function Dock({
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
       <TooltipProvider delayDuration={300}>
         <nav
-          className="flex items-center gap-1 px-2 py-1.5 bg-white dark:bg-[#0d0d0d] border border-gray-200 dark:border-gray-800 rounded-lg"
+          className="flex items-center gap-1 px-2 py-1.5 bg-[var(--bg-l2-solid)] border border-[var(--border-primary)] rounded-lg"
           aria-label="Categories"
         >
           {/* Add Button - Primary */}
@@ -119,15 +119,16 @@ export function Dock({
             <TooltipTrigger asChild>
               <Button
                 onClick={onAddClick}
-                className="h-8 w-8 p-0 rounded-md bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
+                aria-label="Add link"
+                className="h-8 w-8 p-0 rounded-md bg-[var(--accent-blue-primary)] hover:bg-[var(--accent-blue-secondary)] text-[var(--text-inverse)] border-0"
               >
-                <Plus className="h-4 w-4" />
+                <IconPlus className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 ">
                 <span>Add</span>
-                <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                <kbd className="px-1.5 py-0.5 text-xs bg-[var(--bg-emphasis)] text-[var(--text-inverse)] rounded">
                   C
                 </kbd>
               </div>
@@ -135,7 +136,7 @@ export function Dock({
           </Tooltip>
 
           {/* Separator */}
-          <div className="w-px h-5 bg-gray-200 dark:bg-gray-800 mx-1" />
+          <div className="w-px h-5 bg-[var(--border-primary)] mx-1" />
 
           {/* All Button */}
           <Tooltip>
@@ -145,22 +146,23 @@ export function Dock({
                   categoryRefs.current[0] = el;
                 }}
                 onClick={() => onCategorySelect(null)}
+                aria-label="Show all items"
                 onKeyDown={(e) => handleKeyDown(e, 0)}
                 variant="ghost"
                 className={cn(
                   "h-8 w-8 p-0 rounded-md",
                   selectedCategoryId === null
-                    ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
-                    : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-900"
+                    ? "bg-[var(--bg-field-hover)] text-[var(--text-primary)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)]",
                 )}
               >
-                <Menu className="h-4 w-4" />
+                <IconMenu className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
               <div className="flex items-center gap-2">
                 <span>All</span>
-                <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                <kbd className="px-1.5 py-0.5 text-xs bg-[var(--bg-emphasis)] text-[var(--text-inverse)] rounded">
                   1
                 </kbd>
               </div>
@@ -175,22 +177,23 @@ export function Dock({
                   categoryRefs.current[1] = el;
                 }}
                 onClick={() => onCategorySelect("trash")}
+                aria-label="Show trash"
                 onKeyDown={(e) => handleKeyDown(e, 1)}
                 variant="ghost"
                 className={cn(
                   "h-8 w-8 p-0 rounded-md",
                   selectedCategoryId === "trash"
-                    ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
-                    : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-900"
+                    ? "bg-[var(--bg-field-hover)] text-[var(--text-primary)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)]",
                 )}
               >
-                <Trash2 className="h-4 w-4" />
+                <IconTrash className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
               <div className="flex items-center gap-2">
                 <span>Trash</span>
-                <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                <kbd className="px-1.5 py-0.5 text-xs bg-[var(--bg-emphasis)] text-[var(--text-inverse)] rounded">
                   2
                 </kbd>
               </div>
@@ -199,7 +202,7 @@ export function Dock({
 
           {/* Separator if there are categories */}
           {categories.length > 0 && (
-            <div className="w-px h-5 bg-gray-200 dark:bg-gray-800 mx-1" />
+            <div className="w-px h-5 bg-[var(--border-primary)] mx-1" />
           )}
 
           {/* Category Buttons */}
@@ -216,31 +219,36 @@ export function Dock({
                       categoryRefs.current[buttonIndex] = el;
                     }}
                     onClick={() => onCategorySelect(category.id)}
+                    aria-label={category.name}
                     onKeyDown={(e) => handleKeyDown(e, buttonIndex)}
                     variant="ghost"
                     className={cn(
                       "h-8 w-8 p-0 rounded-md relative",
                       isSelected
-                        ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
-                        : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-900"
+                        ? "bg-[var(--bg-field-hover)] text-[var(--text-primary)]"
+                        : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)]",
                     )}
                   >
-                    <Circle
-                      className="h-4 w-4"
-                      fill={category.color}
-                      stroke={category.color}
+                    <IconCircle
+                      className="h-2 w-2"
+                      style={{ color: category.color, fill: category.color }}
                     />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top">
                   <div className="flex items-center gap-2">
-                    <span>{category.name}</span>
+                    <div className="flex items-center justify-center w-8 h-8">
+                      <IconCircle
+                        className="h-2 w-2"
+                        style={{ color: category.color, fill: category.color }}
+                      />
+                    </div>
                     {(category.count ?? 0) > 0 && (
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-[var(--text-tertiary)]">
                         ({category.count})
                       </span>
                     )}
-                    <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 rounded">
+                    <kbd className="px-1.5 py-0.5 text-xs bg-[var(--bg-l1-solid)] text-[var(--text-primary)] rounded">
                       {shortcutKey}
                     </kbd>
                   </div>

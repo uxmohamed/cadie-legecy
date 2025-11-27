@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import { useShortcuts } from "@/components/shortcut-context";
+import { useTheme } from "@/components/theme-provider";
+import { IconMoon, IconSun, IconDeviceDesktop, IconCheck } from "@tabler/icons-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -26,6 +28,7 @@ export function UserMenu({ user }: UserMenuProps) {
   const [isSigningOut, setIsSigningOut] = React.useState(false);
   const router = useRouter();
   const { toggleHelp, registerShortcut, unregisterShortcut } = useShortcuts();
+  const { theme, setTheme } = useTheme();
 
   const handleSignOut = React.useCallback(async () => {
     try {
@@ -87,11 +90,11 @@ export function UserMenu({ user }: UserMenuProps) {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="flex items-center gap-2.5 rounded-lg hover:bg-neutral-100 px-3 py-2 h-auto"
+          className="flex items-center gap-2.5 rounded-lg hover:bg-[var(--bg-field-hover)] px-3 py-2 h-auto"
         >
           <Avatar className="h-8 w-8">
             <AvatarImage src={user.user_metadata?.avatar_url || user.user_metadata?.picture} alt={user.email} />
-            <AvatarFallback className="bg-neutral-900 text-white">
+            <AvatarFallback className="bg-[var(--bg-inverse)] text-[var(--text-inverse)]">
               {user.email?.charAt(0).toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
@@ -101,15 +104,15 @@ export function UserMenu({ user }: UserMenuProps) {
         <div className="px-2 py-3">
           {userName ? (
             <>
-              <p className="text-sm font-medium text-neutral-900 truncate">
+              <p className="text-sm font-medium text-[var(--overlay-text-primary)] truncate">
                 {userName}
               </p>
-              <p className="text-xs text-neutral-500 truncate mt-0.5">
+              <p className="text-xs text-[var(--overlay-text-secondary)] truncate mt-0.5">
                 {user.email}
               </p>
             </>
           ) : (
-            <p className="text-sm font-medium text-neutral-900 truncate">
+            <p className="text-sm font-medium text-[var(--overlay-text-primary)] truncate">
               {user.email}
             </p>
           )}
@@ -128,6 +131,22 @@ export function UserMenu({ user }: UserMenuProps) {
           <a href="https://x.com/caddyapp_" target="_blank" rel="noopener noreferrer" className="cursor-pointer w-full flex items-center justify-between">
             Follow us on X
           </a>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => setTheme('light')} className="cursor-pointer">
+          <IconSun className="mr-2 h-4 w-4" />
+          Light
+          {theme === 'light' && <IconCheck className="ml-auto h-4 w-4" />}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme('dark')} className="cursor-pointer">
+          <IconMoon className="mr-2 h-4 w-4" />
+          Dark
+          {theme === 'dark' && <IconCheck className="ml-auto h-4 w-4" />}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme('system')} className="cursor-pointer">
+          <IconDeviceDesktop className="mr-2 h-4 w-4" />
+          System
+          {theme === 'system' && <IconCheck className="ml-auto h-4 w-4" />}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem

@@ -1,7 +1,7 @@
 "use client";
 
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
-import { ChevronDownIcon } from "lucide-react";
+import { IconChevronDown } from "@tabler/icons-react";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
@@ -29,14 +29,14 @@ const AccordionTrigger = React.forwardRef<
     <AccordionPrimitive.Trigger
       ref={ref}
       className={cn(
-        "flex flex-1 cursor-pointer items-start justify-between gap-4 rounded-md py-4 text-left font-medium text-sm outline-none transition-all focus-visible:ring-[3px] focus-visible:ring-neutral-950 disabled:pointer-events-none disabled:opacity-64 [&[data-state=open]>svg]:rotate-180 dark:focus-visible:ring-neutral-300",
+        "flex flex-1 cursor-pointer items-start justify-between gap-4 rounded-md py-4 text-left font-medium text-sm outline-none transition-all focus-visible:ring-[3px] focus-visible:ring-[var(--border-active)] disabled:pointer-events-none disabled:opacity-64 [&[data-state=open]>svg]:rotate-180",
         className,
       )}
       data-slot="accordion-trigger"
       {...props}
     >
       {children}
-      <ChevronDownIcon className="pointer-events-none size-4 shrink-0 tranneutral-y-0.5 opacity-72 transition-transform duration-200 ease-in-out" />
+      <IconChevronDown className="pointer-events-none h-4 w-4 shrink-0 translate-y-0.5 opacity-72 transition-transform duration-200 ease-in-out" />
     </AccordionPrimitive.Trigger>
   </AccordionPrimitive.Header>
 ));
@@ -48,7 +48,7 @@ const AccordionPanel = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <AccordionPrimitive.Content
     ref={ref}
-    className="overflow-hidden text-neutral-500 text-sm transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down dark:text-neutral-400"
+    className="overflow-hidden text-[var(--text-secondary)] text-sm transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
     data-slot="accordion-panel"
     {...props}
   >

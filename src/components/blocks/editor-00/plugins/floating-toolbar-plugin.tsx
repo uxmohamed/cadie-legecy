@@ -114,7 +114,7 @@ export function FloatingToolbarPlugin(): React.ReactPortal | null {
   return createPortal(
     <div
       ref={toolbarRef}
-      className="fixed z-50 flex items-center gap-1 rounded-lg border border-neutral-200 bg-white p-1 shadow-lg"
+      className="fixed z-50 flex items-center gap-1 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-l0-solid)] p-1 shadow-lg"
       style={{
         top: `${position.top}px`,
         left: `${position.left}px`,
@@ -125,63 +125,63 @@ export function FloatingToolbarPlugin(): React.ReactPortal | null {
       }}
     >
       <button
-        className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 transition-colors"
+        className="flex h-8 w-8 items-center justify-center rounded hover:bg-[var(--bg-field-hover)] transition-colors"
         onClick={() => formatText("bold")}
         title="Bold (Cmd+B)"
       >
-        <Bold className="h-4 w-4 text-neutral-700" />
+        <Bold className="h-4 w-4 text-[var(--text-primary)]" />
       </button>
       
       <button
-        className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 transition-colors"
+        className="flex h-8 w-8 items-center justify-center rounded hover:bg-[var(--bg-field-hover)] transition-colors"
         onClick={() => formatText("italic")}
         title="Italic (Cmd+I)"
       >
-        <Italic className="h-4 w-4 text-neutral-700" />
+        <Italic className="h-4 w-4 text-[var(--text-primary)]" />
       </button>
       
       <button
-        className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 transition-colors"
+        className="flex h-8 w-8 items-center justify-center rounded hover:bg-[var(--bg-field-hover)] transition-colors"
         onClick={() => formatText("strikethrough")}
         title="Strikethrough"
       >
-        <Strikethrough className="h-4 w-4 text-neutral-700" />
+        <Strikethrough className="h-4 w-4 text-[var(--text-primary)]" />
       </button>
       
       <button
-        className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 transition-colors"
+        className="flex h-8 w-8 items-center justify-center rounded hover:bg-[var(--bg-field-hover)] transition-colors"
         onClick={() => formatText("code")}
         title="Code"
       >
-        <Code className="h-4 w-4 text-neutral-700" />
+        <Code className="h-4 w-4 text-[var(--text-primary)]" />
       </button>
       
-      <div className="w-px h-6 bg-neutral-200" />
+      <div className="w-px h-6 bg-[var(--border-primary)]" />
       
       <button
-        className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 transition-colors"
+        className="flex h-8 w-8 items-center justify-center rounded hover:bg-[var(--bg-field-hover)] transition-colors"
         onClick={insertLink}
         title="Link (Cmd+K)"
       >
-        <Link className="h-4 w-4 text-neutral-700" />
+        <Link className="h-4 w-4 text-[var(--text-primary)]" />
       </button>
       
       <div className="relative">
         <button
-          className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded hover:bg-[var(--bg-field-hover)] transition-colors"
           onClick={() => setShowColorPicker(!showColorPicker)}
           title="Highlight Color"
         >
-          <Highlighter className="h-4 w-4 text-neutral-700" />
+          <Highlighter className="h-4 w-4 text-[var(--text-primary)]" />
         </button>
         
         {showColorPicker && (
-          <div className="absolute top-full left-0 mt-1 rounded-lg border border-neutral-200 bg-white p-2 shadow-lg">
+          <div className="absolute top-full left-0 mt-1 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-l0-solid)] p-2 shadow-lg">
             <div className="flex gap-1">
               {HIGHLIGHT_COLORS.map((color) => (
                 <button
                   key={color.name}
-                  className="h-6 w-6 rounded border border-neutral-300 hover:scale-110 transition-transform"
+                  className="h-6 w-6 rounded border border-[var(--border-secondary)] hover:scale-110 transition-transform"
                   style={{ backgroundColor: color.value || "#ffffff" }}
                   onClick={() => applyHighlight(color.value)}
                   title={color.name}

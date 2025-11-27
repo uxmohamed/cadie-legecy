@@ -25,7 +25,7 @@ export function Sidebar({
 
   const handleKeyDown = (
     e: React.KeyboardEvent<HTMLButtonElement>,
-    index: number
+    index: number,
   ) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -41,7 +41,6 @@ export function Sidebar({
       e.preventDefault();
       if (index === 0) {
         onCategorySelect(null);
-
       } else if (index === 2) {
         onCategorySelect("trash");
       } else if (index >= 3 && index < categories.length + 3) {
@@ -60,12 +59,12 @@ export function Sidebar({
   };
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r border-gray-100 bg-white dark:border-gray-800 dark:bg-[#0d0d0d]">
-      <div className="flex h-14 items-center justify-between border-b border-gray-100 px-4 dark:border-gray-800">
-        <div className="flex h-7 w-7 items-center justify-center text-base font-medium text-gray-900 dark:text-gray-100">
+    <aside className="flex h-screen w-64 flex-col border-r border-[var(--border-primary)] bg-[var(--bg-l2-solid)]">
+      <div className="flex h-14 items-center justify-between border-b border-[var(--border-primary)] px-4">
+        <div className="flex h-7 w-7 items-center justify-center text-base font-medium text-[var(--text-primary)]">
           M
         </div>
-        <span className="text-[10px] text-neutral-400 bg-neutral-100 px-1.5 py-0.5 rounded border border-neutral-300">
+        <span className="text-[10px] text-[var(--text-tertiary)] bg-[var(--bg-l1-solid)] px-1.5 py-0.5 rounded border border-[var(--border-secondary)]">
           <kbd className="font-sans font-medium">[</kbd>
         </span>
       </div>
@@ -81,14 +80,12 @@ export function Sidebar({
           className={cn(
             "w-full justify-start gap-2 h-auto px-2 py-1.5 text-sm font-normal",
             selectedCategoryId === null
-              ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
-              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+              ? "bg-[var(--bg-field-hover)] text-[var(--text-primary)]"
+              : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)] hover:text-[var(--text-primary)]",
           )}
         >
           <span className="text-xs">All</span>
         </Button>
-
-
 
         <Button
           ref={(el) => {
@@ -100,18 +97,18 @@ export function Sidebar({
           className={cn(
             "w-full justify-start gap-2 h-auto px-2 py-1.5 text-sm font-normal",
             selectedCategoryId === "trash"
-              ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
-              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+              ? "bg-[var(--bg-field-hover)] text-[var(--text-primary)]"
+              : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)] hover:text-[var(--text-primary)]",
           )}
         >
           <span className="text-xs">Trash</span>
         </Button>
 
-        <div className="my-2 h-px bg-gray-100 dark:bg-gray-800" />
+        <div className="my-2 h-px bg-[var(--border-primary)]" />
 
         {categories.map((category, index) => {
           const isSelected = selectedCategoryId === category.id;
-          const buttonIndex = index + 3; // Offset by All, Archive, Trash
+          const buttonIndex = index + 3;
 
           return (
             <Button
@@ -125,8 +122,8 @@ export function Sidebar({
               className={cn(
                 "w-full justify-between gap-2 h-auto px-2 py-1.5 text-sm font-normal",
                 isSelected
-                  ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+                  ? "bg-[var(--bg-field-hover)] text-[var(--text-primary)]"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)] hover:text-[var(--text-primary)]",
               )}
             >
               <div className="flex items-center gap-2">
@@ -154,7 +151,7 @@ export function Sidebar({
                     />
                   </svg>
                 )}
-                <span className="text-xs text-gray-400 dark:text-gray-500">
+                <span className="text-xs text-[var(--text-tertiary)]">
                   {category.count}
                 </span>
               </div>
@@ -162,10 +159,6 @@ export function Sidebar({
           );
         })}
       </nav>
-
-
     </aside>
   );
 }
-
-

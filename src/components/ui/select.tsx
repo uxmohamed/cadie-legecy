@@ -1,12 +1,7 @@
 "use client";
 
 import * as SelectPrimitive from "@radix-ui/react-select";
-import {
-  ChevronDownIcon,
-  ChevronsUpDownIcon,
-  ChevronUpIcon,
-  CheckIcon,
-} from "lucide-react";
+import { IconChevronUp, IconChevronDown, IconCheck } from "@tabler/icons-react";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
@@ -26,7 +21,7 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "relative inline-flex w-full min-w-36 select-none items-center justify-between gap-2 rounded-lg border border-neutral-200 bg-white bg-clip-padding px-[calc(--spacing(3)-1px)] py-[calc(--spacing(1.5)-1px)] data-[placeholder]:text-neutral-500 text-base/5 shadow-xs outline-none ring-neutral-950/24 transition-shadow before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] not-data-disabled:not-focus-visible:not-aria-invalid:not-data-[state=open]:before:shadow-[0_1px_--theme(--color-black/4%)] pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 focus-visible:border-neutral-950 focus-visible:ring-[3px] aria-invalid:border-red-500/36 focus-visible:aria-invalid:border-red-500/64 focus-visible:aria-invalid:ring-red-500/16 data-disabled:pointer-events-none data-disabled:opacity-64 sm:text-sm dark:bg-neutral-200/32 dark:not-in-data-[slot=group]:bg-clip-border dark:aria-invalid:ring-red-500/24 dark:not-data-disabled:not-focus-visible:not-aria-invalid:not-data-[state=open]:before:shadow-[0_-1px_--theme(--color-white/8%)] [&:is([data-disabled],:focus-visible,[aria-invalid],[data-state=open])]:shadow-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:opacity-72 dark:border-neutral-800 dark:bg-neutral-950 dark:data-[placeholder]:text-neutral-400 dark:ring-neutral-300/24 dark:focus-visible:border-neutral-300 dark:aria-invalid:border-red-900/36 dark:focus-visible:aria-invalid:border-red-900/64 dark:focus-visible:aria-invalid:ring-red-900/16 dark:dark:bg-neutral-800/32 dark:dark:aria-invalid:ring-red-900/24",
+      "relative inline-flex w-full min-w-36 select-none items-center justify-between gap-2 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-field-default)] bg-clip-padding px-[calc(--spacing(3)-1px)] py-[calc(--spacing(1.5)-1px)] data-[placeholder]:text-[var(--text-tertiary)] text-base/5 shadow-xs outline-none ring-[var(--border-active)]/24 transition-shadow before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] not-data-disabled:not-focus-visible:not-aria-invalid:not-data-[state=open]:before:shadow-[0_1px_--theme(--color-black/4%)] pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 focus-visible:border-[var(--border-active)] focus-visible:ring-[3px] aria-invalid:border-[var(--accent-red-primary)]/36 focus-visible:aria-invalid:border-[var(--accent-red-primary)]/64 focus-visible:aria-invalid:ring-[var(--accent-red-primary)]/16 data-disabled:pointer-events-none data-disabled:opacity-64 sm:text-sm [&:is([data-disabled],:focus-visible,[aria-invalid],[data-state=open])]:shadow-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:opacity-72",
       size === "sm" &&
         "gap-1.5 px-[calc(--spacing(2.5)-1px)] py-[calc(--spacing(1)-1px)]",
       size === "lg" && "py-[calc(--spacing(2)-1px)]",
@@ -37,7 +32,9 @@ const SelectTrigger = React.forwardRef<
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <ChevronsUpDownIcon className="-me-1 size-4 opacity-72" />
+      <span className="-me-1 size-4 opacity-72">
+        <IconChevronDown className="h-4 w-4" />
+      </span>
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ));
@@ -55,7 +52,7 @@ const SelectScrollUpButton = React.forwardRef<
     )}
     {...props}
   >
-    <ChevronUpIcon className="size-4" />
+    <IconChevronUp className="h-4 w-4" />
   </SelectPrimitive.ScrollUpButton>
 ));
 SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName;
@@ -72,7 +69,7 @@ const SelectScrollDownButton = React.forwardRef<
     )}
     {...props}
   >
-    <ChevronDownIcon className="size-4" />
+    <IconChevronDown className="h-4 w-4" />
   </SelectPrimitive.ScrollDownButton>
 ));
 SelectScrollDownButton.displayName =
@@ -86,7 +83,7 @@ const SelectPopup = React.forwardRef<
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-lg border border-neutral-200 bg-white text-neutral-950 shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-50",
+        "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-lg border border-[var(--overlay-border)] bg-[var(--overlay-bg)] text-[var(--overlay-text-primary)] shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
         position === "popper" &&
           "data-[side=bottom]:tranneutral-y-1 data-[side=left]:-tranneutral-x-1 data-[side=right]:tranneutral-x-1 data-[side=top]:-tranneutral-y-1",
         className,
@@ -118,7 +115,7 @@ const SelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-neutral-100 focus:text-neutral-900 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:focus:bg-neutral-800 dark:focus:text-neutral-50",
+      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none text-[var(--overlay-text-primary)] focus:bg-[var(--overlay-hover)] focus:text-[var(--overlay-text-primary)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className,
     )}
     data-slot="select-item"
@@ -126,7 +123,7 @@ const SelectItem = React.forwardRef<
   >
     <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
       <SelectPrimitive.ItemIndicator>
-        <CheckIcon className="size-4" />
+        <IconCheck className="h-4 w-4" />
       </SelectPrimitive.ItemIndicator>
     </span>
 
@@ -141,7 +138,7 @@ const SelectSeparator = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Separator
     ref={ref}
-    className={cn("-mx-1 my-1 h-px bg-neutral-100 dark:bg-neutral-800", className)}
+    className={cn("-mx-1 my-1 h-px bg-[var(--overlay-separator)]", className)}
     data-slot="select-separator"
     {...props}
   />
