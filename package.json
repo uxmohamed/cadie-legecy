@@ -15,7 +15,8 @@
     "extension:dev": "cd extension && npm run dev",
     "extension:build": "cd extension && npm run build",
     "extension:install": "cd extension && npm install",
-    "build:theme": "npx tsx scripts/build-theme-css.ts"
+    "build:theme": "npx tsx scripts/build-theme-css.ts",
+    "generate:tokens": "npx tsx scripts/generate-tokens-json.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

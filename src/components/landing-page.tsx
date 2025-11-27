@@ -128,8 +128,10 @@ export function LandingPage() {
       <main className="flex-1 pt-20 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
           <h1 className="text-5xl font-bold tracking-tight text-[var(--text-primary)] sm:text-5xl md:text-6xl mb-6 font-custom leading-snug">
-            Simple way to <br />{" "}
-            <span className="bg-brand/10 text-brand px-1">save links</span>
+            The simplest way <br />{" "}
+            to <span
+              className="bg-[color-mix(in_oklab,var(--caddy-color-6)_12%,transparent)] text-[var(--text-link)] px-1"
+            >save links</span>
           </h1>
 
           <p className="mx-auto max-w-xs text-lg font-medium text-[var(--text-tertiary)] mb-8 leading-7">

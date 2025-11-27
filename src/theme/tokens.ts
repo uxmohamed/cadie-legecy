@@ -47,10 +47,6 @@ const addPaletteToTheme = (themeTokens: Record<string, string>) => {
   add("yellow", p.yellow);
   add("red", p.red);
   add("opacity", p.opacity);
-  
-  // Legacy aliases
-  result["--color-4"] = `var(--caddy-color-4)`;
-  result["--color-6"] = `var(--caddy-color-6)`;
 
   // Filter definitions (hardcoded in original, let's keep them)
   result["--filter-dark-card-bg"] = "none";
