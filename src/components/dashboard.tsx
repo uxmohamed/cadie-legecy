@@ -57,7 +57,6 @@ export function Dashboard({ user }: DashboardProps) {
     handleUnpinLink,
     handleBatchDeleteLinks,
 
-    reorderLinks,
   } = useLinks(!!user, filters);
 
   const onSaveRichText = async (content: SerializedEditorState) => {
@@ -100,7 +99,6 @@ export function Dashboard({ user }: DashboardProps) {
                   onUnpin={handleUnpinLink}
                   onBatchDelete={handleBatchDeleteLinks}
 
-                  onReorder={reorderLinks}
                   isTrashView={selectedCategoryId === "trash"}
                 />
               </>

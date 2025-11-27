@@ -1,8 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 
 import type { Link } from "@/features/links/types";
 import { cn, formatDate } from "@/lib/utils";
@@ -65,22 +63,6 @@ export function LinkListItem({
     ? extractTextFromRichText(link.rich_text_content) || link.title
     : null;
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging: isSortableDragging,
-  } = useSortable({ id: link.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isSortableDragging ? 10 : "auto",
-    opacity: isSortableDragging ? 0.5 : 1,
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.metaKey || e.ctrlKey) {
       if (e.key === "c") {
@@ -104,23 +86,8 @@ export function LinkListItem({
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
       className="group/item relative flex items-center gap-2 w-full"
     >
-      <div
-        {...attributes}
-        {...listeners}
-        className="opacity-0 group-hover/item:opacity-100 cursor-grab active:cursor-grabbing p-1 text-neutral-400 hover:text-neutral-600 transition-opacity flex-shrink-0"
-        onClick={(e) => e.stopPropagation()}
-        onMouseDown={(e) => {
-          // Prevent item selection when clicking drag handle
-          e.stopPropagation();
-        }}
-      >
-        <IconGripVertical className="w-4 h-4" />
-      </div>
-
       <div
         onMouseDown={(e) => onMouseDown(index, e)}
         onClick={(e) => onClick(e, link, index)}
