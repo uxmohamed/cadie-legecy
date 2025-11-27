@@ -1,14 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 
 import type { Link } from "@/features/links/types";
 import { cn, formatDate } from "@/lib/utils";
 import { Favicon } from "@/components/ui/favicon";
 import { Button } from "@/components/ui/button";
-import { IconGripVertical, IconFile, IconPinnedOff } from "@tabler/icons-react";
+import {
+  IconGripVertical,
+  IconFile,
+  IconPinnedOff,
+} from "@tabler/icons-react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { extractTextFromRichText } from "@/lib/rich-text-utils";
 
 interface LinkListItemProps {
@@ -65,20 +69,14 @@ export function LinkListItem({
     ? extractTextFromRichText(link.rich_text_content) || link.title
     : null;
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging: isSortableDragging,
-  } = useSortable({ id: link.id });
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({
+      id: link.id,
+    });
 
-  const style = {
+  const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    zIndex: isSortableDragging ? 10 : "auto",
-    opacity: isSortableDragging ? 0.5 : 1,
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -114,7 +112,6 @@ export function LinkListItem({
         className="opacity-0 group-hover/item:opacity-100 cursor-grab active:cursor-grabbing p-1 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-opacity flex-shrink-0"
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => {
-          // Prevent item selection when clicking drag handle
           e.stopPropagation();
         }}
       >

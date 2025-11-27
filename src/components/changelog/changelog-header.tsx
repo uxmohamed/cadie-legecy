@@ -35,9 +35,7 @@ export function ChangelogHeader() {
           </div>
           <div className="flex items-center gap-3">
             {!authChecked ? (
-              // Loading state or empty to prevent flash?
-              // Let's show nothing or a skeleton. For now, nothing to avoid flash of wrong content.
-              <div className="w-[100px]" /> 
+              <div className="w-[100px]" />
             ) : user ? (
               <Link href="/">
                 <Button className="py-2 px-4 bg-[var(--bg-inverse-primary)] border-0 text-[var(--text-inverse)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--bg-inverse-strong)] transition-colors duration-150">
