@@ -43,6 +43,7 @@ export const metadata: Metadata = {
 
 import { ShortcutProvider } from "@/components/shortcut-context";
 import { ShortcutsHelpModal } from "@/components/shortcuts-help-modal";
+import { ThemeProvider } from "@/providers/theme-provider";
 
 // ... imports
 
@@ -57,13 +58,15 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <PostHogPageView />
         </Suspense>
-        <ErrorBoundary>
-          <ShortcutProvider>
-            {children}
-            <ShortcutsHelpModal />
-          </ShortcutProvider>
-        </ErrorBoundary>
-        <ToasterProvider />
+        <ThemeProvider>
+          <ErrorBoundary>
+            <ShortcutProvider>
+              {children}
+              <ShortcutsHelpModal />
+            </ShortcutProvider>
+          </ErrorBoundary>
+          <ToasterProvider />
+        </ThemeProvider>
       </body>
     </html>
   );

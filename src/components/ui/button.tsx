@@ -26,19 +26,19 @@ const buttonVariants = cva(
       },
       variant: {
         default:
-          "bg-brand text-white hover:bg-brand-hover focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2",
+          "bg-[rgb(var(--skiff-black))] text-white hover:bg-[linear-gradient(0deg,rgba(var(--skiff-white),0.16),rgba(var(--skiff-white),0.16)),rgb(var(--skiff-black))] focus-visible:ring-2 focus-visible:ring-[rgb(var(--skiff-black))] focus-visible:ring-offset-2",
         destructive:
-          "bg-red-500 text-white hover:bg-red-600 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2",
+          "bg-[rgb(var(--skiff-red-600))] text-white hover:bg-[rgb(var(--skiff-red-400))] focus-visible:ring-2 focus-visible:ring-[rgb(var(--skiff-red-600))] focus-visible:ring-offset-2",
         "destructive-outline":
-          "border border-red-200 bg-transparent text-red-600 hover:bg-red-50 hover:border-red-300 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2",
+          "border border-[rgba(var(--skiff-red-400),0.12)] bg-transparent text-[rgb(var(--skiff-red-600))] hover:bg-[rgba(var(--skiff-red-400),0.12)] focus-visible:ring-2 focus-visible:ring-[rgb(var(--skiff-red-600))] focus-visible:ring-offset-2",
         ghost: 
-          "bg-transparent hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-neutral-300 focus-visible:ring-offset-2",
+          "bg-transparent hover:bg-[rgba(var(--skiff-black),var(--skiff-opacity-8))] focus-visible:ring-2 focus-visible:ring-[rgba(var(--skiff-black),var(--skiff-opacity-12))] focus-visible:ring-offset-2",
         link: 
-          "bg-transparent text-brand underline-offset-4 hover:underline hover:text-brand-hover",
+          "bg-transparent text-[rgb(var(--skiff-orange-500))] underline-offset-4 hover:underline hover:text-[rgb(var(--skiff-orange-600))]",
         outline:
-          "border border-neutral-200 bg-white hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-neutral-300 focus-visible:ring-offset-2 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:bg-neutral-800",
+          "border border-[var(--border-primary)] bg-white hover:bg-[rgba(var(--skiff-black),var(--skiff-opacity-4))] focus-visible:ring-2 focus-visible:ring-[var(--border-primary)] focus-visible:ring-offset-2",
         secondary:
-          "bg-neutral-100 text-neutral-900 hover:bg-neutral-200 focus-visible:ring-2 focus-visible:ring-neutral-300 focus-visible:ring-offset-2 dark:bg-neutral-800 dark:text-neutral-50 dark:hover:bg-neutral-700",
+          "bg-[rgba(var(--skiff-black),var(--skiff-opacity-4))] text-[var(--text-primary)] hover:bg-[rgba(var(--skiff-black),var(--skiff-opacity-8))] focus-visible:ring-2 focus-visible:ring-[var(--border-primary)] focus-visible:ring-offset-2",
       },
     },
   },

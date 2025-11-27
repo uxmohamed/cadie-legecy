@@ -14,24 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Editor } from "@/components/blocks/editor-00/editor";
 import type { SerializedEditorState } from "lexical";
-import {
-  ExternalLink,
-  Copy,
-  ChevronUp,
-  ChevronDown,
-  Calendar,
-  Clock,
-  Video,
-  FileText,
-  Palette,
-  Globe,
-  MoreVertical,
-  Edit,
-  Pin,
-  PinOff,
-  Trash2,
-  X,
-} from "lucide-react";
+import { IconDots, IconExternalLink, IconCopy, IconEdit, IconMapPin, IconTrash, IconChevronUp, IconChevronDown, IconX, IconFile, IconWorld, IconCalendar, IconClock, IconPalette } from "@tabler/icons-react";
 import { extractTextFromRichText } from "@/lib/rich-text-utils";
 import {
   Menu,
@@ -136,24 +119,24 @@ export function LinkDetailSheet({
               <MenuTrigger
                 className="h-6 w-6 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 flex items-center justify-center rounded-md"
               >
-                <MoreVertical className="h-3.5 w-3.5" />
+                <IconDots className="h-3.5 w-3.5" />
               </MenuTrigger>
               <MenuPopup align="end">
                 {isUrl && (
                   <>
                     <MenuItem onClick={handleOpenLink}>
-                      <ExternalLink className="h-4 w-4" />
+                      <IconExternalLink className="h-4 w-4" />
                       Open Link
                     </MenuItem>
                     <MenuItem onClick={handleCopyUrl}>
-                      <Copy className="h-4 w-4" />
+                      <IconCopy className="h-4 w-4" />
                       {copied ? "Copied!" : "Copy Link"}
                     </MenuItem>
                   </>
                 )}
                 {!isUrl && (
                   <MenuItem onClick={handleCopyUrl}>
-                    <Copy className="h-4 w-4" />
+                    <IconCopy className="h-4 w-4" />
                     {copied ? "Copied!" : isColor ? "Copy Color" : "Copy"}
                   </MenuItem>
                 )}
@@ -166,7 +149,7 @@ export function LinkDetailSheet({
                         onOpenChange(false);
                       }}
                     >
-                      <Edit className="h-4 w-4" />
+                      <IconEdit className="h-4 w-4" />
                       Edit
                     </MenuItem>
                   </>
@@ -174,14 +157,14 @@ export function LinkDetailSheet({
                 {link.is_pinned ? (
                   onUnpin && (
                     <MenuItem onClick={() => onUnpin(link.id)}>
-                      <PinOff className="h-4 w-4" />
+                      <IconMapPin className="h-4 w-4" />
                       Unpin
                     </MenuItem>
                   )
                 ) : (
                   onPin && (
                     <MenuItem onClick={() => onPin(link.id)}>
-                      <Pin className="h-4 w-4" />
+                      <IconMapPin className="h-4 w-4" />
                       Pin
                     </MenuItem>
                   )
@@ -199,7 +182,7 @@ export function LinkDetailSheet({
                         }
                       }}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <IconTrash className="h-4 w-4" />
                       Delete
                     </MenuItem>
                   </>
@@ -213,7 +196,7 @@ export function LinkDetailSheet({
               disabled={!canGoPrevious}
               className="h-6 w-6 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              <ChevronUp className="h-3.5 w-3.5" />
+              <IconChevronUp className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="ghost"
@@ -222,7 +205,7 @@ export function LinkDetailSheet({
               disabled={!canGoNext}
               className="h-6 w-6 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              <ChevronDown className="h-3.5 w-3.5" />
+              <IconChevronDown className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="ghost"
@@ -230,7 +213,7 @@ export function LinkDetailSheet({
               onClick={() => onOpenChange(false)}
               className="h-6 w-6 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100"
             >
-              <X className="h-3.5 w-3.5" />
+              <IconX className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
@@ -253,7 +236,7 @@ export function LinkDetailSheet({
           ) : (
             <div className="w-full aspect-square rounded-lg bg-neutral-100 border border-neutral-200 flex items-center justify-center">
               {isRichText ? (
-                <FileText className="h-16 w-16 text-neutral-400" />
+                <IconFile className="h-16 w-16 text-neutral-400" />
               ) : link.domain ? (
                 <div className="h-16 w-16">
                   <Favicon
@@ -263,7 +246,7 @@ export function LinkDetailSheet({
                   />
                 </div>
               ) : (
-                <Globe className="h-16 w-16 text-neutral-400" />
+                <IconWorld className="h-16 w-16 text-neutral-400" />
               )}
             </div>
           )}
@@ -275,19 +258,19 @@ export function LinkDetailSheet({
             </SheetTitle>
             {link.domain && !isColor && !isRichText && (
               <div className="flex items-center gap-2 text-sm text-neutral-600">
-                <Globe className="h-4 w-4 text-neutral-400" />
+                <IconWorld className="h-4 w-4 text-neutral-400" />
                 <span>{link.domain}</span>
               </div>
             )}
             {isColor && link.color_value && (
               <div className="flex items-center gap-2 text-sm text-neutral-600 mt-2">
-                <Palette className="h-4 w-4 text-neutral-400" />
+                <IconWorld className="h-4 w-4 text-neutral-400" />
                 <code className="font-mono text-sm">{link.color_value}</code>
               </div>
             )}
             {isRichText && (
               <div className="flex items-center gap-2 text-sm text-neutral-600 mt-2">
-                <FileText className="h-4 w-4 text-neutral-400" />
+                <IconFile className="h-4 w-4 text-neutral-400" />
                 <span>Rich Text Note</span>
               </div>
             )}
@@ -296,18 +279,18 @@ export function LinkDetailSheet({
           {/* Key Metadata Section */}
           <div className="flex flex-wrap items-center gap-4 text-sm text-neutral-600">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-neutral-400" />
+              <IconWorld className="h-4 w-4 text-neutral-400" />
               <span>{formatDate(new Date(link.created_at))}</span>
             </div>
             {link.read_at && (
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-neutral-400" />
+                <IconWorld className="h-4 w-4 text-neutral-400" />
                 <span>Read {formatDate(new Date(link.read_at))}</span>
               </div>
             )}
             {isUrl && (
               <div className="flex items-center gap-2">
-                <ExternalLink className="h-4 w-4 text-neutral-400" />
+                <IconExternalLink className="h-4 w-4 text-neutral-400" />
                 <span>URL Link</span>
               </div>
             )}

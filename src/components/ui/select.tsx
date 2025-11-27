@@ -1,12 +1,7 @@
 "use client";
 
 import * as SelectPrimitive from "@radix-ui/react-select";
-import {
-  ChevronDownIcon,
-  ChevronsUpDownIcon,
-  ChevronUpIcon,
-  CheckIcon,
-} from "lucide-react";
+import { IconChevronUp, IconChevronDown, IconCheck } from "@tabler/icons-react";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
@@ -37,7 +32,9 @@ const SelectTrigger = React.forwardRef<
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <ChevronsUpDownIcon className="-me-1 size-4 opacity-72" />
+      <span className="-me-1 size-4 opacity-72">
+        <IconChevronDown className="h-4 w-4" />
+      </span>
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ));
@@ -55,7 +52,7 @@ const SelectScrollUpButton = React.forwardRef<
     )}
     {...props}
   >
-    <ChevronUpIcon className="size-4" />
+    <IconChevronUp className="h-4 w-4" />
   </SelectPrimitive.ScrollUpButton>
 ));
 SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName;
@@ -72,7 +69,7 @@ const SelectScrollDownButton = React.forwardRef<
     )}
     {...props}
   >
-    <ChevronDownIcon className="size-4" />
+    <IconChevronDown className="h-4 w-4" />
   </SelectPrimitive.ScrollDownButton>
 ));
 SelectScrollDownButton.displayName =
@@ -126,7 +123,7 @@ const SelectItem = React.forwardRef<
   >
     <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
       <SelectPrimitive.ItemIndicator>
-        <CheckIcon className="size-4" />
+        <IconCheck className="h-4 w-4" />
       </SelectPrimitive.ItemIndicator>
     </span>
 

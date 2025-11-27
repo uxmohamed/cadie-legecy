@@ -7,7 +7,7 @@ import {
   MenuTrigger,
 } from "@/components/ui/menu";
 import { Button } from "@/components/ui/button";
-import { X, Trash2, MoreHorizontal, Pin, PinOff } from "lucide-react";
+import { IconX, IconTrash, IconDots, IconMapPin } from "@tabler/icons-react";
 
 interface SelectionToolbarProps {
   selectedCount: number;
@@ -40,7 +40,7 @@ export function SelectionToolbar({
           onClick={onClearSelection}
           className="h-auto w-auto p-0 text-neutral-400 hover:text-neutral-900 hover:bg-transparent"
         >
-          <X className="h-4 w-4" />
+          <IconX className="h-4 w-4" />
         </Button>
       </div>
 
@@ -51,25 +51,25 @@ export function SelectionToolbar({
         onClick={onBatchDelete}
         className="h-auto gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-600"
       >
-        <Trash2 className="h-4 w-4" />
+        <IconTrash className="h-4 w-4" />
         Delete
       </Button>
 
       <Menu>
         <MenuTrigger className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors select-none">
-          <MoreHorizontal className="h-4 w-4" />
+          <IconDots className="h-4 w-4" />
           Actions
         </MenuTrigger>
         <MenuPopup align="center" side="top">
           {onBatchPin && (
             <MenuItem onClick={onBatchPin}>
-              <Pin className="h-4 w-4" />
+              <IconMapPin className="h-4 w-4" />
               Pin Selected
             </MenuItem>
           )}
           {onBatchUnpin && (
             <MenuItem onClick={onBatchUnpin}>
-              <PinOff className="h-4 w-4" />
+              <IconMapPin className="h-4 w-4" />
               Unpin Selected
             </MenuItem>
           )}

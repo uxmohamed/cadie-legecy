@@ -6,7 +6,7 @@ import type { Link } from "@/features/links/types";
 import { cn, formatDate } from "@/lib/utils";
 import { Favicon } from "@/components/ui/favicon";
 import { Button } from "@/components/ui/button";
-import { PinOff, FileText } from "lucide-react";
+import { IconGripVertical, IconFile, IconMapPin } from "@tabler/icons-react";
 import { extractTextFromRichText } from "@/lib/rich-text-utils";
 
 interface LinkListItemProps {
@@ -121,7 +121,7 @@ export function LinkListItem({
             />
           ) : isRichText ? (
             <div className="h-5 w-5 flex-shrink-0 rounded bg-neutral-100 flex items-center justify-center">
-              <FileText className="h-3.5 w-3.5 text-neutral-500" />
+              <IconFile className="h-3.5 w-3.5 text-neutral-500" />
             </div>
           ) : (
             <Favicon url={link.favicon_url || ""} domain={link.domain} />
@@ -161,7 +161,7 @@ export function LinkListItem({
                 className="h-8 w-8 hover:bg-neutral-300"
                 title="Unpin"
               >
-                <PinOff className="h-4 w-4" />
+                <IconMapPin className="h-4 w-4" />
               </Button>
             )}
           </div>
