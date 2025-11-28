@@ -4,8 +4,6 @@ import * as React from "react";
 import { toast } from "sonner";
 import type { Link, CreateLinkDTO, LinkFilters } from "@/features/links/types";
 import type { DetectedContent } from "@/lib/content-detector";
-import type { SerializedEditorState } from "lexical";
-
 
 /**
  * Hook for managing links
@@ -168,32 +166,6 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
         toast("Edit functionality coming soon");
     };
 
-    const handleSaveRichText = async (
-        editingLink: Link,
-        content: SerializedEditorState
-    ) => {
-        try {
-            const response = await fetch(`/api/links/${editingLink.id}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ rich_text_content: content }),
-            });
-
-            if (!response.ok) {
-                throw new Error("Failed to save rich text");
-            }
-
-            const { link: updatedLink } = await response.json();
-
-            setLinks((prev) =>
-                prev.map((l) => (l.id === editingLink.id ? updatedLink : l))
-            );
-        } catch (error) {
-            console.error("Error saving rich text:", error);
-            toast.error("Failed to save rich text");
-            throw error;
-        }
-    };
 
     const handlePinLink = React.useCallback(
         async (id: string) => {
@@ -267,6 +239,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
                     url: value,
                     title: value,
                     content_type: type,
+                    og_image_url: null,
                 };
 
                 if (type === "color") {
@@ -341,7 +314,6 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
         handleDeleteLink,
         handleCopyUrl,
         handleEditLink,
-        handleSaveRichText,
         handlePinLink,
         handleUnpinLink,
         handleBatchDeleteLinks,

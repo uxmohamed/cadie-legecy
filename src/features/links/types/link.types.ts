@@ -1,9 +1,9 @@
-import type { SerializedEditorState } from "lexical";
+
 
 /**
  * Content types supported by the application
  */
-export type ContentType = "url" | "color" | "text";
+export type ContentType = "url" | "color";
 
 /**
  * Link entity representing a saved item
@@ -18,11 +18,9 @@ export interface Link {
     content_type: ContentType;
     category_id: string | null;
     color_value: string | null;
-    rich_text_content: SerializedEditorState | null;
     favicon_url: string | null;
     og_image_url: string | null;
     description: string | null;
-    notes: string | null;
     ai_summary: string | null;
     ai_tags: string[] | null;
     ai_key_themes: Record<string, unknown> | null;
@@ -48,9 +46,8 @@ export interface CreateLinkDTO {
     content_type?: ContentType;
     category_id?: string | null;
     color_value?: string | null;
-    rich_text_content?: SerializedEditorState | null;
     favicon_url?: string | null;
-    og_image_url?: string | null;
+    og_image_url: string | null;
     description?: string | null;
 }
 
@@ -63,7 +60,6 @@ export interface UpdateLinkDTO {
     content_type?: ContentType;
     category_id?: string | null;
     color_value?: string | null;
-    rich_text_content?: SerializedEditorState | null;
     favicon_url?: string | null;
     og_image_url?: string | null;
     description?: string | null;

@@ -98,13 +98,6 @@ export class LinkService {
     }
 
     /**
-     * Update link's rich text content
-     */
-    async updateRichText(id: string, userId: string, content: any): Promise<Link> {
-        return this.linkRepository.update(id, userId, { rich_text_content: content });
-    }
-
-    /**
      * Batch create links
      * Returns summary of successes, duplicates, and failures
      */

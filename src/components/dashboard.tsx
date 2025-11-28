@@ -8,23 +8,16 @@ import { LinkList } from "@/components/link-list";
 import { LinkListSkeleton } from "@/components/link-list-skeleton";
 import { UserMenu } from "@/components/user-menu";
 import { Logo } from "@/components/logo";
-import { RichTextModal } from "@/components/rich-text-modal";
 import { Dock } from "@/components/dock";
 import { useCategories } from "@/hooks/use-categories";
-import { useShortcuts } from "@/components/shortcut-context";
 import { useLinks } from "@/features/links/hooks";
 import type { User } from "@supabase/supabase-js";
-import type { Link } from "@/features/links/types";
-import type { SerializedEditorState } from "lexical";
 
 interface DashboardProps {
   user: User;
 }
 
 export function Dashboard({ user }: DashboardProps) {
-  const [richTextModalOpen, setRichTextModalOpen] = React.useState(false);
-  const [editingLink, setEditingLink] = React.useState<Link | null>(null);
-
   const [selectedCategoryId, setSelectedCategoryId] = React.useState<string | null>(null);
   const [addModalOpen, setAddModalOpen] = React.useState(false);
   const { categories } = useCategories(!!user);
@@ -49,20 +42,12 @@ export function Dashboard({ user }: DashboardProps) {
     handleSearch,
     handleSubmit,
     handleDeleteLink,
-
     handleCopyUrl,
     handleEditLink,
-    handleSaveRichText,
     handlePinLink,
     handleUnpinLink,
     handleBatchDeleteLinks,
-
   } = useLinks(!!user, filters);
-
-  const onSaveRichText = async (content: SerializedEditorState) => {
-    if (!editingLink) return;
-    await handleSaveRichText(editingLink, content);
-  };
 
   return (
     <div className="flex h-screen flex-col bg-[var(--bg-l0-solid)]">
@@ -118,21 +103,6 @@ export function Dashboard({ user }: DashboardProps) {
         onCategorySelect={setSelectedCategoryId}
         onAddClick={() => setAddModalOpen(true)}
       />
-      {editingLink && (
-        <RichTextModal
-          isOpen={richTextModalOpen}
-          onClose={() => {
-            setRichTextModalOpen(false);
-            setEditingLink(null);
-          }}
-          onSave={onSaveRichText}
-          initialContent={
-            (editingLink.rich_text_content as SerializedEditorState | null) ||
-            undefined
-          }
-          linkId={editingLink.id}
-        />
-      )}
     </div>
   );
 }

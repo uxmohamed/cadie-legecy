@@ -1,34 +1,17 @@
-# Caddy - Personal Knowledge Management System
+# Caddy
 
-A modern, keyboard-friendly read-it-later application with rich text editing, Chrome extension, and automatic metadata extraction. Save links, colors, and text notes with a beautiful, minimal interface.
+A modern, keyboard-friendly read-it-later application with Chrome extension and automatic metadata extraction. Save links and colors with a beautiful, minimal interface.
 
-## ✨ Current Features
+## Features
 
 ### Core Functionality
 
-- 🔐 **Secure Authentication** - Supabase OTP with magic link authentication
-- 💾 **Personal Data Storage** - Your data stays in your own Supabase database with Row Level Security
-- 🎯 **Auto Metadata Extraction** - Automatically fetches titles, descriptions, favicons, and OG images
-- 🧹 **URL Cleaning** - Removes tracking parameters automatically
-- 🔍 **Real-time Search** - Filter through your saved items instantly
-- 📌 **Pin Important Items** - Keep your most important links at the top
-
-### Content Types
-
-- 🔗 **URLs** - Save any web link with automatic metadata enrichment
-- 🎨 **Colors** - Save color palettes with visual previews
-- 📝 **Rich Text Notes** - Full-featured rich text editor with auto-save
-
-### Rich Text Editor (Lexical)
-
-- **Text Formatting**: Bold, italic, underline, strikethrough, code
-- **Headings**: H1, H2, H3
-- **Lists**: Ordered and unordered lists
-- **Links**: Insert and edit hyperlinks
-- **Code Blocks**: Syntax-highlighted code with language selection
-- **Block Formatting**: Quotes, paragraphs
-- **Auto-save**: Changes save automatically as you type
-- **Keyboard Shortcuts**: Full keyboard support for power users
+- 🔗 **Link Management** - Save and organize web links with automatic metadata extraction
+- 🎨 **Color Palette** - Save and organize colors in any format (hex, rgb, hsl, oklch, etc.)
+- 🏷️ **Smart Organization** - Organize with categories and tags
+- 🔍 **Powerful Search** - Instant search across all your saved items
+- 📌 **Pin Important Items** - Keep frequently accessed items at the top
+- 🗑️ **Trash & Archive** - Safely delete items with 60-day recovery period
 
 ### Chrome Extension
 
@@ -135,16 +118,6 @@ For detailed extension setup, see the extension's README in the `extension/` dir
 - `Enter` - Open selected link in new tab
 - `Escape` - Clear input and blur
 
-### Rich Text Editor
-
-- `Cmd/Ctrl + B` - Bold
-- `Cmd/Ctrl + I` - Italic
-- `Cmd/Ctrl + U` - Underline
-- `Cmd/Ctrl + K` - Insert link
-- `Cmd/Ctrl + Shift + 7` - Ordered list
-- `Cmd/Ctrl + Shift + 8` - Unordered list
-- `/` - Open slash command menu
-
 ## 📁 Project Structure
 
 ```
@@ -162,12 +135,9 @@ caddy/
 │   │   ├── settings/             # Settings pages (API tokens)
 │   │   └── page.tsx              # Main dashboard
 │   ├── components/
-│   │   ├── blocks/               # Complex feature blocks
-│   │   │   └── editor-00/        # Rich text editor
 │   │   ├── ui/                   # Reusable UI components (40+)
-│   │   ├── capture-input.tsx     # Smart input for URLs/colors/text
+│   │   ├── capture-input.tsx     # Smart input for URLs/colors
 │   │   ├── link-list.tsx         # Main list component
-│   │   ├── rich-text-editor.tsx  # Lexical editor wrapper
 │   │   └── user-menu.tsx         # User menu with settings
 │   ├── lib/
 │   │   ├── supabase/             # Supabase clients
@@ -175,8 +145,7 @@ caddy/
 │   │   ├── auth-middleware.ts    # Authentication middleware
 │   │   ├── canonicalize.ts       # URL canonicalization
 │   │   ├── content-detector.ts   # Smart content type detection
-│   │   ├── metadata.ts           # Metadata extraction
-│   │   └── rich-text-utils.ts    # Rich text helper functions
+│   │   └── metadata.ts           # Metadata extraction
 │   └── types/                    # TypeScript type definitions
 ├── extension/                     # Chrome extension
 │   ├── src/
@@ -199,7 +168,6 @@ caddy/
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS v4
 - **UI Components**: shadcn/ui (Radix UI primitives)
-- **Rich Text**: Lexical Editor
 - **Icons**: Lucide React
 - **Notifications**: Sonner (toast)
 
@@ -367,10 +335,10 @@ npm run extension:install    # Install extension dependencies
 
 ## 🚀 Deployment
 
-### Vercel (Recommended)
+### Cloudflare Pages
 
 1. **Push to GitHub**
-2. **Import to Vercel**
+2. **Import to Cloudflare Pages**
 3. **Set environment variables**:
    ```
    NEXT_PUBLIC_SUPABASE_URL
@@ -386,7 +354,7 @@ The app is optimized for Vercel with automatic deployments on push.
 ### Planned Features
 
 - 📂 **Visual Category Management** - UI for organizing links
-- 🔍 **Full-text Search** - Search through page content and notes
+- 🔍 **Full-text Search** - Search through page content
 - 📊 **Analytics** - Track reading habits and saved items
 - 🤖 **AI Summaries** - Automatic summarization of saved articles
 - 🏷️ **Auto-tagging with AI** - Smart categorization
@@ -400,7 +368,6 @@ The app is optimized for Vercel with automatic deployments on push.
 ### Recently Completed
 
 - ✅ Chrome Extension with full authentication
-- ✅ Rich text editor with auto-save
 - ✅ API token management
 - ✅ Pin/unpin functionality
 - ✅ Archive functionality
@@ -456,4 +423,4 @@ MIT License - feel free to use this project for personal or commercial purposes.
 
 ---
 
-**Built with ❤️ using Next.js, Supabase, and Lexical**
+**Built with ❤️ using Next.js and Supabase**

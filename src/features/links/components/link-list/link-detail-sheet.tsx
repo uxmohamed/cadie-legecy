@@ -12,8 +12,6 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Editor } from "@/components/blocks/editor-00/editor";
-import type { SerializedEditorState } from "lexical";
 import {
   ExternalLink,
   Copy,
@@ -21,8 +19,6 @@ import {
   ChevronDown,
   Calendar,
   Clock,
-  Video,
-  FileText,
   Palette,
   Globe,
   MoreVertical,
@@ -33,7 +29,6 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { extractTextFromRichText } from "@/lib/rich-text-utils";
 import {
   Menu,
   MenuTrigger,
@@ -93,7 +88,6 @@ export function LinkDetailSheet({
   const canGoNext = currentIndex < links.length - 1;
 
   const isColor = link.content_type === "color";
-  const isRichText = link.content_type === "text";
   const isUrl = link.content_type === "url";
 
   const handleCopyUrl = async () => {
@@ -265,9 +259,7 @@ export function LinkDetailSheet({
             />
           ) : (
             <div className="w-full aspect-square rounded-lg bg-[var(--bg-l1-solid)] border border-[var(--border-primary)] flex items-center justify-center">
-              {isRichText ? (
-                <FileText className="h-16 w-16 text-[var(--text-tertiary)]" />
-              ) : link.domain ? (
+              {link.domain ? (
                 <div className="h-16 w-16">
                   <Favicon
                     url={link.favicon_url || ""}
@@ -286,7 +278,7 @@ export function LinkDetailSheet({
             <SheetTitle className="text-2xl font-bold text-[var(--text-primary)] mb-2">
               {link.title}
             </SheetTitle>
-            {link.domain && !isColor && !isRichText && (
+            {link.domain && !isColor && (
               <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                 <Globe className="h-4 w-4 text-[var(--text-tertiary)]" />
                 <span>{link.domain}</span>
@@ -296,12 +288,6 @@ export function LinkDetailSheet({
               <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)] mt-2">
                 <Palette className="h-4 w-4 text-[var(--text-tertiary)]" />
                 <code className="font-mono text-sm">{link.color_value}</code>
-              </div>
-            )}
-            {isRichText && (
-              <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)] mt-2">
-                <FileText className="h-4 w-4 text-[var(--text-tertiary)]" />
-                <span>Rich Text Note</span>
               </div>
             )}
           </div>
@@ -357,27 +343,7 @@ export function LinkDetailSheet({
             </div>
           )}
 
-          {/* Rich Text Content */}
-          {isRichText && link.rich_text_content && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-[var(--text-primary)]">Content</h3>
-              <div className="border border-[var(--border-primary)] rounded-lg p-4 bg-[var(--bg-l1-solid)] min-h-[200px]">
-                <Editor
-                  editorSerializedState={link.rich_text_content as SerializedEditorState}
-                />
-              </div>
-            </div>
-          )}
 
-          {/* Notes */}
-          {link.notes && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-[var(--text-primary)]">Notes</h3>
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
-                {link.notes}
-              </p>
-            </div>
-          )}
 
           {/* AI Summary */}
           {link.ai_summary && (

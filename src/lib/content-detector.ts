@@ -1,4 +1,4 @@
-export type ContentType = "url" | "color" | "text";
+export type ContentType = "url" | "color";
 
 export interface DetectedContent {
   type: ContentType;
@@ -6,7 +6,7 @@ export interface DetectedContent {
 }
 
 const URL_PATTERN =
-  /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i;
+  /^(https?:\/\/)?([\ da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i;
 
 const HEX_COLOR_PATTERN = /^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
 
@@ -74,10 +74,6 @@ const NAMED_COLORS = new Set([
 export function detectContentType(input: string): DetectedContent {
   const trimmed = input.trim();
 
-  if (!trimmed) {
-    return { type: "text", value: trimmed };
-  }
-
   // Check for hex color (with or without #) - must check before URL
   if (HEX_COLOR_PATTERN.test(trimmed)) {
     const normalizedColor = trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
@@ -114,7 +110,7 @@ export function detectContentType(input: string): DetectedContent {
     return { type: "color", value: trimmed.toLowerCase() };
   }
 
-  // Check for URL
+  // Check for URL or default to URL
   if (
     trimmed.startsWith("http://") ||
     trimmed.startsWith("https://") ||
@@ -125,8 +121,9 @@ export function detectContentType(input: string): DetectedContent {
     return { type: "url", value: normalizedUrl };
   }
 
-  // Default to text
-  return { type: "text", value: trimmed };
+  // Default to URL for any other input
+  const normalizedUrl = normalizeUrl(trimmed);
+  return { type: "url", value: normalizedUrl };
 }
 
 function normalizeUrl(url: string): string {

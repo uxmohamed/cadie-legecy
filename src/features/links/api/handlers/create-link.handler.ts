@@ -43,7 +43,6 @@ export class CreateLinkHandler {
                 favicon_url,
                 og_image_url,
                 description,
-                rich_text_content,
             } = body;
 
             if (!url || !title) {
@@ -63,7 +62,6 @@ export class CreateLinkHandler {
                 favicon_url: favicon_url || null,
                 og_image_url: og_image_url || null,
                 description: description || null,
-                rich_text_content: rich_text_content || null,
             };
 
             // Create link using service

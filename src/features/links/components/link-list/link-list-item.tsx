@@ -2,8 +2,7 @@ import type { Link } from "@/features/links/types";
 import { cn, formatDate } from "@/lib/utils";
 import { Favicon } from "@/components/ui/favicon";
 import { Button } from "@/components/ui/button";
-import { PinOff, FileText } from "lucide-react";
-import { extractTextFromRichText } from "@/lib/rich-text-utils";
+import { PinOff } from "lucide-react";
 
 interface LinkListItemProps {
   link: Link;
@@ -53,11 +52,6 @@ export function LinkListItem({
   isDragging,
 }: LinkListItemProps) {
   const isColor = link.content_type === "color";
-  const isRichText = link.content_type === "text";
-
-  const richTextPreview = isRichText
-    ? extractTextFromRichText(link.rich_text_content) || link.title
-    : null;
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.metaKey || e.ctrlKey) {
@@ -101,9 +95,9 @@ export function LinkListItem({
     >
       <a
         ref={linkRef}
-        href={isColor || isRichText ? "#" : link.url}
-        target={isColor || isRichText ? undefined : "_blank"}
-        rel={isColor || isRichText ? undefined : "noopener noreferrer"}
+        href={isColor ? "#" : link.url}
+        target={isColor ? undefined : "_blank"}
+        rel={isColor ? undefined : "noopener noreferrer"}
         onClick={(e) => e.preventDefault()}
         onFocus={() => onFocus(index)}
         className="flex min-w-0 items-center gap-3 focus:outline-none select-none"
@@ -114,21 +108,15 @@ export function LinkListItem({
             className="h-5 w-5 flex-shrink-0 rounded-full border border-[var(--border-secondary)]"
             style={{ backgroundColor: link.color_value || link.title }}
           />
-        ) : isRichText ? (
-          <div className="h-5 w-5 flex-shrink-0 rounded bg-[var(--bg-l1-solid)] flex items-center justify-center">
-            <FileText className="h-3.5 w-3.5 text-[var(--text-secondary)]" />
-          </div>
         ) : (
           <Favicon url={link.favicon_url || ""} domain={link.domain} />
         )}
         <div className="min-w-0 flex-1">
           <div className="truncate text-[15px] text-[var(--text-primary)]">
-            {isRichText && richTextPreview
-              ? richTextPreview
-              : link.title || link.url}
+            {link.title || link.url}
           </div>
           <div className="truncate text-sm text-[var(--text-tertiary)]">
-            {isRichText ? "Rich text" : link.domain}
+            {link.domain}
           </div>
         </div>
       </a>

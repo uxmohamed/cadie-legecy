@@ -1,4 +1,3 @@
-import type { SerializedEditorState } from "lexical";
 
 export interface LinkMetadata {
   title?: string;
@@ -20,8 +19,6 @@ export interface Link {
   description?: string | null;
   content_type: string;
   color_value?: string | null;
-  rich_text_content?: SerializedEditorState | null;
-  notes?: string | null;
   ai_summary?: string | null;
   ai_tags?: string[] | null;
   ai_key_themes?: Record<string, unknown> | null;

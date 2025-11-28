@@ -1,7 +1,6 @@
 import type { ILinkRepository } from "./link.repository.interface";
 import type { Link, CreateLinkDTO, UpdateLinkDTO, LinkFilters } from "../types/link.types";
 import { createClient } from "@/lib/supabase/server";
-import { createInitialRichTextState } from "@/lib/rich-text-utils";
 
 /**
  * Supabase implementation of the Link Repository
@@ -98,20 +97,12 @@ export class SupabaseLinkRepository implements ILinkRepository {
 
         if (contentType === "color") {
             domain = "color";
-        } else if (contentType === "text") {
-            domain = "text";
         } else {
             try {
                 domain = new URL(data.url).hostname.replace("www.", "");
             } catch {
                 domain = data.url;
             }
-        }
-
-        // For text content type, create initial rich text state if not provided
-        let richTextContent = data.rich_text_content || null;
-        if (contentType === "text" && !richTextContent) {
-            richTextContent = createInitialRichTextState(data.title);
         }
 
         const { data: link, error } = await supabase
@@ -125,7 +116,6 @@ export class SupabaseLinkRepository implements ILinkRepository {
                 content_type: contentType,
                 category_id: data.category_id || null,
                 color_value: data.color_value || null,
-                rich_text_content: richTextContent,
                 favicon_url: data.favicon_url || null,
                 og_image_url: data.og_image_url || null,
                 description: data.description || null,
