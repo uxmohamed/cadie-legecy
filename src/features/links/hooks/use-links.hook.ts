@@ -72,14 +72,13 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
             } else {
                 toast.error("Failed to refresh links");
             }
-        } catch (error) {
-            // Ignore abort errors
-            if (error instanceof Error && error.name === 'AbortError') {
-                return;
+            } catch (error) {
+                // Ignore abort errors
+                if (error instanceof Error && error.name === 'AbortError') {
+                    return;
+                }
+                toast.error("Failed to refresh links");
             }
-            console.error("Error refreshing links:", error);
-            toast.error("Failed to refresh links");
-        }
     }, [buildQueryString]);
 
     // Track if this is the initial mount to avoid duplicate fetches
@@ -89,11 +88,26 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
     React.useEffect(() => {
         if (!isAuthenticated) return;
 
+        // Cancel any in-flight request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+
+        // Create new AbortController for this request
+        const abortController = new AbortController();
+        abortControllerRef.current = abortController;
+
         async function fetchLinks() {
             setFetchingLinks(true);
             try {
                 const queryString = buildQueryString();
-                const response = await fetch(`/api/links?${queryString}`);
+                const response = await fetch(`/api/links?${queryString}`, {
+                    signal: abortController.signal,
+                });
+                
+                // Check if request was aborted
+                if (abortController.signal.aborted) return;
+
                 if (response.ok) {
                     const data = await response.json();
                     setLinks(data.links || []);
@@ -104,7 +118,10 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
                     toast.error("Failed to load links");
                 }
             } catch (error) {
-                console.error("Error fetching links:", error);
+                // Ignore abort errors
+                if (error instanceof Error && error.name === 'AbortError') {
+                    return;
+                }
                 toast.error("Failed to load links");
             } finally {
                 setFetchingLinks(false);
@@ -114,6 +131,18 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
 
         fetchLinks();
     }, [isAuthenticated, buildQueryString]);
+
+    // Store filters in ref to avoid recreating subscription on filter changes
+    const filtersRef = React.useRef(filters);
+    React.useEffect(() => {
+        filtersRef.current = filters;
+    }, [filters]);
+
+    // Store setLinks in ref to avoid stale closure in subscription callback
+    const setLinksRef = React.useRef(setLinks);
+    React.useEffect(() => {
+        setLinksRef.current = setLinks;
+    }, []);
 
     // Supabase Realtime subscription for real-time updates (when extension saves a link)
     // Only listens to INSERT events - no refresh calls, just real-time updates
@@ -129,22 +158,20 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
                 const { data: { user }, error: authError } = await supabase.auth.getUser();
                 
                 if (authError) {
-                    console.error("Realtime: Auth error", authError);
                     return;
                 }
                 
                 if (!user) {
-                    console.warn("Realtime: No user found");
                     return;
                 }
 
                 if (!isMounted) return;
 
-                console.log("Realtime: Setting up subscription for user", user.id);
+                // Store user ID for use in callback
+                const userId = user.id;
 
-                // Create channel for real-time updates
-                const channelName = `links-realtime-${user.id}`;
-                console.log("Realtime: Creating channel", channelName);
+                // Create unique channel name with timestamp to avoid conflicts
+                const channelName = `links-realtime-${userId}-${Date.now()}`;
                 
                 channel = supabase
                     .channel(channelName)
@@ -154,19 +181,26 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
                             event: "INSERT",
                             schema: "public",
                             table: "links",
-                            filter: `user_id=eq.${user.id}`,
                         },
                         (payload) => {
-                            console.log("Realtime: Received INSERT event", payload);
+                            // Use ref to get latest filters and setLinks
+                            if (!isMounted) return;
+                            
                             const newLink = payload.new as Link;
+                            const currentFilters = filtersRef.current;
+                            
+                            // Filter by user_id in code (since we removed DB filter to avoid RLS issues)
+                            if (newLink.user_id !== userId) {
+                                return;
+                            }
                             
                             // Check if link matches current filters
                             const matchesFilters = () => {
-                                if (filters?.category_id && newLink.category_id !== filters.category_id) {
+                                if (currentFilters?.category_id && newLink.category_id !== currentFilters.category_id) {
                                     return false;
                                 }
-                                if (filters?.is_deleted !== undefined) {
-                                    if (filters.is_deleted) {
+                                if (currentFilters?.is_deleted !== undefined) {
+                                    if (currentFilters.is_deleted) {
                                         // Trash view - show deleted or archived
                                         return newLink.is_deleted || newLink.is_archived;
                                     } else {
@@ -180,35 +214,20 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
 
                             // Only add if matches current filters and doesn't already exist
                             if (matchesFilters()) {
-                                setLinks((prev) => {
+                                setLinksRef.current((prev) => {
                                     // Check if link already exists (avoid duplicates)
                                     if (prev.some((l) => l.id === newLink.id)) {
-                                        console.log("Realtime: Link already exists, skipping", newLink.id);
                                         return prev;
                                     }
-                                    console.log("Realtime: Adding new link", newLink.id);
                                     // Add new link at the beginning (newest first)
                                     return [newLink, ...prev];
                                 });
-                            } else {
-                                console.log("Realtime: Link doesn't match filters, skipping", newLink.id);
                             }
                         }
                     )
-                    .subscribe((status) => {
-                        console.log("Realtime: Subscription status", status);
-                        if (status === "SUBSCRIBED") {
-                            console.log("Realtime: Successfully subscribed to links changes");
-                        } else if (status === "CHANNEL_ERROR") {
-                            console.error("Realtime: Channel error - Check RLS policies and Realtime settings");
-                        } else if (status === "TIMED_OUT") {
-                            console.error("Realtime: Subscription timed out - Check network connection and Realtime server");
-                        } else if (status === "CLOSED") {
-                            console.warn("Realtime: Channel closed");
-                        }
-                    });
+                    .subscribe();
             } catch (error) {
-                console.error("Realtime: Error setting up subscription", error);
+                // Silently fail - Realtime is optional for functionality
             }
         }
 
@@ -218,13 +237,12 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
         return () => {
             isMounted = false;
             if (channel) {
-                console.log("Realtime: Cleaning up subscription");
-                supabase.removeChannel(channel).catch((error) => {
-                    console.error("Realtime: Error removing channel", error);
+                supabase.removeChannel(channel).catch(() => {
+                    // Ignore cleanup errors
                 });
             }
         };
-    }, [isAuthenticated, filters]);
+    }, [isAuthenticated]); // Only depend on isAuthenticated, not filters
 
     // Filter links based on search query
     const filteredLinks = React.useMemo(() => {
@@ -267,7 +285,6 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
 
                 toast.success("Link deleted");
             } catch (error) {
-                console.error("Error deleting link:", error);
                 toast.error("Failed to delete link");
                 await refreshLinks();
             }
@@ -294,7 +311,6 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
 
                 toast.success(`${ids.length} links deleted`);
             } catch (error) {
-                console.error("Error deleting links:", error);
                 toast.error("Failed to delete some links");
                 await refreshLinks();
             }
@@ -307,7 +323,6 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
             await navigator.clipboard.writeText(url);
             toast.success("URL copied to clipboard");
         } catch (error) {
-            console.error("Failed to copy URL:", error);
             toast.error("Failed to copy URL");
         }
     };
@@ -339,7 +354,6 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
 
                 toast.success("Link pinned");
             } catch (error) {
-                console.error("Error pinning link:", error);
                 toast.error("Failed to pin link");
                 await refreshLinks();
             }
@@ -369,7 +383,6 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
 
                 toast.success("Link unpinned");
             } catch (error) {
-                console.error("Error unpinning link:", error);
                 toast.error("Failed to unpin link");
                 await refreshLinks();
             }
@@ -445,7 +458,6 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
             // Show toast notifications
             showSubmitToast(items.length, successCount, duplicateCount, failureCount, items[0]?.type);
         } catch (error) {
-            console.error("Error creating links:", error);
             toast.error(
                 error instanceof Error ? error.message : "Failed to save"
             );
