@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
 import type { Link, CreateLinkDTO, LinkFilters } from "@/features/links/types";
 import type { DetectedContent } from "@/lib/content-detector";
 
@@ -30,22 +31,59 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
         return params.toString();
     }, [filters]);
 
+    // AbortController ref to cancel in-flight requests
+    const abortControllerRef = React.useRef<AbortController | null>(null);
+
+    // Cleanup: Cancel any in-flight requests on unmount
+    React.useEffect(() => {
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, []);
+
     // Refresh links from server
     const refreshLinks = React.useCallback(async () => {
+        // Cancel any in-flight request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+
+        // Create new AbortController for this request
+        const abortController = new AbortController();
+        abortControllerRef.current = abortController;
+
         try {
             const queryString = buildQueryString();
-            const response = await fetch(`/api/links?${queryString}`);
+            const response = await fetch(`/api/links?${queryString}`, {
+                signal: abortController.signal,
+            });
+            
+            // Check if request was aborted
+            if (abortController.signal.aborted) return;
+
             if (response.ok) {
                 const data = await response.json();
                 setLinks(data.links || []);
             } else if (response.status === 401) {
                 // Unauthorized: show error toast
                 toast.error('Unauthorized - please log in');
+            } else {
+                toast.error("Failed to refresh links");
             }
         } catch (error) {
+            // Ignore abort errors
+            if (error instanceof Error && error.name === 'AbortError') {
+                return;
+            }
             console.error("Error refreshing links:", error);
+            toast.error("Failed to refresh links");
         }
     }, [buildQueryString]);
+
+    // Track if this is the initial mount to avoid duplicate fetches
+    const isInitialMountRef = React.useRef(true);
 
     // Fetch links on mount or when filters change
     React.useEffect(() => {
@@ -70,36 +108,123 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
                 toast.error("Failed to load links");
             } finally {
                 setFetchingLinks(false);
+                isInitialMountRef.current = false;
             }
         }
 
         fetchLinks();
     }, [isAuthenticated, buildQueryString]);
 
-    // Refresh links when window regains focus or becomes visible (for real-time updates from extension)
+    // Supabase Realtime subscription for real-time updates (when extension saves a link)
+    // Only listens to INSERT events - no refresh calls, just real-time updates
     React.useEffect(() => {
         if (!isAuthenticated) return;
 
-        const handleVisibilityChange = () => {
-            // Refresh links when tab becomes visible (user switches back to the tab)
-            if (!document.hidden) {
-                refreshLinks();
+        const supabase = createClient();
+        let channel: ReturnType<typeof supabase.channel> | null = null;
+        let isMounted = true;
+
+        async function setupSubscription() {
+            try {
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                
+                if (authError) {
+                    console.error("Realtime: Auth error", authError);
+                    return;
+                }
+                
+                if (!user) {
+                    console.warn("Realtime: No user found");
+                    return;
+                }
+
+                if (!isMounted) return;
+
+                console.log("Realtime: Setting up subscription for user", user.id);
+
+                // Create channel for real-time updates
+                const channelName = `links-realtime-${user.id}`;
+                console.log("Realtime: Creating channel", channelName);
+                
+                channel = supabase
+                    .channel(channelName)
+                    .on(
+                        "postgres_changes",
+                        {
+                            event: "INSERT",
+                            schema: "public",
+                            table: "links",
+                            filter: `user_id=eq.${user.id}`,
+                        },
+                        (payload) => {
+                            console.log("Realtime: Received INSERT event", payload);
+                            const newLink = payload.new as Link;
+                            
+                            // Check if link matches current filters
+                            const matchesFilters = () => {
+                                if (filters?.category_id && newLink.category_id !== filters.category_id) {
+                                    return false;
+                                }
+                                if (filters?.is_deleted !== undefined) {
+                                    if (filters.is_deleted) {
+                                        // Trash view - show deleted or archived
+                                        return newLink.is_deleted || newLink.is_archived;
+                                    } else {
+                                        // Normal view - exclude deleted and archived
+                                        return !newLink.is_deleted && !newLink.is_archived;
+                                    }
+                                }
+                                // Default: show non-deleted, non-archived
+                                return !newLink.is_deleted && !newLink.is_archived;
+                            };
+
+                            // Only add if matches current filters and doesn't already exist
+                            if (matchesFilters()) {
+                                setLinks((prev) => {
+                                    // Check if link already exists (avoid duplicates)
+                                    if (prev.some((l) => l.id === newLink.id)) {
+                                        console.log("Realtime: Link already exists, skipping", newLink.id);
+                                        return prev;
+                                    }
+                                    console.log("Realtime: Adding new link", newLink.id);
+                                    // Add new link at the beginning (newest first)
+                                    return [newLink, ...prev];
+                                });
+                            } else {
+                                console.log("Realtime: Link doesn't match filters, skipping", newLink.id);
+                            }
+                        }
+                    )
+                    .subscribe((status) => {
+                        console.log("Realtime: Subscription status", status);
+                        if (status === "SUBSCRIBED") {
+                            console.log("Realtime: Successfully subscribed to links changes");
+                        } else if (status === "CHANNEL_ERROR") {
+                            console.error("Realtime: Channel error - Check RLS policies and Realtime settings");
+                        } else if (status === "TIMED_OUT") {
+                            console.error("Realtime: Subscription timed out - Check network connection and Realtime server");
+                        } else if (status === "CLOSED") {
+                            console.warn("Realtime: Channel closed");
+                        }
+                    });
+            } catch (error) {
+                console.error("Realtime: Error setting up subscription", error);
+            }
+        }
+
+        setupSubscription();
+
+        // Cleanup function
+        return () => {
+            isMounted = false;
+            if (channel) {
+                console.log("Realtime: Cleaning up subscription");
+                supabase.removeChannel(channel).catch((error) => {
+                    console.error("Realtime: Error removing channel", error);
+                });
             }
         };
-
-        const handleFocus = () => {
-            // Also refresh on window focus as a fallback
-            refreshLinks();
-        };
-
-        document.addEventListener("visibilitychange", handleVisibilityChange);
-        window.addEventListener("focus", handleFocus);
-        
-        return () => {
-            document.removeEventListener("visibilitychange", handleVisibilityChange);
-            window.removeEventListener("focus", handleFocus);
-        };
-    }, [isAuthenticated, refreshLinks]);
+    }, [isAuthenticated, filters]);
 
     // Filter links based on search query
     const filteredLinks = React.useMemo(() => {
