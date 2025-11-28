@@ -110,6 +110,8 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
 
                 if (response.ok) {
                     const data = await response.json();
+                    // Replace links completely - server is source of truth
+                    // Realtime will add new links on top, but fetchLinks should replace
                     setLinks(data.links || []);
                 } else if (response.status === 401) {
                     // Unauthorized: show error toast
@@ -144,13 +146,27 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
         setLinksRef.current = setLinks;
     }, []);
 
+    // Store channel ref to ensure proper cleanup and prevent leaks
+    const channelRef = React.useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null);
+    const userIdRef = React.useRef<string | null>(null);
+
     // Supabase Realtime subscription for real-time updates (when extension saves a link)
     // Only listens to INSERT events - no refresh calls, just real-time updates
     React.useEffect(() => {
-        if (!isAuthenticated) return;
+        if (!isAuthenticated) {
+            // Clean up channel when not authenticated
+            if (channelRef.current) {
+                const supabase = createClient();
+                supabase.removeChannel(channelRef.current).catch(() => {
+                    // Ignore cleanup errors
+                });
+                channelRef.current = null;
+            }
+            userIdRef.current = null;
+            return;
+        }
 
         const supabase = createClient();
-        let channel: ReturnType<typeof supabase.channel> | null = null;
         let isMounted = true;
 
         async function setupSubscription() {
@@ -158,10 +174,16 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
                 const { data: { user }, error: authError } = await supabase.auth.getUser();
                 
                 if (authError) {
+                    if (process.env.NODE_ENV === 'development') {
+                        console.error("Realtime: Auth error", authError);
+                    }
                     return;
                 }
                 
                 if (!user) {
+                    if (process.env.NODE_ENV === 'development') {
+                        console.warn("Realtime: No user found");
+                    }
                     return;
                 }
 
@@ -169,11 +191,18 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
 
                 // Store user ID for use in callback
                 const userId = user.id;
+                userIdRef.current = userId;
 
-                // Create unique channel name with timestamp to avoid conflicts
-                const channelName = `links-realtime-${userId}-${Date.now()}`;
+                // Remove existing channel if any (from previous subscription)
+                if (channelRef.current) {
+                    await supabase.removeChannel(channelRef.current);
+                    channelRef.current = null;
+                }
+
+                // Create stable channel name (without timestamp to reuse same channel)
+                const channelName = `links-realtime-${userId}`;
                 
-                channel = supabase
+                const channel = supabase
                     .channel(channelName)
                     .on(
                         "postgres_changes",
@@ -188,9 +217,10 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
                             
                             const newLink = payload.new as Link;
                             const currentFilters = filtersRef.current;
+                            const currentUserId = userIdRef.current;
                             
                             // Filter by user_id in code (since we removed DB filter to avoid RLS issues)
-                            if (newLink.user_id !== userId) {
+                            if (!currentUserId || newLink.user_id !== currentUserId) {
                                 return;
                             }
                             
@@ -225,9 +255,21 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
                             }
                         }
                     )
-                    .subscribe();
+                    .subscribe((status) => {
+                        if (status === "SUBSCRIBED") {
+                            // Successfully subscribed
+                        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+                            if (process.env.NODE_ENV === 'development') {
+                                console.error("Realtime: Subscription failed", status);
+                            }
+                        }
+                    });
+
+                channelRef.current = channel;
             } catch (error) {
-                // Silently fail - Realtime is optional for functionality
+                if (process.env.NODE_ENV === 'development') {
+                    console.error("Realtime: Error setting up subscription", error);
+                }
             }
         }
 
@@ -236,11 +278,13 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
         // Cleanup function
         return () => {
             isMounted = false;
-            if (channel) {
-                supabase.removeChannel(channel).catch(() => {
+            if (channelRef.current) {
+                supabase.removeChannel(channelRef.current).catch(() => {
                     // Ignore cleanup errors
                 });
+                channelRef.current = null;
             }
+            userIdRef.current = null;
         };
     }, [isAuthenticated]); // Only depend on isAuthenticated, not filters
 
