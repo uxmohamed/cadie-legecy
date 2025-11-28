@@ -29,7 +29,6 @@ export interface Link {
   is_favorite: boolean;
   is_pinned: boolean;
   read_at?: string | null;
-  sort_order: number;
   created_at: string;
   updated_at: string;
 }
@@ -41,7 +40,6 @@ export interface Category {
   color: string;
   icon?: string | null;
   description?: string | null;
-  sort_order: number;
   created_at: string;
   updated_at: string;
   count?: number;

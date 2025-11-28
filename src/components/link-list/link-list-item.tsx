@@ -7,12 +7,9 @@ import { cn, formatDate } from "@/lib/utils";
 import { Favicon } from "@/components/ui/favicon";
 import { Button } from "@/components/ui/button";
 import {
-  IconGripVertical,
   IconFile,
   IconPinnedOff,
 } from "@tabler/icons-react";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 
 interface LinkListItemProps {
   link: Link;
@@ -63,16 +60,6 @@ export function LinkListItem({
 }: LinkListItemProps) {
   const isColor = link.content_type === "color";
 
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({
-      id: link.id,
-    });
-
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.metaKey || e.ctrlKey) {
       if (e.key === "c") {
@@ -95,23 +82,7 @@ export function LinkListItem({
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="group/item relative flex items-center gap-2 w-full"
-    >
-      <div
-        {...attributes}
-        {...listeners}
-        className="opacity-0 group-hover/item:opacity-100 cursor-grab active:cursor-grabbing p-1 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-opacity flex-shrink-0"
-        onClick={(e) => e.stopPropagation()}
-        onMouseDown={(e) => {
-          e.stopPropagation();
-        }}
-      >
-        <IconGripVertical className="w-4 h-4" />
-      </div>
-
+    <div className="group/item relative flex items-center gap-2 w-full">
       <div
         onMouseDown={(e) => onMouseDown(index, e)}
         onClick={(e) => onClick(e, link, index)}

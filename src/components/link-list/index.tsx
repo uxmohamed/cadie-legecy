@@ -3,21 +3,6 @@
 import * as React from "react";
 import type { Link } from "@/features/links/types";
 import { toast } from "sonner";
-import { Menu, MenuPopup, MenuTrigger, MenuItem } from "@/components/ui/menu";
-import { ChevronDown } from "lucide-react";
-import {
-  DndContext,
-  closestCenter,
-  type DragEndEvent,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
 
 import { useSelection } from "./use-selection";
 import { useKeyboardNavigation } from "./use-keyboard-navigation";
@@ -27,15 +12,7 @@ import { LinkContextMenu } from "./link-context-menu";
 import { SelectionToolbar } from "./selection-toolbar";
 import { LinkDetailSheet } from "./link-detail-sheet";
 import type { LinkListProps, ContextMenuState } from "./types";
-
-type SortOption = "date-desc" | "date-asc" | "alpha-asc" | "alpha-desc";
-
-const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: "date-desc", label: "Date ↓ (Newest first)" },
-  { value: "date-asc", label: "Date ↑ (Oldest first)" },
-  { value: "alpha-asc", label: "A → Z" },
-  { value: "alpha-desc", label: "Z → A" },
-];
+import { Menu, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 
 export function LinkList({
   links,
@@ -55,48 +32,18 @@ export function LinkList({
   );
   const [selectedLink, setSelectedLink] = React.useState<Link | null>(null);
   const [sheetOpen, setSheetOpen] = React.useState(false);
-  const [sortOption, setSortOption] = React.useState<SortOption>("date-desc");
 
   const linkRefs = React.useRef<(HTMLAnchorElement | null)[]>([]);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   const previousLengthRef = React.useRef(links.length);
 
-  const sensors = useSensors(
-    useSensor(MouseSensor, {
-      activationConstraint: {
-        distance: 5,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 150,
-        tolerance: 5,
-      },
-    })
-  );
-
-  // Sort links based on selected option
+  // Sort links by creation date (newest first)
   const sortedLinks = React.useMemo(() => {
     const sorted = [...links];
-    
-    switch (sortOption) {
-      case "date-desc":
-        sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        break;
-      case "date-asc":
-        sorted.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-        break;
-      case "alpha-asc":
-        sorted.sort((a, b) => (a.title || a.url).localeCompare(b.title || b.url));
-        break;
-      case "alpha-desc":
-        sorted.sort((a, b) => (b.title || b.url).localeCompare(a.title || a.url));
-        break;
-    }
-    
+    sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     return sorted;
-  }, [links, sortOption]);
+  }, [links]);
 
   // Helper to get flattened list of links for index calculation
   const displayLinks = React.useMemo(() => {
@@ -105,14 +52,6 @@ export function LinkList({
     const unpinned = sortedLinks.filter((l) => !l.is_pinned);
     return [...pinned, ...unpinned];
   }, [sortedLinks, isTrashView]);
-
-  const [localOrder, setLocalOrder] = React.useState<string[]>(() =>
-    displayLinks.map((link) => link.id)
-  );
-
-  React.useEffect(() => {
-    setLocalOrder(displayLinks.map((link) => link.id));
-  }, [displayLinks]);
 
   const {
     selectedIds,
@@ -139,24 +78,7 @@ export function LinkList({
     previousLengthRef.current = displayLinks.length;
   }, [displayLinks.length, focusedIndex]);
 
-  const handleDragEnd = React.useCallback(
-    (event: DragEndEvent) => {
-      const { active, over } = event;
-      if (!over || active.id === over.id) return;
 
-      const oldIndex = localOrder.indexOf(String(active.id));
-      const newIndex = localOrder.indexOf(String(over.id));
-
-      if (oldIndex === -1 || newIndex === -1) return;
-
-      const updatedOrder = [...localOrder];
-      const [moved] = updatedOrder.splice(oldIndex, 1);
-      updatedOrder.splice(newIndex, 0, moved);
-
-      setLocalOrder(updatedOrder);
-    },
-    [localOrder]
-  );
 
   // Batch Actions
 
@@ -236,7 +158,6 @@ export function LinkList({
   const pinnedLinks = isTrashView ? [] : displayLinks.filter((link) => link.is_pinned);
   const unpinnedLinks = isTrashView ? displayLinks : displayLinks.filter((link) => !link.is_pinned);
 
-  const currentSortLabel = SORT_OPTIONS.find(opt => opt.value === sortOption)?.label || "Sort";
 
   return (
     <div className="w-full" ref={containerRef}>
@@ -246,36 +167,9 @@ export function LinkList({
         <div className="absolute -bottom-4 left-0 right-0 h-4 bg-gradient-to-b from-[var(--bg-l0-solid)] to-transparent pointer-events-none" />
       </div>
 
-      <div className="sticky top-[152px] px-5 z-10 bg-[var(--bg-l0-solid)] py-2 text-xs font-medium text-[var(--text-tertiary)] relative select-none">
-        <div className="flex justify-start">
-          <Menu>
-            <MenuTrigger className="flex items-center gap-1 hover:text-[var(--text-secondary)] transition-colors cursor-pointer">
-              <span>{currentSortLabel}</span>
-              <ChevronDown className="w-3 h-3" />
-            </MenuTrigger>
-            <MenuPopup>
-              {SORT_OPTIONS.map((option) => (
-                <MenuItem
-                  key={option.value}
-                  onSelect={() => setSortOption(option.value)}
-                  className={
-                    sortOption === option.value ? "bg-[var(--bg-l1-solid)]" : ""
-                  }
-                >
-                  {option.label}
-                </MenuItem>
-              ))}
-            </MenuPopup>
-          </Menu>
-        </div>
-        <div className="absolute -bottom-2 left-0 right-0 h-4 bg-gradient-to-b from-[var(--bg-l0-solid)] to-transparent pointer-events-none" />
-      </div>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
+
+
         <div className="space-y-0.5 py-4 relative">
           {pinnedLinks.length > 0 && (
             <>
@@ -314,10 +208,7 @@ export function LinkList({
           )}
 
           {unpinnedLinks.length > 0 && (
-            <SortableContext
-              items={unpinnedLinks.map((l) => l.id)}
-              strategy={verticalListSortingStrategy}
-            >
+            <>
               {pinnedLinks.length > 0 && (
                 <div className="mb-4 mt-8 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none">
                   All Links
@@ -354,10 +245,9 @@ export function LinkList({
                   />
                 );
               })}
-            </SortableContext>
+            </>
           )}
         </div>
-      </DndContext>
 
       {contextMenu && (
         <Menu
