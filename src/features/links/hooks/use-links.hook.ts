@@ -30,6 +30,23 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
         return params.toString();
     }, [filters]);
 
+    // Refresh links from server
+    const refreshLinks = React.useCallback(async () => {
+        try {
+            const queryString = buildQueryString();
+            const response = await fetch(`/api/links?${queryString}`);
+            if (response.ok) {
+                const data = await response.json();
+                setLinks(data.links || []);
+            } else if (response.status === 401) {
+                // Unauthorized: show error toast
+                toast.error('Unauthorized - please log in');
+            }
+        } catch (error) {
+            console.error("Error refreshing links:", error);
+        }
+    }, [buildQueryString]);
+
     // Fetch links on mount or when filters change
     React.useEffect(() => {
         if (!isAuthenticated) return;
@@ -59,22 +76,30 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
         fetchLinks();
     }, [isAuthenticated, buildQueryString]);
 
-    // Refresh links from server
-    const refreshLinks = React.useCallback(async () => {
-        try {
-            const queryString = buildQueryString();
-            const response = await fetch(`/api/links?${queryString}`);
-            if (response.ok) {
-                const data = await response.json();
-                setLinks(data.links || []);
-            } else if (response.status === 401) {
-                // Unauthorized: show error toast
-                toast.error('Unauthorized - please log in');
+    // Refresh links when window regains focus or becomes visible (for real-time updates from extension)
+    React.useEffect(() => {
+        if (!isAuthenticated) return;
+
+        const handleVisibilityChange = () => {
+            // Refresh links when tab becomes visible (user switches back to the tab)
+            if (!document.hidden) {
+                refreshLinks();
             }
-        } catch (error) {
-            console.error("Error refreshing links:", error);
-        }
-    }, [buildQueryString]);
+        };
+
+        const handleFocus = () => {
+            // Also refresh on window focus as a fallback
+            refreshLinks();
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        window.addEventListener("focus", handleFocus);
+        
+        return () => {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+            window.removeEventListener("focus", handleFocus);
+        };
+    }, [isAuthenticated, refreshLinks]);
 
     // Filter links based on search query
     const filteredLinks = React.useMemo(() => {
