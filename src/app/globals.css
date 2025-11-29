@@ -5,4 +5,8 @@
 @theme {
   --font-custom: var(--font-custom);
   --font-inter: var(--font-inter);
+
+  /* Custom font weights for Inter variable font */
+  --font-weight-book: 470;
+  --font-weight-text: 570;
 }
