@@ -135,10 +135,17 @@ export function UserMenu({ user }: UserMenuProps) {
           )}
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer group">
-          <IconMessage className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
-          Beta Feedback
-          <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
+        <DropdownMenuItem asChild>
+          <a 
+            href="https://x.com/messages/compose?recipient_id=1649994120725778432" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="cursor-pointer w-full flex items-center group"
+          >
+            <IconMessage className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+            Beta Feedback
+            <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
+          </a>
         </DropdownMenuItem>
         <DropdownMenuItem className="cursor-pointer">
           <IconSettings className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
