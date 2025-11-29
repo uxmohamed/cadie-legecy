@@ -1,4 +1,5 @@
 @import "../theme/generated-tokens.css";
+@source "../../src/**/*.{js,ts,jsx,tsx,mdx}";
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
 
