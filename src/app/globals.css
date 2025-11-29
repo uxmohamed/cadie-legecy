@@ -10,3 +10,10 @@
   --font-weight-book: 470;
   --font-weight-text: 570;
 }
+
+/* Utility Classes */
+.overlay-blur {
+  background: var(--overlay-blur-bg);
+  box-shadow: var(--overlay-blur-shadow);
+  backdrop-filter: var(--overlay-blur-backdrop);
+}

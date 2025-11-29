@@ -72,7 +72,7 @@
   --cta-neutral-active: oklch(0.309 0 0);
   --cta-neutral-default: oklch(0.309 0 0);
   --cta-neutral-disabled: color-mix(in oklab, oklch(0.309 0 0) 32%, transparent 68%);
-  --cta-neutral-hover: oklch(0.431 0 0);
+  --cta-neutral-hover: oklch(0.13 0 0);
   --cta-primary-active: oklch(0.431 0.115 252.3);
   --cta-primary-default: oklch(0.604 0.161 252.3);
   --cta-primary-disabled: color-mix(in oklab, oklch(0.604 0.161 252.3) 32%, transparent 68%);
@@ -145,6 +145,9 @@
   --opacity-80: 0.80;
   --opacity-88: 0.88;
   --overlay-bg: oklch(0.13 0 0);
+  --overlay-blur-backdrop: blur(13.5px);
+  --overlay-blur-bg: linear-gradient(180deg, rgba(25, 25, 25, 0.50) 0%, rgba(2, 2, 2, 0.50) 100%), rgba(2, 2, 2, 0.80);
+  --overlay-blur-shadow: 0 0 1px 0 rgba(0, 0, 0, 0.40), 0 0 1.5px 0 rgba(0, 0, 0, 0.30), 0 7px 22px 0 rgba(0, 0, 0, 0.25);
   --overlay-border: color-mix(in oklab, oklch(1 0 0) 16%, transparent 84%);
   --overlay-hover: color-mix(in oklab, oklch(1 0 0) 12%, transparent 88%);
   --overlay-separator: color-mix(in oklab, oklch(1 0 0) 12%, transparent 88%);
@@ -258,7 +261,7 @@
   --cta-neutral-active: oklch(0.309 0 0);
   --cta-neutral-default: oklch(0.309 0 0);
   --cta-neutral-disabled: color-mix(in oklab, oklch(0.309 0 0) 32%, transparent 68%);
-  --cta-neutral-hover: oklch(0.431 0 0);
+  --cta-neutral-hover: oklch(0.13 0 0);
   --cta-primary-active: oklch(0.431 0.115 252.3);
   --cta-primary-default: oklch(0.604 0.161 252.3);
   --cta-primary-disabled: color-mix(in oklab, oklch(0.604 0.161 252.3) 32%, transparent 68%);
@@ -331,6 +334,9 @@
   --opacity-80: 0.80;
   --opacity-88: 0.88;
   --overlay-bg: oklch(0.13 0 0);
+  --overlay-blur-backdrop: blur(13.5px);
+  --overlay-blur-bg: linear-gradient(180deg, rgba(64, 64, 64, 0.50) 0%, rgba(40, 40, 40, 0.50) 100%), rgba(40, 40, 40, 0.80);
+  --overlay-blur-shadow: 0 0 1px 0 rgba(0, 0, 0, 0.40), 0 0 1.5px 0 rgba(0, 0, 0, 0.30), 0 7px 22px 0 rgba(0, 0, 0, 0.25);
   --overlay-border: color-mix(in oklab, oklch(1 0 0) 16%, transparent 84%);
   --overlay-hover: color-mix(in oklab, oklch(1 0 0) 12%, transparent 88%);
   --overlay-separator: color-mix(in oklab, oklch(1 0 0) 12%, transparent 88%);

@@ -153,6 +153,13 @@ export const getSemanticTokens = (mode: ThemeMode = 'light') => {
     "shadow-l1": "0px 1px 3px oklch(0 0 0 / 0.1), 0px 0px 2px oklch(0 0 0 / 0.06)",
     "shadow-l2": "0px 10px 15px -3px oklch(0 0 0 / 0.1), 0px 4px 6px -2px oklch(0 0 0 / 0.05)",
     "shadow-l3": "0px 25px 50px -12px oklch(0 0 0 / 0.25)",
+    
+    // Overlay Blur (Glassmorphic overlay with backdrop blur)
+    "overlay-blur-bg": isLight 
+      ? "linear-gradient(180deg, rgba(25, 25, 25, 0.50) 0%, rgba(2, 2, 2, 0.50) 100%), rgba(2, 2, 2, 0.80)"
+      : "linear-gradient(180deg, rgba(64, 64, 64, 0.50) 0%, rgba(40, 40, 40, 0.50) 100%), rgba(40, 40, 40, 0.80)",
+    "overlay-blur-shadow": "0 0 1px 0 rgba(0, 0, 0, 0.40), 0 0 1.5px 0 rgba(0, 0, 0, 0.30), 0 7px 22px 0 rgba(0, 0, 0, 0.25)",
+    "overlay-blur-backdrop": "blur(13.5px)",
       
     // Misc (adapts to theme)
     "scrollbar-active-gray": isLight ? p.grey[300] : p.grey[600],
