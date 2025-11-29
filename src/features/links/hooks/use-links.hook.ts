@@ -81,9 +81,6 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
             }
     }, [buildQueryString]);
 
-    // Track if this is the initial mount to avoid duplicate fetches
-    const isInitialMountRef = React.useRef(true);
-
     // Fetch links on mount or when filters change
     React.useEffect(() => {
         if (!isAuthenticated) return;
@@ -127,7 +124,6 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
                 toast.error("Failed to load links");
             } finally {
                 setFetchingLinks(false);
-                isInitialMountRef.current = false;
             }
         }
 
@@ -151,7 +147,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
     const userIdRef = React.useRef<string | null>(null);
 
     // Supabase Realtime subscription for real-time updates (when extension saves a link)
-    // Only listens to INSERT events - no refresh calls, just real-time updates
+    // Only listens to INSERT events - displays new link immediately when saved from extension
     React.useEffect(() => {
         if (!isAuthenticated) {
             // Clean up channel when not authenticated
@@ -173,17 +169,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
             try {
                 const { data: { user }, error: authError } = await supabase.auth.getUser();
                 
-                if (authError) {
-                    if (process.env.NODE_ENV === 'development') {
-                        console.error("Realtime: Auth error", authError);
-                    }
-                    return;
-                }
-                
-                if (!user) {
-                    if (process.env.NODE_ENV === 'development') {
-                        console.warn("Realtime: No user found");
-                    }
+                if (authError || !user) {
                     return;
                 }
 
@@ -203,7 +189,12 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
                 const channelName = `links-realtime-${userId}`;
                 
                 const channel = supabase
-                    .channel(channelName)
+                    .channel(channelName, {
+                        config: {
+                            // Configure for better Cloudflare compatibility
+                            broadcast: { self: false },
+                        },
+                    })
                     .on(
                         "postgres_changes",
                         {
@@ -256,20 +247,19 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
                         }
                     )
                     .subscribe((status) => {
-                        if (status === "SUBSCRIBED") {
-                            // Successfully subscribed
-                        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-                            if (process.env.NODE_ENV === 'development') {
-                                console.error("Realtime: Subscription failed", status);
+                        // Monitor subscription status for debugging
+                        if (process.env.NODE_ENV === 'development') {
+                            if (status === "SUBSCRIBED") {
+                                console.log("Realtime: Successfully subscribed");
+                            } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+                                console.warn("Realtime: Subscription failed", status);
                             }
                         }
                     });
 
                 channelRef.current = channel;
             } catch (error) {
-                if (process.env.NODE_ENV === 'development') {
-                    console.error("Realtime: Error setting up subscription", error);
-                }
+                // Silently fail - Realtime is optional
             }
         }
 
