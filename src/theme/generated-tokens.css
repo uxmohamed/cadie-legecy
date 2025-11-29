@@ -120,6 +120,7 @@
   --icon-primary: oklch(0 0 0);
   --icon-secondary: color-mix(in oklab, oklch(0 0 0) 57%, transparent 43%);
   --icon-tertiary: color-mix(in oklab, oklch(0 0 0) 44%, transparent 56%);
+  --kbd-bg: rgba(26, 26, 26, 0.06);
   --opacity-10: 0.10;
   --opacity-12: 0.12;
   --opacity-14: 0.14;
@@ -309,6 +310,7 @@
   --icon-primary: oklch(1 0 0);
   --icon-secondary: color-mix(in oklab, oklch(1 0 0) 60%, transparent 40%);
   --icon-tertiary: color-mix(in oklab, oklch(1 0 0) 56%, transparent 44%);
+  --kbd-bg: rgba(255, 255, 255, 0.06);
   --opacity-10: 0.10;
   --opacity-12: 0.12;
   --opacity-14: 0.14;

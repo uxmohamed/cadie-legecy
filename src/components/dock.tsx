@@ -10,6 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Kbd } from "@/components/ui/kbd";
 import { useShortcuts } from "@/components/shortcut-context";
 import { IconPlus, IconMenu, IconTrash, IconCircle } from "@tabler/icons-react";
 
@@ -128,9 +129,7 @@ export function Dock({
             <TooltipContent side="top">
               <div className="flex items-center gap-2 ">
                 <span>Add</span>
-                <kbd className="px-1.5 py-0.5 text-xs bg-[var(--bg-emphasis)] text-[var(--text-inverse)] rounded">
-                  C
-                </kbd>
+                <Kbd>C</Kbd>
               </div>
             </TooltipContent>
           </Tooltip>
@@ -162,9 +161,7 @@ export function Dock({
             <TooltipContent side="top">
               <div className="flex items-center gap-2">
                 <span>All</span>
-                <kbd className="px-1.5 py-0.5 text-xs bg-[var(--bg-emphasis)] text-[var(--text-inverse)] rounded">
-                  1
-                </kbd>
+                <Kbd>1</Kbd>
               </div>
             </TooltipContent>
           </Tooltip>
@@ -193,9 +190,7 @@ export function Dock({
             <TooltipContent side="top">
               <div className="flex items-center gap-2">
                 <span>Trash</span>
-                <kbd className="px-1.5 py-0.5 text-xs bg-[var(--bg-emphasis)] text-[var(--text-inverse)] rounded">
-                  2
-                </kbd>
+                <Kbd>2</Kbd>
               </div>
             </TooltipContent>
           </Tooltip>
@@ -248,9 +243,7 @@ export function Dock({
                         ({category.count})
                       </span>
                     )}
-                    <kbd className="px-1.5 py-0.5 text-xs bg-[var(--bg-l1-solid)] text-[var(--text-primary)] rounded">
-                      {shortcutKey}
-                    </kbd>
+                    <Kbd>{shortcutKey}</Kbd>
                   </div>
                 </TooltipContent>
               </Tooltip>

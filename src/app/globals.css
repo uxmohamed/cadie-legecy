@@ -16,4 +16,5 @@
   background: var(--overlay-blur-bg);
   box-shadow: var(--overlay-blur-shadow);
   backdrop-filter: var(--overlay-blur-backdrop);
+  --kbd-bg: rgba(255, 255, 255, 0.06);
 }

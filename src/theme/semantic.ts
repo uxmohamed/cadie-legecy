@@ -160,6 +160,9 @@ export const getSemanticTokens = (mode: ThemeMode = 'light') => {
       : "linear-gradient(180deg, rgba(64, 64, 64, 0.50) 0%, rgba(40, 40, 40, 0.50) 100%), rgba(40, 40, 40, 0.80)",
     "overlay-blur-shadow": "0 0 1px 0 rgba(0, 0, 0, 0.40), 0 0 1.5px 0 rgba(0, 0, 0, 0.30), 0 7px 22px 0 rgba(0, 0, 0, 0.25)",
     "overlay-blur-backdrop": "blur(13.5px)",
+    
+    // Keyboard shortcut background
+    "kbd-bg": isLight ? "rgba(26, 26, 26, 0.06)" : "rgba(255, 255, 255, 0.06)",
       
     // Misc (adapts to theme)
     "scrollbar-active-gray": isLight ? p.grey[300] : p.grey[600],

@@ -7,16 +7,16 @@ import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import { useShortcuts } from "@/components/shortcut-context";
 import { useTheme } from "@/components/theme-provider";
-import { IconMoon, IconSun, IconDeviceDesktop, IconCheck } from "@tabler/icons-react";
+import { IconMoon, IconSun, IconDeviceDesktop, IconCheck, IconMessageCircle, IconSettings, IconBrandX, IconKeyboard, IconLogout, IconNews } from "@tabler/icons-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Kbd } from "@/components/ui/kbd";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/menu";
 
@@ -118,47 +118,50 @@ export function UserMenu({ user }: UserMenuProps) {
           )}
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={toggleHelp} className="cursor-pointer">
-          Shortcuts
-          <DropdownMenuShortcut>⌘/</DropdownMenuShortcut>
+        <DropdownMenuItem className="cursor-pointer">
+          <IconMessageCircle className="mr-2 h-4 w-4" />
+          Beta Feedback
         </DropdownMenuItem>
+        <DropdownMenuItem className="cursor-pointer">
+          <IconSettings className="mr-2 h-4 w-4" />
+          Settings
+          <Kbd className="ml-auto">,</Kbd>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="cursor-pointer">
+          <IconMoon className="mr-2 h-4 w-4" />
+          Dark mode
+          {theme === 'dark' && <IconCheck className="ml-auto h-4 w-4" />}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/changelog" className="cursor-pointer w-full flex items-center justify-between">
+          <Link href="/changelog" className="cursor-pointer w-full">
+            <IconNews className="mr-2 h-4 w-4" />
             Changelog
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <a href="https://x.com/caddyapp_" target="_blank" rel="noopener noreferrer" className="cursor-pointer w-full flex items-center justify-between">
+          <a href="https://x.com/caddyapp_" target="_blank" rel="noopener noreferrer" className="cursor-pointer w-full">
+            <IconBrandX className="mr-2 h-4 w-4" />
             Follow us on X
           </a>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => setTheme('light')} className="cursor-pointer">
-          <IconSun className="mr-2 h-4 w-4" />
-          Light
-          {theme === 'light' && <IconCheck className="ml-auto h-4 w-4" />}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('dark')} className="cursor-pointer">
-          <IconMoon className="mr-2 h-4 w-4" />
-          Dark
-          {theme === 'dark' && <IconCheck className="ml-auto h-4 w-4" />}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('system')} className="cursor-pointer">
-          <IconDeviceDesktop className="mr-2 h-4 w-4" />
-          System
-          {theme === 'system' && <IconCheck className="ml-auto h-4 w-4" />}
+        <DropdownMenuItem onClick={toggleHelp} className="cursor-pointer">
+          <IconKeyboard className="mr-2 h-4 w-4" />
+          Keyboard Shortcuts
+          <Kbd className="ml-auto">⌘/</Kbd>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={handleSignOut}
           disabled={isSigningOut}
-          className="cursor-pointer"
+          className="cursor-pointer text-[var(--text-destructive)]"
         >
-          {isSigningOut ? "Signing out..." : "Sign out"}
-          <DropdownMenuShortcut>⌥⇧Q</DropdownMenuShortcut>
+          <IconLogout className="mr-2 h-4 w-4" />
+          {isSigningOut ? "Signing out..." : "Log out"}
+          <Kbd className="ml-auto">⌥⇧Q</Kbd>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
-
