@@ -2,7 +2,6 @@
 
 import * as React from "react";
 
-import { AddLinkModal } from "@/components/add-link-modal";
 import { CaptureInput } from "@/components/capture-input";
 import { LinkList } from "@/components/link-list";
 import { LinkListSkeleton } from "@/components/link-list-skeleton";
@@ -19,18 +18,10 @@ interface DashboardProps {
 
 export function Dashboard({ user }: DashboardProps) {
   const [selectedCategoryId, setSelectedCategoryId] = React.useState<string | null>(null);
-  const [addModalOpen, setAddModalOpen] = React.useState(false);
   const [sortBy, setSortBy] = React.useState<"date" | "title">("date");
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("desc");
   const searchFocusFnRef = React.useRef<(() => void) | null>(null);
   const { categories } = useCategories(!!user);
-
-  // Listen for custom event to open add modal
-  React.useEffect(() => {
-    const handleOpenAddModal = () => setAddModalOpen(true);
-    window.addEventListener("openAddModal", handleOpenAddModal);
-    return () => window.removeEventListener("openAddModal", handleOpenAddModal);
-  }, []);
 
   const filters = React.useMemo(() => {
 
@@ -138,18 +129,13 @@ export function Dashboard({ user }: DashboardProps) {
           </div>
         </div>
       </main>
-      <AddLinkModal
-        isOpen={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-        onSubmit={handleSubmit}
-        isLoading={isLoading}
-      />
       <Dock
-        onAddClick={() => setAddModalOpen(true)}
+        onAddSubmit={handleSubmit}
         onSearchClick={handleSearchClick}
         sortBy={sortBy}
         sortOrder={sortOrder}
         onSortChange={handleSortChange}
+        isLoading={isLoading}
       />
     </div>
   );

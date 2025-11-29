@@ -14,6 +14,7 @@ import {
   PopoverTrigger,
   PopoverPopup,
 } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
 import {
   IconPlus,
   IconSearch,
@@ -21,23 +22,34 @@ import {
   IconSortDescending,
   IconCheck,
 } from "@tabler/icons-react";
+import {
+  detectMultipleContentTypes,
+  type DetectedContent,
+} from "@/lib/content-detector";
 
 interface DockProps {
-  onAddClick: () => void;
+  onAddClick?: () => void;
+  onAddSubmit?: (items: DetectedContent[]) => void;
   onSearchClick?: () => void;
   sortBy?: "date" | "title";
   sortOrder?: "asc" | "desc";
   onSortChange?: (sortBy: "date" | "title", order: "asc" | "desc") => void;
+  isLoading?: boolean;
 }
 
 export function Dock({
   onAddClick,
+  onAddSubmit,
   onSearchClick,
   sortBy = "date",
   sortOrder = "desc",
   onSortChange,
+  isLoading = false,
 }: DockProps) {
   const [sortPopoverOpen, setSortPopoverOpen] = React.useState(false);
+  const [addPopoverOpen, setAddPopoverOpen] = React.useState(false);
+  const [addInputValue, setAddInputValue] = React.useState("");
+  const addInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleSortChange = (newSortBy: "date" | "title") => {
     if (sortBy === newSortBy) {
@@ -49,6 +61,48 @@ export function Dock({
       onSortChange?.(newSortBy, "desc");
     }
     setSortPopoverOpen(false);
+  };
+
+  const handleAddClick = () => {
+    if (onAddSubmit) {
+      setAddPopoverOpen(true);
+    } else {
+      onAddClick?.();
+    }
+  };
+
+  // Auto-focus input when popover opens
+  React.useEffect(() => {
+    if (addPopoverOpen && addInputRef.current) {
+      // Small delay to ensure popover is fully rendered
+      const timer = setTimeout(() => {
+        addInputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [addPopoverOpen]);
+
+  const handleAddSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addInputValue.trim() || isLoading || !onAddSubmit) return;
+
+    const detectedItems = detectMultipleContentTypes(addInputValue);
+    if (detectedItems.length > 0) {
+      onAddSubmit(detectedItems);
+      setAddInputValue("");
+      setAddPopoverOpen(false);
+    }
+  };
+
+  const handleAddInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAddInputValue(e.target.value);
+  };
+
+  const handleAddKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Escape") {
+      setAddInputValue("");
+      setAddPopoverOpen(false);
+    }
   };
 
   const getSortIcon = () => {
@@ -75,26 +129,66 @@ export function Dock({
           style={{ gap: '4px' }}
           aria-label="Dock actions"
         >
-          {/* Add Button - Light grey, always highlighted */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={onAddClick}
-                aria-label="Add link"
-                variant="ghost"
-                style={{ padding: '0', width: '50px', height: '50px' }}
-                className="rounded-full bg-[var(--overlay-hover)] hover:bg-[var(--overlay-hover)] text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0"
+          {/* Add Button with Popover */}
+          <Popover open={addPopoverOpen && !!onAddSubmit} onOpenChange={setAddPopoverOpen}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PopoverTrigger asChild>
+                  <Button
+                    onClick={handleAddClick}
+                    aria-label="Add link"
+                    variant="ghost"
+                    style={{ padding: '0', width: '50px', height: '50px' }}
+                    className="rounded-full bg-[var(--overlay-hover)] hover:bg-[var(--overlay-hover)] text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0"
+                  >
+                    <IconPlus style={{ width: '18px', height: '18px' }} />
+                  </Button>
+                </PopoverTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={12}>
+                <div className="flex items-center gap-2">
+                  <span>Add</span>
+                  <Kbd>C</Kbd>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+            {onAddSubmit && (
+              <PopoverPopup
+                side="top"
+                align="center"
+                sideOffset={12}
+                className="w-[420px] p-3"
               >
-                <IconPlus style={{ width: '18px', height: '18px' }} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={12}>
-              <div className="flex items-center gap-2">
-                <span>Add</span>
-                <Kbd>C</Kbd>
-              </div>
-            </TooltipContent>
-          </Tooltip>
+                <form onSubmit={handleAddSubmit} className="space-y-3">
+                  <div className="px-2 text-sm font-[470] text-[var(--overlay-text-primary)]">
+                    Add item
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      ref={addInputRef}
+                      type="text"
+                      value={addInputValue}
+                      onChange={handleAddInputChange}
+                      onKeyDown={handleAddKeyDown}
+                      placeholder="Add a link or color..."
+                      disabled={isLoading}
+                      unstyled
+                      className="flex-1 rounded-lg bg-[var(--overlay-hover)] px-3 py-2 text-sm placeholder:text-[var(--overlay-text-primary)]/70 text-[var(--overlay-text-primary)] outline-none"
+                      autoComplete="off"
+                    />
+                    <Button
+                      type="submit"
+                      disabled={!addInputValue.trim() || isLoading}
+                      variant="default"
+                      className="shrink-0 bg-white text-black hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </form>
+              </PopoverPopup>
+            )}
+          </Popover>
 
           {/* Search Button */}
           <Tooltip>
