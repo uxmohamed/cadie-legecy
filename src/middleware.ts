@@ -48,8 +48,8 @@ export async function middleware(request: NextRequest) {
       return supabaseResponse
     }
 
-    // Protected routes (except root, changelog, auth pages, and theme-debug)
-    const publicRoutes = ['/', '/changelog', '/theme-debug']
+    // Protected routes (except root, changelog, auth pages, theme-debug, and button-debug)
+    const publicRoutes = ['/', '/changelog', '/theme-debug', '/button-debug']
     const isPublicRoute = publicRoutes.includes(request.nextUrl.pathname) ||
       request.nextUrl.pathname.startsWith('/auth') ||
       request.nextUrl.pathname.startsWith('/api')

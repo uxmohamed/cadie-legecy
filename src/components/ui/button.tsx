@@ -5,7 +5,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-colors duration-150 disabled:pointer-events-none disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-150 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.97] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     defaultVariants: {
       size: "default",
@@ -26,7 +26,9 @@ const buttonVariants = cva(
       },
       variant: {
         default:
-          "bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--border-active)] focus-visible:ring-offset-2",
+          "bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2",
+        neutral:
+          "bg-[var(--cta-neutral-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-neutral-hover)] focus-visible:ring-2 focus-visible:ring-[var(--border-active)] focus-visible:ring-offset-2",
         destructive:
           "bg-[var(--cta-destructive-default)] text-[var(--text-destructive)] hover:bg-[var(--cta-destructive-hover)] focus-visible:ring-2 focus-visible:ring-[var(--border-destructive)] focus-visible:ring-offset-2",
         "destructive-outline":
@@ -34,7 +36,7 @@ const buttonVariants = cva(
         ghost:
           "bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--border-secondary)] focus-visible:ring-offset-2",
         link:
-          "bg-transparent text-[var(--text-link)] underline-offset-4 hover:underline hover:text-[var(--accent-blue-primary)]",
+          "bg-transparent text-[var(--text-link)] underline-offset-4 hover:underline hover:text-[var(--accent-blue-primary)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2",
         outline:
           "border border-[var(--border-primary)] bg-[var(--bg-l2-solid)] hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--border-primary)] focus-visible:ring-offset-2",
         secondary:
