@@ -30,9 +30,9 @@ export const getSemanticTokens = (mode: ThemeMode = 'light') => {
 
     // Icons (adapts to theme)
     "icon-primary": isLight ? p.base.black : p.base.white,
-    "icon-secondary": isLight ? mix(p.base.black, 57) : mix(p.base.white, 60),
-    "icon-tertiary": isLight ? mix(p.base.black, 44) : mix(p.base.white, 56),
-    "icon-disabled": isLight ? mix(p.base.black, 34) : mix(p.base.white, 27),
+    "icon-secondary": p.grey[500],
+    "icon-tertiary": isLight ? p.grey[600] : p.grey[500],
+    "icon-disabled": isLight ? p.grey[700] : p.grey[600],
     "icon-link": p.caddy[5],
     "icon-destructive": isLight ? p.red[600] : p.red[400],
     "icon-inverse": isLight ? p.base.white : p.base.black,

@@ -12,3 +12,4 @@ const tokens = {
 
 writeFileSync(outputPath, JSON.stringify(tokens, null, 2));
 console.log(`✅ Generated ${outputPath}`);
+

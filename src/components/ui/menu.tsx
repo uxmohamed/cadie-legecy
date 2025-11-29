@@ -26,11 +26,11 @@ const DropdownMenuSubTrigger = React.forwardRef<
 >(({ className, inset, children, ...props }, ref) => (
   <DropdownMenuPrimitive.SubTrigger
     ref={ref}
-    className={cn(
-      "flex cursor-default select-none items-center rounded-lg px-2 py-1.5 text-sm outline-none text-[var(--overlay-text-primary)] focus:bg-[var(--overlay-hover)] data-[state=open]:bg-[var(--overlay-hover)]",
-      inset && "pl-8",
-      className,
-    )}
+      className={cn(
+        "flex cursor-default select-none items-center rounded-lg px-2 py-1.5 text-sm font-[470] outline-none text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] focus:bg-[var(--overlay-hover)] data-[state=open]:bg-[var(--overlay-hover)]",
+        inset && "pl-8",
+        className,
+      )}
     {...props}
   >
     {children}
@@ -82,11 +82,11 @@ const DropdownMenuItem = React.forwardRef<
 >(({ className, inset, ...props }, ref) => (
   <DropdownMenuPrimitive.Item
     ref={ref}
-    className={cn(
-      "relative flex cursor-default select-none items-center rounded-lg px-2 py-1.5 text-sm outline-none transition-colors text-[var(--overlay-text-primary)] focus:bg-[var(--overlay-hover)] focus:text-[var(--overlay-text-primary)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      inset && "pl-8",
-      className,
-    )}
+      className={cn(
+        "relative flex cursor-default select-none items-center rounded-lg px-2 py-1.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] focus:bg-[var(--overlay-hover)] focus:text-[var(--overlay-text-primary)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        inset && "pl-8",
+        className,
+      )}
     {...props}
   />
 ))
@@ -98,10 +98,10 @@ const DropdownMenuCheckboxItem = React.forwardRef<
 >(({ className, children, checked, ...props }, ref) => (
   <DropdownMenuPrimitive.CheckboxItem
     ref={ref}
-    className={cn(
-      "relative flex cursor-default select-none items-center rounded-lg py-1.5 pl-8 pr-2 text-sm outline-none transition-colors text-[var(--overlay-text-primary)] focus:bg-[var(--overlay-hover)] focus:text-[var(--overlay-text-primary)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      className,
-    )}
+      className={cn(
+        "relative flex cursor-default select-none items-center rounded-lg py-1.5 pl-8 pr-2 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] focus:bg-[var(--overlay-hover)] focus:text-[var(--overlay-text-primary)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        className,
+      )}
     checked={checked}
     {...props}
   >
@@ -122,10 +122,10 @@ const DropdownMenuRadioItem = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <DropdownMenuPrimitive.RadioItem
     ref={ref}
-    className={cn(
-      "relative flex cursor-default select-none items-center rounded-lg py-1.5 pl-8 pr-2 text-sm outline-none transition-colors text-[var(--overlay-text-primary)] focus:bg-[var(--overlay-hover)] focus:text-[var(--overlay-text-primary)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      className,
-    )}
+      className={cn(
+        "relative flex cursor-default select-none items-center rounded-lg py-1.5 pl-8 pr-2 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] focus:bg-[var(--overlay-hover)] focus:text-[var(--overlay-text-primary)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        className,
+      )}
     {...props}
   >
     <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
@@ -146,11 +146,11 @@ const DropdownMenuLabel = React.forwardRef<
 >(({ className, inset, ...props }, ref) => (
   <DropdownMenuPrimitive.Label
     ref={ref}
-    className={cn(
-      "px-2 py-1.5 text-sm font-semibold",
-      inset && "pl-8",
-      className,
-    )}
+      className={cn(
+        "px-2 py-1.5 text-sm font-[470]",
+        inset && "pl-8",
+        className,
+      )}
     {...props}
   />
 ))
