@@ -5,6 +5,24 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function cleanUrl(url: string): string {
+  try {
+    // Remove protocol (http://, https://)
+    let cleaned = url.replace(/^https?:\/\//i, "");
+    
+    // Remove www. subdomain
+    cleaned = cleaned.replace(/^www\./i, "");
+    
+    // Remove trailing slash
+    cleaned = cleaned.replace(/\/$/, "");
+    
+    return cleaned;
+  } catch {
+    // If URL parsing fails, return original
+    return url;
+  }
+}
+
 export function formatDate(date: Date): string {
   const now = new Date();
   const diffTime = now.getTime() - date.getTime();

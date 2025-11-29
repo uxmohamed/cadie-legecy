@@ -3,7 +3,7 @@
 import * as React from "react";
 
 import type { Link } from "@/features/links/types";
-import { cn, formatDate } from "@/lib/utils";
+import { cn, formatDate, cleanUrl } from "@/lib/utils";
 import { Favicon } from "@/components/ui/favicon";
 import { Button } from "@/components/ui/button";
 import {
@@ -91,7 +91,7 @@ export function LinkListItem({
         onKeyDown={handleKeyDown}
         onContextMenu={(e) => onContextMenu(e, link)}
         className={cn(
-          "group relative flex-1 grid grid-cols-[1fr_auto] ease-in will-change-transform duration-100 items-center gap-2 rounded-lg px-3 py-2 select-none cursor-pointer active:scale-[0.99] transition-transform",
+          "group relative flex-1 grid grid-cols-[1fr_auto] ease-in will-change-transform items-center gap-1 rounded-lg py-4 px-4 select-none cursor-pointer active:scale-[0.99] transition-transform",
           isSelected
             ? "bg-[var(--bg-l1-solid)]"
             : isFocused
@@ -115,19 +115,28 @@ export function LinkListItem({
               style={{ backgroundColor: link.color_value || link.title }}
             />
           ) : (
-            <Favicon url={link.favicon_url || ""} domain={link.domain} />
+            <Favicon url={link.favicon_url || ""} domain={link.domain} className="h-5 w-5" />
           )}
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[15px] text-[var(--text-primary)]">
+          <div className="min-w-0 flex-1 flex items-center gap-2">
+            <div className="truncate text-sm leading-4 text-[rgba(0,0,0,0.90)] font-[470]">
               {link.title || link.url}
             </div>
-            <div className="truncate text-sm text-[var(--text-tertiary)]">
-              {link.domain}
-            </div>
+            {!isColor && (
+              <div
+                className={cn(
+                  "truncate text-sm leading-4 text-[var(--text-tertiary)] font-[470]",
+                  isSelected || isFocused
+                    ? "opacity-100"
+                    : "opacity-0 group-hover:opacity-100"
+                )}
+              >
+                {cleanUrl(link.url)}
+              </div>
+            )}
           </div>
         </a>
         <div className="flex items-center gap-2">
-          <div className="text-sm text-[var(--text-tertiary)]">
+          <div className="text-[13px] text-[var(--text-tertiary)] font-[470]">
             {formatDate(new Date(link.created_at))}
           </div>
           <div

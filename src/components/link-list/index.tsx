@@ -154,7 +154,7 @@ export function LinkList({
 
   return (
     <div className="w-full" ref={containerRef}>
-        <div className="space-y-0.5 py-4 relative">
+        <div className="space-y-px py-4 relative">
           {pinnedLinks.length > 0 && (
             <>
               <div className="mb-4 mt-4 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none">
