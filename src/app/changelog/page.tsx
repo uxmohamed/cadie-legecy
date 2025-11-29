@@ -23,10 +23,6 @@ export default function ChangelogPage() {
   const entries = Array.isArray(allChangelogs) ? allChangelogs : [];
   const sortedEntries = sortEntriesByDate(entries);
 
-  // Debug: Log if entries are empty (remove in production)
-  if (entries.length === 0 && process.env.NODE_ENV === 'development') {
-    console.warn('No changelog entries found. Make sure Contentlayer has processed the MDX files.');
-  }
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--bg-l0-solid)]">

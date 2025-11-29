@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
 import type { Link, CreateLinkDTO, LinkFilters } from "@/features/links/types";
 import type { DetectedContent } from "@/lib/content-detector";
 
@@ -30,17 +31,87 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
         return params.toString();
     }, [filters]);
 
+    // AbortController ref to cancel in-flight requests
+    const abortControllerRef = React.useRef<AbortController | null>(null);
+
+    // Cleanup: Cancel any in-flight requests on unmount
+    React.useEffect(() => {
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, []);
+
+    // Refresh links from server
+    const refreshLinks = React.useCallback(async () => {
+        // Cancel any in-flight request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+
+        // Create new AbortController for this request
+        const abortController = new AbortController();
+        abortControllerRef.current = abortController;
+
+        try {
+            const queryString = buildQueryString();
+            const response = await fetch(`/api/links?${queryString}`, {
+                signal: abortController.signal,
+            });
+            
+            // Check if request was aborted
+            if (abortController.signal.aborted) return;
+
+            if (response.ok) {
+                const data = await response.json();
+                setLinks(data.links || []);
+            } else if (response.status === 401) {
+                // Unauthorized: show error toast
+                toast.error('Unauthorized - please log in');
+            } else {
+                toast.error("Failed to refresh links");
+            }
+            } catch (error) {
+                // Ignore abort errors
+                if (error instanceof Error && error.name === 'AbortError') {
+                    return;
+                }
+                toast.error("Failed to refresh links");
+            }
+    }, [buildQueryString]);
+
+    // Track if this is the initial mount to avoid duplicate fetches
+    const isInitialMountRef = React.useRef(true);
+
     // Fetch links on mount or when filters change
     React.useEffect(() => {
         if (!isAuthenticated) return;
+
+        // Cancel any in-flight request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+
+        // Create new AbortController for this request
+        const abortController = new AbortController();
+        abortControllerRef.current = abortController;
 
         async function fetchLinks() {
             setFetchingLinks(true);
             try {
                 const queryString = buildQueryString();
-                const response = await fetch(`/api/links?${queryString}`);
+                const response = await fetch(`/api/links?${queryString}`, {
+                    signal: abortController.signal,
+                });
+                
+                // Check if request was aborted
+                if (abortController.signal.aborted) return;
+
                 if (response.ok) {
                     const data = await response.json();
+                    // Replace links completely - server is source of truth
+                    // Realtime will add new links on top, but fetchLinks should replace
                     setLinks(data.links || []);
                 } else if (response.status === 401) {
                     // Unauthorized: show error toast
@@ -49,32 +120,173 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
                     toast.error("Failed to load links");
                 }
             } catch (error) {
-                console.error("Error fetching links:", error);
+                // Ignore abort errors
+                if (error instanceof Error && error.name === 'AbortError') {
+                    return;
+                }
                 toast.error("Failed to load links");
             } finally {
                 setFetchingLinks(false);
+                isInitialMountRef.current = false;
             }
         }
 
         fetchLinks();
     }, [isAuthenticated, buildQueryString]);
 
-    // Refresh links from server
-    const refreshLinks = React.useCallback(async () => {
-        try {
-            const queryString = buildQueryString();
-            const response = await fetch(`/api/links?${queryString}`);
-            if (response.ok) {
-                const data = await response.json();
-                setLinks(data.links || []);
-            } else if (response.status === 401) {
-                // Unauthorized: show error toast
-                toast.error('Unauthorized - please log in');
+    // Store filters in ref to avoid recreating subscription on filter changes
+    const filtersRef = React.useRef(filters);
+    React.useEffect(() => {
+        filtersRef.current = filters;
+    }, [filters]);
+
+    // Store setLinks in ref to avoid stale closure in subscription callback
+    const setLinksRef = React.useRef(setLinks);
+    React.useEffect(() => {
+        setLinksRef.current = setLinks;
+    }, []);
+
+    // Store channel ref to ensure proper cleanup and prevent leaks
+    const channelRef = React.useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null);
+    const userIdRef = React.useRef<string | null>(null);
+
+    // Supabase Realtime subscription for real-time updates (when extension saves a link)
+    // Only listens to INSERT events - no refresh calls, just real-time updates
+    React.useEffect(() => {
+        if (!isAuthenticated) {
+            // Clean up channel when not authenticated
+            if (channelRef.current) {
+                const supabase = createClient();
+                supabase.removeChannel(channelRef.current).catch(() => {
+                    // Ignore cleanup errors
+                });
+                channelRef.current = null;
             }
-        } catch (error) {
-            console.error("Error refreshing links:", error);
+            userIdRef.current = null;
+            return;
         }
-    }, [buildQueryString]);
+
+        const supabase = createClient();
+        let isMounted = true;
+
+        async function setupSubscription() {
+            try {
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                
+                if (authError) {
+                    if (process.env.NODE_ENV === 'development') {
+                        console.error("Realtime: Auth error", authError);
+                    }
+                    return;
+                }
+                
+                if (!user) {
+                    if (process.env.NODE_ENV === 'development') {
+                        console.warn("Realtime: No user found");
+                    }
+                    return;
+                }
+
+                if (!isMounted) return;
+
+                // Store user ID for use in callback
+                const userId = user.id;
+                userIdRef.current = userId;
+
+                // Remove existing channel if any (from previous subscription)
+                if (channelRef.current) {
+                    await supabase.removeChannel(channelRef.current);
+                    channelRef.current = null;
+                }
+
+                // Create stable channel name (without timestamp to reuse same channel)
+                const channelName = `links-realtime-${userId}`;
+                
+                const channel = supabase
+                    .channel(channelName)
+                    .on(
+                        "postgres_changes",
+                        {
+                            event: "INSERT",
+                            schema: "public",
+                            table: "links",
+                        },
+                        (payload) => {
+                            // Use ref to get latest filters and setLinks
+                            if (!isMounted) return;
+                            
+                            const newLink = payload.new as Link;
+                            const currentFilters = filtersRef.current;
+                            const currentUserId = userIdRef.current;
+                            
+                            // Filter by user_id in code (since we removed DB filter to avoid RLS issues)
+                            if (!currentUserId || newLink.user_id !== currentUserId) {
+                                return;
+                            }
+                            
+                            // Check if link matches current filters
+                            const matchesFilters = () => {
+                                if (currentFilters?.category_id && newLink.category_id !== currentFilters.category_id) {
+                                    return false;
+                                }
+                                if (currentFilters?.is_deleted !== undefined) {
+                                    if (currentFilters.is_deleted) {
+                                        // Trash view - show deleted or archived
+                                        return newLink.is_deleted || newLink.is_archived;
+                                    } else {
+                                        // Normal view - exclude deleted and archived
+                                        return !newLink.is_deleted && !newLink.is_archived;
+                                    }
+                                }
+                                // Default: show non-deleted, non-archived
+                                return !newLink.is_deleted && !newLink.is_archived;
+                            };
+
+                            // Only add if matches current filters and doesn't already exist
+                            if (matchesFilters()) {
+                                setLinksRef.current((prev) => {
+                                    // Check if link already exists (avoid duplicates)
+                                    if (prev.some((l) => l.id === newLink.id)) {
+                                        return prev;
+                                    }
+                                    // Add new link at the beginning (newest first)
+                                    return [newLink, ...prev];
+                                });
+                            }
+                        }
+                    )
+                    .subscribe((status) => {
+                        if (status === "SUBSCRIBED") {
+                            // Successfully subscribed
+                        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+                            if (process.env.NODE_ENV === 'development') {
+                                console.error("Realtime: Subscription failed", status);
+                            }
+                        }
+                    });
+
+                channelRef.current = channel;
+            } catch (error) {
+                if (process.env.NODE_ENV === 'development') {
+                    console.error("Realtime: Error setting up subscription", error);
+                }
+            }
+        }
+
+        setupSubscription();
+
+        // Cleanup function
+        return () => {
+            isMounted = false;
+            if (channelRef.current) {
+                supabase.removeChannel(channelRef.current).catch(() => {
+                    // Ignore cleanup errors
+                });
+                channelRef.current = null;
+            }
+            userIdRef.current = null;
+        };
+    }, [isAuthenticated]); // Only depend on isAuthenticated, not filters
 
     // Filter links based on search query
     const filteredLinks = React.useMemo(() => {
@@ -117,7 +329,6 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
 
                 toast.success("Link deleted");
             } catch (error) {
-                console.error("Error deleting link:", error);
                 toast.error("Failed to delete link");
                 await refreshLinks();
             }
@@ -144,7 +355,6 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
 
                 toast.success(`${ids.length} links deleted`);
             } catch (error) {
-                console.error("Error deleting links:", error);
                 toast.error("Failed to delete some links");
                 await refreshLinks();
             }
@@ -157,7 +367,6 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
             await navigator.clipboard.writeText(url);
             toast.success("URL copied to clipboard");
         } catch (error) {
-            console.error("Failed to copy URL:", error);
             toast.error("Failed to copy URL");
         }
     };
@@ -189,7 +398,6 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
 
                 toast.success("Link pinned");
             } catch (error) {
-                console.error("Error pinning link:", error);
                 toast.error("Failed to pin link");
                 await refreshLinks();
             }
@@ -219,7 +427,6 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
 
                 toast.success("Link unpinned");
             } catch (error) {
-                console.error("Error unpinning link:", error);
                 toast.error("Failed to unpin link");
                 await refreshLinks();
             }
@@ -295,7 +502,6 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
             // Show toast notifications
             showSubmitToast(items.length, successCount, duplicateCount, failureCount, items[0]?.type);
         } catch (error) {
-            console.error("Error creating links:", error);
             toast.error(
                 error instanceof Error ? error.message : "Failed to save"
             );

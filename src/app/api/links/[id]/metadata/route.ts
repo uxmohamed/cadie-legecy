@@ -47,7 +47,6 @@ export async function POST(
 
     // Skip if already has complete metadata
     if (link.favicon_url && link.og_image_url && link.description) {
-      console.log("Link already has complete metadata:", id);
       return NextResponse.json({ 
         message: "Link already has metadata",
         updated: false 
@@ -55,7 +54,6 @@ export async function POST(
     }
 
     // Extract metadata with timeout
-    console.log("Fetching metadata for link:", id, link.url);
     const metadata = await extractMetadata(link.url);
 
     // Update the link with fetched metadata
@@ -77,7 +75,6 @@ export async function POST(
 
     // Only update if we have new data
     if (Object.keys(updates).length === 0) {
-      console.log("No new metadata to update for link:", id);
       return NextResponse.json({ 
         message: "No new metadata available",
         updated: false 
@@ -97,7 +94,6 @@ export async function POST(
       );
     }
 
-    console.log("Successfully updated link metadata:", id, Object.keys(updates));
     return NextResponse.json({ 
       message: "Metadata updated successfully",
       updated: true,

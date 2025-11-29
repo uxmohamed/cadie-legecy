@@ -27,9 +27,7 @@ export function PostHogPageView() {
           api_host: host || 'https://eu.i.posthog.com',
           defaults: '2025-05-24',
           loaded: () => {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('[PostHog] Initialized successfully');
-            }
+            // PostHog initialized
           },
         });
       }
