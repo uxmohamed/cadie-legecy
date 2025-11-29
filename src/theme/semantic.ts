@@ -45,10 +45,10 @@ export const getSemanticTokens = (mode: ThemeMode = 'light') => {
     "cta-primary-active": p.caddy[3],
     "cta-primary-disabled": isLight ? mix(p.caddy[5], 32) : mix(p.caddy[5], 32),
 
-    "cta-neutral-default": isLight ? p.base.black : p.base.white,
-    "cta-neutral-hover": isLight ? mix(p.base.black, 100, mix(p.base.white, 16)) : mix(p.base.white, 100, mix(p.base.black, 8)),
-    "cta-neutral-active": isLight ? mix(p.base.black, 76, p.base.white) : mix(p.base.white, 76, p.base.black),
-    "cta-neutral-disabled": isLight ? mix(p.base.black, 12) : mix(p.base.white, 12),
+    "cta-neutral-default": p.grey[800],
+    "cta-neutral-hover": p.grey[900],
+    "cta-neutral-active": p.grey[800],
+    "cta-neutral-disabled": isLight ? mix(p.grey[800], 32) : mix(p.grey[800], 32),
 
     "cta-secondary-default": isLight ? p.base.white : mix(p.base.white, 8),
     "cta-secondary-hover": isLight ? mix(p.base.black, 4) : mix(p.base.white, 12),
