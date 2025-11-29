@@ -27,6 +27,7 @@
   --bg-emphasis: color-mix(in oklab, oklch(0 0 0) 16%, oklch(1 0 0) 84%);
   --bg-field-default: color-mix(in oklab, oklch(0 0 0) 6%, transparent 94%);
   --bg-field-hover: color-mix(in oklab, oklch(0 0 0) 8%, transparent 92%);
+  --bg-field-light: color-mix(in oklab, oklch(0 0 0) 4%, transparent 94%);
   --bg-inverse: oklch(0 0 0);
   --bg-l0-glass: color-mix(in oklab, oklch(0.952 0 0) 72%, transparent 28%);
   --bg-l0-solid: color-mix(in oklab, oklch(0 0 0) 2%, oklch(1 0 0) 98%);
@@ -217,6 +218,7 @@
   --bg-emphasis: oklch(0.309 0 0);
   --bg-field-default: color-mix(in oklab, oklch(1 0 0) 8%, transparent 92%);
   --bg-field-hover: color-mix(in oklab, oklch(1 0 0) 12%, transparent 88%);
+  --bg-field-light: color-mix(in oklab, oklch(1 0 0) 6%, transparent 94%);
   --bg-inverse: oklch(1 0 0);
   --bg-l0-glass: color-mix(in oklab, oklch(0.13 0 0) 72%, transparent 28%);
   --bg-l0-solid: color-mix(in oklab, oklch(1 0 0) 10%, oklch(0 0 0) 90%);

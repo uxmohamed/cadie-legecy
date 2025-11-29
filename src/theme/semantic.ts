@@ -108,6 +108,7 @@ export const getSemanticTokens = (mode: ThemeMode = 'light') => {
     "bg-cell-active": isLight ? mix(p.base.black, 8) : mix(p.base.white, 12),
 
     "bg-field-default": isLight ? mix(p.base.black, 6) : mix(p.base.white, 8),
+    "bg-field-light": isLight ? "color-mix(in oklab, oklch(0 0 0) 4%, transparent 94%)" : mix(p.base.white, 6),
     "bg-field-hover": isLight ? mix(p.base.black, 8) : mix(p.base.white, 12),
 
     // Overlays (adapts to theme)
