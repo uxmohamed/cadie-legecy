@@ -20,6 +20,9 @@ interface DashboardProps {
 export function Dashboard({ user }: DashboardProps) {
   const [selectedCategoryId, setSelectedCategoryId] = React.useState<string | null>(null);
   const [addModalOpen, setAddModalOpen] = React.useState(false);
+  const [sortBy, setSortBy] = React.useState<"date" | "title">("date");
+  const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("desc");
+  const searchFocusFnRef = React.useRef<(() => void) | null>(null);
   const { categories } = useCategories(!!user);
 
   // Listen for custom event to open add modal
@@ -49,6 +52,49 @@ export function Dashboard({ user }: DashboardProps) {
     handleBatchDeleteLinks,
   } = useLinks(!!user, filters);
 
+  // Sort links based on current sort settings, maintaining pinned/unpinned grouping
+  const sortedLinks = React.useMemo(() => {
+    const pinned = filteredLinks.filter((link) => link.is_pinned);
+    const unpinned = filteredLinks.filter((link) => !link.is_pinned);
+
+    const sortFunction = (a: typeof filteredLinks[0], b: typeof filteredLinks[0]) => {
+      if (sortBy === "date") {
+        const dateA = new Date(a.created_at).getTime();
+        const dateB = new Date(b.created_at).getTime();
+        return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+      } else {
+        // sortBy === "title"
+        const titleA = a.title.toLowerCase();
+        const titleB = b.title.toLowerCase();
+        if (sortOrder === "asc") {
+          return titleA.localeCompare(titleB);
+        } else {
+          return titleB.localeCompare(titleA);
+        }
+      }
+    };
+
+    // Sort pinned and unpinned separately
+    pinned.sort(sortFunction);
+    unpinned.sort(sortFunction);
+
+    // Combine: pinned first, then unpinned (maintaining grouping)
+    return [...pinned, ...unpinned];
+  }, [filteredLinks, sortBy, sortOrder]);
+
+  const handleSortChange = React.useCallback((newSortBy: "date" | "title", newOrder: "asc" | "desc") => {
+    setSortBy(newSortBy);
+    setSortOrder(newOrder);
+  }, []);
+
+  const handleSearchClick = React.useCallback(() => {
+    searchFocusFnRef.current?.();
+  }, []);
+
+  const handleFocusRequest = React.useCallback((focusFn: () => void) => {
+    searchFocusFnRef.current = focusFn;
+  }, []);
+
   return (
     <div className="flex h-screen flex-col bg-[var(--bg-l0-solid)]">
       <main className="flex flex-1 flex-col overflow-hidden">
@@ -63,6 +109,7 @@ export function Dashboard({ user }: DashboardProps) {
                 onSearch={handleSearch}
                 isLoading={isLoading}
                 searchOnly
+                onFocusRequest={handleFocusRequest}
               />
             </div>
             {fetchingLinks ? (
@@ -75,7 +122,7 @@ export function Dashboard({ user }: DashboardProps) {
                   </div>
                 )}
                 <LinkList
-                  links={filteredLinks}
+                  links={sortedLinks}
                   onDelete={handleDeleteLink}
 
                   onEdit={handleEditLink}
@@ -98,10 +145,11 @@ export function Dashboard({ user }: DashboardProps) {
         isLoading={isLoading}
       />
       <Dock
-        categories={categories}
-        selectedCategoryId={selectedCategoryId}
-        onCategorySelect={setSelectedCategoryId}
         onAddClick={() => setAddModalOpen(true)}
+        onSearchClick={handleSearchClick}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSortChange={handleSortChange}
       />
     </div>
   );

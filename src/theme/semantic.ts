@@ -12,6 +12,13 @@ export const getSemanticTokens = (mode: ThemeMode = 'light') => {
   // Determine if we're in light mode
   const isLight = mode === 'light';
 
+  // Main app background - SINGLE SOURCE OF TRUTH
+  // Update this value to change the app background for both light and dark modes
+  // Both bg-main-container and bg-l0-solid use this value
+  // Light mode: white with 2% black (same as bg-l1-solid)
+  // Dark mode: black with 10% white (same as bg-l1-solid)
+  const mainAppBackground = isLight ? mix(p.base.black, 2, p.base.white) : mix(p.base.white, 10, p.base.black);
+
   const colors = {
     // Base
     white: p.base.white,
@@ -74,11 +81,14 @@ export const getSemanticTokens = (mode: ThemeMode = 'light') => {
     "border-destructive": isLight ? mix(p.red[600], 12) : mix(p.red[400], 12),
 
     // Backgrounds (adapts to theme)
-    "bg-main-container": isLight ? mix(p.base.black, 2, p.base.white) : p.grey[900],
+    // Main app background - SINGLE SOURCE OF TRUTH (defined above)
+    // Both bg-main-container and bg-l0-solid use mainAppBackground
+    "bg-main-container": mainAppBackground,
     "bg-sidepanel": isLight ? mix(p.base.black, 4, p.base.white) : p.grey[800],
     
     // Layered backgrounds (adapts to theme)
-    "bg-l0-solid": isLight ? mix(p.base.black, 4, p.base.white) : mix(p.base.white, 8, p.base.black),
+    // bg-l0-solid references the main app background (single source of truth)
+    "bg-l0-solid": mainAppBackground,
     "bg-l0-glass": isLight ? mix(p.grey[100], 72) : mix(p.grey[900], 72),
     
     "bg-l1-solid": isLight ? mix(p.base.black, 2, p.base.white) : mix(p.base.white, 12, p.base.black),

@@ -14,6 +14,7 @@ interface CaptureInputProps {
   isLoading?: boolean;
   autoFocus?: boolean;
   searchOnly?: boolean;
+  onFocusRequest?: (focusFn: () => void) => void;
 }
 
 export function CaptureInput({
@@ -22,6 +23,7 @@ export function CaptureInput({
   isLoading,
   autoFocus = false,
   searchOnly = false,
+  onFocusRequest,
 }: CaptureInputProps) {
   const [value, setValue] = React.useState("");
   const [showFocusAnimation, setShowFocusAnimation] = React.useState(false);
@@ -29,12 +31,20 @@ export function CaptureInput({
 
   const { registerShortcut, unregisterShortcut } = useShortcuts();
 
+  const focusInput = React.useCallback(() => {
+    inputRef.current?.focus();
+    setShowFocusAnimation(true);
+    setTimeout(() => setShowFocusAnimation(false), 200);
+  }, []);
+
+  // Expose focus function to parent via callback
   React.useEffect(() => {
-    const focusInput = () => {
-      inputRef.current?.focus();
-      setShowFocusAnimation(true);
-      setTimeout(() => setShowFocusAnimation(false), 200);
-    };
+    if (onFocusRequest) {
+      onFocusRequest(focusInput);
+    }
+  }, [onFocusRequest, focusInput]);
+
+  React.useEffect(() => {
 
     registerShortcut({
       key: "c",
@@ -135,3 +145,5 @@ export function CaptureInput({
     </form>
   );
 }
+
+CaptureInput.displayName = "CaptureInput";

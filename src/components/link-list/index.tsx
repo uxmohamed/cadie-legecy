@@ -38,20 +38,13 @@ export function LinkList({
 
   const previousLengthRef = React.useRef(links.length);
 
-  // Sort links by creation date (newest first)
-  const sortedLinks = React.useMemo(() => {
-    const sorted = [...links];
-    sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    return sorted;
-  }, [links]);
-
-  // Helper to get flattened list of links for index calculation
+  // Links are already sorted by Dashboard, just separate pinned/unpinned
   const displayLinks = React.useMemo(() => {
-    if (isTrashView) return sortedLinks;
-    const pinned = sortedLinks.filter((l) => l.is_pinned);
-    const unpinned = sortedLinks.filter((l) => !l.is_pinned);
+    if (isTrashView) return links;
+    const pinned = links.filter((l) => l.is_pinned);
+    const unpinned = links.filter((l) => !l.is_pinned);
     return [...pinned, ...unpinned];
-  }, [sortedLinks, isTrashView]);
+  }, [links, isTrashView]);
 
   const {
     selectedIds,

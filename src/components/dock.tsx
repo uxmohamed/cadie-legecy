@@ -1,8 +1,6 @@
 "use client";
 
 import * as React from "react";
-import type { Category } from "@/types";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -11,244 +9,185 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Kbd } from "@/components/ui/kbd";
-import { useShortcuts } from "@/components/shortcut-context";
-import { IconPlus, IconMenu, IconTrash, IconCircle } from "@tabler/icons-react";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverPopup,
+} from "@/components/ui/popover";
+import {
+  IconPlus,
+  IconSearch,
+  IconSortAscending,
+  IconSortDescending,
+  IconCheck,
+} from "@tabler/icons-react";
 
 interface DockProps {
-  categories: Category[];
-  selectedCategoryId: string | null;
-  onCategorySelect: (categoryId: string | null) => void;
   onAddClick: () => void;
+  onSearchClick?: () => void;
+  sortBy?: "date" | "title";
+  sortOrder?: "asc" | "desc";
+  onSortChange?: (sortBy: "date" | "title", order: "asc" | "desc") => void;
 }
 
 export function Dock({
-  categories,
-  selectedCategoryId,
-  onCategorySelect,
   onAddClick,
+  onSearchClick,
+  sortBy = "date",
+  sortOrder = "desc",
+  onSortChange,
 }: DockProps) {
-  const { registerShortcut, unregisterShortcut } = useShortcuts();
-  const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null);
-  const categoryRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
+  const [sortPopoverOpen, setSortPopoverOpen] = React.useState(false);
 
-  React.useEffect(() => {
-    categoryRefs.current = categoryRefs.current.slice(0, categories.length + 2);
-  }, [categories.length]);
-
-  // Register keyboard shortcuts
-  React.useEffect(() => {
-    // All - shortcut 1
-    registerShortcut({
-      key: "1",
-      description: "Show all items",
-      category: "Navigation",
-      action: () => onCategorySelect(null),
-    });
-
-    // Trash - shortcut 2
-    registerShortcut({
-      key: "2",
-      description: "Show trash",
-      category: "Navigation",
-      action: () => onCategorySelect("trash"),
-    });
-
-    // Categories - shortcuts 3-9
-    categories.slice(0, 7).forEach((category, index) => {
-      const key = String(index + 3);
-      registerShortcut({
-        key,
-        description: `Show ${category.name}`,
-        category: "Navigation",
-        action: () => onCategorySelect(category.id),
-      });
-    });
-
-    return () => {
-      unregisterShortcut("1");
-      unregisterShortcut("2");
-      categories.slice(0, 7).forEach((_, index) => {
-        unregisterShortcut(String(index + 3));
-      });
-    };
-  }, [categories, onCategorySelect, registerShortcut, unregisterShortcut]);
-
-  const handleKeyDown = (
-    e: React.KeyboardEvent<HTMLButtonElement>,
-    index: number,
-  ) => {
-    if (e.key === "ArrowRight") {
-      e.preventDefault();
-      const nextIndex = index < categories.length + 1 ? index + 1 : 0;
-      setFocusedIndex(nextIndex);
-      categoryRefs.current[nextIndex]?.focus();
-    } else if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      const prevIndex = index > 0 ? index - 1 : categories.length + 1;
-      setFocusedIndex(prevIndex);
-      categoryRefs.current[prevIndex]?.focus();
-    } else if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      if (index === 0) {
-        onCategorySelect(null);
-      } else if (index === 1) {
-        onCategorySelect("trash");
-      } else if (index >= 2 && index < categories.length + 2) {
-        onCategorySelect(categories[index - 2].id);
-      }
-    } else if (e.key === "Home") {
-      e.preventDefault();
-      setFocusedIndex(0);
-      categoryRefs.current[0]?.focus();
-    } else if (e.key === "End") {
-      e.preventDefault();
-      const lastIndex = categories.length + 1;
-      setFocusedIndex(lastIndex);
-      categoryRefs.current[lastIndex]?.focus();
+  const handleSortChange = (newSortBy: "date" | "title") => {
+    if (sortBy === newSortBy) {
+      // Toggle order if same field
+      const newOrder = sortOrder === "asc" ? "desc" : "asc";
+      onSortChange?.(newSortBy, newOrder);
+    } else {
+      // New field, default to descending
+      onSortChange?.(newSortBy, "desc");
     }
+    setSortPopoverOpen(false);
+  };
+
+  const getSortIcon = () => {
+    const iconStyle = { width: '18px', height: '18px' };
+    if (sortBy === "date") {
+      return sortOrder === "desc" ? (
+        <IconSortDescending style={iconStyle} />
+      ) : (
+        <IconSortAscending style={iconStyle} />
+      );
+    }
+    return sortOrder === "desc" ? (
+      <IconSortDescending style={iconStyle} />
+    ) : (
+      <IconSortAscending style={iconStyle} />
+    );
   };
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
       <TooltipProvider delayDuration={300}>
         <nav
-          className="flex items-center gap-1 px-2 py-1.5 bg-[var(--bg-l2-solid)] border border-[var(--border-primary)] rounded-lg"
-          aria-label="Categories"
+          className="overlay-blur flex items-center py-1.5 px-1.5 rounded-full border-[var(--overlay-border)]"
+          style={{ gap: '4px' }}
+          aria-label="Dock actions"
         >
-          {/* Add Button - Primary */}
+          {/* Add Button - Light grey, always highlighted */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 onClick={onAddClick}
                 aria-label="Add link"
-                className="h-8 w-8 p-0 rounded-md bg-[var(--accent-blue-primary)] hover:bg-[var(--accent-blue-secondary)] text-[var(--text-inverse)] border-0"
+                variant="ghost"
+                style={{ padding: '0', width: '50px', height: '50px' }}
+                className="rounded-full bg-[var(--overlay-hover)] hover:bg-[var(--overlay-hover)] text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0"
               >
-                <IconPlus className="h-5 w-5" />
+                <IconPlus style={{ width: '18px', height: '18px' }} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">
-              <div className="flex items-center gap-2 ">
+            <TooltipContent side="top" sideOffset={12}>
+              <div className="flex items-center gap-2">
                 <span>Add</span>
                 <Kbd>C</Kbd>
               </div>
             </TooltipContent>
           </Tooltip>
 
-          {/* Separator */}
-          <div className="w-px h-5 bg-[var(--border-primary)] mx-1" />
-
-          {/* All Button */}
+          {/* Search Button */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                ref={(el) => {
-                  categoryRefs.current[0] = el;
-                }}
-                onClick={() => onCategorySelect(null)}
-                aria-label="Show all items"
-                onKeyDown={(e) => handleKeyDown(e, 0)}
+                onClick={onSearchClick}
+                aria-label="Search"
                 variant="ghost"
-                className={cn(
-                  "h-8 w-8 p-0 rounded-md",
-                  selectedCategoryId === null
-                    ? "bg-[var(--bg-field-hover)] text-[var(--text-primary)]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)]",
-                )}
+                style={{ padding: '0', width: '50px', height: '50px' }}
+                className="rounded-full bg-transparent hover:bg-[var(--overlay-hover)] text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0"
               >
-                <IconMenu className="h-5 w-5" />
+                <IconSearch style={{ width: '18px', height: '18px' }} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">
+            <TooltipContent side="top" sideOffset={12}>
               <div className="flex items-center gap-2">
-                <span>All</span>
-                <Kbd>1</Kbd>
+                <span>Search</span>
+                <Kbd>/</Kbd>
               </div>
             </TooltipContent>
           </Tooltip>
 
-          {/* Trash Button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                ref={(el) => {
-                  categoryRefs.current[1] = el;
-                }}
-                onClick={() => onCategorySelect("trash")}
-                aria-label="Show trash"
-                onKeyDown={(e) => handleKeyDown(e, 1)}
-                variant="ghost"
-                className={cn(
-                  "h-8 w-8 p-0 rounded-md",
-                  selectedCategoryId === "trash"
-                    ? "bg-[var(--bg-field-hover)] text-[var(--text-primary)]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)]",
-                )}
-              >
-                <IconTrash className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              <div className="flex items-center gap-2">
-                <span>Trash</span>
-                <Kbd>2</Kbd>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-
-          {/* Separator if there are categories */}
-          {categories.length > 0 && (
-            <div className="w-px h-5 bg-[var(--border-primary)] mx-1" />
-          )}
-
-          {/* Category Buttons */}
-          {categories.slice(0, 7).map((category, index) => {
-            const isSelected = selectedCategoryId === category.id;
-            const buttonIndex = index + 2;
-            const shortcutKey = index + 3;
-
-            return (
-              <Tooltip key={category.id}>
-                <TooltipTrigger asChild>
+          {/* Sort Button with Popover */}
+          <Popover open={sortPopoverOpen} onOpenChange={setSortPopoverOpen}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PopoverTrigger asChild>
                   <Button
-                    ref={(el) => {
-                      categoryRefs.current[buttonIndex] = el;
-                    }}
-                    onClick={() => onCategorySelect(category.id)}
-                    aria-label={category.name}
-                    onKeyDown={(e) => handleKeyDown(e, buttonIndex)}
+                    aria-label="Sort"
                     variant="ghost"
-                    className={cn(
-                      "h-8 w-8 p-0 rounded-md relative",
-                      isSelected
-                        ? "bg-[var(--bg-field-hover)] text-[var(--text-primary)]"
-                        : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)]",
-                    )}
+                    style={{ padding: '0', width: '50px', height: '50px' }}
+                    className="rounded-full bg-transparent hover:bg-[var(--overlay-hover)] text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0"
                   >
-                    <IconCircle
-                      className="h-2 w-2"
-                      style={{ color: category.color, fill: category.color }}
-                    />
+                    {getSortIcon()}
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top">
+                </PopoverTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={12}>
+                <span>Sort</span>
+              </TooltipContent>
+            </Tooltip>
+            <PopoverPopup side="top" align="center" sideOffset={12} className="w-48 p-2">
+              <div className="px-2 py-1.5 text-xs text-[var(--overlay-text-secondary)] font-[470]">
+                Sort by
+              </div>
+              <div className="flex flex-col gap-1 mt-1">
+                <button
+                  onClick={() => handleSortChange("title")}
+                  className={`relative flex w-full cursor-default select-none items-center justify-between rounded-lg px-2 py-1.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] focus:bg-[var(--overlay-hover)] ${
+                    sortBy === "title"
+                      ? "bg-[var(--overlay-hover)]"
+                      : ""
+                  }`}
+                >
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center justify-center w-8 h-8">
-                      <IconCircle
-                        className="h-2 w-2"
-                        style={{ color: category.color, fill: category.color }}
-                      />
-                    </div>
-                    {(category.count ?? 0) > 0 && (
-                      <span className="text-xs text-[var(--text-tertiary)]">
-                        ({category.count})
-                      </span>
+                    {sortBy === "title" && (
+                      <IconCheck className="h-4 w-4" />
                     )}
-                    <Kbd>{shortcutKey}</Kbd>
+                    <span>Name</span>
                   </div>
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
+                  {sortBy === "title" && (
+                    sortOrder === "asc" ? (
+                      <IconSortAscending className="h-4 w-4" />
+                    ) : (
+                      <IconSortDescending className="h-4 w-4" />
+                    )
+                  )}
+                </button>
+                <button
+                  onClick={() => handleSortChange("date")}
+                  className={`relative flex w-full cursor-default select-none items-center justify-between rounded-lg px-2 py-1.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] focus:bg-[var(--overlay-hover)] ${
+                    sortBy === "date"
+                      ? "bg-[var(--overlay-hover)]"
+                      : ""
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {sortBy === "date" && (
+                      <IconCheck className="h-4 w-4" />
+                    )}
+                    <span>Date Added</span>
+                  </div>
+                  {sortBy === "date" && (
+                    sortOrder === "asc" ? (
+                      <IconSortAscending className="h-4 w-4" />
+                    ) : (
+                      <IconSortDescending className="h-4 w-4" />
+                    )
+                  )}
+                </button>
+              </div>
+            </PopoverPopup>
+          </Popover>
         </nav>
       </TooltipProvider>
     </div>

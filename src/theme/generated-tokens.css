@@ -29,7 +29,7 @@
   --bg-field-hover: color-mix(in oklab, oklch(0 0 0) 8%, transparent 92%);
   --bg-inverse: oklch(0 0 0);
   --bg-l0-glass: color-mix(in oklab, oklch(0.952 0 0) 72%, transparent 28%);
-  --bg-l0-solid: color-mix(in oklab, oklch(0 0 0) 4%, oklch(1 0 0) 96%);
+  --bg-l0-solid: color-mix(in oklab, oklch(0 0 0) 2%, oklch(1 0 0) 98%);
   --bg-l1-glass: color-mix(in oklab, oklch(1 0 0) 72%, transparent 28%);
   --bg-l1-solid: color-mix(in oklab, oklch(0 0 0) 2%, oklch(1 0 0) 98%);
   --bg-l2-glass: color-mix(in oklab, oklch(1 0 0) 72%, transparent 28%);
@@ -219,14 +219,14 @@
   --bg-field-hover: color-mix(in oklab, oklch(1 0 0) 12%, transparent 88%);
   --bg-inverse: oklch(1 0 0);
   --bg-l0-glass: color-mix(in oklab, oklch(0.13 0 0) 72%, transparent 28%);
-  --bg-l0-solid: color-mix(in oklab, oklch(1 0 0) 8%, oklch(0 0 0) 92%);
+  --bg-l0-solid: color-mix(in oklab, oklch(1 0 0) 10%, oklch(0 0 0) 90%);
   --bg-l1-glass: color-mix(in oklab, oklch(0.309 0 0) 72%, transparent 28%);
   --bg-l1-solid: color-mix(in oklab, oklch(1 0 0) 12%, oklch(0 0 0) 88%);
   --bg-l2-glass: color-mix(in oklab, oklch(0.309 0 0) 72%, transparent 28%);
   --bg-l2-solid: color-mix(in oklab, oklch(1 0 0) 12%, oklch(0 0 0) 88%);
   --bg-l3-glass: color-mix(in oklab, oklch(0.431 0 0) 72%, transparent 28%);
   --bg-l3-solid: color-mix(in oklab, oklch(1 0 0) 14%, oklch(0 0 0) 86%);
-  --bg-main-container: oklch(0.13 0 0);
+  --bg-main-container: color-mix(in oklab, oklch(1 0 0) 10%, oklch(0 0 0) 90%);
   --bg-overlay-destructive: color-mix(in oklab, oklch(0.77 0.136 20.7) 24%, transparent 76%);
   --bg-overlay-primary: color-mix(in oklab, oklch(1 0 0) 10%, transparent 90%);
   --bg-overlay-quaternary: color-mix(in oklab, oklch(1 0 0) 2%, transparent 98%);
