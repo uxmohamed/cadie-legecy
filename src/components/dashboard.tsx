@@ -198,7 +198,7 @@ export function Dashboard({ user }: DashboardProps) {
         {/* Control Bar */}
         <div>
           <div className="mx-auto w-full max-w-4xl px-8">
-            <div className="flex items-center justify-between py-12">
+            <div className="flex items-center justify-between py-2">
               {/* Left side: Add button + All items */}
               <div className="flex items-center gap-4">
             <Popover open={addPopoverOpen} onOpenChange={setAddPopoverOpen}>
