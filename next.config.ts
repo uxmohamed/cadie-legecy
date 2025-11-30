@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import { withContentlayer } from "next-contentlayer";
+import { withContentlayer } from "next-contentlayer2";
 import path from "path";
 
 const nextConfig: NextConfig = {
@@ -19,6 +19,10 @@ const nextConfig: NextConfig = {
   // Optimize for production
   reactStrictMode: true,
 
+  // Fix workspace root detection
+  outputFileTracingRoot: process.cwd(),
+
+
   // Webpack configuration for Contentlayer
   webpack: (config, { isServer }) => {
     // Add alias for contentlayer/generated
@@ -31,3 +35,4 @@ const nextConfig: NextConfig = {
 };
 
 export default withContentlayer(nextConfig);
+// export default nextConfig;

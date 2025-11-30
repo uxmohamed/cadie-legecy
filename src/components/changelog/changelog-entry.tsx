@@ -1,6 +1,6 @@
 "use client";
 
-import { useMDXComponent } from "next-contentlayer/hooks";
+import { useMDXComponent } from "next-contentlayer2/hooks";
 import type { ChangelogEntry } from "@/types/changelog";
 
 interface ChangelogEntryProps {
