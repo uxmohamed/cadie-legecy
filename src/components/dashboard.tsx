@@ -189,14 +189,14 @@ export function Dashboard({ user }: DashboardProps) {
   }, [registerShortcut, unregisterShortcut]);
 
   return (
-    <div className="flex h-screen flex-col bg-[var(--bg-l0-solid)]">
-      <main className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-16 items-center justify-between px-8 relative z-30">
+    <div className="min-h-screen bg-[var(--bg-l0-solid)]">
+      <main className="flex flex-col">
+        <header className="sticky top-0 z-40 flex h-16 items-center justify-between px-8 bg-[var(--bg-l0-solid)]">
           <Logo />
           <UserMenu user={user} />
         </header>
         {/* Control Bar */}
-        <div>
+        <div className="sticky top-16 z-30 bg-[var(--bg-l0-solid)]">
           <div className="mx-auto w-full max-w-4xl px-8">
             <div className="flex items-center justify-between py-2">
               {/* Left side: Add button + All items */}
@@ -251,9 +251,9 @@ export function Dashboard({ user }: DashboardProps) {
             <button
               className="text-[22px] font-[570] leading-[32px] tracking-[-0.16px] text-[var(--text-primary)] hover:text-[var(--text-primary)]"
               style={{ fontStyle: 'normal' }}
-              aria-label="All items"
+              aria-label="All Items"
             >
-              All items
+              All Items
             </button>
           </div>
           {/* Right side: Search + Options */}
@@ -288,12 +288,12 @@ export function Dashboard({ user }: DashboardProps) {
             </div>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto pb-24">
+        <div className="pb-24">
           <div className="mx-auto w-full max-w-4xl px-8">
             {/* Title and Created at header - sticky */}
-            <div className="sticky top-0 z-10 flex justify-between items-center py-4 text-xs font-medium text-[var(--text-tertiary)] select-none bg-[var(--bg-l0-solid)] border-b border-[var(--border-tertiary)] -mx-8 px-8">
+            <div className="sticky top-0 z-10 grid grid-cols-[1fr_150px] gap-1 items-center py-4 text-xs font-medium text-[var(--text-tertiary)] select-none bg-[var(--bg-l0-solid)] border-b border-[var(--border-tertiary)] -mx-8 px-10">
               <div>Title</div>
-              <div>Created at</div>
+              <div className="text-right">Created</div>
             </div>
             {fetchingLinks ? (
               <LinkListSkeleton />

@@ -91,7 +91,7 @@ export function LinkListItem({
         onKeyDown={handleKeyDown}
         onContextMenu={(e) => onContextMenu(e, link)}
         className={cn(
-          "group relative flex-1 grid grid-cols-[1fr_auto] ease-in will-change-transform items-center gap-1 rounded-lg py-4 px-4 select-none cursor-pointer active:scale-[0.99] transition-transform",
+          "group relative flex-1 grid grid-cols-[1fr_150px] ease-in will-change-transform items-center gap-1 rounded-lg py-4 px-2 select-none cursor-pointer active:scale-[0.99] transition-transform",
           isSelected
             ? "bg-[var(--bg-l1-solid)]"
             : isFocused
@@ -135,7 +135,7 @@ export function LinkListItem({
             )}
           </div>
         </a>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end">
           <div className="text-[13px] text-[var(--text-tertiary)] font-[470]">
             {formatDate(new Date(link.created_at))}
           </div>
