@@ -79,3 +79,7 @@ html {
   backdrop-filter: var(--overlay-blur-backdrop);
   --kbd-bg: rgba(255, 255, 255, 0.06);
 }
+
+::selection {
+  background-color: color-mix(in oklab, var(--caddy-color-6) 12%, transparent);
+}
