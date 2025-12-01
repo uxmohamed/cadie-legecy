@@ -17,6 +17,7 @@ html {
   overflow: auto;
   margin: 0;
   padding: 0;
+  scrollbar-gutter: stable;
 }
 
 body {
