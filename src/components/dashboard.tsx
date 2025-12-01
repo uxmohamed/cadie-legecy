@@ -174,10 +174,56 @@ export function Dashboard({ user }: DashboardProps) {
       },
     });
 
+    registerShortcut({
+      key: "T",
+      description: "Switch to Trash view",
+      category: "Navigation",
+      action: () => {
+        setSelectedCategoryId("trash");
+      },
+    });
+
+    registerShortcut({
+      key: "A",
+      description: "Switch to All Items view",
+      category: "Navigation",
+      action: () => {
+        setSelectedCategoryId(null);
+      },
+    });
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "f") {
         e.preventDefault();
         searchInputRef.current?.focus();
+      }
+
+      // Handle Shift+T for Trash view
+      if (e.shiftKey && e.key === "T") {
+        const target = e.target as HTMLElement;
+        const isInputFocused =
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable;
+        
+        if (!isInputFocused) {
+          e.preventDefault();
+          setSelectedCategoryId("trash");
+        }
+      }
+
+      // Handle Shift+A for All Items view
+      if (e.shiftKey && e.key === "A") {
+        const target = e.target as HTMLElement;
+        const isInputFocused =
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable;
+        
+        if (!isInputFocused) {
+          e.preventDefault();
+          setSelectedCategoryId(null);
+        }
       }
     };
 
@@ -329,6 +375,9 @@ export function Dashboard({ user }: DashboardProps) {
         sortOrder={sortOrder}
         onSortChange={handleSortChange}
         isLoading={isLoading}
+        selectedCategoryId={selectedCategoryId}
+        onViewChange={setSelectedCategoryId}
+        allItemsCount={selectedCategoryId !== "trash" ? filteredLinks.length : undefined}
       />
     </div>
   );

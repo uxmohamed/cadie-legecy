@@ -137,7 +137,7 @@ export const getSemanticTokens = (mode: ThemeMode = 'light') => {
     "accent-yellow-secondary": mix(p.yellow[400], 48),
     "accent-blue-primary": p.caddy[5],
     "accent-blue-secondary": mix(p.caddy[4], 36),
-    "accent-red-primary": p.red[600],
+    "accent-red-primary": p.red[500],
     "accent-red-secondary": mix(p.red[400], 36),
 
     // Extension Specific (Legacy/Compat)

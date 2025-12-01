@@ -21,6 +21,9 @@ import {
   IconSortAscending,
   IconSortDescending,
   IconCheck,
+  IconChevronDown,
+  IconCapsuleHorizontalFilled,
+  IconTrashFilled,
 } from "@tabler/icons-react";
 import {
   detectMultipleContentTypes,
@@ -35,6 +38,9 @@ interface DockProps {
   sortOrder?: "asc" | "desc";
   onSortChange?: (sortBy: "date" | "title", order: "asc" | "desc") => void;
   isLoading?: boolean;
+  selectedCategoryId?: string | null;
+  onViewChange?: (view: string | null) => void;
+  allItemsCount?: number;
 }
 
 export function Dock({
@@ -45,9 +51,13 @@ export function Dock({
   sortOrder = "desc",
   onSortChange,
   isLoading = false,
+  selectedCategoryId = null,
+  onViewChange,
+  allItemsCount,
 }: DockProps) {
   const [sortPopoverOpen, setSortPopoverOpen] = React.useState(false);
   const [addPopoverOpen, setAddPopoverOpen] = React.useState(false);
+  const [viewPopoverOpen, setViewPopoverOpen] = React.useState(false);
   const [addInputValue, setAddInputValue] = React.useState("");
   const addInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -121,6 +131,14 @@ export function Dock({
     );
   };
 
+  const handleViewChange = (view: string | null) => {
+    onViewChange?.(view);
+    setViewPopoverOpen(false);
+  };
+
+  const isAllItemsSelected = selectedCategoryId === null;
+  const isTrashSelected = selectedCategoryId === "trash";
+
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
       <TooltipProvider delayDuration={300}>
@@ -139,7 +157,7 @@ export function Dock({
                     aria-label="Add link"
                     variant="ghost"
                     style={{ padding: '0', width: '50px', height: '50px' }}
-                    className="rounded-full bg-[var(--overlay-hover)] hover:bg-[var(--overlay-hover)] text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0"
+                    className="rounded-full bg-[var(--overlay-hover)] hover:bg-white/25 text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0 transition-colors"
                   >
                     <IconPlus style={{ width: '18px', height: '18px' }} />
                   </Button>
@@ -282,6 +300,80 @@ export function Dock({
               </div>
             </PopoverPopup>
           </Popover>
+
+          {/* View Switcher Chip with Dropdown */}
+          {onViewChange && (
+            <Popover open={viewPopoverOpen} onOpenChange={setViewPopoverOpen}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <PopoverTrigger asChild>
+                    <Button
+                      aria-label="Switch view"
+                      variant="ghost"
+                      className="rounded-full bg-[var(--overlay-hover)] hover:bg-white/25 text-[var(--overlay-text-primary)] shrink-0 transition-colors px-4 h-[50px] gap-2"
+                    >
+                      {isTrashSelected ? (
+                        <IconTrashFilled className="h-[18px] w-[18px] text-[var(--accent-red-primary)]" />
+                      ) : (
+                        <IconCapsuleHorizontalFilled className="h-[18px] w-[18px] text-[var(--overlay-text-secondary)]" />
+                      )}
+                      <span className="text-sm font-[470]">
+                        {isTrashSelected ? "Trash" : "All items"}
+                      </span>
+                      <IconChevronDown style={{ width: '14px', height: '14px' }} />
+                    </Button>
+                  </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="top" sideOffset={12}>
+                  <span>Switch view</span>
+                </TooltipContent>
+              </Tooltip>
+              <PopoverPopup side="top" align="end" sideOffset={12} className="w-48 p-2">
+                <div className="flex flex-col gap-1">
+                  <button
+                    onClick={() => handleViewChange(null)}
+                    className={`relative flex w-full cursor-default select-none items-center justify-between rounded-lg px-2 py-1.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] focus:bg-[var(--overlay-hover)] ${
+                      isAllItemsSelected
+                        ? "bg-[var(--overlay-hover)]"
+                        : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <IconCapsuleHorizontalFilled className="h-3 w-3 text-[var(--overlay-text-secondary)]" />
+                      <span>All items</span>
+                    </div>
+                    {isAllItemsSelected ? (
+                      <IconCheck className="h-4 w-4" />
+                    ) : allItemsCount !== undefined && allItemsCount > 0 ? (
+                      <span className="text-xs font-[470] text-[var(--overlay-text-secondary)] bg-[rgba(255,255,255,0.1)] px-1.5 py-0.5 rounded-full">
+                        {allItemsCount}
+                      </span>
+                    ) : null}
+                  </button>
+                  <button
+                    onClick={() => handleViewChange("trash")}
+                    className={`relative flex w-full cursor-default select-none items-center justify-between rounded-lg px-2 py-1.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] focus:bg-[var(--overlay-hover)] ${
+                      isTrashSelected
+                        ? "bg-[var(--overlay-hover)]"
+                        : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <IconTrashFilled className="h-3 w-3 text-[var(--accent-red-primary)]" />
+                      <span>Trash</span>
+                    </div>
+                    {isTrashSelected ? (
+                      <IconCheck className="h-4 w-4" />
+                    ) : (
+                      <Kbd className="h-5 px-1.5 text-[10px] bg-[rgba(255,255,255,0.1)] text-[var(--overlay-text-secondary)]">
+                        ⇧T
+                      </Kbd>
+                    )}
+                  </button>
+                </div>
+              </PopoverPopup>
+            </Popover>
+          )}
         </nav>
       </TooltipProvider>
     </div>
