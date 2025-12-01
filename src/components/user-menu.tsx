@@ -26,8 +26,10 @@ interface UserMenuProps {
 
 export function UserMenu({ user }: UserMenuProps) {
   const [isSigningOut, setIsSigningOut] = React.useState(false);
+  const [isOpen, setIsOpen] = React.useState(false);
   const { toggleHelp } = useShortcuts();
   const { theme, setTheme } = useTheme();
+  const menuRef = React.useRef<HTMLDivElement>(null);
 
   const handleSignOut = React.useCallback(async () => {
     try {
@@ -48,6 +50,69 @@ export function UserMenu({ user }: UserMenuProps) {
       setIsSigningOut(false);
     }
   }, []);
+
+  // Handle looping keyboard navigation
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    // Auto-focus the first menu item when menu opens
+    const menuContent = menuRef.current;
+    if (menuContent) {
+      const items = Array.from(
+        menuContent.querySelectorAll('[role="menuitem"]:not([data-disabled])')
+      ) as HTMLElement[];
+      
+      if (items.length > 0) {
+        // Small delay to ensure menu is fully rendered
+        setTimeout(() => {
+          items[0]?.focus();
+        }, 50);
+      }
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+
+      const menuContent = menuRef.current;
+      if (!menuContent) return;
+
+      // Get all focusable menu items (excluding separators and disabled items)
+      const items = Array.from(
+        menuContent.querySelectorAll('[role="menuitem"]:not([data-disabled])')
+      ) as HTMLElement[];
+
+      if (items.length === 0) return;
+
+      // Always prevent default and stop propagation when menu is open
+      // This ensures arrow keys don't affect background links
+      e.preventDefault();
+      e.stopPropagation();
+
+      const currentIndex = items.findIndex((item) => item === document.activeElement);
+      
+      // If no item is focused yet, focus the first one
+      if (currentIndex === -1) {
+        items[0]?.focus();
+        return;
+      }
+
+      if (e.key === 'ArrowDown') {
+        // Loop to first item if at the end, otherwise go to next
+        const nextIndex = currentIndex === items.length - 1 ? 0 : currentIndex + 1;
+        items[nextIndex]?.focus();
+      } else if (e.key === 'ArrowUp') {
+        // Loop to last item if at the beginning, otherwise go to previous
+        const prevIndex = currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
+        items[prevIndex]?.focus();
+      }
+    };
+
+    // Use capture phase to intercept events before they reach other handlers
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [isOpen]);
 
   React.useEffect(() => {
     // We don't need to register Cmd+/ as it's already handled globally by the context provider
@@ -103,7 +168,7 @@ export function UserMenu({ user }: UserMenuProps) {
   }, [setTheme]);
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
@@ -117,7 +182,7 @@ export function UserMenu({ user }: UserMenuProps) {
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64">
+      <DropdownMenuContent ref={menuRef} align="end" className="w-64">
         <div className="px-2 py-3">
           {userName ? (
             <>
