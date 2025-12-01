@@ -11,11 +11,13 @@ import type { DetectedContent } from "@/lib/content-detector";
  * Refactored to follow Single Responsibility Principle
  * Uses API routes for all data operations (proper client/server separation)
  */
-export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
+export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId?: string) {
     const [isLoading, setIsLoading] = React.useState(false);
     const [links, setLinks] = React.useState<Link[]>([]);
     const [searchQuery, setSearchQuery] = React.useState("");
     const [fetchingLinks, setFetchingLinks] = React.useState(true);
+    const [hasInitiallyLoaded, setHasInitiallyLoaded] = React.useState(false);
+    const minSkeletonTimeRef = React.useRef<number | null>(null);
 
     // Build query string from filters
     const buildQueryString = React.useCallback(() => {
@@ -81,9 +83,16 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
             }
     }, [buildQueryString]);
 
-    // Fetch links on mount or when filters change
-    React.useEffect(() => {
-        if (!isAuthenticated) return;
+    // Fetch links on mount or when filters change - use useLayoutEffect for immediate start
+    React.useLayoutEffect(() => {
+        if (!isAuthenticated) {
+            setFetchingLinks(false);
+            setHasInitiallyLoaded(true);
+            return;
+        }
+
+        // Reset hasInitiallyLoaded when starting a new fetch (filters changed or initial load)
+        setHasInitiallyLoaded(false);
 
         // Cancel any in-flight request
         if (abortControllerRef.current) {
@@ -93,6 +102,10 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
         // Create new AbortController for this request
         const abortController = new AbortController();
         abortControllerRef.current = abortController;
+
+        // Track minimum skeleton display time
+        const startTime = Date.now();
+        minSkeletonTimeRef.current = startTime;
 
         async function fetchLinks() {
             setFetchingLinks(true);
@@ -107,14 +120,27 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
 
                 if (response.ok) {
                     const data = await response.json();
+                    
+                    // Ensure minimum skeleton display time (100ms) for perceived performance
+                    const elapsed = Date.now() - startTime;
+                    const remainingTime = Math.max(0, 100 - elapsed);
+                    
+                    await new Promise(resolve => setTimeout(resolve, remainingTime));
+                    
+                    // Check again if request was aborted during delay
+                    if (abortController.signal.aborted) return;
+                    
                     // Replace links completely - server is source of truth
                     // Realtime will add new links on top, but fetchLinks should replace
                     setLinks(data.links || []);
+                    setHasInitiallyLoaded(true);
                 } else if (response.status === 401) {
                     // Unauthorized: show error toast
                     toast.error('Unauthorized - please log in');
+                    setHasInitiallyLoaded(true);
                 } else {
                     toast.error("Failed to load links");
+                    setHasInitiallyLoaded(true);
                 }
             } catch (error) {
                 // Ignore abort errors
@@ -122,8 +148,10 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
                     return;
                 }
                 toast.error("Failed to load links");
+                setHasInitiallyLoaded(true);
             } finally {
                 setFetchingLinks(false);
+                minSkeletonTimeRef.current = null;
             }
         }
 
@@ -148,8 +176,9 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
 
     // Supabase Realtime subscription for real-time updates (when extension saves a link)
     // Only listens to INSERT events - displays new link immediately when saved from extension
+    // Non-blocking: uses userId from props instead of fetching auth
     React.useEffect(() => {
-        if (!isAuthenticated) {
+        if (!isAuthenticated || !userId) {
             // Clean up channel when not authenticated
             if (channelRef.current) {
                 const supabase = createClient();
@@ -165,23 +194,19 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
         const supabase = createClient();
         let isMounted = true;
 
-        async function setupSubscription() {
+        // Store user ID immediately (no auth fetch needed)
+        userIdRef.current = userId;
+
+        // Setup subscription asynchronously without blocking
+        function setupSubscription() {
             try {
-                const { data: { user }, error: authError } = await supabase.auth.getUser();
-                
-                if (authError || !user) {
-                    return;
-                }
-
                 if (!isMounted) return;
-
-                // Store user ID for use in callback
-                const userId = user.id;
-                userIdRef.current = userId;
 
                 // Remove existing channel if any (from previous subscription)
                 if (channelRef.current) {
-                    await supabase.removeChannel(channelRef.current);
+                    supabase.removeChannel(channelRef.current).catch(() => {
+                        // Ignore cleanup errors
+                    });
                     channelRef.current = null;
                 }
 
@@ -263,10 +288,13 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
             }
         }
 
-        setupSubscription();
+        // Setup subscription asynchronously without blocking initial render
+        // Use setTimeout to ensure it doesn't block the initial fetch
+        const timeoutId = setTimeout(setupSubscription, 0);
 
         // Cleanup function
         return () => {
+            clearTimeout(timeoutId);
             isMounted = false;
             if (channelRef.current) {
                 supabase.removeChannel(channelRef.current).catch(() => {
@@ -276,7 +304,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
             }
             userIdRef.current = null;
         };
-    }, [isAuthenticated]); // Only depend on isAuthenticated, not filters
+    }, [isAuthenticated, userId]); // Depend on userId instead of fetching it
 
     // Filter links based on search query
     const filteredLinks = React.useMemo(() => {
@@ -505,6 +533,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters) {
         filteredLinks,
         isLoading,
         fetchingLinks,
+        hasInitiallyLoaded,
         handleSearch,
         handleSubmit,
         handleDeleteLink,

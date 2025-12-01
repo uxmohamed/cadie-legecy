@@ -55,6 +55,7 @@ export function Dashboard({ user }: DashboardProps) {
     filteredLinks,
     isLoading,
     fetchingLinks,
+    hasInitiallyLoaded,
     handleSearch,
     handleSubmit,
     handleDeleteLink,
@@ -63,7 +64,7 @@ export function Dashboard({ user }: DashboardProps) {
     handlePinLink,
     handleUnpinLink,
     handleBatchDeleteLinks,
-  } = useLinks(!!user, filters);
+  } = useLinks(!!user, filters, user.id);
 
   // Sort links based on current sort settings, maintaining pinned/unpinned grouping
   const sortedLinks = React.useMemo(() => {
@@ -295,7 +296,7 @@ export function Dashboard({ user }: DashboardProps) {
               <div>Title</div>
               <div className="text-right">Created</div>
             </div>
-            {fetchingLinks ? (
+            {fetchingLinks || !hasInitiallyLoaded ? (
               <LinkListSkeleton />
             ) : (
               <>
