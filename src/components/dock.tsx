@@ -1,5 +1,6 @@
 "use client";
-
+import { FaArrowUp } from "react-icons/fa6";
+import { FaArrowDown } from "react-icons/fa6";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,13 +23,17 @@ import {
   IconSortDescending,
   IconCheck,
   IconChevronDown,
+  IconArrowsSort,
   IconCapsuleHorizontalFilled,
   IconTrashFilled,
+  IconCaretUpDown,
+  IconCaretUpDownFilled,
 } from "@tabler/icons-react";
 import {
   detectMultipleContentTypes,
   type DetectedContent,
 } from "@/lib/content-detector";
+import { ArrowDown, ArrowUp } from "lucide-react";
 
 interface DockProps {
   onAddClick?: () => void;
@@ -70,7 +75,6 @@ export function Dock({
       // New field, default to descending
       onSortChange?.(newSortBy, "desc");
     }
-    setSortPopoverOpen(false);
   };
 
   const handleAddClick = () => {
@@ -248,52 +252,55 @@ export function Dock({
                 <span>Sort</span>
               </TooltipContent>
             </Tooltip>
-            <PopoverPopup side="top" align="center" sideOffset={12} className="w-48 p-2">
-              <div className="px-2 py-1.5 text-xs text-[var(--overlay-text-secondary)] font-[470]">
+            <PopoverPopup side="top" align="center" sideOffset={12} className="w-64 p-2">
+              <div className="px-3 py-1.5 text-sm text-[var(--overlay-text-primary)] font-[570]">
                 Sort by
               </div>
               <div className="flex flex-col gap-1 mt-1">
                 <button
                   onClick={() => handleSortChange("title")}
-                  className={`relative flex w-full cursor-default select-none items-center justify-between rounded-lg px-2 py-1.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] focus:bg-[var(--overlay-hover)] ${
+                  className={`relative flex w-full cursor-default select-none items-center justify-between rounded-2xl px-3 py-2.5 text-[15px] font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.1)] ${
                     sortBy === "title"
-                      ? "bg-[var(--overlay-hover)]"
+                      ? "bg-[rgba(255,255,255,0.1)]"
                       : ""
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     {sortBy === "title" && (
-                      <IconCheck className="h-4 w-4" />
-                    )}
-                    <span>Name</span>
+<div className="p-1 rounded-full bg-white">
+                        <IconCheck className="h-3 w-3 text-black" />
+                      </div>                    )}
+                    <span className={sortBy !== "title" ? "ml-7" : ""}>Name</span>
                   </div>
                   {sortBy === "title" && (
                     sortOrder === "asc" ? (
-                      <IconSortAscending className="h-4 w-4" />
+                      <FaArrowUp className="h-4 w-4" />
                     ) : (
-                      <IconSortDescending className="h-4 w-4" />
+                      <FaArrowDown className="h-4 w-4" />
                     )
                   )}
                 </button>
                 <button
                   onClick={() => handleSortChange("date")}
-                  className={`relative flex w-full cursor-default select-none items-center justify-between rounded-lg px-2 py-1.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] focus:bg-[var(--overlay-hover)] ${
+                  className={`relative flex w-full cursor-default select-none items-center justify-between rounded-2xl px-3 py-2.5 text-[15px] font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.1)] ${
                     sortBy === "date"
-                      ? "bg-[var(--overlay-hover)]"
+                      ? "bg-[rgba(255,255,255,0.1)]"
                       : ""
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     {sortBy === "date" && (
-                      <IconCheck className="h-4 w-4" />
+                      <div className="p-1 rounded-full bg-white">
+                        <IconCheck className="h-3 w-3 text-black" />
+                      </div>
                     )}
-                    <span>Date Added</span>
+                    <span className={sortBy !== "date" ? "ml-7" : ""}>Date Added</span>
                   </div>
                   {sortBy === "date" && (
                     sortOrder === "asc" ? (
-                      <IconSortAscending className="h-4 w-4" />
+                      <FaArrowUp className="h-4 w-4" />
                     ) : (
-                      <IconSortDescending className="h-4 w-4" />
+                      <FaArrowDown className="h-4 w-4" />
                     )
                   )}
                 </button>
@@ -320,7 +327,7 @@ export function Dock({
                       <span className="text-sm font-[470]">
                         {isTrashSelected ? "Trash" : "All items"}
                       </span>
-                      <IconChevronDown style={{ width: '14px', height: '14px' }} />
+                      <IconCaretUpDownFilled style={{ width: '16px', height: '16px' }} />
                     </Button>
                   </PopoverTrigger>
                 </TooltipTrigger>

@@ -266,7 +266,7 @@ export function Dashboard({ user }: DashboardProps) {
                 className="w-[420px] p-3"
               >
                 <form onSubmit={handleAddSubmit} className="space-y-3">
-                  <div className="px-2 text-sm font-[470] text-[var(--text-primary)]">
+                  <div className="px-2 text-sm font-[470] text-foreground">
                     Add item
                   </div>
                   <div className="flex items-center gap-2">
