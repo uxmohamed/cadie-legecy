@@ -253,7 +253,13 @@ export function UserMenu({ user }: UserMenuProps) {
             <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
           </a>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={toggleHelp} className="cursor-pointer">
+        <DropdownMenuItem 
+          onSelect={(e) => {
+            e.preventDefault();
+            toggleHelp();
+          }}
+          className="cursor-pointer"
+        >
           <IconKeyboard className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
           Keyboard Shortcuts
           <Kbd className="ml-auto">⌘/</Kbd>
