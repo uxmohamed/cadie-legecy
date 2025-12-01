@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { Switch } from "@/components/ui/switch";
+import { getDefaultAvatar } from "@/lib/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -110,7 +111,10 @@ export function UserMenu({ user }: UserMenuProps) {
           className="h-9 w-9 rounded-full p-0 hover:bg-[var(--bg-field-hover)]"
         >
           <Avatar className="h-9 w-9">
-            <AvatarImage src={user.user_metadata?.avatar_url || user.user_metadata?.picture} alt={user.email} />
+            <AvatarImage 
+              src={user.user_metadata?.avatar_url || user.user_metadata?.picture || getDefaultAvatar(user.id)} 
+              alt={user.email} 
+            />
             <AvatarFallback className="bg-[var(--bg-inverse)] text-[var(--text-inverse)]">
               {user.email?.charAt(0).toUpperCase() || "U"}
             </AvatarFallback>
