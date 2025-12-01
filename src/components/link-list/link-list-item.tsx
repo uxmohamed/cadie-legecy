@@ -93,9 +93,9 @@ export function LinkListItem({
         className={cn(
           "group relative flex-1 grid grid-cols-[1fr_150px] ease-in will-change-transform items-center gap-1 rounded-lg py-4 px-2 select-none cursor-pointer active:scale-[0.99] transition-transform",
           isSelected
-            ? "bg-[var(--bg-l1-solid)]"
+            ? "bg-[var(--bg-field-hover)]"
             : isFocused
-            ? "bg-[var(--bg-l1-solid)]"
+            ? "bg-[var(--bg-field-hover)]"
             : "hover:bg-[var(--bg-field-hover)]"
         )}
       >
