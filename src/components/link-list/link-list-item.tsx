@@ -91,7 +91,7 @@ export function LinkListItem({
         onKeyDown={handleKeyDown}
         onContextMenu={(e) => onContextMenu(e, link)}
         className={cn(
-          "group relative flex-1 grid grid-cols-[1fr_150px] ease-in will-change-transform items-center gap-1 rounded-lg py-4 px-2 select-none cursor-pointer active:scale-[0.99] transition-transform",
+          "group relative flex-1 grid grid-cols-[1fr_150px] ease-in will-change-transform items-center gap-1 rounded-lg py-4 px-2 select-none cursor-pointer transition-transform",
           isSelected
             ? "bg-[var(--bg-field-hover)]"
             : isFocused
