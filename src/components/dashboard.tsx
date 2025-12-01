@@ -189,16 +189,16 @@ export function Dashboard({ user }: DashboardProps) {
   }, [registerShortcut, unregisterShortcut]);
 
   return (
-    <div className="flex h-screen flex-col bg-[var(--bg-l0-solid)]">
-      <main className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-16 items-center justify-between px-8 relative z-30">
+    <div className="flex min-h-screen flex-col bg-[var(--bg-l0-solid)]">
+      <main className="flex-1 flex flex-col">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between px-8 bg-[var(--bg-l0-solid)]">
           <Logo />
           <UserMenu user={user} />
         </header>
         {/* Control Bar */}
-        <div>
+        <div className="sticky top-16 z-20 bg-[var(--bg-l0-solid)]">
           <div className="mx-auto w-full max-w-4xl px-8">
-            <div className="flex items-center justify-between py-2">
+            <div className="flex items-center justify-between py-2 -mx-4 px-6">
               {/* Left side: Add button + All items */}
               <div className="flex items-center gap-4">
             <Popover open={addPopoverOpen} onOpenChange={setAddPopoverOpen}>
@@ -288,10 +288,10 @@ export function Dashboard({ user }: DashboardProps) {
             </div>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto pb-24 [scrollbar-gutter:stable]">
+        <div className="pb-24">
           <div className="mx-auto w-full max-w-4xl px-8">
             {/* Title and Created at header - sticky */}
-            <div className="sticky top-0 z-10 grid grid-cols-[1fr_150px] gap-1 items-center py-4 text-xs font-medium text-[var(--text-tertiary)] select-none bg-[var(--bg-l0-solid)] border-b border-[var(--border-tertiary)] -mx-8 px-10">
+            <div className="sticky top-[116px] z-10 grid grid-cols-[1fr_150px] gap-1 items-center py-4 px-6 text-xs font-medium text-[var(--text-tertiary)] select-none bg-[var(--bg-l0-solid)] border-b border-[var(--border-tertiary)] -mx-4">
               <div>Title</div>
               <div className="text-right">Created</div>
             </div>

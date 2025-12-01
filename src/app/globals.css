@@ -12,6 +12,63 @@
   --font-weight-text: 570;
 }
 
+html {
+  height: 100%;
+  overflow: auto;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+:root,
+[data-theme="light"] {
+  --scrollbar-track-bg: var(--bg-l0-solid);
+  --scrollbar-thumb-bg: var(--scrollbar-inactive-gray);
+  --scrollbar-thumb-hover-bg: var(--scrollbar-hover-gray);
+  --scrollbar-thumb-active-bg: var(--scrollbar-active-gray);
+}
+
+[data-theme="dark"] {
+  --scrollbar-track-bg: var(--bg-l0-solid);
+  --scrollbar-thumb-bg: var(--scrollbar-inactive-gray);
+  --scrollbar-thumb-hover-bg: var(--scrollbar-hover-gray);
+  --scrollbar-thumb-active-bg: var(--scrollbar-active-gray);
+}
+
+/* WebKit-based browsers (Chrome, Edge, Safari) */
+html::-webkit-scrollbar {
+  width: 12px;
+}
+
+html::-webkit-scrollbar-track {
+  background-color: var(--scrollbar-track-bg);
+}
+
+html::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb-bg);
+  border-radius: 9999px;
+  border: 3px solid var(--scrollbar-track-bg);
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover-bg);
+}
+
+html::-webkit-scrollbar-thumb:active {
+  background-color: var(--scrollbar-thumb-active-bg);
+}
+
+/* Firefox */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb-bg) var(--scrollbar-track-bg);
+}
+
 /* Utility Classes */
 .overlay-blur {
   background: var(--overlay-blur-bg);
