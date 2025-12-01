@@ -6,6 +6,7 @@
 @theme {
   --font-custom: var(--font-custom);
   --font-inter: var(--font-inter);
+  --font-family-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 
   /* Custom font weights for Inter variable font */
   --font-weight-book: 470;
@@ -26,6 +27,7 @@ body {
   margin: 0;
   padding: 0;
   overscroll-behavior: none;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 :root,
