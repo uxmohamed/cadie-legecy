@@ -81,6 +81,11 @@ export const getSemanticTokens = (mode: ThemeMode = 'light') => {
     "border-destructive": isLight ? mix(p.red[600], 12) : mix(p.red[400], 12),
 
     // Backgrounds (adapts to theme)
+    // Pure background for avatar-based tinting:
+    // - Light mode: pure white
+    // - Dark mode: pure black
+    "bg-pure-white": isLight ? p.base.white : p.base.black,
+    
     // Main app background - SINGLE SOURCE OF TRUTH (defined above)
     // Both bg-main-container and bg-l0-solid use mainAppBackground
     "bg-main-container": mainAppBackground,
@@ -94,10 +99,10 @@ export const getSemanticTokens = (mode: ThemeMode = 'light') => {
     "bg-l1-solid": isLight ? mix(p.base.black, 2, p.base.white) : mix(p.base.white, 12, p.base.black),
     "bg-l1-glass": isLight ? mix(p.base.white, 72) : mix(p.grey[800], 72),
       
-    "bg-l2-solid": isLight ? p.base.white : mix(p.base.white, 12, p.base.black),
+    "bg-l2-solid": isLight ? p.base.white : p.grey[800],
     "bg-l2-glass": isLight ? mix(p.base.white, 72) : mix(p.grey[800], 72),
       
-    "bg-l3-solid": isLight ? p.base.white : mix(p.base.white, 14, p.base.black),
+    "bg-l3-solid": isLight ? p.base.white : p.grey[700],
     "bg-l3-glass": isLight ? mix(p.base.white, 72) : mix(p.grey[700], 72),
 
     "bg-emphasis": isLight ? mix(p.base.black, 16, p.base.white) : p.grey[800],

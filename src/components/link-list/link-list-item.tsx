@@ -118,7 +118,7 @@ export function LinkListItem({
             <Favicon url={link.favicon_url || ""} domain={link.domain} className="h-5 w-5" />
           )}
           <div className="min-w-0 flex-1 flex items-center gap-2">
-            <div className="truncate text-sm leading-4 text-[rgba(0,0,0,0.90)] font-[470]">
+            <div className="truncate text-sm leading-4 text-[var(--text-primary)] font-[470]">
               {link.title || link.url}
             </div>
             {!isColor && (
