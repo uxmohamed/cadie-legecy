@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
+    "build:cloudflare": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "test": "jest",
@@ -61,7 +62,6 @@
     "tweakpane": "^4.0.5"
   },
   "devDependencies": {
-    "@cloudflare/next-on-pages": "^1.13.16",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
