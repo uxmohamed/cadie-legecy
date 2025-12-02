@@ -243,11 +243,16 @@ export function Dashboard({ user }: DashboardProps) {
     <BackgroundTint avatarSrc={avatarSrc}>
       <div className="flex min-h-screen flex-col relative z-10">
         <main className="flex-1 flex flex-col">
+            {/* Top Section */}
+            <div className="sticky top-0 z-20 backdrop-blur-xl relative">
+  {/* Smooth blur gradient */}
+  <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-white/10 to-white/80" />
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between px-8">
           <Logo />
           <UserMenu user={user} />
         </header>
         {/* Control Bar */}
+
         <div className="sticky top-16 z-20">
           <div className="mx-auto w-full max-w-4xl px-8">
             <div className="flex items-center justify-between py-2 -mx-4 px-6">
@@ -340,13 +345,19 @@ export function Dashboard({ user }: DashboardProps) {
             </div>
           </div>
         </div>
-        <div className="pb-24">
-          <div className="mx-auto w-full max-w-4xl px-8">
-            {/* Title and Created at header - sticky */}
-            <div className="sticky top-[116px] z-10 grid grid-cols-[1fr_150px] gap-1 items-center py-4 px-6 text-xs font-medium text-[var(--text-tertiary)] select-none border-b border-[var(--border-tertiary)] -mx-4">
+           <div className="sticky max-w-4xl mx-auto top-[116px] z-10 pt-4  px-10 -mx-4">
+  <div className="grid grid-cols-[1fr_150px] gap-1 px-1 items-center text-xs font-medium text-[var(--text-tertiary)] select-none pb-4 border-b border-[var(--border-tertiary)]">
               <div>Title</div>
               <div className="text-right">Created</div>
             </div>
+            </div>
+            </div>
+
+{/* Bottom Section */}
+
+        <div className="pb-24">
+          <div className="mx-auto w-full max-w-4xl px-8">
+            {/* Title and Created at header - sticky */}
             {fetchingLinks || !hasInitiallyLoaded ? (
               <LinkListSkeleton />
             ) : (

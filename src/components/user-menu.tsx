@@ -186,7 +186,7 @@ export function UserMenu({ user }: UserMenuProps) {
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent ref={menuRef} align="end" className="w-64">
+      <DropdownMenuContent ref={menuRef} align="end" className="w-64 sticky">
         <div className="px-2 py-3">
           {userName ? (
             <>
