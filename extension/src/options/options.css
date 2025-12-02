@@ -13,6 +13,8 @@ body {
   color: var(--text-primary);
   padding: 40px 20px;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 .container {

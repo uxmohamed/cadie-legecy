@@ -28,6 +28,8 @@ body {
   padding: 0;
   overscroll-behavior: none;
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 :root,
@@ -36,6 +38,9 @@ body {
   --scrollbar-thumb-bg: var(--scrollbar-inactive-gray);
   --scrollbar-thumb-hover-bg: var(--scrollbar-hover-gray);
   --scrollbar-thumb-active-bg: var(--scrollbar-active-gray);
+
+  /* Avatar-tint base background in light mode: pure white */
+  --bg-pure-white: oklch(1 0 0);
 }
 
 [data-theme="dark"] {
@@ -43,6 +48,10 @@ body {
   --scrollbar-thumb-bg: var(--scrollbar-inactive-gray);
   --scrollbar-thumb-hover-bg: var(--scrollbar-hover-gray);
   --scrollbar-thumb-active-bg: var(--scrollbar-active-gray);
+
+  /* Avatar-tint base background in dark mode: softer near-black */
+  /* Using grey[800]: oklch(0.309 0 0) */
+  --bg-pure-white: oklch(0.309 0 0);
 }
 
 /* WebKit-based browsers (Chrome, Edge, Safari) */

@@ -7,10 +7,12 @@ import { LinkListSkeleton } from "@/components/link-list-skeleton";
 import { UserMenu } from "@/components/user-menu";
 import { Logo } from "@/components/logo";
 import { Dock } from "@/components/dock";
+import { BackgroundTint } from "@/components/background-tint";
 import { useCategories } from "@/hooks/use-categories";
 import { useLinks } from "@/features/links/hooks";
 import type { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
+import { getDefaultAvatar } from "@/lib/avatar";
 import {
   Popover,
   PopoverTrigger,
@@ -235,15 +237,18 @@ export function Dashboard({ user }: DashboardProps) {
     };
   }, [registerShortcut, unregisterShortcut]);
 
+  const avatarSrc = user.user_metadata?.avatar_url || user.user_metadata?.picture || getDefaultAvatar(user.id);
+
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--bg-l0-solid)]">
-      <main className="flex-1 flex flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between px-8 bg-[var(--bg-l0-solid)]">
+    <BackgroundTint avatarSrc={avatarSrc}>
+      <div className="flex min-h-screen flex-col relative z-10">
+        <main className="flex-1 flex flex-col">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between px-8">
           <Logo />
           <UserMenu user={user} />
         </header>
         {/* Control Bar */}
-        <div className="sticky top-16 z-20 bg-[var(--bg-l0-solid)]">
+        <div className="sticky top-16 z-20">
           <div className="mx-auto w-full max-w-4xl px-8">
             <div className="flex items-center justify-between py-2 -mx-4 px-6">
               {/* Left side: Add button + All items */}
@@ -318,7 +323,7 @@ export function Dashboard({ user }: DashboardProps) {
                 aria-label="Search"
               />
               <div className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none z-10 flex items-center">
-                <Kbd className="h-5 px-1.5 text-[10px] bg-[rgba(0,0,0,0.06)] text-[var(--text-tertiary)] flex items-center justify-center">
+                <Kbd className="h-5 px-1.5 text-[10px] text-[var(--text-tertiary)] flex items-center justify-center">
                   /
                 </Kbd>
               </div>
@@ -338,7 +343,7 @@ export function Dashboard({ user }: DashboardProps) {
         <div className="pb-24">
           <div className="mx-auto w-full max-w-4xl px-8">
             {/* Title and Created at header - sticky */}
-            <div className="sticky top-[116px] z-10 grid grid-cols-[1fr_150px] gap-1 items-center py-4 px-6 text-xs font-medium text-[var(--text-tertiary)] select-none bg-[var(--bg-l0-solid)] border-b border-[var(--border-tertiary)] -mx-4">
+            <div className="sticky top-[116px] z-10 grid grid-cols-[1fr_150px] gap-1 items-center py-4 px-6 text-xs font-medium text-[var(--text-tertiary)] select-none border-b border-[var(--border-tertiary)] -mx-4">
               <div>Title</div>
               <div className="text-right">Created</div>
             </div>
@@ -379,6 +384,7 @@ export function Dashboard({ user }: DashboardProps) {
         onViewChange={setSelectedCategoryId}
         allItemsCount={selectedCategoryId !== "trash" ? filteredLinks.length : undefined}
       />
-    </div>
+      </div>
+    </BackgroundTint>
   );
 }

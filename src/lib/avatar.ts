@@ -21,3 +21,15 @@ export function getDefaultAvatar(userId: string): string {
   
   return `/avatars/avatar-pic-${paddedNumber}.webp`;
 }
+
+/**
+ * Converts an avatar number (1-12) to an avatar path.
+ * 
+ * @param avatarNumber - The avatar number (1-12)
+ * @returns Path to the avatar image (e.g., "/avatars/avatar-pic-01.webp")
+ */
+export function getAvatarPath(avatarNumber: number): string {
+  const clampedNumber = Math.max(1, Math.min(12, Math.round(avatarNumber)));
+  const paddedNumber = String(clampedNumber).padStart(2, "0");
+  return `/avatars/avatar-pic-${paddedNumber}.webp`;
+}

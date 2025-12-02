@@ -12,6 +12,8 @@ body {
     "Helvetica Neue", Arial, sans-serif;
   background: var(--bg-main-container);
   color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 .container {

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
+    "build:cloudflare": "next build --webpack && npx @cloudflare/next-on-pages@latest",
     "start": "next start",
     "lint": "eslint",
     "test": "jest",
@@ -57,9 +58,11 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "tweakpane": "^4.0.5"
   },
   "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.13.16",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
