@@ -1,6 +1,8 @@
 import type { ILinkRepository } from "./link.repository.interface";
 import type { Link, CreateLinkDTO, UpdateLinkDTO, LinkFilters } from "../types/link.types";
 import { createClient } from "@/lib/supabase/server";
+import { canonicalizeUrl } from "@/lib/canonicalize";
+import { AppError, ErrorCode } from "@/lib/errors";
 
 /**
  * Supabase implementation of the Link Repository
@@ -55,7 +57,12 @@ export class SupabaseLinkRepository implements ILinkRepository {
         const { data, error } = await query;
 
         if (error) {
-            throw new Error(`Failed to fetch links: ${error.message}`);
+            throw new AppError(
+                ErrorCode.QUERY_FAILED,
+                `Failed to fetch links: ${error.message}`,
+                500,
+                { originalError: error }
+            );
         }
 
         return data || [];
@@ -79,7 +86,12 @@ export class SupabaseLinkRepository implements ILinkRepository {
                 // Not found
                 return null;
             }
-            throw new Error(`Failed to fetch link: ${error.message}`);
+            throw new AppError(
+                ErrorCode.QUERY_FAILED,
+                `Failed to fetch link: ${error.message}`,
+                500,
+                { originalError: error }
+            );
         }
 
         return data;
@@ -110,7 +122,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
             .insert({
                 user_id: userId,
                 url: data.url,
-                clean_url: data.url, // TODO: Implement URL cleaning
+                clean_url: contentType === "color" ? data.url : canonicalizeUrl(data.url),
                 title: data.title,
                 domain,
                 content_type: contentType,
@@ -127,7 +139,21 @@ export class SupabaseLinkRepository implements ILinkRepository {
             .single();
 
         if (error) {
-            throw new Error(`Failed to create link: ${error.message}`);
+            if (error.code === "23505") {
+                // Unique constraint violation
+                throw new AppError(
+                    ErrorCode.ALREADY_EXISTS,
+                    "A link with this URL already exists",
+                    409,
+                    { originalError: error }
+                );
+            }
+            throw new AppError(
+                ErrorCode.DATABASE_ERROR,
+                `Failed to create link: ${error.message}`,
+                500,
+                { originalError: error }
+            );
         }
 
         return link;
@@ -148,7 +174,20 @@ export class SupabaseLinkRepository implements ILinkRepository {
             .single();
 
         if (error) {
-            throw new Error(`Failed to update link: ${error.message}`);
+            if (error.code === "PGRST116") {
+                throw new AppError(
+                    ErrorCode.NOT_FOUND,
+                    "Link not found",
+                    404,
+                    { originalError: error }
+                );
+            }
+            throw new AppError(
+                ErrorCode.DATABASE_ERROR,
+                `Failed to update link: ${error.message}`,
+                500,
+                { originalError: error }
+            );
         }
 
         return link;
@@ -171,7 +210,20 @@ export class SupabaseLinkRepository implements ILinkRepository {
             .eq("user_id", userId);
 
         if (error) {
-            throw new Error(`Failed to delete link: ${error.message}`);
+            if (error.code === "PGRST116") {
+                throw new AppError(
+                    ErrorCode.NOT_FOUND,
+                    "Link not found",
+                    404,
+                    { originalError: error }
+                );
+            }
+            throw new AppError(
+                ErrorCode.DATABASE_ERROR,
+                `Failed to delete link: ${error.message}`,
+                500,
+                { originalError: error }
+            );
         }
     }
 

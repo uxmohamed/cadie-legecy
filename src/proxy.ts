@@ -1,10 +1,11 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { log } from '@/lib/logger'
 
 export async function proxy(request: NextRequest) {
   // Check if environment variables are available
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    console.warn('Supabase environment variables not set, skipping auth proxy')
+    log.warn('Supabase environment variables not set, skipping auth proxy')
     return NextResponse.next({
       request,
     })
@@ -70,7 +71,7 @@ export async function proxy(request: NextRequest) {
     return supabaseResponse
   } catch (error) {
     // If proxy fails, log error but allow request to proceed
-    console.error('Proxy error:', error)
+    log.error('Proxy error', error, { path: request.nextUrl.pathname })
     return NextResponse.next({
       request,
     })

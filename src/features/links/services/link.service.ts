@@ -2,6 +2,7 @@ import type { ILinkRepository } from "../repositories/link.repository.interface"
 import type { Link, CreateLinkDTO, UpdateLinkDTO, LinkFilters } from "../types/link.types";
 import { MetadataService } from "./metadata.service";
 import { DuplicateDetectionService } from "./duplicate-detection.service";
+import { log } from "@/lib/logger";
 
 /**
  * Service for managing link operations
@@ -48,7 +49,7 @@ export class LinkService {
         if (data.content_type === "url" || !data.content_type) {
             // Fire and forget - don't wait for metadata
             this.metadataService.enrichLink(link.id, data.url).catch(err => {
-                console.error('Background metadata enrichment failed:', err);
+                log.error('Background metadata enrichment failed', err, { linkId: link.id, url: data.url });
             });
         }
 

@@ -5,6 +5,7 @@ import { DuplicateDetectionService } from "@/features/links/services";
 import { SupabaseLinkRepository } from "@/features/links/repositories";
 import { authenticateRequest } from "@/lib/auth-middleware";
 import type { CreateLinkDTO } from "@/features/links/types";
+import { isAppError, toAppError, ErrorCode } from "@/lib/errors";
 
 /**
  * Handler for POST /api/links
@@ -29,7 +30,16 @@ export class CreateLinkHandler {
             // Authenticate
             const userId = await authenticateRequest(request);
             if (!userId) {
-                return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+                return NextResponse.json(
+                    {
+                        error: {
+                            code: ErrorCode.UNAUTHORIZED,
+                            message: "Unauthorized",
+                            userMessage: "Please sign in to continue"
+                        }
+                    },
+                    { status: 401 }
+                );
             }
 
             // Parse and validate request body
@@ -47,7 +57,13 @@ export class CreateLinkHandler {
 
             if (!url || !title) {
                 return NextResponse.json(
-                    { error: "URL and title are required" },
+                    {
+                        error: {
+                            code: ErrorCode.INVALID_INPUT,
+                            message: "URL and title are required",
+                            userMessage: "Please check your input and try again"
+                        }
+                    },
                     { status: 400 }
                 );
             }
@@ -75,10 +91,16 @@ export class CreateLinkHandler {
                 { status: isDuplicate ? 200 : 201 }
             );
         } catch (error) {
-            console.error("Error creating link:", error);
+            const appError = toAppError(error);
             return NextResponse.json(
-                { error: error instanceof Error ? error.message : "Internal server error" },
-                { status: 500 }
+                {
+                    error: {
+                        code: appError.code,
+                        message: appError.message,
+                        userMessage: appError.getUserMessage()
+                    }
+                },
+                { status: appError.statusCode }
             );
         }
     }

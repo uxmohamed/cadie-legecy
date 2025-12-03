@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { log } from "@/lib/logger";
 
 export interface AuthenticatedRequest extends NextRequest {
   userId?: string;
@@ -60,18 +61,18 @@ async function authenticateWithToken(token: string): Promise<string | null> {
       .single();
 
     if (error || !tokenRecord) {
-      console.error("Token authentication failed:", error?.message);
+      log.error("Token authentication failed", error);
       return null;
     }
 
     // Update last_used_at timestamp asynchronously (don't await)
     updateTokenLastUsed(tokenRecord.id).catch((err) => {
-      console.error("Failed to update token last_used_at:", err);
+      log.error("Failed to update token last_used_at", err, { tokenId: tokenRecord.id });
     });
 
     return tokenRecord.user_id;
   } catch (error) {
-    console.error("Error during token authentication:", error);
+    log.error("Error during token authentication", error);
     return null;
   }
 }

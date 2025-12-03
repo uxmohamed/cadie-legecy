@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import type { Link, CreateLinkDTO, LinkFilters } from "@/features/links/types";
 import type { DetectedContent } from "@/lib/content-detector";
+import { log } from "@/lib/logger";
 
 /**
  * Hook for managing links
@@ -68,11 +69,10 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
             if (response.ok) {
                 const data = await response.json();
                 setLinks(data.links || []);
-            } else if (response.status === 401) {
-                // Unauthorized: show error toast
-                toast.error('Unauthorized - please log in');
             } else {
-                toast.error("Failed to refresh links");
+                const errorData = await response.json();
+                const errorMessage = errorData.error?.userMessage || "Failed to refresh links";
+                toast.error(errorMessage);
             }
             } catch (error) {
                 // Ignore abort errors
@@ -120,26 +120,24 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
 
                 if (response.ok) {
                     const data = await response.json();
-                    
+
                     // Ensure minimum skeleton display time (100ms) for perceived performance
                     const elapsed = Date.now() - startTime;
                     const remainingTime = Math.max(0, 100 - elapsed);
-                    
+
                     await new Promise(resolve => setTimeout(resolve, remainingTime));
-                    
+
                     // Check again if request was aborted during delay
                     if (abortController.signal.aborted) return;
-                    
+
                     // Replace links completely - server is source of truth
                     // Realtime will add new links on top, but fetchLinks should replace
                     setLinks(data.links || []);
                     setHasInitiallyLoaded(true);
-                } else if (response.status === 401) {
-                    // Unauthorized: show error toast
-                    toast.error('Unauthorized - please log in');
-                    setHasInitiallyLoaded(true);
                 } else {
-                    toast.error("Failed to load links");
+                    const errorData = await response.json();
+                    const errorMessage = errorData.error?.userMessage || "Failed to load links";
+                    toast.error(errorMessage);
                     setHasInitiallyLoaded(true);
                 }
             } catch (error) {
@@ -275,9 +273,9 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                         // Monitor subscription status for debugging
                         if (process.env.NODE_ENV === 'development') {
                             if (status === "SUBSCRIBED") {
-                                console.log("Realtime: Successfully subscribed");
+                                log.info("Realtime: Successfully subscribed", { userId });
                             } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-                                console.warn("Realtime: Subscription failed", status);
+                                log.warn("Realtime: Subscription failed", { status, userId });
                             }
                         }
                     });
@@ -342,12 +340,15 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 const response = await fetch(`/api/links/${id}`, { method: "DELETE" });
 
                 if (!response.ok) {
-                    throw new Error("Failed to delete link");
+                    const errorData = await response.json();
+                    const errorMessage = errorData.error?.userMessage || "Failed to delete link";
+                    throw new Error(errorMessage);
                 }
 
                 toast.success("Link deleted");
             } catch (error) {
-                toast.error("Failed to delete link");
+                const errorMessage = error instanceof Error ? error.message : "Failed to delete link";
+                toast.error(errorMessage);
                 await refreshLinks();
             }
         },
@@ -367,13 +368,18 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 await Promise.all(
                     ids.map(async (id) => {
                         const response = await fetch(`/api/links/${id}`, { method: "DELETE" });
-                        if (!response.ok) throw new Error(`Failed to delete link ${id}`);
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            const errorMessage = errorData.error?.userMessage || `Failed to delete link ${id}`;
+                            throw new Error(errorMessage);
+                        }
                     })
                 );
 
                 toast.success(`${ids.length} links deleted`);
             } catch (error) {
-                toast.error("Failed to delete some links");
+                const errorMessage = error instanceof Error ? error.message : "Failed to delete some links";
+                toast.error(errorMessage);
                 await refreshLinks();
             }
         },
@@ -411,12 +417,15 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 });
 
                 if (!response.ok) {
-                    throw new Error("Failed to pin link");
+                    const errorData = await response.json();
+                    const errorMessage = errorData.error?.userMessage || "Failed to pin link";
+                    throw new Error(errorMessage);
                 }
 
                 toast.success("Link pinned");
             } catch (error) {
-                toast.error("Failed to pin link");
+                const errorMessage = error instanceof Error ? error.message : "Failed to pin link";
+                toast.error(errorMessage);
                 await refreshLinks();
             }
         },
@@ -440,12 +449,15 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 });
 
                 if (!response.ok) {
-                    throw new Error("Failed to unpin link");
+                    const errorData = await response.json();
+                    const errorMessage = errorData.error?.userMessage || "Failed to unpin link";
+                    throw new Error(errorMessage);
                 }
 
                 toast.success("Link unpinned");
             } catch (error) {
-                toast.error("Failed to unpin link");
+                const errorMessage = error instanceof Error ? error.message : "Failed to unpin link";
+                toast.error(errorMessage);
                 await refreshLinks();
             }
         },
@@ -485,7 +497,8 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
 
                     if (!response.ok) {
                         const errorData = await response.json();
-                        throw new Error(errorData.error || "Failed to create link");
+                        const errorMessage = errorData.error?.userMessage || errorData.error || "Failed to create link";
+                        throw new Error(errorMessage);
                     }
 
                     return response.json();

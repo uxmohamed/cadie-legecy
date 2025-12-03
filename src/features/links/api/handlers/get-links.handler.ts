@@ -4,6 +4,7 @@ import { MetadataService } from "@/features/links/services";
 import { DuplicateDetectionService } from "@/features/links/services";
 import { SupabaseLinkRepository } from "@/features/links/repositories";
 import { authenticateRequest } from "@/lib/auth-middleware";
+import { toAppError, ErrorCode } from "@/lib/errors";
 
 /**
  * Handler for GET /api/links
@@ -28,7 +29,16 @@ export class GetLinksHandler {
             // Authenticate
             const userId = await authenticateRequest(request);
             if (!userId) {
-                return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+                return NextResponse.json(
+                    {
+                        error: {
+                            code: ErrorCode.UNAUTHORIZED,
+                            message: "Unauthorized",
+                            userMessage: "Please sign in to continue"
+                        }
+                    },
+                    { status: 401 }
+                );
             }
 
             // Parse query parameters
@@ -46,10 +56,16 @@ export class GetLinksHandler {
 
             return NextResponse.json({ links });
         } catch (error) {
-            console.error("Error fetching links:", error);
+            const appError = toAppError(error);
             return NextResponse.json(
-                { error: "Internal server error" },
-                { status: 500 }
+                {
+                    error: {
+                        code: appError.code,
+                        message: appError.message,
+                        userMessage: appError.getUserMessage()
+                    }
+                },
+                { status: appError.statusCode }
             );
         }
     }

@@ -5,6 +5,7 @@ import { DuplicateDetectionService } from "@/features/links/services";
 import { SupabaseLinkRepository } from "@/features/links/repositories";
 import { authenticateRequest } from "@/lib/auth-middleware";
 import type { UpdateLinkDTO } from "@/features/links/types";
+import { toAppError, ErrorCode } from "@/lib/errors";
 
 /**
  * Handler for PUT /api/links/[id]
@@ -29,7 +30,16 @@ export class UpdateLinkHandler {
             // Authenticate
             const userId = await authenticateRequest(request);
             if (!userId) {
-                return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+                return NextResponse.json(
+                    {
+                        error: {
+                            code: ErrorCode.UNAUTHORIZED,
+                            message: "Unauthorized",
+                            userMessage: "Please sign in to continue"
+                        }
+                    },
+                    { status: 401 }
+                );
             }
 
             // Parse request body
@@ -41,10 +51,16 @@ export class UpdateLinkHandler {
 
             return NextResponse.json({ link });
         } catch (error) {
-            console.error("Error updating link:", error);
+            const appError = toAppError(error);
             return NextResponse.json(
-                { error: error instanceof Error ? error.message : "Internal server error" },
-                { status: 500 }
+                {
+                    error: {
+                        code: appError.code,
+                        message: appError.message,
+                        userMessage: appError.getUserMessage()
+                    }
+                },
+                { status: appError.statusCode }
             );
         }
     }
@@ -73,7 +89,16 @@ export class DeleteLinkHandler {
             // Authenticate
             const userId = await authenticateRequest(request);
             if (!userId) {
-                return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+                return NextResponse.json(
+                    {
+                        error: {
+                            code: ErrorCode.UNAUTHORIZED,
+                            message: "Unauthorized",
+                            userMessage: "Please sign in to continue"
+                        }
+                    },
+                    { status: 401 }
+                );
             }
 
             // Delete link using service
@@ -81,10 +106,16 @@ export class DeleteLinkHandler {
 
             return NextResponse.json({ success: true });
         } catch (error) {
-            console.error("Error deleting link:", error);
+            const appError = toAppError(error);
             return NextResponse.json(
-                { error: error instanceof Error ? error.message : "Internal server error" },
-                { status: 500 }
+                {
+                    error: {
+                        code: appError.code,
+                        message: appError.message,
+                        userMessage: appError.getUserMessage()
+                    }
+                },
+                { status: appError.statusCode }
             );
         }
     }

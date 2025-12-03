@@ -10,11 +10,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Kbd } from "@/components/ui/kbd";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverPopup,
-} from "@/components/ui/popover";
+import { Popover, PopoverTrigger, PopoverPopup } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import {
   IconPlus,
@@ -120,7 +116,7 @@ export function Dock({
   };
 
   const getSortIcon = () => {
-    const iconStyle = { width: '18px', height: '18px' };
+    const iconStyle = { width: "18px", height: "18px" };
     if (sortBy === "date") {
       return sortOrder === "desc" ? (
         <IconSortDescending style={iconStyle} />
@@ -148,11 +144,14 @@ export function Dock({
       <TooltipProvider delayDuration={300}>
         <nav
           className="overlay-blur flex items-center py-1.5 px-1.5 rounded-full border-[var(--overlay-border)]"
-          style={{ gap: '4px' }}
+          style={{ gap: "4px" }}
           aria-label="Dock actions"
         >
           {/* Add Button with Popover */}
-          <Popover open={addPopoverOpen && !!onAddSubmit} onOpenChange={setAddPopoverOpen}>
+          <Popover
+            open={addPopoverOpen && !!onAddSubmit}
+            onOpenChange={setAddPopoverOpen}
+          >
             <Tooltip>
               <TooltipTrigger asChild>
                 <PopoverTrigger asChild>
@@ -160,10 +159,10 @@ export function Dock({
                     onClick={handleAddClick}
                     aria-label="Add link"
                     variant="ghost"
-                    style={{ padding: '0', width: '50px', height: '50px' }}
+                    style={{ padding: "0", width: "50px", height: "50px" }}
                     className="rounded-full bg-[var(--overlay-hover)] hover:bg-white/25 text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0 transition-colors"
                   >
-                    <IconPlus style={{ width: '18px', height: '18px' }} />
+                    <IconPlus style={{ width: "18px", height: "18px" }} />
                   </Button>
                 </PopoverTrigger>
               </TooltipTrigger>
@@ -219,10 +218,10 @@ export function Dock({
                 onClick={onSearchClick}
                 aria-label="Search"
                 variant="ghost"
-                style={{ padding: '0', width: '50px', height: '50px' }}
+                style={{ padding: "0", width: "50px", height: "50px" }}
                 className="rounded-full bg-transparent hover:bg-[var(--overlay-hover)] text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0"
               >
-                <IconSearch style={{ width: '18px', height: '18px' }} />
+                <IconSearch style={{ width: "18px", height: "18px" }} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={12}>
@@ -241,7 +240,7 @@ export function Dock({
                   <Button
                     aria-label="Sort"
                     variant="ghost"
-                    style={{ padding: '0', width: '50px', height: '50px' }}
+                    style={{ padding: "0", width: "50px", height: "50px" }}
                     className="rounded-full bg-transparent hover:bg-[var(--overlay-hover)] text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0"
                   >
                     {getSortIcon()}
@@ -252,7 +251,12 @@ export function Dock({
                 <span>Sort</span>
               </TooltipContent>
             </Tooltip>
-            <PopoverPopup side="top" align="center" sideOffset={12} className="w-64 p-2">
+            <PopoverPopup
+              side="top"
+              align="center"
+              sideOffset={12}
+              className="w-64 p-2"
+            >
               <div className="px-3 py-1.5 text-sm text-[var(--overlay-text-primary)] font-[570]">
                 Sort by
               </div>
@@ -260,32 +264,30 @@ export function Dock({
                 <button
                   onClick={() => handleSortChange("title")}
                   className={`relative flex w-full cursor-default select-none items-center justify-between rounded-2xl px-3 py-2.5 text-[15px] font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.1)] ${
-                    sortBy === "title"
-                      ? "bg-[rgba(255,255,255,0.1)]"
-                      : ""
+                    sortBy === "title" ? "bg-[rgba(255,255,255,0.1)]" : ""
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     {sortBy === "title" && (
-<div className="p-1 rounded-full bg-white">
+                      <div className="p-1 rounded-full bg-white">
                         <IconCheck className="h-3 w-3 text-black" />
-                      </div>                    )}
-                    <span className={sortBy !== "title" ? "ml-7" : ""}>Name</span>
+                      </div>
+                    )}
+                    <span className={sortBy !== "title" ? "ml-7" : ""}>
+                      Name
+                    </span>
                   </div>
-                  {sortBy === "title" && (
-                    sortOrder === "asc" ? (
+                  {sortBy === "title" &&
+                    (sortOrder === "asc" ? (
                       <FaArrowUp className="h-4 w-4" />
                     ) : (
                       <FaArrowDown className="h-4 w-4" />
-                    )
-                  )}
+                    ))}
                 </button>
                 <button
                   onClick={() => handleSortChange("date")}
                   className={`relative flex w-full cursor-default select-none items-center justify-between rounded-2xl px-3 py-2.5 text-[15px] font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.1)] ${
-                    sortBy === "date"
-                      ? "bg-[rgba(255,255,255,0.1)]"
-                      : ""
+                    sortBy === "date" ? "bg-[rgba(255,255,255,0.1)]" : ""
                   }`}
                 >
                   <div className="flex items-center gap-2">
@@ -294,15 +296,16 @@ export function Dock({
                         <IconCheck className="h-3 w-3 text-black" />
                       </div>
                     )}
-                    <span className={sortBy !== "date" ? "ml-7" : ""}>Date Added</span>
+                    <span className={sortBy !== "date" ? "ml-7" : ""}>
+                      Date Added
+                    </span>
                   </div>
-                  {sortBy === "date" && (
-                    sortOrder === "asc" ? (
+                  {sortBy === "date" &&
+                    (sortOrder === "asc" ? (
                       <FaArrowUp className="h-4 w-4" />
                     ) : (
                       <FaArrowDown className="h-4 w-4" />
-                    )
-                  )}
+                    ))}
                 </button>
               </div>
             </PopoverPopup>
@@ -327,7 +330,9 @@ export function Dock({
                       <span className="text-sm font-[470]">
                         {isTrashSelected ? "Trash" : "All items"}
                       </span>
-                      <IconCaretUpDownFilled style={{ width: '16px', height: '16px' }} />
+                      <IconCaretUpDownFilled
+                        style={{ width: "16px", height: "16px" }}
+                      />
                     </Button>
                   </PopoverTrigger>
                 </TooltipTrigger>
@@ -335,14 +340,17 @@ export function Dock({
                   <span>Switch view</span>
                 </TooltipContent>
               </Tooltip>
-              <PopoverPopup side="top" align="end" sideOffset={12} className="w-48 p-2">
+              <PopoverPopup
+                side="top"
+                align="end"
+                sideOffset={12}
+                className="w-48 p-2"
+              >
                 <div className="flex flex-col gap-1">
                   <button
                     onClick={() => handleViewChange(null)}
                     className={`relative flex w-full cursor-default select-none items-center justify-between rounded-lg px-2 py-1.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] focus:bg-[var(--overlay-hover)] ${
-                      isAllItemsSelected
-                        ? "bg-[var(--overlay-hover)]"
-                        : ""
+                      isAllItemsSelected ? "bg-[var(--overlay-hover)]" : ""
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -360,9 +368,7 @@ export function Dock({
                   <button
                     onClick={() => handleViewChange("trash")}
                     className={`relative flex w-full cursor-default select-none items-center justify-between rounded-lg px-2 py-1.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] focus:bg-[var(--overlay-hover)] ${
-                      isTrashSelected
-                        ? "bg-[var(--overlay-hover)]"
-                        : ""
+                      isTrashSelected ? "bg-[var(--overlay-hover)]" : ""
                     }`}
                   >
                     <div className="flex items-center gap-2">
