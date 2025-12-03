@@ -2,9 +2,6 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { log } from '@/lib/logger'
 
-// Cloudflare Pages requires edge runtime
-export const runtime = 'edge'
-
 export async function proxy(request: NextRequest) {
   // Check if environment variables are available
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
