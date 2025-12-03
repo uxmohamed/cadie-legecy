@@ -246,8 +246,8 @@ export function Dashboard({ user }: DashboardProps) {
             {/* Top Section */}
             <div className="sticky top-0 z-20 backdrop-blur-xl relative">
   {/* Smooth blur gradient */}
-  <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-white/10 to-white/80" />
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between px-8">
+  <div className="absolute inset-0 pointer-events-none " />
+        <header className="relative z-[60] flex h-16 items-center justify-between px-8">
           <Logo />
           <UserMenu user={user} />
         </header>
@@ -345,6 +345,8 @@ export function Dashboard({ user }: DashboardProps) {
             </div>
           </div>
         </div>
+
+        
            <div className="sticky max-w-4xl mx-auto top-[116px] z-10 pt-4  px-10 -mx-4">
   <div className="grid grid-cols-[1fr_150px] gap-1 px-1 items-center text-xs font-medium text-[var(--text-tertiary)] select-none pb-4 border-b border-[var(--border-tertiary)]">
               <div>Title</div>

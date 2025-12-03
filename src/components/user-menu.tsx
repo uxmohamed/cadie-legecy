@@ -169,7 +169,7 @@ export function UserMenu({ user }: UserMenuProps) {
   }, [setTheme]);
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
@@ -186,7 +186,7 @@ export function UserMenu({ user }: UserMenuProps) {
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent ref={menuRef} align="end" className="w-64 sticky">
+      <DropdownMenuContent ref={menuRef} align="end" className="w-64">
         <div className="px-2 py-3">
           {userName ? (
             <>

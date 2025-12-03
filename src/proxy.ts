@@ -1,10 +1,10 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Check if environment variables are available
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    console.warn('Supabase environment variables not set, skipping auth middleware')
+    console.warn('Supabase environment variables not set, skipping auth proxy')
     return NextResponse.next({
       request,
     })
@@ -69,8 +69,8 @@ export async function middleware(request: NextRequest) {
 
     return supabaseResponse
   } catch (error) {
-    // If middleware fails, log error but allow request to proceed
-    console.error('Middleware error:', error)
+    // If proxy fails, log error but allow request to proceed
+    console.error('Proxy error:', error)
     return NextResponse.next({
       request,
     })
