@@ -38,7 +38,31 @@ export const metadata: Metadata = {
   title: "Caddy",
   description: "Personal read-it-later app",
   icons: {
-    icon: "/icon.png",
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    apple: "/icon.png",
+    shortcut: "/icon.png",
+  },
+  openGraph: {
+    title: "Caddy",
+    description: "Personal read-it-later app",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Caddy - Personal read-it-later app",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Caddy",
+    description: "Personal read-it-later app",
+    images: ["/og-image.png"],
   },
 };
 
