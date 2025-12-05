@@ -68,7 +68,7 @@ export function useSelection({ displayLinks }: UseSelectionOptions) {
       if (
         selectedIds.size > 0 &&
         !target.closest(".group") &&
-        !target.closest(".fixed.bottom-8") &&
+        !target.closest(".fixed.bottom-24") &&
         !target.closest('[role="menu"]')
       ) {
         setSelectedIds(new Set());

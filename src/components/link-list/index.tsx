@@ -78,11 +78,11 @@ export function LinkList({
   // Batch Actions
 
 
-  const handleBatchDelete = React.useCallback(() => {
+  const handleBatchDelete = React.useCallback(async () => {
     if (onBatchDelete) {
-      onBatchDelete(Array.from(selectedIds));
+      await onBatchDelete(Array.from(selectedIds));
     } else {
-      selectedIds.forEach((id) => onDelete?.(id));
+      await Promise.all(Array.from(selectedIds).map((id) => onDelete?.(id)));
     }
     clearSelection();
   }, [selectedIds, onDelete, onBatchDelete, clearSelection]);
@@ -280,10 +280,10 @@ export function LinkList({
       <SelectionToolbar
         selectedCount={selectedIds.size}
         onClearSelection={clearSelection}
-
         onBatchDelete={handleBatchDelete}
         onBatchPin={!isTrashView ? handleBatchPin : undefined}
         onBatchUnpin={!isTrashView ? handleBatchUnpin : undefined}
+        selectedLinks={displayLinks.filter(link => selectedIds.has(link.id))}
       />
 
       <LinkDetailSheet

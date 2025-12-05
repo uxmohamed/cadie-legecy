@@ -12,21 +12,31 @@ import { IconX, IconTrash, IconDots, IconPin, IconPinnedOff } from "@tabler/icon
 interface SelectionToolbarProps {
   selectedCount: number;
   onClearSelection: () => void;
-
   onBatchDelete: () => void;
   onBatchPin?: () => void;
   onBatchUnpin?: () => void;
+  selectedLinks?: Array<{ id: string; is_pinned: boolean }>;
 }
 
 export function SelectionToolbar({
   selectedCount,
   onClearSelection,
-
   onBatchDelete,
   onBatchPin,
   onBatchUnpin,
+  selectedLinks = [],
 }: SelectionToolbarProps) {
   if (selectedCount === 0) return null;
+
+  // Determine which pin/unpin actions to show
+  const allPinned = selectedLinks.length > 0 && selectedLinks.every(link => link.is_pinned);
+  const allUnpinned = selectedLinks.length > 0 && selectedLinks.every(link => !link.is_pinned);
+  const hasMixed = selectedLinks.length > 0 && !allPinned && !allUnpinned;
+
+  // Show pin if all are unpinned or mixed
+  const showPin = (allUnpinned || hasMixed) && onBatchPin;
+  // Show unpin if all are pinned or mixed
+  const showUnpin = (allPinned || hasMixed) && onBatchUnpin;
 
   return (
     <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-[var(--bg-l0-solid)] border border-[var(--border-primary)] shadow-xl rounded-lg p-1.5 animate-in fade-in slide-in-from-bottom-4 duration-200">
@@ -62,13 +72,13 @@ export function SelectionToolbar({
           Actions
         </MenuTrigger>
         <MenuPopup align="center" side="top">
-          {onBatchPin && (
+          {showPin && (
             <MenuItem onClick={onBatchPin}>
               <IconPin className="h-4 w-4" />
               Pin Selected
             </MenuItem>
           )}
-          {onBatchUnpin && (
+          {showUnpin && (
             <MenuItem onClick={onBatchUnpin}>
               <IconPinnedOff className="h-4 w-4" />
               Unpin Selected

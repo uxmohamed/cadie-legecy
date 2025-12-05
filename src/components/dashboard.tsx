@@ -397,6 +397,8 @@ export function Dashboard({ user }: DashboardProps) {
           allItemsCount={
             selectedCategoryId !== "trash" ? filteredLinks.length : undefined
           }
+          isAddPopoverOpen={addPopoverOpen}
+          onAddPopoverOpenChange={setAddPopoverOpen}
         />
       </div>
     </BackgroundTint>

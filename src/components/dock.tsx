@@ -41,6 +41,8 @@ interface DockProps {
   selectedCategoryId?: string | null;
   onViewChange?: (view: string | null) => void;
   allItemsCount?: number;
+  isAddPopoverOpen?: boolean;
+  onAddPopoverOpenChange?: (open: boolean) => void;
 }
 
 export function Dock({
@@ -54,12 +56,18 @@ export function Dock({
   selectedCategoryId = null,
   onViewChange,
   allItemsCount,
+  isAddPopoverOpen: externalAddPopoverOpen,
+  onAddPopoverOpenChange,
 }: DockProps) {
   const [sortPopoverOpen, setSortPopoverOpen] = React.useState(false);
-  const [addPopoverOpen, setAddPopoverOpen] = React.useState(false);
+  const [internalAddPopoverOpen, setInternalAddPopoverOpen] = React.useState(false);
   const [viewPopoverOpen, setViewPopoverOpen] = React.useState(false);
   const [addInputValue, setAddInputValue] = React.useState("");
   const addInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Use external state if provided, otherwise use internal state
+  const addPopoverOpen = externalAddPopoverOpen ?? internalAddPopoverOpen;
+  const setAddPopoverOpen = onAddPopoverOpenChange ?? setInternalAddPopoverOpen;
 
   const handleSortChange = (newSortBy: "date" | "title") => {
     if (sortBy === newSortBy) {

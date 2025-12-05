@@ -280,10 +280,10 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : "Failed to delete link";
                 toast.error(errorMessage);
-                await refreshLinks();
+                await mutate();
             }
         },
-        [refreshLinks]
+        [mutate]
     );
 
 
@@ -314,10 +314,10 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : "Failed to delete some links";
                 toast.error(errorMessage);
-                await refreshLinks();
+                await mutate();
             }
         },
-        [refreshLinks]
+        [mutate]
     );
 
     const handleBatchPinLinks = React.useCallback(
@@ -354,10 +354,10 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : "Failed to pin some links";
                 toast.error(errorMessage);
-                await refreshLinks();
+                await mutate();
             }
         },
-        [refreshLinks]
+        [mutate]
     );
 
     const handleBatchUnpinLinks = React.useCallback(
@@ -394,10 +394,10 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : "Failed to unpin some links";
                 toast.error(errorMessage);
-                await refreshLinks();
+                await mutate();
             }
         },
-        [refreshLinks]
+        [mutate]
     );
 
     const handleCopyUrl = async (url: string) => {
@@ -443,10 +443,10 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : "Failed to pin link";
                 toast.error(errorMessage);
-                await refreshLinks();
+                await mutate();
             }
         },
-        [refreshLinks]
+        [mutate]
     );
 
     const handleUnpinLink = React.useCallback(
@@ -478,10 +478,10 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : "Failed to unpin link";
                 toast.error(errorMessage);
-                await refreshLinks();
+                await mutate();
             }
         },
-        [refreshLinks]
+        [mutate]
     );
 
     const handleSubmit = async (items: DetectedContent[]) => {

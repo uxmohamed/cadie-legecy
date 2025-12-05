@@ -8,9 +8,9 @@ export interface LinkListProps {
   onCopyUrl?: (url: string) => void;
   onPin?: (id: string) => void;
   onUnpin?: (id: string) => void;
-  onBatchDelete?: (ids: string[]) => void;
-  onBatchPin?: (ids: string[]) => void;
-  onBatchUnpin?: (ids: string[]) => void;
+  onBatchDelete?: (ids: string[]) => Promise<void> | void;
+  onBatchPin?: (ids: string[]) => Promise<void> | void;
+  onBatchUnpin?: (ids: string[]) => Promise<void> | void;
 
   isTrashView?: boolean;
 }
