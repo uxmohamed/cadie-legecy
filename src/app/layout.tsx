@@ -35,6 +35,7 @@ const customFont = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://caddy-ed0.pages.dev"),
   title: "Caddy",
   description: "Personal read-it-later app",
   icons: {
@@ -49,6 +50,7 @@ export const metadata: Metadata = {
     title: "Caddy",
     description: "Personal read-it-later app",
     type: "website",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://caddy-ed0.pages.dev",
     images: [
       {
         url: "/og-image.png",
