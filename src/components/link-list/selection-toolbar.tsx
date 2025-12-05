@@ -29,7 +29,7 @@ export function SelectionToolbar({
   if (selectedCount === 0) return null;
 
   return (
-    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-[var(--bg-l0-solid)] border border-[var(--border-primary)] shadow-xl rounded-lg p-1.5 animate-in fade-in slide-in-from-bottom-4 duration-200">
+    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-[var(--bg-l0-solid)] border border-[var(--border-primary)] shadow-xl rounded-lg p-1.5 animate-in fade-in slide-in-from-bottom-4 duration-200">
       <div className="flex items-center gap-2 px-2 border-r border-[var(--border-primary)] pr-3 mr-1">
         <span className="text-sm font-medium text-[var(--text-primary)] select-none">
           {selectedCount} selected

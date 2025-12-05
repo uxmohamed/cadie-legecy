@@ -62,6 +62,8 @@ export function Dashboard({ user }: DashboardProps) {
     handlePinLink,
     handleUnpinLink,
     handleBatchDeleteLinks,
+    handleBatchPinLinks,
+    handleBatchUnpinLinks,
   } = useLinks(!!user, filters, user.id);
 
   // Sort links based on current sort settings, maintaining pinned/unpinned grouping
@@ -365,6 +367,8 @@ export function Dashboard({ user }: DashboardProps) {
                     onPin={handlePinLink}
                     onUnpin={handleUnpinLink}
                     onBatchDelete={handleBatchDeleteLinks}
+                    onBatchPin={handleBatchPinLinks}
+                    onBatchUnpin={handleBatchUnpinLinks}
                     isTrashView={selectedCategoryId === "trash"}
                   />
                 </>

@@ -24,6 +24,8 @@ export function LinkList({
   onUnpin,
 
   onBatchDelete,
+  onBatchPin,
+  onBatchUnpin,
   isTrashView,
 }: LinkListProps) {
   const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null);
@@ -85,15 +87,25 @@ export function LinkList({
     clearSelection();
   }, [selectedIds, onDelete, onBatchDelete, clearSelection]);
 
-  const handleBatchPin = () => {
+  const handleBatchPin = React.useCallback(() => {
     if (isTrashView) return;
-    selectedIds.forEach((id) => onPin?.(id));
-  };
+    if (onBatchPin) {
+      onBatchPin(Array.from(selectedIds));
+    } else {
+      selectedIds.forEach((id) => onPin?.(id));
+    }
+    clearSelection();
+  }, [selectedIds, onPin, onBatchPin, clearSelection, isTrashView]);
 
-  const handleBatchUnpin = () => {
+  const handleBatchUnpin = React.useCallback(() => {
     if (isTrashView) return;
-    selectedIds.forEach((id) => onUnpin?.(id));
-  };
+    if (onBatchUnpin) {
+      onBatchUnpin(Array.from(selectedIds));
+    } else {
+      selectedIds.forEach((id) => onUnpin?.(id));
+    }
+    clearSelection();
+  }, [selectedIds, onUnpin, onBatchUnpin, clearSelection, isTrashView]);
 
   // Keyboard navigation
   useKeyboardNavigation({
@@ -249,12 +261,17 @@ export function LinkList({
           <MenuPopup align="start">
             <LinkContextMenu
               link={contextMenu.link}
+              selectedCount={selectedIds.size}
+              selectedIds={selectedIds}
+              links={displayLinks}
               onCopyUrl={onCopyUrl}
               onEdit={onEdit}
               onPin={!isTrashView ? onPin : undefined}
               onUnpin={!isTrashView ? onUnpin : undefined}
-
               onDelete={onDelete}
+              onBatchPin={!isTrashView ? handleBatchPin : undefined}
+              onBatchUnpin={!isTrashView ? handleBatchUnpin : undefined}
+              onBatchDelete={handleBatchDelete}
             />
           </MenuPopup>
         </Menu>

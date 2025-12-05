@@ -62,7 +62,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
             const response = await fetch(`/api/links?${queryString}`, {
                 signal: abortController.signal,
             });
-            
+
             // Check if request was aborted
             if (abortController.signal.aborted) return;
 
@@ -74,13 +74,13 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 const errorMessage = errorData.error?.userMessage || "Failed to refresh links";
                 toast.error(errorMessage);
             }
-            } catch (error) {
-                // Ignore abort errors
-                if (error instanceof Error && error.name === 'AbortError') {
-                    return;
-                }
-                toast.error("Failed to refresh links");
+        } catch (error) {
+            // Ignore abort errors
+            if (error instanceof Error && error.name === 'AbortError') {
+                return;
             }
+            toast.error("Failed to refresh links");
+        }
     }, [buildQueryString]);
 
     // Fetch links on mount or when filters change - use useLayoutEffect for immediate start
@@ -114,7 +114,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 const response = await fetch(`/api/links?${queryString}`, {
                     signal: abortController.signal,
                 });
-                
+
                 // Check if request was aborted
                 if (abortController.signal.aborted) return;
 
@@ -210,7 +210,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
 
                 // Create stable channel name (without timestamp to reuse same channel)
                 const channelName = `links-realtime-${userId}`;
-                
+
                 const channel = supabase
                     .channel(channelName, {
                         config: {
@@ -228,16 +228,16 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                         (payload) => {
                             // Use ref to get latest filters and setLinks
                             if (!isMounted) return;
-                            
+
                             const newLink = payload.new as Link;
                             const currentFilters = filtersRef.current;
                             const currentUserId = userIdRef.current;
-                            
+
                             // Filter by user_id in code (since we removed DB filter to avoid RLS issues)
                             if (!currentUserId || newLink.user_id !== currentUserId) {
                                 return;
                             }
-                            
+
                             // Check if link matches current filters
                             const matchesFilters = () => {
                                 if (currentFilters?.category_id && newLink.category_id !== currentFilters.category_id) {
@@ -379,6 +379,80 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 toast.success(`${ids.length} links deleted`);
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : "Failed to delete some links";
+                toast.error(errorMessage);
+                await refreshLinks();
+            }
+        },
+        [refreshLinks]
+    );
+
+    const handleBatchPinLinks = React.useCallback(
+        async (ids: string[]) => {
+            if (ids.length === 0) return;
+
+            // Optimistic update
+            setLinks((prev) =>
+                prev.map((link) =>
+                    ids.includes(link.id) ? { ...link, is_pinned: true } : link
+                )
+            );
+
+            try {
+                await Promise.all(
+                    ids.map(async (id) => {
+                        const response = await fetch(`/api/links/${id}`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ is_pinned: true }),
+                        });
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            const errorMessage = errorData.error?.userMessage || `Failed to pin link ${id}`;
+                            throw new Error(errorMessage);
+                        }
+                    })
+                );
+
+                toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} pinned`);
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : "Failed to pin some links";
+                toast.error(errorMessage);
+                await refreshLinks();
+            }
+        },
+        [refreshLinks]
+    );
+
+    const handleBatchUnpinLinks = React.useCallback(
+        async (ids: string[]) => {
+            if (ids.length === 0) return;
+
+            // Optimistic update
+            setLinks((prev) =>
+                prev.map((link) =>
+                    ids.includes(link.id) ? { ...link, is_pinned: false } : link
+                )
+            );
+
+            try {
+                await Promise.all(
+                    ids.map(async (id) => {
+                        const response = await fetch(`/api/links/${id}`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ is_pinned: false }),
+                        });
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            const errorMessage = errorData.error?.userMessage || `Failed to unpin link ${id}`;
+                            throw new Error(errorMessage);
+                        }
+                    })
+                );
+
+                toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} unpinned`);
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : "Failed to unpin some links";
                 toast.error(errorMessage);
                 await refreshLinks();
             }
@@ -555,6 +629,8 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         handlePinLink,
         handleUnpinLink,
         handleBatchDeleteLinks,
+        handleBatchPinLinks,
+        handleBatchUnpinLinks,
     };
 }
 

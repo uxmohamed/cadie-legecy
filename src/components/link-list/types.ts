@@ -9,6 +9,8 @@ export interface LinkListProps {
   onPin?: (id: string) => void;
   onUnpin?: (id: string) => void;
   onBatchDelete?: (ids: string[]) => void;
+  onBatchPin?: (ids: string[]) => void;
+  onBatchUnpin?: (ids: string[]) => void;
 
   isTrashView?: boolean;
 }
