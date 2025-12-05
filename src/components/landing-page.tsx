@@ -32,12 +32,12 @@ export function LandingPage() {
             {/* Desktop Navigation - Centered */}
             <div className="hidden md:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
               <Link href="#">
-                <Button className="py-2 px-4 bg-transparent border-0 text-[var(--text-secondary)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--bg-field-hover)] transition-colors duration-150">
+                <Button className="relative text-black/60 hover:text-black inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
                   Extension
                 </Button>
               </Link>
               <Link href="/changelog">
-                <Button className="py-2 px-4 bg-transparent border-0 text-[var(--text-secondary)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--bg-field-hover)] transition-colors duration-150">
+                <Button className="relative text-black/60 hover:text-black inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
                   Changelog
                 </Button>
               </Link>
@@ -46,7 +46,7 @@ export function LandingPage() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <Button className="py-2 px-4 bg-transparent border-0 text-[var(--text-secondary)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--bg-field-hover)] transition-colors duration-150">
+                <Button className="relative text-black/60 hover:text-black inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
                   X (Twitter)
                 </Button>
               </a>
@@ -56,7 +56,7 @@ export function LandingPage() {
             <div className="flex items-center gap-3">
               {/* Get Started Button - Always visible */}
               <Link href="/auth" className="hidden sm:block">
-                <Button className="py-2 px-4 bg-[var(--bg-inverse)] border-0 text-[var(--text-inverse)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--bg-inverse)]/90 transition-colors duration-150">
+                <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-9 px-3.5 py-2 text-base rounded-lg bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
                   Get Started
                 </Button>
               </Link>
@@ -82,7 +82,7 @@ export function LandingPage() {
                       </Link>
                       <div className="flex items-center gap-2">
                         <Link href="/auth" onClick={() => setIsMenuOpen(false)}>
-                          <Button className="py-2 px-4 bg-[var(--bg-inverse)] border-0 text-[var(--text-inverse)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--bg-inverse)]/90 transition-colors duration-150">
+                          <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
                             Get Started
                           </Button>
                         </Link>
@@ -156,7 +156,7 @@ export function LandingPage() {
             <Link href="/auth">
               <Button
                 size="lg"
-                className="h-12 bg-[var(--bg-inverse)] border-0 text-[var(--text-inverse)] text-base rounded-xl shadow-none hover:bg-[var(--bg-inverse)]/90 transition-colors duration-150 px-8"
+                className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-4 py-3 text-base rounded-xl [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2"
               >
                 Get Started
               </Button>

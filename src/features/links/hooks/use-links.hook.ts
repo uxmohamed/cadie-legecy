@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import useSWR from "swr";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import type { Link, CreateLinkDTO, LinkFilters } from "@/features/links/types";
@@ -8,17 +9,29 @@ import type { DetectedContent } from "@/lib/content-detector";
 import { log } from "@/lib/logger";
 
 /**
- * Hook for managing links
+ * Fetcher function for SWR
+ */
+async function fetcher<T>(url: string): Promise<T> {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        const error = new Error(errorData.error?.userMessage || "Failed to fetch");
+        throw error;
+    }
+
+    return response.json();
+}
+
+/**
+ * Hook for managing links with SWR caching
  * Refactored to follow Single Responsibility Principle
  * Uses API routes for all data operations (proper client/server separation)
  */
 export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId?: string) {
     const [isLoading, setIsLoading] = React.useState(false);
-    const [links, setLinks] = React.useState<Link[]>([]);
     const [searchQuery, setSearchQuery] = React.useState("");
-    const [fetchingLinks, setFetchingLinks] = React.useState(true);
     const [hasInitiallyLoaded, setHasInitiallyLoaded] = React.useState(false);
-    const minSkeletonTimeRef = React.useRef<number | null>(null);
 
     // Build query string from filters
     const buildQueryString = React.useCallback(() => {
@@ -34,127 +47,38 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         return params.toString();
     }, [filters]);
 
-    // AbortController ref to cancel in-flight requests
-    const abortControllerRef = React.useRef<AbortController | null>(null);
+    const queryString = buildQueryString();
 
-    // Cleanup: Cancel any in-flight requests on unmount
-    React.useEffect(() => {
-        return () => {
-            if (abortControllerRef.current) {
-                abortControllerRef.current.abort();
-            }
-        };
-    }, []);
+    // Use SWR for data fetching with caching
+    const { data, error, isValidating, mutate } = useSWR<{ links: Link[] }>(
+        isAuthenticated ? `/api/links?${queryString}` : null,
+        fetcher,
+        {
+            revalidateOnFocus: false, // Don't refetch on window focus
+            revalidateOnReconnect: true, // Refetch on reconnect
+            dedupingInterval: 30000, // 30 seconds - prevent duplicate requests
+            onSuccess: () => {
+                setHasInitiallyLoaded(true);
+            },
+            onError: (err) => {
+                const errorMessage = err instanceof Error ? err.message : "Failed to load links";
+                toast.error(errorMessage);
+                setHasInitiallyLoaded(true);
+            },
+        }
+    );
+
+    const links = data?.links || [];
+    const fetchingLinks = isValidating && !hasInitiallyLoaded;
 
     // Refresh links from server
     const refreshLinks = React.useCallback(async () => {
-        // Cancel any in-flight request
-        if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-        }
-
-        // Create new AbortController for this request
-        const abortController = new AbortController();
-        abortControllerRef.current = abortController;
-
         try {
-            const queryString = buildQueryString();
-            const response = await fetch(`/api/links?${queryString}`, {
-                signal: abortController.signal,
-            });
-
-            // Check if request was aborted
-            if (abortController.signal.aborted) return;
-
-            if (response.ok) {
-                const data = await response.json();
-                setLinks(data.links || []);
-            } else {
-                const errorData = await response.json();
-                const errorMessage = errorData.error?.userMessage || "Failed to refresh links";
-                toast.error(errorMessage);
-            }
+            await mutate();
         } catch (error) {
-            // Ignore abort errors
-            if (error instanceof Error && error.name === 'AbortError') {
-                return;
-            }
             toast.error("Failed to refresh links");
         }
-    }, [buildQueryString]);
-
-    // Fetch links on mount or when filters change - use useLayoutEffect for immediate start
-    React.useLayoutEffect(() => {
-        if (!isAuthenticated) {
-            setFetchingLinks(false);
-            setHasInitiallyLoaded(true);
-            return;
-        }
-
-        // Reset hasInitiallyLoaded when starting a new fetch (filters changed or initial load)
-        setHasInitiallyLoaded(false);
-
-        // Cancel any in-flight request
-        if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-        }
-
-        // Create new AbortController for this request
-        const abortController = new AbortController();
-        abortControllerRef.current = abortController;
-
-        // Track minimum skeleton display time
-        const startTime = Date.now();
-        minSkeletonTimeRef.current = startTime;
-
-        async function fetchLinks() {
-            setFetchingLinks(true);
-            try {
-                const queryString = buildQueryString();
-                const response = await fetch(`/api/links?${queryString}`, {
-                    signal: abortController.signal,
-                });
-
-                // Check if request was aborted
-                if (abortController.signal.aborted) return;
-
-                if (response.ok) {
-                    const data = await response.json();
-
-                    // Ensure minimum skeleton display time (100ms) for perceived performance
-                    const elapsed = Date.now() - startTime;
-                    const remainingTime = Math.max(0, 100 - elapsed);
-
-                    await new Promise(resolve => setTimeout(resolve, remainingTime));
-
-                    // Check again if request was aborted during delay
-                    if (abortController.signal.aborted) return;
-
-                    // Replace links completely - server is source of truth
-                    // Realtime will add new links on top, but fetchLinks should replace
-                    setLinks(data.links || []);
-                    setHasInitiallyLoaded(true);
-                } else {
-                    const errorData = await response.json();
-                    const errorMessage = errorData.error?.userMessage || "Failed to load links";
-                    toast.error(errorMessage);
-                    setHasInitiallyLoaded(true);
-                }
-            } catch (error) {
-                // Ignore abort errors
-                if (error instanceof Error && error.name === 'AbortError') {
-                    return;
-                }
-                toast.error("Failed to load links");
-                setHasInitiallyLoaded(true);
-            } finally {
-                setFetchingLinks(false);
-                minSkeletonTimeRef.current = null;
-            }
-        }
-
-        fetchLinks();
-    }, [isAuthenticated, buildQueryString]);
+    }, [mutate]);
 
     // Store filters in ref to avoid recreating subscription on filter changes
     const filtersRef = React.useRef(filters);
@@ -162,11 +86,11 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         filtersRef.current = filters;
     }, [filters]);
 
-    // Store setLinks in ref to avoid stale closure in subscription callback
-    const setLinksRef = React.useRef(setLinks);
+    // Store mutate in ref for realtime subscription
+    const mutateRef = React.useRef(mutate);
     React.useEffect(() => {
-        setLinksRef.current = setLinks;
-    }, []);
+        mutateRef.current = mutate;
+    }, [mutate]);
 
     // Store channel ref to ensure proper cleanup and prevent leaks
     const channelRef = React.useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null);
@@ -258,14 +182,18 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
 
                             // Only add if matches current filters and doesn't already exist
                             if (matchesFilters()) {
-                                setLinksRef.current((prev) => {
-                                    // Check if link already exists (avoid duplicates)
-                                    if (prev.some((l) => l.id === newLink.id)) {
-                                        return prev;
-                                    }
-                                    // Add new link at the beginning (newest first)
-                                    return [newLink, ...prev];
-                                });
+                                mutateRef.current(
+                                    (current) => {
+                                        if (!current) return current;
+                                        // Check if link already exists (avoid duplicates)
+                                        if (current.links.some((l: Link) => l.id === newLink.id)) {
+                                            return current;
+                                        }
+                                        // Add new link at the beginning (newest first)
+                                        return { links: [newLink, ...current.links] };
+                                    },
+                                    false // Don't revalidate
+                                );
                             }
                         }
                     )
@@ -334,7 +262,10 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
     const handleDeleteLink = React.useCallback(
         async (id: string) => {
             // Optimistic update
-            setLinks((prev) => prev.filter((link) => link.id !== id));
+            mutate(
+                (current) => current ? { links: current.links.filter((link: Link) => link.id !== id) } : current,
+                false
+            );
 
             try {
                 const response = await fetch(`/api/links/${id}`, { method: "DELETE" });
@@ -362,7 +293,10 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
             if (ids.length === 0) return;
 
             // Optimistic update
-            setLinks((prev) => prev.filter((link) => !ids.includes(link.id)));
+            mutate(
+                (current) => current ? { links: current.links.filter((link: Link) => !ids.includes(link.id)) } : current,
+                false
+            );
 
             try {
                 await Promise.all(
@@ -391,10 +325,13 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
             if (ids.length === 0) return;
 
             // Optimistic update
-            setLinks((prev) =>
-                prev.map((link) =>
-                    ids.includes(link.id) ? { ...link, is_pinned: true } : link
-                )
+            mutate(
+                (current) => current ? {
+                    links: current.links.map((link: Link) =>
+                        ids.includes(link.id) ? { ...link, is_pinned: true } : link
+                    )
+                } : current,
+                false
             );
 
             try {
@@ -428,10 +365,13 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
             if (ids.length === 0) return;
 
             // Optimistic update
-            setLinks((prev) =>
-                prev.map((link) =>
-                    ids.includes(link.id) ? { ...link, is_pinned: false } : link
-                )
+            mutate(
+                (current) => current ? {
+                    links: current.links.map((link: Link) =>
+                        ids.includes(link.id) ? { ...link, is_pinned: false } : link
+                    )
+                } : current,
+                false
             );
 
             try {
@@ -477,10 +417,13 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
     const handlePinLink = React.useCallback(
         async (id: string) => {
             // Optimistic update
-            setLinks((prev) =>
-                prev.map((link) =>
-                    link.id === id ? { ...link, is_pinned: true } : link
-                )
+            mutate(
+                (current) => current ? {
+                    links: current.links.map((link: Link) =>
+                        link.id === id ? { ...link, is_pinned: true } : link
+                    )
+                } : current,
+                false
             );
 
             try {
@@ -509,10 +452,13 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
     const handleUnpinLink = React.useCallback(
         async (id: string) => {
             // Optimistic update
-            setLinks((prev) =>
-                prev.map((link) =>
-                    link.id === id ? { ...link, is_pinned: false } : link
-                )
+            mutate(
+                (current) => current ? {
+                    links: current.links.map((link: Link) =>
+                        link.id === id ? { ...link, is_pinned: false } : link
+                    )
+                } : current,
+                false
             );
 
             try {
@@ -601,7 +547,10 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
 
             // Update state with new links
             if (newLinks.length > 0) {
-                setLinks((prev) => [...newLinks, ...prev]);
+                mutate(
+                    (current) => current ? { links: [...newLinks, ...current.links] } : { links: newLinks },
+                    false
+                );
             }
 
             // Show toast notifications

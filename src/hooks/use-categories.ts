@@ -1,34 +1,48 @@
 "use client";
 
-import * as React from "react";
+import useSWR from "swr";
 import type { Category } from "@/types";
-import { toast } from "sonner";
 
+/**
+ * Fetcher function for SWR
+ */
+async function fetcher<T>(url: string): Promise<T> {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        const error = new Error(errorData.error?.userMessage || "Failed to fetch");
+        throw error;
+    }
+
+    return response.json();
+}
+
+/**
+ * Hook for fetching categories using SWR
+ * Benefits:
+ * - Automatic caching
+ * - Background revalidation
+ * - Error retry with exponential backoff
+ * - Request deduplication
+ */
 export function useCategories(isAuthenticated: boolean) {
-    const [categories, setCategories] = React.useState<Category[]>([]);
-    const [isLoading, setIsLoading] = React.useState(true);
-
-    React.useEffect(() => {
-        if (!isAuthenticated) return;
-
-        async function fetchCategories() {
-            try {
-                const response = await fetch("/api/categories");
-                if (response.ok) {
-                    const data = await response.json();
-                    setCategories(data.categories || []);
-                } else {
-                    console.error("Failed to fetch categories");
-                }
-            } catch (error) {
-                console.error("Error fetching categories:", error);
-            } finally {
-                setIsLoading(false);
-            }
+    const { data, error, isLoading } = useSWR<{ categories: Category[] }>(
+        isAuthenticated ? "/api/categories" : null,
+        fetcher,
+        {
+            revalidateOnFocus: false, // Categories don't change often
+            revalidateOnReconnect: true,
+            dedupingInterval: 60000, // 1 minute - categories are stable
+            shouldRetryOnError: true,
+            errorRetryCount: 3,
         }
+    );
 
-        fetchCategories();
-    }, [isAuthenticated]);
-
-    return { categories, isLoading };
+    return {
+        categories: data?.categories || [],
+        isLoading,
+        isError: !!error,
+        error,
+    };
 }

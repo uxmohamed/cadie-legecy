@@ -31,12 +31,12 @@ export function ChangelogHeader() {
           {/* Desktop Navigation - Centered */}
           <div className="hidden md:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
             <Link href="#">
-              <Button className="py-2 px-4 bg-transparent border-0 text-[var(--text-secondary)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--bg-field-hover)] transition-colors duration-150">
+              <Button className="relative text-black/60 hover:text-black inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
                 Extension
               </Button>
             </Link>
             <Link href="/changelog">
-              <Button className="py-2 px-4 bg-transparent border-0 text-[var(--text-secondary)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--bg-field-hover)] transition-colors duration-150">
+              <Button className="relative text-black/60 hover:text-black inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
                 Changelog
               </Button>
             </Link>
@@ -45,7 +45,7 @@ export function ChangelogHeader() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <Button className="py-2 px-4 bg-transparent border-0 text-[var(--text-secondary)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--bg-field-hover)] transition-colors duration-150">
+              <Button className="relative text-black/60 hover:text-black inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
                 X (Twitter)
               </Button>
             </a>
