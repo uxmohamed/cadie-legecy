@@ -42,18 +42,18 @@ export function ChangelogList({ entries }: ChangelogListProps) {
 
         return (
           <div key={entry._id} className="relative">
-            <div className="flex flex-col md:flex-row gap-y-6">
+            <div className="flex flex-col md:flex-row gap-y-4 md:gap-y-6">
               {/* Left column - Date */}
               <div className="md:w-48 flex-shrink-0">
                 <div className="md:sticky md:top-8">
-                  <time className="text-sm font-medium text-[var(--text-tertiary)] block mb-3">
+                  <time className="text-sm font-medium text-[var(--text-tertiary)] block mb-2 md:mb-3">
                     {formattedDate}
                   </time>
                 </div>
               </div>
 
               {/* Right column - Content with Timeline */}
-              <div className="flex-1 justify-start md:pl-8 relative pb-10">
+              <div className="flex-1 justify-start md:pl-8 relative pb-8 md:pb-10">
                 {/* Vertical timeline line */}
                 <div className="hidden md:block absolute top-2 left-0 w-px h-full bg-[var(--border-primary)]">
                   {/* Timeline dot */}

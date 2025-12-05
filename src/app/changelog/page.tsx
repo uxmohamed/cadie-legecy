@@ -32,9 +32,9 @@ export default function ChangelogPage() {
       {/* Main Content */}
       <main className="flex-1">
         {/* Timeline */}
-        <div className="max-w-5xl mx-auto px-6 lg:px-10 pt-10">
-          <div className="mb-12">
-            <h1 className="text-4xl font-semibold tracking-tight text-[var(--text-primary)] font-custom">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 pt-6 sm:pt-8 lg:pt-10 pb-12">
+          <div className="mb-8 sm:mb-10 lg:mb-12">
+            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[var(--text-primary)] font-custom">
               Changelog
             </h1>
           </div>

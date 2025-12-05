@@ -115,18 +115,17 @@ export function Dock({
   };
 
   const getSortIcon = () => {
-    const iconStyle = { width: "18px", height: "18px" };
     if (sortBy === "date") {
       return sortOrder === "desc" ? (
-        <IconSortDescending style={iconStyle} />
+        <IconSortDescending className="w-[18px] h-[18px]" />
       ) : (
-        <IconSortAscending style={iconStyle} />
+        <IconSortAscending className="w-[18px] h-[18px]" />
       );
     }
     return sortOrder === "desc" ? (
-      <IconSortDescending style={iconStyle} />
+      <IconSortDescending className="w-[18px] h-[18px]" />
     ) : (
-      <IconSortAscending style={iconStyle} />
+      <IconSortAscending className="w-[18px] h-[18px]" />
     );
   };
 
@@ -142,8 +141,7 @@ export function Dock({
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
       <TooltipProvider delayDuration={300}>
         <nav
-          className="overlay-blur flex items-center py-1.5 px-1.5 rounded-full border-[var(--overlay-border)]"
-          style={{ gap: "4px" }}
+          className="overlay-blur flex items-center gap-1 py-1.5 px-1.5 rounded-full border-[var(--overlay-border)]"
           aria-label="Dock actions"
         >
           {/* Add Button with Popover */}
@@ -158,10 +156,9 @@ export function Dock({
                     onClick={handleAddClick}
                     aria-label="Add link"
                     variant="ghost"
-                    style={{ padding: "0", width: "50px", height: "50px" }}
-                    className="rounded-full bg-[var(--overlay-hover)] hover:bg-white/25 text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0 transition-colors"
+                    className="p-0 w-[50px] h-[50px] rounded-full bg-[var(--overlay-hover)] hover:bg-white/25 text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0 transition-colors"
                   >
-                    <IconPlus style={{ width: "18px", height: "18px" }} />
+                    <IconPlus className="w-[18px] h-[18px]" />
                   </Button>
                 </PopoverTrigger>
               </TooltipTrigger>
@@ -217,10 +214,9 @@ export function Dock({
                 onClick={onSearchClick}
                 aria-label="Search"
                 variant="ghost"
-                style={{ padding: "0", width: "50px", height: "50px" }}
-                className="rounded-full bg-transparent hover:bg-[var(--overlay-hover)] text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0"
+                className="p-0 w-[50px] h-[50px] rounded-full bg-transparent hover:bg-[var(--overlay-hover)] text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0"
               >
-                <IconSearch style={{ width: "18px", height: "18px" }} />
+                <IconSearch className="w-[18px] h-[18px]" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={12}>
@@ -239,8 +235,7 @@ export function Dock({
                   <Button
                     aria-label="Sort"
                     variant="ghost"
-                    style={{ padding: "0", width: "50px", height: "50px" }}
-                    className="rounded-full bg-transparent hover:bg-[var(--overlay-hover)] text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0"
+                    className="p-0 w-[50px] h-[50px] rounded-full bg-transparent hover:bg-[var(--overlay-hover)] text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0"
                   >
                     {getSortIcon()}
                   </Button>
@@ -330,7 +325,7 @@ export function Dock({
                         {isTrashSelected ? "Trash" : "All items"}
                       </span>
                       <IconCaretUpDownFilled
-                        style={{ width: "16px", height: "16px" }}
+                        className="w-4 h-4"
                       />
                     </Button>
                   </PopoverTrigger>

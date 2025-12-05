@@ -20,7 +20,7 @@ export function ChangelogHeader() {
   return (
     <div>
       <div className="max-w-5xl mx-auto relative">
-        <div className="p-3 flex items-center justify-between relative">
+        <div className="p-3 sm:p-4 md:p-3 flex items-center justify-between relative">
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/">
