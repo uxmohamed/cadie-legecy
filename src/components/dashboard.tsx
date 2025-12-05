@@ -291,59 +291,9 @@ export function Dashboard({ user }: DashboardProps) {
 
             {/* Control Bar */}
             <div className="mx-auto w-full max-w-4xl px-8">
-              <div className="flex items-center justify-between py-2">
+              <div className="flex items-center justify-between pt-2 pb-6">
                 {/* Left side: Add button + All items */}
                 <div className="flex items-center gap-4">
-                  <Popover
-                    open={addPopoverOpen}
-                    onOpenChange={setAddPopoverOpen}
-                  >
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-9 w-9 rounded-md"
-                        aria-label="Add item"
-                      >
-                        <IconPlus className="h-4 w-4 text-[var(--text-primary)]" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverPopup
-                      side="bottom"
-                      align="start"
-                      sideOffset={8}
-                      className="w-[420px] p-3"
-                    >
-                      <form onSubmit={handleAddSubmit} className="space-y-3">
-                        <div className="px-2 text-sm font-[470] text-foreground">
-                          Add item
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            ref={addInputRef}
-                            type="text"
-                            value={addInputValue}
-                            onChange={handleAddInputChange}
-                            onKeyDown={handleAddKeyDown}
-                            placeholder="Add a link or color..."
-                            disabled={isLoading}
-                            unstyled
-                            className="flex-1 rounded-lg bg-[var(--bg-l1-solid)] px-3 py-2 text-sm placeholder:text-[var(--text-tertiary)] text-[var(--text-primary)] outline-none border border-[var(--border-primary)]"
-                            autoComplete="off"
-                          />
-                          <Button
-                            type="submit"
-                            disabled={!addInputValue.trim() || isLoading}
-                            variant="default"
-                            className="shrink-0"
-                          >
-                            Add
-                          </Button>
-                        </div>
-                      </form>
-                    </PopoverPopup>
-                  </Popover>
-                  <div className="h-6 w-px bg-[var(--border-primary)]" />
                   <button
                     className="text-[22px] font-[570] leading-[32px] tracking-[-0.16px] text-[var(--text-primary)] hover:text-[var(--text-primary)]"
                     style={{ fontStyle: "normal" }}

@@ -96,7 +96,7 @@ export function LinkListItem({
             ? "bg-[var(--bg-field-hover)]"
             : isFocused
             ? "bg-[var(--bg-field-hover)]"
-            : "hover:bg-[var(--bg-field-hover)]"
+            : "hover:bg-[var(--bg-field-hover-light)]"
         )}
       >
         <a
