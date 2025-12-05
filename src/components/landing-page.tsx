@@ -21,7 +21,7 @@ export function LandingPage() {
       {/* Header */}
       <div>
         <div className="max-w-5xl mx-auto relative">
-          <div className="p-3 flex items-center justify-between relative">
+          <div className="p-3 sm:p-4 md:p-3 flex items-center justify-between relative">
             {/* Logo */}
             <div className="flex items-center">
               <Link href="/">
@@ -139,16 +139,16 @@ export function LandingPage() {
       </div>
 
       {/* Hero Section */}
-      <main className="flex-1 pt-20 pb-20 px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 pt-12 sm:pt-16 md:pt-20 pb-16 sm:pb-20 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
-          <h1 className="text-5xl font-bold tracking-tight text-[var(--text-primary)] sm:text-5xl md:text-6xl mb-6 font-custom leading-snug">
-            The simplest way <br />{" "}
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-[var(--text-primary)] mb-4 sm:mb-6 font-custom leading-tight sm:leading-snug">
+            The simplest way <br className="hidden sm:block" />{" "}
             to <span
               className="bg-[color-mix(in_oklab,var(--caddy-color-6)_12%,transparent)] text-[var(--text-link)] px-1"
             >save links</span>
           </h1>
 
-          <p className="mx-auto max-w-xs text-lg font-medium text-[var(--text-tertiary)] mb-8 leading-7">
+          <p className="mx-auto max-w-xs sm:max-w-md text-base sm:text-lg font-medium text-[var(--text-tertiary)] mb-6 sm:mb-8 leading-6 sm:leading-7">
             Save links from anywhere and keep everything in one place.
           </p>
 
@@ -156,7 +156,7 @@ export function LandingPage() {
             <Link href="/auth">
               <Button
                 size="lg"
-                className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-4 py-3 text-base rounded-xl [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2"
+                className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-4 py-3 text-base rounded-xl [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2"
               >
                 Get Started
               </Button>
@@ -164,7 +164,7 @@ export function LandingPage() {
           </div>
 
           {/* Product Screenshot */}
-          <div className="mt-20 relative mx-auto w-full max-w-4xl ">
+          <div className="mt-12 sm:mt-16 md:mt-20 relative mx-auto w-full max-w-4xl ">
             {/* Gradient border wrapper */}
             <div className="relative rounded-2xl p-[1px] bg-gradient-to-b from-[var(--border-primary)] from-60% to-transparent to-100%">
               <div className="relative w-full overflow-hidden rounded-2xl bg-[var(--bg-l2-solid)]">
