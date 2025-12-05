@@ -38,6 +38,9 @@ export function Dashboard({ user }: DashboardProps) {
   const [searchValue, setSearchValue] = React.useState("");
   const addInputRef = React.useRef<HTMLInputElement>(null);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const [showTopMask, setShowTopMask] = React.useState(false);
+  const [showBottomMask, setShowBottomMask] = React.useState(true);
   const { categories } = useCategories(!!user);
   const { registerShortcut, unregisterShortcut } = useShortcuts();
 
@@ -256,129 +259,153 @@ export function Dashboard({ user }: DashboardProps) {
     user.user_metadata?.picture ||
     getDefaultAvatar(user.id);
 
+  // Handle scroll to update mask visibility
+  const handleScrollContainer = (e: React.UIEvent<HTMLDivElement>) => {
+    const element = e.currentTarget;
+    const scrollTop = element.scrollTop;
+    const scrollHeight = element.scrollHeight;
+    const clientHeight = element.clientHeight;
+
+    // Show top mask when scrolled down more than 10px
+    setShowTopMask(scrollTop > 10);
+    // Show bottom mask when not at bottom
+    setShowBottomMask(scrollTop < scrollHeight - clientHeight - 10);
+  };
+
   return (
     <BackgroundTint avatarSrc={avatarSrc}>
-      <div className="flex min-h-screen flex-col relative z-10">
-        <main className="flex-1 flex flex-col">
-          {/* Top Section */}
-          <div className="sticky top-0 z-20 backdrop-blur-xl relative">
-            {/* Smooth blur gradient */}
-            <div className="absolute inset-0 pointer-events-none " />
-            <header className="relative z-[60] flex h-16 items-center justify-between px-8">
-              <Logo />
-              <UserMenu user={user} />
-            </header>
-            {/* Control Bar */}
+      <div className="h-screen flex flex-col overflow-hidden relative z-10">
+        {/* Fixed Header Zone - All headers combined */}
+        <div className="flex-shrink-0 bg-[var(--bg-pure-white)] relative z-20">
+          {/* Top Header Bar */}
+          <header className="flex h-16 items-center justify-between px-8">
+            <Logo />
+            <UserMenu user={user} />
+          </header>
 
-            <div className="sticky top-16 z-20">
-              <div className="mx-auto w-full max-w-4xl px-8">
-                <div className="flex items-center justify-between py-2 -mx-4 px-6">
-                  {/* Left side: Add button + All items */}
-                  <div className="flex items-center gap-4">
-                    <Popover
-                      open={addPopoverOpen}
-                      onOpenChange={setAddPopoverOpen}
-                    >
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-9 w-9 rounded-md"
-                          aria-label="Add item"
-                        >
-                          <IconPlus className="h-4 w-4 text-[var(--text-primary)]" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverPopup
-                        side="bottom"
-                        align="start"
-                        sideOffset={8}
-                        className="w-[420px] p-3"
-                      >
-                        <form onSubmit={handleAddSubmit} className="space-y-3">
-                          <div className="px-2 text-sm font-[470] text-foreground">
-                            Add item
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              ref={addInputRef}
-                              type="text"
-                              value={addInputValue}
-                              onChange={handleAddInputChange}
-                              onKeyDown={handleAddKeyDown}
-                              placeholder="Add a link or color..."
-                              disabled={isLoading}
-                              unstyled
-                              className="flex-1 rounded-lg bg-[var(--bg-l1-solid)] px-3 py-2 text-sm placeholder:text-[var(--text-tertiary)] text-[var(--text-primary)] outline-none border border-[var(--border-primary)]"
-                              autoComplete="off"
-                            />
-                            <Button
-                              type="submit"
-                              disabled={!addInputValue.trim() || isLoading}
-                              variant="default"
-                              className="shrink-0"
-                            >
-                              Add
-                            </Button>
-                          </div>
-                        </form>
-                      </PopoverPopup>
-                    </Popover>
-                    <div className="h-6 w-px bg-[var(--border-primary)]" />
-                    <button
-                      className="text-[22px] font-[570] leading-[32px] tracking-[-0.16px] text-[var(--text-primary)] hover:text-[var(--text-primary)]"
-                      style={{ fontStyle: "normal" }}
-                      aria-label="All Items"
-                    >
-                      All Items
-                    </button>
-                  </div>
-                  {/* Right side: Search + Options */}
-                  <div className="flex items-center gap-2">
-                    <div className="relative">
-                      <IconSearch className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none z-10" />
-                      <input
-                        ref={searchInputRef}
-                        type="text"
-                        value={searchValue}
-                        onChange={handleSearchChange}
-                        onKeyDown={handleSearchKeyDown}
-                        placeholder="Search..."
-                        className="h-9 w-[250px] py-0 pl-[26px] pr-[22px] rounded-lg outline-none placeholder:text-[var(--text-tertiary)] text-[var(--text-primary)] bg-[var(--bg-field-light)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2 transition-shadow text-sm font-[470] tracking-[-0.1px]"
-                        aria-label="Search"
-                      />
-                      <div className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none z-10 flex items-center">
-                        <Kbd className="h-5 px-1.5 text-[10px] text-[var(--text-tertiary)] flex items-center justify-center">
-                          /
-                        </Kbd>
-                      </div>
-                    </div>
+          {/* Control Bar */}
+          <div className="mx-auto w-full max-w-4xl px-8">
+            <div className="flex items-center justify-between py-2 -mx-4 px-6">
+              {/* Left side: Add button + All items */}
+              <div className="flex items-center gap-4">
+                <Popover
+                  open={addPopoverOpen}
+                  onOpenChange={setAddPopoverOpen}
+                >
+                  <PopoverTrigger asChild>
                     <Button
-                      variant="secondary"
+                      variant="outline"
                       size="icon"
-                      className="h-9 w-9 rounded-md bg-[var(--bg-field-light)] hover:bg-[var(--bg-field-hover)]"
-                      aria-label="Options"
+                      className="h-9 w-9 rounded-md"
+                      aria-label="Add item"
                     >
-                      <IconDots className="h-4 w-4" />
+                      <IconPlus className="h-4 w-4 text-[var(--text-primary)]" />
                     </Button>
+                  </PopoverTrigger>
+                  <PopoverPopup
+                    side="bottom"
+                    align="start"
+                    sideOffset={8}
+                    className="w-[420px] p-3"
+                  >
+                    <form onSubmit={handleAddSubmit} className="space-y-3">
+                      <div className="px-2 text-sm font-[470] text-foreground">
+                        Add item
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          ref={addInputRef}
+                          type="text"
+                          value={addInputValue}
+                          onChange={handleAddInputChange}
+                          onKeyDown={handleAddKeyDown}
+                          placeholder="Add a link or color..."
+                          disabled={isLoading}
+                          unstyled
+                          className="flex-1 rounded-lg bg-[var(--bg-l1-solid)] px-3 py-2 text-sm placeholder:text-[var(--text-tertiary)] text-[var(--text-primary)] outline-none border border-[var(--border-primary)]"
+                          autoComplete="off"
+                        />
+                        <Button
+                          type="submit"
+                          disabled={!addInputValue.trim() || isLoading}
+                          variant="default"
+                          className="shrink-0"
+                        >
+                          Add
+                        </Button>
+                      </div>
+                    </form>
+                  </PopoverPopup>
+                </Popover>
+                <div className="h-6 w-px bg-[var(--border-primary)]" />
+                <button
+                  className="text-[22px] font-[570] leading-[32px] tracking-[-0.16px] text-[var(--text-primary)] hover:text-[var(--text-primary)]"
+                  style={{ fontStyle: "normal" }}
+                  aria-label="All Items"
+                >
+                  All Items
+                </button>
+              </div>
+              {/* Right side: Search + Options */}
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <IconSearch className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none z-10" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    value={searchValue}
+                    onChange={handleSearchChange}
+                    onKeyDown={handleSearchKeyDown}
+                    placeholder="Search..."
+                    className="h-9 w-[250px] py-0 pl-[26px] pr-[22px] rounded-lg outline-none placeholder:text-[var(--text-tertiary)] text-[var(--text-primary)] bg-[var(--bg-field-light)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2 transition-shadow text-sm font-[470] tracking-[-0.1px]"
+                    aria-label="Search"
+                  />
+                  <div className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none z-10 flex items-center">
+                    <Kbd className="h-5 px-1.5 text-[10px] text-[var(--text-tertiary)] flex items-center justify-center">
+                      /
+                    </Kbd>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            <div className="sticky max-w-4xl mx-auto top-[116px] z-10 pt-4  px-10 -mx-4">
-              <div className="grid grid-cols-[1fr_150px] gap-1 px-1 items-center text-xs font-medium text-[var(--text-tertiary)] select-none pb-4 border-b border-[var(--border-tertiary)]">
-                <div>Title</div>
-                <div className="text-right">Created</div>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="h-9 w-9 rounded-md bg-[var(--bg-field-light)] hover:bg-[var(--bg-field-hover)]"
+                  aria-label="Options"
+                >
+                  <IconDots className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </div>
 
-          {/* Bottom Section */}
+          {/* Column Headers */}
+          <div className="mx-auto w-full max-w-4xl px-8">
+            <div className="grid grid-cols-[1fr_150px] gap-1 px-1 items-center text-xs font-medium text-[var(--text-tertiary)] select-none pt-2 pb-3 border-b border-[var(--border-tertiary)]">
+              <div>Title</div>
+              <div className="text-right">Created</div>
+            </div>
+          </div>
+        </div>
 
-          <div className="pb-24">
-            <div className="mx-auto w-full max-w-4xl px-8">
-              {/* Title and Created at header - sticky */}
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-hidden relative">
+          {/* Bottom fade mask overlay */}
+          <div 
+            className="absolute bottom-0 left-0 right-0 h-20 z-10 pointer-events-none transition-opacity duration-150"
+            style={{
+              background: 'linear-gradient(to top, var(--bg-pure-white), transparent)',
+              opacity: showBottomMask ? 1 : 0,
+            }}
+          />
+          
+          {/* Scroll container */}
+          <div
+            ref={scrollContainerRef}
+            onScroll={handleScrollContainer}
+            className="h-full overflow-auto"
+          >
+            <div className="mx-auto w-full max-w-4xl px-8 pb-28">
+              {/* List Content */}
               {fetchingLinks || !hasInitiallyLoaded ? (
                 <LinkListSkeleton />
               ) : (
@@ -402,7 +429,9 @@ export function Dashboard({ user }: DashboardProps) {
               )}
             </div>
           </div>
-        </main>
+        </div>
+
+        {/* Dock */}
         <Dock
           onAddSubmit={handleSubmit}
           onSearchClick={handleSearchClick}

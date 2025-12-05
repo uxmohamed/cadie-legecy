@@ -1,6 +1,4 @@
 "use client";
-import { FaArrowUp } from "react-icons/fa6";
-import { FaArrowDown } from "react-icons/fa6";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,12 +22,13 @@ import {
   IconTrashFilled,
   IconCaretUpDown,
   IconCaretUpDownFilled,
+  IconArrowUp,
+  IconArrowDown,
 } from "@tabler/icons-react";
 import {
   detectMultipleContentTypes,
   type DetectedContent,
 } from "@/lib/content-detector";
-import { ArrowDown, ArrowUp } from "lucide-react";
 
 interface DockProps {
   onAddClick?: () => void;
@@ -279,9 +278,9 @@ export function Dock({
                   </div>
                   {sortBy === "title" &&
                     (sortOrder === "asc" ? (
-                      <FaArrowUp className="h-4 w-4" />
+                      <IconArrowUp className="h-4 w-4" />
                     ) : (
-                      <FaArrowDown className="h-4 w-4" />
+                      <IconArrowDown className="h-4 w-4" />
                     ))}
                 </button>
                 <button
@@ -302,9 +301,9 @@ export function Dock({
                   </div>
                   {sortBy === "date" &&
                     (sortOrder === "asc" ? (
-                      <FaArrowUp className="h-4 w-4" />
+                      <IconArrowUp className="h-4 w-4" />
                     ) : (
-                      <FaArrowDown className="h-4 w-4" />
+                      <IconArrowDown className="h-4 w-4" />
                     ))}
                 </button>
               </div>
