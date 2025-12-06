@@ -275,7 +275,13 @@ export function Dashboard({ user }: DashboardProps) {
       <div className="sticky top-0 z-20 bg-[var(--bg-main-container)]">
         {/* Top Header Bar */}
         <header className="flex h-16 items-center justify-between px-4 sm:px-6 md:px-8">
-          <Logo />
+          <button
+            onClick={() => setSelectedCategoryId(null)}
+            className={`focus:outline-none ${selectedCategoryId !== null ? 'cursor-pointer' : 'cursor-default'}`}
+            aria-label="Go to All Items"
+          >
+            <Logo />
+          </button>
           <UserMenu user={user} />
         </header>
 
@@ -286,9 +292,9 @@ export function Dashboard({ user }: DashboardProps) {
             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <button
                 className="not-italic text-lg sm:text-[22px] font-[570] leading-tight sm:leading-[32px] tracking-[-0.16px] text-[var(--text-primary)] hover:text-[var(--text-primary)] truncate"
-                aria-label="All Items"
+                aria-label={selectedCategoryId === "trash" ? "Trash" : "All Items"}
               >
-                All Items
+                {selectedCategoryId === "trash" ? "Trash" : "All Items"}
               </button>
             </div>
             {/* Right side: Search + Options */}

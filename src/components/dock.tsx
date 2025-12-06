@@ -20,11 +20,10 @@ import {
   IconArrowsSort,
   IconCapsuleHorizontalFilled,
   IconTrashFilled,
-  IconCaretUpDown,
-  IconCaretUpDownFilled,
   IconArrowUp,
   IconArrowDown,
 } from "@tabler/icons-react";
+import { ChevronUpDown } from "@/components/icons/chevron-up-down";
 import {
   detectMultipleContentTypes,
   type DetectedContent,
@@ -332,9 +331,7 @@ export function Dock({
                       <span className="text-sm font-[470]">
                         {isTrashSelected ? "Trash" : "All items"}
                       </span>
-                      <IconCaretUpDownFilled
-                        className="w-4 h-4"
-                      />
+                      <ChevronUpDown className="w-[15px] h-[15px]" />
                     </Button>
                   </PopoverTrigger>
                 </TooltipTrigger>
