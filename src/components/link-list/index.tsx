@@ -17,13 +17,15 @@ import { Menu, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 export function LinkList({
   links,
   onDelete,
-
+  onRestore,
+  onPermanentDelete,
   onEdit,
   onCopyUrl,
   onPin,
   onUnpin,
-
   onBatchDelete,
+  onBatchRestore,
+  onBatchPermanentDelete,
   onBatchPin,
   onBatchUnpin,
   isTrashView,
@@ -77,7 +79,6 @@ export function LinkList({
 
   // Batch Actions
 
-
   const handleBatchDelete = React.useCallback(async () => {
     if (onBatchDelete) {
       await onBatchDelete(Array.from(selectedIds));
@@ -86,6 +87,24 @@ export function LinkList({
     }
     clearSelection();
   }, [selectedIds, onDelete, onBatchDelete, clearSelection]);
+
+  const handleBatchRestore = React.useCallback(async () => {
+    if (onBatchRestore) {
+      await onBatchRestore(Array.from(selectedIds));
+    } else {
+      await Promise.all(Array.from(selectedIds).map((id) => onRestore?.(id)));
+    }
+    clearSelection();
+  }, [selectedIds, onRestore, onBatchRestore, clearSelection]);
+
+  const handleBatchPermanentDelete = React.useCallback(async () => {
+    if (onBatchPermanentDelete) {
+      await onBatchPermanentDelete(Array.from(selectedIds));
+    } else {
+      await Promise.all(Array.from(selectedIds).map((id) => onPermanentDelete?.(id)));
+    }
+    clearSelection();
+  }, [selectedIds, onPermanentDelete, onBatchPermanentDelete, clearSelection]);
 
   const handleBatchPin = React.useCallback(() => {
     if (isTrashView) return;
@@ -264,14 +283,19 @@ export function LinkList({
               selectedCount={selectedIds.size}
               selectedIds={selectedIds}
               links={displayLinks}
+              isTrashView={isTrashView}
               onCopyUrl={onCopyUrl}
-              onEdit={onEdit}
+              onEdit={!isTrashView ? onEdit : undefined}
               onPin={!isTrashView ? onPin : undefined}
               onUnpin={!isTrashView ? onUnpin : undefined}
-              onDelete={onDelete}
+              onDelete={!isTrashView ? onDelete : undefined}
+              onRestore={isTrashView ? onRestore : undefined}
+              onPermanentDelete={isTrashView ? onPermanentDelete : undefined}
               onBatchPin={!isTrashView ? handleBatchPin : undefined}
               onBatchUnpin={!isTrashView ? handleBatchUnpin : undefined}
-              onBatchDelete={handleBatchDelete}
+              onBatchDelete={!isTrashView ? handleBatchDelete : undefined}
+              onBatchRestore={isTrashView ? handleBatchRestore : undefined}
+              onBatchPermanentDelete={isTrashView ? handleBatchPermanentDelete : undefined}
             />
           </MenuPopup>
         </Menu>
@@ -281,9 +305,12 @@ export function LinkList({
         selectedCount={selectedIds.size}
         onClearSelection={clearSelection}
         onBatchDelete={handleBatchDelete}
+        onBatchRestore={isTrashView ? handleBatchRestore : undefined}
+        onBatchPermanentDelete={isTrashView ? handleBatchPermanentDelete : undefined}
         onBatchPin={!isTrashView ? handleBatchPin : undefined}
         onBatchUnpin={!isTrashView ? handleBatchUnpin : undefined}
         selectedLinks={displayLinks.filter(link => selectedIds.has(link.id))}
+        isTrashView={isTrashView}
       />
 
       <LinkDetailSheet
@@ -304,12 +331,14 @@ export function LinkList({
         onLinkChange={(link) => {
           setSelectedLink(link);
         }}
-        onEdit={onEdit}
+        onEdit={!isTrashView ? onEdit : undefined}
         onCopyUrl={onCopyUrl}
         onPin={!isTrashView ? onPin : undefined}
         onUnpin={!isTrashView ? onUnpin : undefined}
-
-        onDelete={onDelete}
+        onDelete={!isTrashView ? onDelete : undefined}
+        onRestore={isTrashView ? onRestore : undefined}
+        onPermanentDelete={isTrashView ? onPermanentDelete : undefined}
+        isTrashView={isTrashView}
       />
     </div>
   );

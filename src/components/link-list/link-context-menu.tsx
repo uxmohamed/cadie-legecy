@@ -6,21 +6,26 @@ import {
   MenuSeparator,
   MenuShortcut,
 } from "@/components/ui/menu";
-import { IconCopy, IconEdit, IconPin, IconPinnedOff, IconTrash } from "@tabler/icons-react";
+import { IconCopy, IconEdit, IconPin, IconPinnedOff, IconTrash, IconRestore, IconExternalLink } from "@tabler/icons-react";
 
 interface LinkContextMenuProps {
   link: Link;
   selectedCount?: number;
   selectedIds?: Set<string>;
   links?: Link[];
+  isTrashView?: boolean;
   onCopyUrl?: (url: string) => void;
   onEdit?: (link: Link) => void;
   onPin?: (id: string) => void;
   onUnpin?: (id: string) => void;
   onDelete?: (id: string) => void;
+  onRestore?: (id: string) => void;
+  onPermanentDelete?: (id: string) => void;
   onBatchPin?: () => void;
   onBatchUnpin?: () => void;
   onBatchDelete?: () => void;
+  onBatchRestore?: () => void;
+  onBatchPermanentDelete?: () => void;
 }
 
 export function LinkContextMenu({
@@ -28,21 +33,56 @@ export function LinkContextMenu({
   selectedCount = 0,
   selectedIds,
   links = [],
+  isTrashView = false,
   onCopyUrl,
   onEdit,
   onPin,
   onUnpin,
   onDelete,
+  onRestore,
+  onPermanentDelete,
   onBatchPin,
   onBatchUnpin,
   onBatchDelete,
+  onBatchRestore,
+  onBatchPermanentDelete,
 }: LinkContextMenuProps) {
   const isMultiSelect = selectedCount > 1;
   const isLinkSelected = selectedIds?.has(link.id);
 
   // If multiple items are selected and this link is one of them, show batch operations
   if (isMultiSelect && isLinkSelected) {
-    // Determine pin state of selected items
+    if (isTrashView) {
+      // Trash view batch actions
+      return (
+        <>
+          {onBatchRestore && (
+            <MenuItem onClick={onBatchRestore}>
+              <IconRestore className="h-4 w-4" />
+              Restore {selectedCount} items
+            </MenuItem>
+          )}
+          {onBatchPermanentDelete && (
+            <>
+              {onBatchRestore && <MenuSeparator />}
+              <MenuItem
+                className="text-[var(--accent-red-primary)] focus:text-[var(--accent-red-primary)]"
+                onClick={() => {
+                  if (confirm(`Are you sure you want to permanently delete ${selectedCount} items? This action cannot be undone.`)) {
+                    onBatchPermanentDelete();
+                  }
+                }}
+              >
+                <IconTrash className="h-4 w-4" />
+                Delete {selectedCount} items permanently
+              </MenuItem>
+            </>
+          )}
+        </>
+      );
+    }
+
+    // Normal view batch actions
     const selectedLinks = links.filter(l => selectedIds?.has(l.id));
     const allPinned = selectedLinks.every(l => l.is_pinned);
     const allUnpinned = selectedLinks.every(l => !l.is_pinned);
@@ -75,6 +115,49 @@ export function LinkContextMenu({
   }
 
   // Single item context menu
+  if (isTrashView) {
+    // Trash view single item actions
+    return (
+      <>
+        <MenuItem onClick={() => window.open(link.url, '_blank')}>
+          <IconExternalLink className="h-4 w-4" />
+          Open
+        </MenuItem>
+        <MenuItem onClick={() => onCopyUrl?.(link.url)}>
+          <IconCopy className="h-4 w-4" />
+          Copy URL
+          <MenuShortcut>⌘C</MenuShortcut>
+        </MenuItem>
+        {onRestore && (
+          <>
+            <MenuSeparator />
+            <MenuItem onClick={() => onRestore(link.id)}>
+              <IconRestore className="h-4 w-4" />
+              Restore
+            </MenuItem>
+          </>
+        )}
+        {onPermanentDelete && (
+          <>
+            <MenuSeparator />
+            <MenuItem
+              className="text-[var(--accent-red-primary)] focus:text-[var(--accent-red-primary)]"
+              onClick={() => {
+                if (confirm("Are you sure you want to permanently delete this link? This action cannot be undone.")) {
+                  onPermanentDelete(link.id);
+                }
+              }}
+            >
+              <IconTrash className="h-4 w-4" />
+              Delete permanently
+            </MenuItem>
+          </>
+        )}
+      </>
+    );
+  }
+
+  // Normal view single item actions
   return (
     <>
       <MenuItem onClick={() => onCopyUrl?.(link.url)}>
@@ -115,3 +198,4 @@ export function LinkContextMenu({
     </>
   );
 }
+

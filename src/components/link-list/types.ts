@@ -3,12 +3,15 @@ import type { Link } from "@/features/links/types";
 export interface LinkListProps {
   links: Link[];
   onDelete?: (id: string) => void;
-
+  onRestore?: (id: string) => void;
+  onPermanentDelete?: (id: string) => void;
   onEdit?: (link: Link) => void;
   onCopyUrl?: (url: string) => void;
   onPin?: (id: string) => void;
   onUnpin?: (id: string) => void;
   onBatchDelete?: (ids: string[]) => Promise<void> | void;
+  onBatchRestore?: (ids: string[]) => Promise<void> | void;
+  onBatchPermanentDelete?: (ids: string[]) => Promise<void> | void;
   onBatchPin?: (ids: string[]) => Promise<void> | void;
   onBatchUnpin?: (ids: string[]) => Promise<void> | void;
 

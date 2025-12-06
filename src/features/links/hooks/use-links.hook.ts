@@ -276,9 +276,135 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                     throw new Error(errorMessage);
                 }
 
-                toast.success("Link deleted");
+                toast.success("Link moved to trash");
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : "Failed to delete link";
+                toast.error(errorMessage);
+                await mutate();
+            }
+        },
+        [mutate]
+    );
+
+    const handleRestoreLink = React.useCallback(
+        async (id: string) => {
+            // Optimistic update - remove from trash view
+            mutate(
+                (current) => current ? { links: current.links.filter((link: Link) => link.id !== id) } : current,
+                false
+            );
+
+            try {
+                const response = await fetch(`/api/links/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ is_deleted: false, is_archived: false }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const errorMessage = errorData.error?.userMessage || "Failed to restore link";
+                    throw new Error(errorMessage);
+                }
+
+                toast.success("Link restored");
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : "Failed to restore link";
+                toast.error(errorMessage);
+                await mutate();
+            }
+        },
+        [mutate]
+    );
+
+    const handlePermanentDeleteLink = React.useCallback(
+        async (id: string) => {
+            // Optimistic update
+            mutate(
+                (current) => current ? { links: current.links.filter((link: Link) => link.id !== id) } : current,
+                false
+            );
+
+            try {
+                const response = await fetch(`/api/links/${id}/permanent`, { method: "DELETE" });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const errorMessage = errorData.error?.userMessage || "Failed to permanently delete link";
+                    throw new Error(errorMessage);
+                }
+
+                toast.success("Link permanently deleted");
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : "Failed to permanently delete link";
+                toast.error(errorMessage);
+                await mutate();
+            }
+        },
+        [mutate]
+    );
+
+    const handleBatchRestoreLinks = React.useCallback(
+        async (ids: string[]) => {
+            if (ids.length === 0) return;
+
+            // Optimistic update
+            mutate(
+                (current) => current ? { links: current.links.filter((link: Link) => !ids.includes(link.id)) } : current,
+                false
+            );
+
+            try {
+                await Promise.all(
+                    ids.map(async (id) => {
+                        const response = await fetch(`/api/links/${id}`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ is_deleted: false, is_archived: false }),
+                        });
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            const errorMessage = errorData.error?.userMessage || `Failed to restore link ${id}`;
+                            throw new Error(errorMessage);
+                        }
+                    })
+                );
+
+                toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} restored`);
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : "Failed to restore some links";
+                toast.error(errorMessage);
+                await mutate();
+            }
+        },
+        [mutate]
+    );
+
+    const handleBatchPermanentDeleteLinks = React.useCallback(
+        async (ids: string[]) => {
+            if (ids.length === 0) return;
+
+            // Optimistic update
+            mutate(
+                (current) => current ? { links: current.links.filter((link: Link) => !ids.includes(link.id)) } : current,
+                false
+            );
+
+            try {
+                await Promise.all(
+                    ids.map(async (id) => {
+                        const response = await fetch(`/api/links/${id}/permanent`, { method: "DELETE" });
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            const errorMessage = errorData.error?.userMessage || `Failed to permanently delete link ${id}`;
+                            throw new Error(errorMessage);
+                        }
+                    })
+                );
+
+                toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} permanently deleted`);
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : "Failed to permanently delete some links";
                 toast.error(errorMessage);
                 await mutate();
             }
@@ -573,11 +699,15 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         handleSearch,
         handleSubmit,
         handleDeleteLink,
+        handleRestoreLink,
+        handlePermanentDeleteLink,
         handleCopyUrl,
         handleEditLink,
         handlePinLink,
         handleUnpinLink,
         handleBatchDeleteLinks,
+        handleBatchRestoreLinks,
+        handleBatchPermanentDeleteLinks,
         handleBatchPinLinks,
         handleBatchUnpinLinks,
     };

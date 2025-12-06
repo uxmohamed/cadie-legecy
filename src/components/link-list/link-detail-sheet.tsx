@@ -12,7 +12,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { IconDots, IconExternalLink, IconCopy, IconEdit, IconPin, IconPinnedOff, IconTrash, IconChevronUp, IconChevronDown, IconX, IconFile, IconWorld, IconCalendar, IconClock, IconPalette } from "@tabler/icons-react";
+import { IconDots, IconExternalLink, IconCopy, IconEdit, IconPin, IconPinnedOff, IconTrash, IconChevronUp, IconChevronDown, IconX, IconFile, IconWorld, IconCalendar, IconClock, IconPalette, IconRestore } from "@tabler/icons-react";
 import {
   Menu,
   MenuTrigger,
@@ -33,6 +33,9 @@ interface LinkDetailSheetProps {
   onPin?: (id: string) => void;
   onUnpin?: (id: string) => void;
   onDelete?: (id: string) => void;
+  onRestore?: (id: string) => void;
+  onPermanentDelete?: (id: string) => void;
+  isTrashView?: boolean;
 }
 
 export function LinkDetailSheet({
@@ -47,6 +50,9 @@ export function LinkDetailSheet({
   onPin,
   onUnpin,
   onDelete,
+  onRestore,
+  onPermanentDelete,
+  isTrashView = false,
 }: LinkDetailSheetProps) {
   const [copied, setCopied] = React.useState(false);
 
@@ -89,6 +95,13 @@ export function LinkDetailSheet({
     }
   };
 
+  const handlePermanentDelete = () => {
+    if (confirm("Are you sure you want to permanently delete this link? This action cannot be undone.")) {
+      onPermanentDelete?.(link.id);
+      onOpenChange(false);
+    }
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -116,69 +129,114 @@ export function LinkDetailSheet({
                 <IconDots className="h-3.5 w-3.5" />
               </MenuTrigger>
               <MenuPopup align="end">
-                {isUrl && (
+                {isTrashView ? (
+                  // Trash view actions
                   <>
-                    <MenuItem onClick={handleOpenLink}>
-                      <IconExternalLink className="h-4 w-4" />
-                      Open Link
-                    </MenuItem>
+                    {isUrl && (
+                      <MenuItem onClick={handleOpenLink}>
+                        <IconExternalLink className="h-4 w-4" />
+                        Open Link
+                      </MenuItem>
+                    )}
                     <MenuItem onClick={handleCopyUrl}>
                       <IconCopy className="h-4 w-4" />
-                      {copied ? "Copied!" : "Copy Link"}
+                      {copied ? "Copied!" : isColor ? "Copy Color" : "Copy Link"}
                     </MenuItem>
+                    {onRestore && (
+                      <>
+                        <MenuSeparator />
+                        <MenuItem
+                          onClick={() => {
+                            onRestore(link.id);
+                            onOpenChange(false);
+                          }}
+                        >
+                          <IconRestore className="h-4 w-4" />
+                          Restore
+                        </MenuItem>
+                      </>
+                    )}
+                    {onPermanentDelete && (
+                      <>
+                        <MenuSeparator />
+                        <MenuItem
+                          className="text-[var(--accent-red-primary)] focus:text-[var(--accent-red-primary)]"
+                          onClick={handlePermanentDelete}
+                        >
+                          <IconTrash className="h-4 w-4" />
+                          Delete permanently
+                        </MenuItem>
+                      </>
+                    )}
                   </>
-                )}
-                {!isUrl && (
-                  <MenuItem onClick={handleCopyUrl}>
-                    <IconCopy className="h-4 w-4" />
-                    {copied ? "Copied!" : isColor ? "Copy Color" : "Copy"}
-                  </MenuItem>
-                )}
-                {onEdit && (
-                  <>
-                    <MenuSeparator />
-                    <MenuItem
-                      onClick={() => {
-                        onEdit(link);
-                        onOpenChange(false);
-                      }}
-                    >
-                      <IconEdit className="h-4 w-4" />
-                      Edit
-                    </MenuItem>
-                  </>
-                )}
-                {link.is_pinned ? (
-                  onUnpin && (
-                    <MenuItem onClick={() => onUnpin(link.id)}>
-                      <IconPinnedOff className="h-4 w-4" />
-                      Unpin
-                    </MenuItem>
-                  )
                 ) : (
-                  onPin && (
-                    <MenuItem onClick={() => onPin(link.id)}>
-                      <IconPin className="h-4 w-4" />
-                      Pin
-                    </MenuItem>
-                  )
-                )}
-
-                {onDelete && (
+                  // Normal view actions
                   <>
-                    <MenuSeparator />
-                    <MenuItem
-                      className="text-[var(--accent-red-primary)] focus:text-[var(--accent-red-primary)]"
-                      onClick={() => {
-                        if (confirm("Are you sure you want to delete this link?")) {
-                          onDelete(link.id);
-                          onOpenChange(false);
-                        }
-                      }}
-                    >
-                      <IconTrash className="h-4 w-4" />
-                      Delete
-                    </MenuItem>
+                    {isUrl && (
+                      <>
+                        <MenuItem onClick={handleOpenLink}>
+                          <IconExternalLink className="h-4 w-4" />
+                          Open Link
+                        </MenuItem>
+                        <MenuItem onClick={handleCopyUrl}>
+                          <IconCopy className="h-4 w-4" />
+                          {copied ? "Copied!" : "Copy Link"}
+                        </MenuItem>
+                      </>
+                    )}
+                    {!isUrl && (
+                      <MenuItem onClick={handleCopyUrl}>
+                        <IconCopy className="h-4 w-4" />
+                        {copied ? "Copied!" : isColor ? "Copy Color" : "Copy"}
+                      </MenuItem>
+                    )}
+                    {onEdit && (
+                      <>
+                        <MenuSeparator />
+                        <MenuItem
+                          onClick={() => {
+                            onEdit(link);
+                            onOpenChange(false);
+                          }}
+                        >
+                          <IconEdit className="h-4 w-4" />
+                          Edit
+                        </MenuItem>
+                      </>
+                    )}
+                    {link.is_pinned ? (
+                      onUnpin && (
+                        <MenuItem onClick={() => onUnpin(link.id)}>
+                          <IconPinnedOff className="h-4 w-4" />
+                          Unpin
+                        </MenuItem>
+                      )
+                    ) : (
+                      onPin && (
+                        <MenuItem onClick={() => onPin(link.id)}>
+                          <IconPin className="h-4 w-4" />
+                          Pin
+                        </MenuItem>
+                      )
+                    )}
+
+                    {onDelete && (
+                      <>
+                        <MenuSeparator />
+                        <MenuItem
+                          className="text-[var(--accent-red-primary)] focus:text-[var(--accent-red-primary)]"
+                          onClick={() => {
+                            if (confirm("Are you sure you want to delete this link?")) {
+                              onDelete(link.id);
+                              onOpenChange(false);
+                            }
+                          }}
+                        >
+                          <IconTrash className="h-4 w-4" />
+                          Delete
+                        </MenuItem>
+                      </>
+                    )}
                   </>
                 )}
               </MenuPopup>

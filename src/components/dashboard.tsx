@@ -11,6 +11,7 @@ import { useCategories } from "@/hooks/use-categories";
 import { useLinks } from "@/features/links/hooks";
 import type { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverTrigger, PopoverPopup } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { IconPlus, IconSearch, IconDots } from "@tabler/icons-react";
@@ -55,11 +56,15 @@ export function Dashboard({ user }: DashboardProps) {
     handleSearch,
     handleSubmit,
     handleDeleteLink,
+    handleRestoreLink,
+    handlePermanentDeleteLink,
     handleCopyUrl,
     handleEditLink,
     handlePinLink,
     handleUnpinLink,
     handleBatchDeleteLinks,
+    handleBatchRestoreLinks,
+    handleBatchPermanentDeleteLinks,
     handleBatchPinLinks,
     handleBatchUnpinLinks,
   } = useLinks(!!user, filters, user.id);
@@ -290,12 +295,17 @@ export function Dashboard({ user }: DashboardProps) {
           <div className="flex items-center justify-between gap-2 pt-2 pb-4 sm:pb-6">
             {/* Left side: Add button + All items */}
             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-              <button
-                className="not-italic text-lg sm:text-[22px] font-[570] leading-tight sm:leading-[32px] tracking-[-0.16px] text-[var(--text-primary)] hover:text-[var(--text-primary)] truncate"
-                aria-label={selectedCategoryId === "trash" ? "Trash" : "All Items"}
-              >
-                {selectedCategoryId === "trash" ? "Trash" : "All Items"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  className="not-italic text-lg sm:text-[22px] font-[570] leading-tight sm:leading-[32px] tracking-[-0.16px] text-[var(--text-primary)] hover:text-[var(--text-primary)] truncate"
+                  aria-label={selectedCategoryId === "trash" ? "Trash" : "All Items"}
+                >
+                  {selectedCategoryId === "trash" ? "Trash" : "All Items"}
+                </button>
+                {selectedCategoryId === "trash" && (
+                  <Badge variant="secondary" className="bg-[var(--bg-field-light)] px-2 py-0.75 text-[var(--text-tertiary)] rounded-full">Auto-deletes in 60 days</Badge>
+                )}
+              </div>
             </div>
             {/* Right side: Search + Options */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -352,19 +362,18 @@ export function Dashboard({ user }: DashboardProps) {
             <LinkListSkeleton />
           ) : (
             <>
-              {selectedCategoryId === "trash" && (
-                <div className="mx-2 mb-4 rounded-md bg-[var(--accent-yellow-secondary)]/10 p-3 text-sm text-[var(--accent-yellow-primary)] border border-[var(--accent-yellow-secondary)]/30">
-                  Items in the Trash are permanently deleted after 60 days.
-                </div>
-              )}
               <LinkList
                 links={sortedLinks}
                 onDelete={handleDeleteLink}
+                onRestore={handleRestoreLink}
+                onPermanentDelete={handlePermanentDeleteLink}
                 onEdit={handleEditLink}
                 onCopyUrl={handleCopyUrl}
                 onPin={handlePinLink}
                 onUnpin={handleUnpinLink}
                 onBatchDelete={handleBatchDeleteLinks}
+                onBatchRestore={handleBatchRestoreLinks}
+                onBatchPermanentDelete={handleBatchPermanentDeleteLinks}
                 onBatchPin={handleBatchPinLinks}
                 onBatchUnpin={handleBatchUnpinLinks}
                 isTrashView={selectedCategoryId === "trash"}
