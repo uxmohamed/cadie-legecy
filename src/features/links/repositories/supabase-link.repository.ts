@@ -251,7 +251,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
             .eq("is_deleted", false);
 
         // Check if any existing link matches
-        const existingLink = links?.find(link => {
+        const existingLink = links?.find((link: Link) => {
             if (link.url === url) return true;
 
             // Also check normalized URLs
@@ -265,5 +265,52 @@ export class SupabaseLinkRepository implements ILinkRepository {
         });
 
         return existingLink || null;
+    }
+
+    /**
+     * Find a link by URL, including trashed links
+     * Returns the link and whether it's currently in trash
+     */
+    async findByUrl(userId: string, url: string): Promise<{ link: Link; isInTrash: boolean } | null> {
+        const supabase = await createClient();
+
+        // Normalize URL for comparison
+        let normalizedUrl = url;
+        try {
+            const urlObj = new URL(url);
+            normalizedUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname.replace(/\/$/, '')}`;
+        } catch {
+            // If URL parsing fails, use original
+            normalizedUrl = url;
+        }
+
+        // Fetch all links for the user (including trashed ones)
+        const { data: links } = await supabase
+            .from("links")
+            .select("*")
+            .eq("user_id", userId);
+
+        // Check if any existing link matches
+        const existingLink = links?.find((link: Link) => {
+            if (link.url === url) return true;
+
+            // Also check normalized URLs
+            try {
+                const existingUrlObj = new URL(link.url);
+                const existingNormalized = `${existingUrlObj.protocol}//${existingUrlObj.host}${existingUrlObj.pathname.replace(/\/$/, '')}`;
+                return existingNormalized === normalizedUrl;
+            } catch {
+                return false;
+            }
+        });
+
+        if (!existingLink) {
+            return null;
+        }
+
+        return {
+            link: existingLink,
+            isInTrash: existingLink.is_deleted || existingLink.is_archived
+        };
     }
 }

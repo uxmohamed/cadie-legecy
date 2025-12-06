@@ -30,6 +30,7 @@ export interface Link {
     is_pinned: boolean;
     is_archived: boolean;
     is_deleted: boolean;
+    deleted_at: string | null;
     is_favorite: boolean;
     read_at: string | null;
     sort_order: number;
@@ -66,6 +67,7 @@ export interface UpdateLinkDTO {
     is_pinned?: boolean;
     is_archived?: boolean;
     is_deleted?: boolean;
+    deleted_at?: string | null;
 }
 
 /**

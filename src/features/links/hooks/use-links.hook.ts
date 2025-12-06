@@ -654,14 +654,18 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
             // Process results
             let successCount = 0;
             let duplicateCount = 0;
+            let restoredCount = 0;
             let failureCount = 0;
             const newLinks: Link[] = [];
 
             results.forEach((result) => {
                 if (result.status === "fulfilled") {
-                    const { link, duplicate } = result.value;
+                    const { link, duplicate, restored } = result.value;
                     if (duplicate) {
                         duplicateCount++;
+                    } else if (restored) {
+                        restoredCount++;
+                        newLinks.push(link);
                     } else {
                         successCount++;
                         newLinks.push(link);
@@ -680,7 +684,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
             }
 
             // Show toast notifications
-            showSubmitToast(items.length, successCount, duplicateCount, failureCount, items[0]?.type);
+            showSubmitToast(items.length, successCount, duplicateCount, restoredCount, failureCount, items[0]?.type);
         } catch (error) {
             toast.error(
                 error instanceof Error ? error.message : "Failed to save"
@@ -720,11 +724,18 @@ function showSubmitToast(
     totalItems: number,
     successCount: number,
     duplicateCount: number,
+    restoredCount: number,
     failureCount: number,
     contentType?: string
 ) {
     if (totalItems === 1) {
-        if (successCount === 1) {
+        if (restoredCount === 1) {
+            const message =
+                contentType === "color"
+                    ? "Color restored from trash"
+                    : "Link restored from trash";
+            toast.success(message);
+        } else if (successCount === 1) {
             const message =
                 contentType === "color"
                     ? "Color saved successfully"
@@ -742,31 +753,25 @@ function showSubmitToast(
             toast.error("Failed to save");
         }
     } else {
-        if (successCount > 0 && duplicateCount === 0 && failureCount === 0) {
-            toast.success(
-                `${successCount} ${successCount === 1 ? "link" : "links"
-                } added successfully`
-            );
-        } else if (successCount > 0 && duplicateCount > 0) {
-            toast(
-                `${successCount} ${successCount === 1 ? "link" : "links"
-                } added, ${duplicateCount} ${duplicateCount === 1 ? "was" : "were"
-                } already in your list`
-            );
-        } else if (duplicateCount > 0 && successCount === 0) {
-            toast(
-                `${duplicateCount} ${duplicateCount === 1 ? "link was" : "links were"
-                } already in your list`
-            );
-        } else if (failureCount > 0) {
-            if (successCount > 0) {
-                toast(
-                    `${successCount} ${successCount === 1 ? "link" : "links"
-                    } added, ${failureCount} failed`
-                );
-            } else {
-                toast.error("Failed to add links");
-            }
+        const parts: string[] = [];
+        
+        if (successCount > 0) {
+            parts.push(`${successCount} added`);
+        }
+        if (restoredCount > 0) {
+            parts.push(`${restoredCount} restored from trash`);
+        }
+        if (duplicateCount > 0) {
+            parts.push(`${duplicateCount} already in list`);
+        }
+        if (failureCount > 0) {
+            parts.push(`${failureCount} failed`);
+        }
+
+        if (failureCount > 0 && successCount === 0 && restoredCount === 0) {
+            toast.error("Failed to add links");
+        } else if (parts.length > 0) {
+            toast.success(parts.join(", "));
         }
     }
 }

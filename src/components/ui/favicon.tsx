@@ -71,38 +71,24 @@ export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
   }, [url, domain]);
 
   const handleError = React.useCallback(() => {
-    // Try next source in the fallback chain, but limit retries to 3 attempts
-    if (currentSource < Math.min(2, sources.length - 1)) {
+    // Try next source in the fallback chain
+    if (currentSource < sources.length - 1) {
       setCurrentSource((prev) => prev + 1);
     } else {
-      // Max retries reached, keep showing placeholder
+      // All sources failed
       setAllFailed(true);
     }
   }, [currentSource, sources.length]);
 
-  // If all sources failed, show placeholder with globe icon
+  // If all sources failed, show placeholder: simple light gray rectangle
   if (allFailed || sources.length === 0) {
     return (
       <div
         className={cn(
-          "h-5 w-5 flex-shrink-0 rounded bg-[var(--bg-l1-solid)] flex items-center justify-center",
+          "h-4 w-4 flex-shrink-0 rounded-[2px] bg-[var(--bg-l1-solid)]",
           className
         )}
-      >
-        <svg
-          className="h-3 w-3 text-[var(--text-tertiary)]"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <line x1="2" y1="12" x2="22" y2="12" />
-          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-        </svg>
-      </div>
+      />
     );
   }
 

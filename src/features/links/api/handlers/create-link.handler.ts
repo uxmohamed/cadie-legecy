@@ -81,13 +81,13 @@ export class CreateLinkHandler {
             };
 
             // Create link using service
-            const { link, isDuplicate } = await this.linkService.createLink(
+            const { link, isDuplicate, isRestored } = await this.linkService.createLink(
                 userId,
                 createLinkDTO
             );
 
             return NextResponse.json(
-                { link, duplicate: isDuplicate },
+                { link, duplicate: isDuplicate, restored: isRestored },
                 { status: isDuplicate ? 200 : 201 }
             );
         } catch (error) {
