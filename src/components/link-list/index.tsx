@@ -13,6 +13,16 @@ import { SelectionToolbar } from "./selection-toolbar";
 import { LinkDetailSheet } from "./link-detail-sheet";
 import type { LinkListProps, ContextMenuState } from "./types";
 import { Menu, MenuPopup, MenuTrigger } from "@/components/ui/menu";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogClose,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 export function LinkList({
   links,
@@ -77,6 +87,37 @@ export function LinkList({
 
 
 
+  // Delete Dialog State
+  const [deleteConfirmation, setDeleteConfirmation] = React.useState<{
+    isOpen: boolean;
+    type: "single" | "batch";
+    itemId?: string;
+  }>({ isOpen: false, type: "single" });
+
+  const confirmPermanentDelete = React.useCallback((id: string) => {
+    setDeleteConfirmation({ isOpen: true, type: "single", itemId: id });
+  }, []);
+
+  const confirmBatchPermanentDelete = React.useCallback(() => {
+    setDeleteConfirmation({ isOpen: true, type: "batch" });
+  }, []);
+
+  const executeDelete = async () => {
+    if (deleteConfirmation.type === "single" && deleteConfirmation.itemId) {
+      onPermanentDelete?.(deleteConfirmation.itemId);
+    } else if (deleteConfirmation.type === "batch") {
+      if (onBatchPermanentDelete) {
+        await onBatchPermanentDelete(Array.from(selectedIds));
+      } else {
+        await Promise.all(
+          Array.from(selectedIds).map((id) => onPermanentDelete?.(id))
+        );
+      }
+      clearSelection();
+    }
+    setDeleteConfirmation((prev) => ({ ...prev, isOpen: false }));
+  };
+
   // Batch Actions
 
   const handleBatchDelete = React.useCallback(async () => {
@@ -97,14 +138,9 @@ export function LinkList({
     clearSelection();
   }, [selectedIds, onRestore, onBatchRestore, clearSelection]);
 
-  const handleBatchPermanentDelete = React.useCallback(async () => {
-    if (onBatchPermanentDelete) {
-      await onBatchPermanentDelete(Array.from(selectedIds));
-    } else {
-      await Promise.all(Array.from(selectedIds).map((id) => onPermanentDelete?.(id)));
-    }
-    clearSelection();
-  }, [selectedIds, onPermanentDelete, onBatchPermanentDelete, clearSelection]);
+  const handleBatchPermanentDelete = React.useCallback(() => {
+    setDeleteConfirmation({ isOpen: true, type: "batch" });
+  }, []);
 
   const handleBatchPin = React.useCallback(() => {
     if (isTrashView) return;
@@ -290,7 +326,7 @@ export function LinkList({
               onUnpin={!isTrashView ? onUnpin : undefined}
               onDelete={!isTrashView ? onDelete : undefined}
               onRestore={isTrashView ? onRestore : undefined}
-              onPermanentDelete={isTrashView ? onPermanentDelete : undefined}
+              onPermanentDelete={isTrashView ? confirmPermanentDelete : undefined}
               onBatchPin={!isTrashView ? handleBatchPin : undefined}
               onBatchUnpin={!isTrashView ? handleBatchUnpin : undefined}
               onBatchDelete={!isTrashView ? handleBatchDelete : undefined}
@@ -337,9 +373,28 @@ export function LinkList({
         onUnpin={!isTrashView ? onUnpin : undefined}
         onDelete={!isTrashView ? onDelete : undefined}
         onRestore={isTrashView ? onRestore : undefined}
-        onPermanentDelete={isTrashView ? onPermanentDelete : undefined}
+        onPermanentDelete={isTrashView ? confirmPermanentDelete : undefined}
         isTrashView={isTrashView}
       />
+
+      <AlertDialog open={deleteConfirmation.isOpen} onOpenChange={(open) => setDeleteConfirmation(prev => ({ ...prev, isOpen: open }))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete permanently?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete {deleteConfirmation.type === 'batch' ? `${selectedIds.size} items` : 'this item'}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogClose asChild>
+              <Button variant="ghost">Cancel</Button>
+            </AlertDialogClose>
+            <Button variant="destructive" onClick={executeDelete}>
+              Delete permanently
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -96,10 +96,8 @@ export function LinkDetailSheet({
   };
 
   const handlePermanentDelete = () => {
-    if (confirm("Are you sure you want to permanently delete this link? This action cannot be undone.")) {
-      onPermanentDelete?.(link.id);
-      onOpenChange(false);
-    }
+    onPermanentDelete?.(link.id);
+    onOpenChange(false);
   };
 
   return (

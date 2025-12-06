@@ -67,11 +67,7 @@ export function LinkContextMenu({
               {onBatchRestore && <MenuSeparator />}
               <MenuItem
                 className="text-[var(--accent-red-primary)] focus:text-[var(--accent-red-primary)]"
-                onClick={() => {
-                  if (confirm(`Are you sure you want to permanently delete ${selectedCount} items? This action cannot be undone.`)) {
-                    onBatchPermanentDelete();
-                  }
-                }}
+                onClick={onBatchPermanentDelete}
               >
                 <IconTrash className="h-4 w-4" />
                 Delete {selectedCount} items permanently
@@ -142,11 +138,7 @@ export function LinkContextMenu({
             <MenuSeparator />
             <MenuItem
               className="text-[var(--accent-red-primary)] focus:text-[var(--accent-red-primary)]"
-              onClick={() => {
-                if (confirm("Are you sure you want to permanently delete this link? This action cannot be undone.")) {
-                  onPermanentDelete(link.id);
-                }
-              }}
+              onClick={() => onPermanentDelete(link.id)}
             >
               <IconTrash className="h-4 w-4" />
               Delete permanently

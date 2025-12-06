@@ -76,11 +76,7 @@ export function SelectionToolbar({
         {onBatchPermanentDelete && (
           <Button
             variant="ghost"
-            onClick={() => {
-              if (confirm(`Are you sure you want to permanently delete ${selectedCount} items? This action cannot be undone.`)) {
-                onBatchPermanentDelete();
-              }
-            }}
+            onClick={onBatchPermanentDelete}
             className="h-auto gap-1.5 px-3 py-1.5 text-sm font-medium text-[var(--accent-red-primary)] hover:bg-[var(--accent-red-subtle)] hover:text-[var(--accent-red-strong)]"
           >
             <IconTrash className="h-4 w-4" />
