@@ -137,7 +137,7 @@ export function LinkListItem({
         </a>
         <div className="relative flex items-center justify-end">
           <div className={cn(
-            "text-[11px] sm:text-[13px] text-[var(--text-tertiary)] font-[470] truncate text-right transition-opacity",
+            "text-[11px] sm:text-[13px] text-[var(--text-tertiary)] font-[470] truncate text-right transition-opacity tabular-nums",
             isPinned && (isFocused || isSelected) && "opacity-0",
             isPinned && "group-hover:opacity-0"
           )}>

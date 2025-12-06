@@ -32,36 +32,27 @@ export function formatDate(date: Date): string {
 
   // Just now (less than 1 minute)
   if (diffMinutes < 1) {
-    return "Just now";
+    return "now";
   }
 
-  // X minutes ago (less than 1 hour)
+  // Xm (less than 1 hour)
   if (diffMinutes < 60) {
-    return `${diffMinutes} ${diffMinutes === 1 ? "minute" : "minutes"} ago`;
+    return `${diffMinutes}m`;
   }
 
-  // X hours ago (less than 6 hours)
-  if (diffHours < 6) {
-    return `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`;
+  // Xh (less than 24 hours)
+  if (diffHours < 24) {
+    return `${diffHours}h`;
   }
 
-  // Today with time (same day, 6+ hours ago)
-  if (diffDays === 0) {
-    return date.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-  }
-
-  // Yesterday
-  if (diffDays === 1) {
-    return "Yesterday";
-  }
-
-  // Day name for last 7 days (Monday, Tuesday, etc.)
+  // Xd (less than 7 days)
   if (diffDays < 7) {
-    return date.toLocaleDateString("en-US", { weekday: "long" });
+    return `${diffDays}d`;
+  }
+
+  // Short weekday for 7-13 days (Mon, Tue, etc.)
+  if (diffDays < 14) {
+    return date.toLocaleDateString("en-US", { weekday: "short" });
   }
 
   // This year: show month and day
@@ -69,10 +60,10 @@ export function formatDate(date: Date): string {
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }
 
-  // Older: show full date
+  // Older: show short date
   return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    year: "numeric",
+    year: "2-digit",
   });
 }
