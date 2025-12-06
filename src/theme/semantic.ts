@@ -179,11 +179,6 @@ export const getSemanticTokens = (mode: ThemeMode = 'light') => {
     
     // Keyboard shortcut background
     "kbd-bg": isLight ? "rgba(26, 26, 26, 0.06)" : "rgba(255, 255, 255, 0.06)",
-      
-    // Misc (adapts to theme)
-    "scrollbar-active-gray": isLight ? p.grey[300] : p.grey[600],
-    "scrollbar-inactive-gray": isLight ? mix(p.grey[300], 50) : mix(p.grey[600], 50),
-    "scrollbar-hover-gray": isLight ? mix(p.grey[300], 70) : mix(p.grey[600], 70),
   };
 
   return colors;

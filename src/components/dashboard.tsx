@@ -7,12 +7,10 @@ import { LinkListSkeleton } from "@/components/link-list-skeleton";
 import { UserMenu } from "@/components/user-menu";
 import { Logo } from "@/components/logo";
 import { Dock } from "@/components/dock";
-import { BackgroundTint } from "@/components/background-tint";
 import { useCategories } from "@/hooks/use-categories";
 import { useLinks } from "@/features/links/hooks";
 import type { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
-import { getDefaultAvatar } from "@/lib/avatar";
 import { Popover, PopoverTrigger, PopoverPopup } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { IconPlus, IconSearch, IconDots } from "@tabler/icons-react";
@@ -256,10 +254,7 @@ export function Dashboard({ user }: DashboardProps) {
     };
   }, [registerShortcut, unregisterShortcut]);
 
-  const avatarSrc =
-    user.user_metadata?.avatar_url ||
-    user.user_metadata?.picture ||
-    getDefaultAvatar(user.id);
+
 
   // Handle scroll to update mask visibility
   const handleScrollContainer = (e: React.UIEvent<HTMLDivElement>) => {
@@ -275,132 +270,128 @@ export function Dashboard({ user }: DashboardProps) {
   };
 
   return (
-    <BackgroundTint avatarSrc={avatarSrc}>
-      <div className="h-screen flex flex-col overflow-hidden relative z-10">
-        {/* Single scroll container - everything scrolls together, header is sticky inside */}
-        <div
-          ref={scrollContainerRef}
-          onScroll={handleScrollContainer}
-          className="flex-1 overlay-scroll"
-        >
-          {/* Sticky Header Zone */}
-          <div className="sticky top-0 z-20 bg-[var(--bg-pure-white)]">
-            {/* Top Header Bar */}
-            <header className="flex h-16 items-center justify-between px-4 sm:px-6 md:px-8">
-              <Logo />
-              <UserMenu user={user} />
-            </header>
+    <div className="min-h-screen bg-[var(--bg-main-container)] relative">
+      {/* Sticky Header Zone */}
+      <div className="sticky top-0 z-20 bg-[var(--bg-main-container)]">
+        {/* Top Header Bar */}
+        <header className="flex h-16 items-center justify-between px-4 sm:px-6 md:px-8">
+          <Logo />
+          <UserMenu user={user} />
+        </header>
 
-            {/* Control Bar */}
-            <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 md:px-8">
-              <div className="flex items-center justify-between gap-2 pt-2 pb-4 sm:pb-6">
-                {/* Left side: Add button + All items */}
-                <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-                  <button
-                    className="not-italic text-lg sm:text-[22px] font-[570] leading-tight sm:leading-[32px] tracking-[-0.16px] text-[var(--text-primary)] hover:text-[var(--text-primary)] truncate"
-                    aria-label="All Items"
-                  >
-                    All Items
-                  </button>
-                </div>
-                {/* Right side: Search + Options */}
-                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                  <div className="relative">
-                    <IconSearch className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none z-10" />
-                    <input
-                      ref={searchInputRef}
-                      type="text"
-                      value={searchValue}
-                      onChange={handleSearchChange}
-                      onKeyDown={handleSearchKeyDown}
-                      placeholder="Search..."
-                      className="h-9 w-32 sm:w-48 md:w-[250px] py-0 pl-[26px] pr-[22px] rounded-lg outline-none placeholder:text-[var(--text-tertiary)] text-[var(--text-primary)] bg-[var(--bg-field-light)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2 transition-shadow text-sm font-[470] tracking-[-0.1px]"
-                      aria-label="Search"
-                    />
-                    <div className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none z-10 hidden sm:flex items-center">
-                      <Kbd className="h-5 px-1.5 text-[10px] text-[var(--text-tertiary)] flex items-center justify-center">
-                        /
-                      </Kbd>
-                    </div>
-                  </div>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="hidden sm:flex h-9 w-9 rounded-md bg-[var(--bg-field-light)] hover:bg-[var(--bg-field-hover)]"
-                    aria-label="Options"
-                  >
-                    <IconDots className="h-4 w-4" />
-                  </Button>
+        {/* Control Bar */}
+        <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 md:px-8">
+          <div className="flex items-center justify-between gap-2 pt-2 pb-4 sm:pb-6">
+            {/* Left side: Add button + All items */}
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+              <button
+                className="not-italic text-lg sm:text-[22px] font-[570] leading-tight sm:leading-[32px] tracking-[-0.16px] text-[var(--text-primary)] hover:text-[var(--text-primary)] truncate"
+                aria-label="All Items"
+              >
+                All Items
+              </button>
+            </div>
+            {/* Right side: Search + Options */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              <div className="relative">
+                <IconSearch className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none z-10" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchValue}
+                  onChange={handleSearchChange}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="Search..."
+                  className="h-9 w-32 sm:w-48 md:w-[250px] py-0 pl-[26px] pr-[22px] rounded-lg outline-none placeholder:text-[var(--text-tertiary)] text-[var(--text-primary)] bg-[var(--bg-field-light)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2 transition-shadow text-sm font-[470] tracking-[-0.1px]"
+                  aria-label="Search"
+                />
+                <div className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none z-10 hidden sm:flex items-center">
+                  <Kbd className="h-5 px-1.5 text-[10px] text-[var(--text-tertiary)] flex items-center justify-center">
+                    /
+                  </Kbd>
                 </div>
               </div>
-            </div>
-
-            {/* Column Headers */}
-            <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 md:px-8">
-              <div className="grid grid-cols-[1fr_80px] sm:grid-cols-[1fr_120px] md:grid-cols-[1fr_150px] gap-1 items-center text-xs font-medium text-[var(--text-tertiary)] select-none pt-2 pb-3 border-b border-[var(--border-tertiary)]">
-                <div>Title</div>
-                <div className="text-right">Created</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Content Area */}
-          <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 md:px-8 pb-32 sm:pb-28">
-            {/* Offset wrapper to align list items with headers */}
-            <div className="-mx-2">
-              {/* List Content */}
-              {fetchingLinks || !hasInitiallyLoaded ? (
-                <LinkListSkeleton />
-              ) : (
-                <>
-                  {selectedCategoryId === "trash" && (
-                    <div className="mx-2 mb-4 rounded-md bg-[var(--accent-yellow-secondary)]/10 p-3 text-sm text-[var(--accent-yellow-primary)] border border-[var(--accent-yellow-secondary)]/30">
-                      Items in the Trash are permanently deleted after 60 days.
-                    </div>
-                  )}
-                  <LinkList
-                    links={sortedLinks}
-                    onDelete={handleDeleteLink}
-                    onEdit={handleEditLink}
-                    onCopyUrl={handleCopyUrl}
-                    onPin={handlePinLink}
-                    onUnpin={handleUnpinLink}
-                    onBatchDelete={handleBatchDeleteLinks}
-                    onBatchPin={handleBatchPinLinks}
-                    onBatchUnpin={handleBatchUnpinLinks}
-                    isTrashView={selectedCategoryId === "trash"}
-                  />
-                </>
-              )}
+              <Button
+                variant="secondary"
+                size="icon"
+                className="hidden sm:flex h-9 w-9 rounded-md bg-[var(--bg-field-light)] hover:bg-[var(--bg-field-hover)]"
+                aria-label="Options"
+              >
+                <IconDots className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </div>
 
-        {/* Bottom fade mask overlay - fixed position */}
-        <div 
-          className="fixed bottom-0 left-0 right-0 h-24 z-10 pointer-events-none transition-opacity duration-150 bg-gradient-to-t from-[var(--bg-pure-white)] to-transparent"
-          style={{
-            opacity: showBottomMask ? 1 : 0,
-          }}
-        />
-
-        {/* Dock */}
-        <Dock
-          onAddSubmit={handleSubmit}
-          onSearchClick={handleSearchClick}
-          sortBy={sortBy}
-          sortOrder={sortOrder}
-          onSortChange={handleSortChange}
-          isLoading={isLoading}
-          selectedCategoryId={selectedCategoryId}
-          onViewChange={setSelectedCategoryId}
-          allItemsCount={
-            selectedCategoryId !== "trash" ? filteredLinks.length : undefined
-          }
-          isAddPopoverOpen={addPopoverOpen}
-          onAddPopoverOpenChange={setAddPopoverOpen}
-        />
+        {/* Column Headers */}
+        <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 md:px-8">
+          <div className="grid grid-cols-[1fr_80px] sm:grid-cols-[1fr_120px] md:grid-cols-[1fr_150px] gap-1 items-center text-xs font-medium text-[var(--text-tertiary)] select-none pt-2 pb-3">
+            <div>Title</div>
+            <div className="text-right">Created</div>
+          </div>
+          {/* Divider line - extends wider than content */}
+          <div className="-mx-6 border-b border-[var(--border-tertiary)]" />
+        </div>
       </div>
-    </BackgroundTint>
+
+      {/* Main Content Area (scrolls with page) */}
+      <div
+        ref={scrollContainerRef}
+        className="mx-auto w-full max-w-4xl px-4 sm:px-6 md:px-8 pb-32 sm:pb-28"
+      >
+        {/* Offset wrapper to align list items with headers */}
+        <div className="-mx-2">
+          {/* List Content */}
+          {fetchingLinks || !hasInitiallyLoaded ? (
+            <LinkListSkeleton />
+          ) : (
+            <>
+              {selectedCategoryId === "trash" && (
+                <div className="mx-2 mb-4 rounded-md bg-[var(--accent-yellow-secondary)]/10 p-3 text-sm text-[var(--accent-yellow-primary)] border border-[var(--accent-yellow-secondary)]/30">
+                  Items in the Trash are permanently deleted after 60 days.
+                </div>
+              )}
+              <LinkList
+                links={sortedLinks}
+                onDelete={handleDeleteLink}
+                onEdit={handleEditLink}
+                onCopyUrl={handleCopyUrl}
+                onPin={handlePinLink}
+                onUnpin={handleUnpinLink}
+                onBatchDelete={handleBatchDeleteLinks}
+                onBatchPin={handleBatchPinLinks}
+                onBatchUnpin={handleBatchUnpinLinks}
+                isTrashView={selectedCategoryId === "trash"}
+              />
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom fade mask overlay - fixed position */}
+      <div 
+        className="fixed bottom-0 left-0 right-0 h-24 z-10 pointer-events-none transition-opacity duration-150 bg-gradient-to-t from-[var(--bg-pure-white)] to-transparent"
+        style={{
+          opacity: showBottomMask ? 1 : 0,
+        }}
+      />
+
+      {/* Dock */}
+      <Dock
+        onAddSubmit={handleSubmit}
+        onSearchClick={handleSearchClick}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSortChange={handleSortChange}
+        isLoading={isLoading}
+        selectedCategoryId={selectedCategoryId}
+        onViewChange={setSelectedCategoryId}
+        allItemsCount={
+          selectedCategoryId !== "trash" ? filteredLinks.length : undefined
+        }
+        isAddPopoverOpen={addPopoverOpen}
+        onAddPopoverOpenChange={setAddPopoverOpen}
+      />
+    </div>
   );
 }

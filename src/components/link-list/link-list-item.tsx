@@ -82,7 +82,7 @@ export function LinkListItem({
   };
 
   return (
-    <div className="group/item relative flex items-center gap-2 w-full">
+    <div className="group/item relative flex items-center w-full">
       <div
         onMouseDown={(e) => onMouseDown(index, e)}
         onClick={(e) => onClick(e, link, index)}
@@ -96,7 +96,7 @@ export function LinkListItem({
             ? "bg-[var(--bg-field-hover)]"
             : isFocused
             ? "bg-[var(--bg-field-hover)]"
-            : "hover:bg-[var(--bg-field-hover-light)]"
+            : "hover:bg-[var(--bg-cell-hover)]"
         )}
       >
         <a
@@ -135,19 +135,23 @@ export function LinkListItem({
             )}
           </div>
         </a>
-        <div className="flex items-center justify-end gap-2">
-          <div className="text-[11px] sm:text-[13px] text-[var(--text-tertiary)] font-[470] truncate">
+        <div className="relative flex items-center justify-end">
+          <div className={cn(
+            "text-[11px] sm:text-[13px] text-[var(--text-tertiary)] font-[470] truncate text-right transition-opacity",
+            isPinned && (isFocused || isSelected) && "opacity-0",
+            isPinned && "group-hover:opacity-0"
+          )}>
             {formatDate(new Date(link.created_at))}
           </div>
-          <div
-            className={cn(
-              "flex items-center gap-1 transition-opacity",
-              isFocused || isSelected
-                ? "opacity-100"
-                : "opacity-0 group-hover:opacity-100"
-            )}
-          >
-            {isPinned && (
+          {isPinned && (
+            <div
+              className={cn(
+                "absolute right-0 flex items-center transition-opacity",
+                isFocused || isSelected
+                  ? "opacity-100"
+                  : "opacity-0 group-hover:opacity-100"
+              )}
+            >
               <Button
                 variant="ghost"
                 size="icon"
@@ -161,8 +165,8 @@ export function LinkListItem({
               >
                 <IconPinnedOff className="h-4 w-4" />
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

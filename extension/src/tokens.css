@@ -43,6 +43,7 @@
   --bg-overlay-quaternary: color-mix(in oklab, oklch(0 0 0) 2%, transparent 98%);
   --bg-overlay-secondary: color-mix(in oklab, oklch(0 0 0) 8%, transparent 92%);
   --bg-overlay-tertiary: color-mix(in oklab, oklch(0 0 0) 4%, transparent 96%);
+  --bg-pure-white: oklch(1 0 0);
   --bg-scrim: color-mix(in oklab, oklch(1 0 0) 80%, transparent 20%);
   --bg-sidepanel: color-mix(in oklab, oklch(0 0 0) 4%, oklch(1 0 0) 96%);
   --black: oklch(0 0 0);
@@ -166,9 +167,6 @@
   --red-700: oklch(0.445 0.177 28.5);
   --red-800: oklch(0.307 0.126 29.2);
   --red-900: oklch(0.22 0.09 29.5);
-  --scrollbar-active-gray: oklch(0.855 0 0);
-  --scrollbar-hover-gray: color-mix(in oklab, oklch(0.855 0 0) 70%, transparent 30%);
-  --scrollbar-inactive-gray: color-mix(in oklab, oklch(0.855 0 0) 50%, transparent 50%);
   --shadow-l1: 0px 1px 3px oklch(0 0 0 / 0.1), 0px 0px 2px oklch(0 0 0 / 0.06);
   --shadow-l2: 0px 10px 15px -3px oklch(0 0 0 / 0.1), 0px 4px 6px -2px oklch(0 0 0 / 0.05);
   --shadow-l3: 0px 25px 50px -12px oklch(0 0 0 / 0.25);
@@ -225,15 +223,16 @@
   --bg-l1-glass: color-mix(in oklab, oklch(0.309 0 0) 72%, transparent 28%);
   --bg-l1-solid: color-mix(in oklab, oklch(1 0 0) 12%, oklch(0 0 0) 88%);
   --bg-l2-glass: color-mix(in oklab, oklch(0.309 0 0) 72%, transparent 28%);
-  --bg-l2-solid: color-mix(in oklab, oklch(1 0 0) 12%, oklch(0 0 0) 88%);
+  --bg-l2-solid: oklch(0.309 0 0);
   --bg-l3-glass: color-mix(in oklab, oklch(0.431 0 0) 72%, transparent 28%);
-  --bg-l3-solid: color-mix(in oklab, oklch(1 0 0) 14%, oklch(0 0 0) 86%);
+  --bg-l3-solid: oklch(0.431 0 0);
   --bg-main-container: color-mix(in oklab, oklch(1 0 0) 10%, oklch(0 0 0) 90%);
   --bg-overlay-destructive: color-mix(in oklab, oklch(0.77 0.136 20.7) 24%, transparent 76%);
   --bg-overlay-primary: color-mix(in oklab, oklch(1 0 0) 10%, transparent 90%);
   --bg-overlay-quaternary: color-mix(in oklab, oklch(1 0 0) 2%, transparent 98%);
   --bg-overlay-secondary: color-mix(in oklab, oklch(1 0 0) 8%, transparent 92%);
   --bg-overlay-tertiary: color-mix(in oklab, oklch(1 0 0) 4%, transparent 96%);
+  --bg-pure-white: oklch(0 0 0);
   --bg-scrim: color-mix(in oklab, oklch(0 0 0) 42%, transparent 58%);
   --bg-sidepanel: oklch(0.309 0 0);
   --black: oklch(0 0 0);
@@ -357,9 +356,6 @@
   --red-700: oklch(0.445 0.177 28.5);
   --red-800: oklch(0.307 0.126 29.2);
   --red-900: oklch(0.22 0.09 29.5);
-  --scrollbar-active-gray: oklch(0.545 0 0);
-  --scrollbar-hover-gray: color-mix(in oklab, oklch(0.545 0 0) 70%, transparent 30%);
-  --scrollbar-inactive-gray: color-mix(in oklab, oklch(0.545 0 0) 50%, transparent 50%);
   --shadow-l1: 0px 1px 3px oklch(0 0 0 / 0.1), 0px 0px 2px oklch(0 0 0 / 0.06);
   --shadow-l2: 0px 10px 15px -3px oklch(0 0 0 / 0.1), 0px 4px 6px -2px oklch(0 0 0 / 0.05);
   --shadow-l3: 0px 25px 50px -12px oklch(0 0 0 / 0.25);
