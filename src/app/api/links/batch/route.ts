@@ -77,42 +77,74 @@ export async function POST(request: NextRequest) {
           p_links: links,
         });
         
-        // Enrich links with metadata immediately
+        // Enrich links with comprehensive metadata immediately
         if (!result.error && result.data?.links) {
           const metadataService = new MetadataService();
-          const enrichedLinks: CreatedLink[] = [];
           
-          // Fetch metadata for all links in parallel
-          const metadataPromises = result.data.links.map(async (link: CreatedLink) => {
-            if (link.content_type === "url" || !link.content_type) {
+          // Fetch metadata for all URL links in parallel with concurrency control
+          const urlLinks = result.data.links.filter(
+            (link: CreatedLink) => link.content_type === "url" || !link.content_type
+          );
+          
+          if (urlLinks.length > 0) {
+            // Fetch metadata for all URLs
+            const urls = urlLinks.map((link: CreatedLink) => link.url);
+            const metadataMap = await metadataService.fetchBatchMetadata(urls, {
+              concurrency: 5,
+              timeout: 5000,
+            });
+            
+            // Update each link with comprehensive metadata
+            const updatePromises = urlLinks.map(async (link: CreatedLink) => {
+              const metadata = metadataMap.get(link.url);
+              if (!metadata) return link;
+              
               try {
-                const metadata = await metadataService.fetchMetadata(link.url);
+                const { data: updatedLink } = await supabase
+                  .from("links")
+                  .update({
+                    // Core fields
+                    title: metadata.title || link.title,
+                    favicon_url: metadata.favicon_url || link.favicon_url,
+                    description: metadata.description || link.description,
+                    og_image_url: metadata.preview_image_url || link.og_image_url,
+                    // Extended metadata
+                    site_name: metadata.site_name,
+                    final_url: metadata.final_url,
+                    canonical_url: metadata.canonical_url,
+                    favicon_variants: metadata.favicon_variants,
+                    preview_image_width: metadata.preview_image_width,
+                    preview_image_height: metadata.preview_image_height,
+                    theme_color: metadata.theme_color,
+                    language: metadata.language,
+                    word_count: metadata.word_count,
+                    reading_time_minutes: metadata.reading_time_minutes,
+                    status_code: metadata.status_code,
+                    fetch_status: metadata.fetch_status,
+                    fetched_at: metadata.fetched_at,
+                    etag: metadata.etag,
+                    last_modified: metadata.last_modified,
+                  })
+                  .eq("id", link.id)
+                  .select()
+                  .single();
                 
-                // Update link in database with metadata
-                if (metadata.title || metadata.favicon || metadata.description) {
-                  const { data: updatedLink } = await supabase
-                    .from("links")
-                    .update({
-                      title: metadata.title || link.title,
-                      favicon_url: metadata.favicon || link.favicon_url,
-                      description: metadata.description || link.description,
-                      og_image_url: metadata.ogImage || link.og_image_url,
-                    })
-                    .eq("id", link.id)
-                    .select()
-                    .single();
-                  
-                  return updatedLink || { ...link, ...metadata };
-                }
+                return updatedLink || link;
               } catch (err) {
-                console.error(`Metadata fetch failed for ${link.url}:`, err);
+                console.error(`Metadata update failed for ${link.url}:`, err);
+                return link;
               }
-            }
-            return link;
-          });
-          
-          const enrichedResults = await Promise.all(metadataPromises);
-          result.data.links = enrichedResults;
+            });
+            
+            const enrichedUrls = await Promise.all(updatePromises);
+            
+            // Merge enriched URLs back with non-URL links
+            const nonUrlLinks = result.data.links.filter(
+              (link: CreatedLink) => link.content_type && link.content_type !== "url"
+            );
+            
+            result.data.links = [...nonUrlLinks, ...enrichedUrls];
+          }
         }
         break;
 

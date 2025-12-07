@@ -45,25 +45,37 @@ export async function POST(
       );
     }
 
-    // Skip if already has complete metadata
-    if (link.favicon_url && link.og_image_url && link.description) {
+    // Skip if content type is not URL
+    if (link.content_type && link.content_type !== "url") {
       return NextResponse.json({ 
-        message: "Link already has metadata",
+        message: "Skipping non-URL content type",
         updated: false 
       });
     }
 
-    // Extract metadata with timeout
+    // Skip if already has complete metadata with success status
+    if (link.fetch_status === "success" && link.favicon_url && link.description) {
+      return NextResponse.json({ 
+        message: "Link already has complete metadata",
+        updated: false 
+      });
+    }
+
+    // Extract comprehensive metadata
     const metadata = await extractMetadata(link.url);
 
-    // Update the link with fetched metadata
-    const updates: any = {};
+    // Build update object with all new metadata fields
+    const updates: Record<string, unknown> = {
+      fetch_status: metadata.fetch_status,
+      fetched_at: metadata.fetched_at,
+    };
     
-    if (!link.favicon_url && metadata.favicon) {
-      updates.favicon_url = metadata.favicon;
+    // Core fields - update if missing or if we got better data
+    if (!link.favicon_url && metadata.favicon_url) {
+      updates.favicon_url = metadata.favicon_url;
     }
-    if (!link.og_image_url && metadata.ogImage) {
-      updates.og_image_url = metadata.ogImage;
+    if (!link.og_image_url && metadata.preview_image_url) {
+      updates.og_image_url = metadata.preview_image_url;
     }
     if (!link.description && metadata.description) {
       updates.description = metadata.description;
@@ -72,13 +84,46 @@ export async function POST(
     if (link.title === link.url && metadata.title !== metadata.domain) {
       updates.title = metadata.title;
     }
-
-    // Only update if we have new data
-    if (Object.keys(updates).length === 0) {
-      return NextResponse.json({ 
-        message: "No new metadata available",
-        updated: false 
-      });
+    
+    // Extended metadata fields - always update if available
+    if (metadata.site_name) {
+      updates.site_name = metadata.site_name;
+    }
+    if (metadata.final_url) {
+      updates.final_url = metadata.final_url;
+    }
+    if (metadata.canonical_url) {
+      updates.canonical_url = metadata.canonical_url;
+    }
+    if (metadata.favicon_variants && metadata.favicon_variants.length > 0) {
+      updates.favicon_variants = metadata.favicon_variants;
+    }
+    if (metadata.preview_image_width) {
+      updates.preview_image_width = metadata.preview_image_width;
+    }
+    if (metadata.preview_image_height) {
+      updates.preview_image_height = metadata.preview_image_height;
+    }
+    if (metadata.theme_color) {
+      updates.theme_color = metadata.theme_color;
+    }
+    if (metadata.language) {
+      updates.language = metadata.language;
+    }
+    if (metadata.word_count) {
+      updates.word_count = metadata.word_count;
+    }
+    if (metadata.reading_time_minutes) {
+      updates.reading_time_minutes = metadata.reading_time_minutes;
+    }
+    if (metadata.status_code) {
+      updates.status_code = metadata.status_code;
+    }
+    if (metadata.etag) {
+      updates.etag = metadata.etag;
+    }
+    if (metadata.last_modified) {
+      updates.last_modified = metadata.last_modified;
     }
 
     const { error: updateError } = await supabase
@@ -97,6 +142,7 @@ export async function POST(
     return NextResponse.json({ 
       message: "Metadata updated successfully",
       updated: true,
+      fetch_status: metadata.fetch_status,
       fields: Object.keys(updates)
     });
   } catch (error) {

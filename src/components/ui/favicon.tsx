@@ -3,6 +3,50 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
+// =============================================================================
+// Global Favicon Cache
+// =============================================================================
+
+/**
+ * Global cache to track successfully loaded favicons
+ * Persists across component re-renders and unmounts
+ */
+const faviconCache = new Map<string, {
+  loadedUrl: string;        // The URL that successfully loaded
+  timestamp: number;        // When it was cached
+}>();
+
+/**
+ * Cache a successfully loaded favicon
+ */
+function cacheLoadedFavicon(cacheKey: string, loadedUrl: string) {
+  faviconCache.set(cacheKey, {
+    loadedUrl,
+    timestamp: Date.now(),
+  });
+}
+
+/**
+ * Get cached favicon if available
+ */
+function getCachedFavicon(cacheKey: string): string | null {
+  const cached = faviconCache.get(cacheKey);
+  if (cached) {
+    // Cache expires after 1 hour
+    const ONE_HOUR = 60 * 60 * 1000;
+    if (Date.now() - cached.timestamp < ONE_HOUR) {
+      return cached.loadedUrl;
+    }
+    // Remove expired cache
+    faviconCache.delete(cacheKey);
+  }
+  return null;
+}
+
+// =============================================================================
+// Component
+// =============================================================================
+
 interface FaviconProps {
   url: string;
   domain: string;
@@ -11,9 +55,9 @@ interface FaviconProps {
 }
 
 /**
- * Fallback placeholder - skeleton loading with pulse animation
+ * Fallback placeholder - light gray rectangle
  */
-function FaviconFallback({ className, isLoading = true }: { className?: string; isLoading?: boolean }) {
+function FaviconFallback({ className, isLoading = false }: { className?: string; isLoading?: boolean }) {
   return (
     <div
       className={cn(
@@ -42,13 +86,27 @@ function isLocalDomain(domain: string): boolean {
 }
 
 /**
- * Smart favicon component with progressive fallbacks
- * Tries multiple sources in order of quality, falls back to gray rectangle
+ * Generate cache key for a favicon
+ */
+function getCacheKey(url: string, domain: string): string {
+  return `${domain}:${url || "default"}`;
+}
+
+/**
+ * Smart favicon component with progressive fallbacks and caching
+ * Once a favicon loads successfully, it's cached to prevent re-loading on re-renders
  */
 export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
-  const [currentSource, setCurrentSource] = React.useState(0);
+  const cacheKey = getCacheKey(url, domain);
+  const cachedUrl = getCachedFavicon(cacheKey);
+  
+  // If we have a cached URL, use it directly without fallback logic
+  const [currentSource, setCurrentSource] = React.useState(() => {
+    if (cachedUrl) return -1; // -1 indicates using cached URL
+    return 0;
+  });
   const [allFailed, setAllFailed] = React.useState(false);
-  const [imageLoaded, setImageLoaded] = React.useState(false);
+  const [imageLoaded, setImageLoaded] = React.useState(() => !!cachedUrl);
 
   // For local domains, immediately show fallback
   const isLocal = isLocalDomain(domain);
@@ -86,28 +144,64 @@ export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
     return fallbacks;
   }, [url, domain, isLocal]);
 
-  // Reset state when URL/domain changes
+  // Get the current image URL to display
+  const currentImageUrl = React.useMemo(() => {
+    if (cachedUrl && currentSource === -1) {
+      return cachedUrl;
+    }
+    if (currentSource >= 0 && currentSource < sources.length) {
+      return sources[currentSource];
+    }
+    return null;
+  }, [cachedUrl, currentSource, sources]);
+
+  // Reset state when URL/domain changes (but check cache first)
   React.useEffect(() => {
-    setCurrentSource(0);
-    setAllFailed(false);
-    setImageLoaded(false);
-  }, [url, domain]);
+    const newCachedUrl = getCachedFavicon(cacheKey);
+    if (newCachedUrl) {
+      setCurrentSource(-1);
+      setImageLoaded(true);
+      setAllFailed(false);
+    } else {
+      setCurrentSource(0);
+      setAllFailed(false);
+      setImageLoaded(false);
+    }
+  }, [cacheKey]);
 
   const handleError = React.useCallback(() => {
+    // If using cached URL and it fails, start from beginning
+    if (currentSource === -1) {
+      faviconCache.delete(cacheKey);
+      setCurrentSource(0);
+      setImageLoaded(false);
+      return;
+    }
+    
     if (currentSource < sources.length - 1) {
       setCurrentSource((prev) => prev + 1);
     } else {
       setAllFailed(true);
     }
-  }, [currentSource, sources.length]);
+  }, [currentSource, sources.length, cacheKey]);
 
   const handleLoad = React.useCallback(() => {
     setImageLoaded(true);
-  }, []);
+    
+    // Cache the successfully loaded URL
+    if (currentImageUrl && currentSource !== -1) {
+      cacheLoadedFavicon(cacheKey, currentImageUrl);
+    }
+  }, [cacheKey, currentImageUrl, currentSource]);
 
   // Show fallback if: all sources failed, no sources available, or local domain with no URL
-  if (allFailed || sources.length === 0) {
-    return <FaviconFallback className={className} />;
+  if (allFailed || (!currentImageUrl && sources.length === 0)) {
+    return <FaviconFallback className={className} isLoading={false} />;
+  }
+
+  // If no image URL available, show loading fallback
+  if (!currentImageUrl) {
+    return <FaviconFallback className={className} isLoading={true} />;
   }
 
   // Render image with fallback shown underneath until loaded
@@ -116,11 +210,11 @@ export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
       {/* Show fallback until image loads successfully */}
       {!imageLoaded && (
         <div className="absolute inset-0">
-          <FaviconFallback className="h-full w-full" />
+          <FaviconFallback className="h-full w-full" isLoading={true} />
         </div>
       )}
       <img
-        src={sources[currentSource]}
+        src={currentImageUrl}
         alt={alt}
         className={cn(
           "h-5 w-5 rounded object-cover",

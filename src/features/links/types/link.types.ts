@@ -36,6 +36,22 @@ export interface Link {
     sort_order: number;
     created_at: string;
     updated_at: string;
+    // Comprehensive metadata columns
+    final_url: string | null;
+    canonical_url: string | null;
+    site_name: string | null;
+    favicon_variants: FaviconVariant[] | null;
+    preview_image_width: number | null;
+    preview_image_height: number | null;
+    theme_color: string | null;
+    language: string | null;
+    word_count: number | null;
+    reading_time_minutes: number | null;
+    status_code: number | null;
+    fetch_status: FetchStatus;
+    fetched_at: string | null;
+    etag: string | null;
+    last_modified: string | null;
 }
 
 /**
@@ -82,7 +98,7 @@ export interface LinkFilters {
 }
 
 /**
- * Metadata extracted from a URL
+ * Metadata extracted from a URL (legacy, kept for compatibility)
  */
 export interface LinkMetadata {
     title?: string;
@@ -91,3 +107,85 @@ export interface LinkMetadata {
     ogImage?: string;
     domain?: string;
 }
+
+// =============================================================================
+// Production-Grade Metadata Types
+// =============================================================================
+
+/**
+ * Fetch status for tracking metadata retrieval state
+ */
+export type FetchStatus =
+    | "pending"       // Not yet fetched
+    | "fetching"      // Currently being fetched
+    | "success"       // Successfully fetched
+    | "timeout"       // Fetch timed out
+    | "blocked"       // Site blocked our request
+    | "invalid_ssl"   // SSL certificate error
+    | "invalid_html"  // Could not parse HTML
+    | "failed";       // Generic failure
+
+/**
+ * Favicon variant with metadata for smart selection
+ */
+export interface FaviconVariant {
+    url: string;
+    sizes?: string;      // e.g., "16x16", "32x32 48x48"
+    type?: string;       // e.g., "image/png", "image/svg+xml"
+    rel?: string;        // e.g., "icon", "apple-touch-icon"
+}
+
+/**
+ * Comprehensive metadata extracted from an HTML page
+ */
+export interface ExtractedMetadata {
+    // URL-level data
+    final_url?: string;              // After redirects
+    canonical_url?: string;          // From <link rel="canonical">
+    domain: string;                  // Hostname without www
+    protocol?: string;               // http, https, etc.
+
+    // Identity/labeling
+    title: string;
+    site_name?: string;
+    description?: string;
+
+    // Visual identity
+    favicon_url?: string;            // Best selected favicon
+    favicon_variants?: FaviconVariant[];
+    preview_image_url?: string;      // OG image or best guess
+    preview_image_width?: number;
+    preview_image_height?: number;
+    theme_color?: string;            // Brand/accent color
+
+    // Content signals
+    language?: string;
+    word_count?: number;
+    reading_time_minutes?: number;
+
+    // System info
+    status_code?: number;
+    fetch_status: FetchStatus;
+    fetched_at?: string;
+    etag?: string;
+    last_modified?: string;
+}
+
+/**
+ * Options for batch metadata fetching
+ */
+export interface BatchMetadataOptions {
+    timeout?: number;          // Per-URL timeout in ms (default: 5000)
+    concurrency?: number;      // Max parallel requests (default: 5)
+    skipCache?: boolean;       // Force fresh fetch
+}
+
+/**
+ * Result of batch metadata enrichment
+ */
+export interface BatchEnrichmentResult {
+    successful: number;
+    failed: number;
+    results: Map<string, ExtractedMetadata | { error: string; fetch_status: FetchStatus }>;
+}
+

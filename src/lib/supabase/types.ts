@@ -91,6 +91,22 @@ export interface Database {
           sort_order: number;
           created_at: string;
           updated_at: string;
+          // Comprehensive metadata columns
+          final_url: string | null;
+          canonical_url: string | null;
+          site_name: string | null;
+          favicon_variants: Record<string, unknown>[] | null;
+          preview_image_width: number | null;
+          preview_image_height: number | null;
+          theme_color: string | null;
+          language: string | null;
+          word_count: number | null;
+          reading_time_minutes: number | null;
+          status_code: number | null;
+          fetch_status: string;
+          fetched_at: string | null;
+          etag: string | null;
+          last_modified: string | null;
         };
         Insert: {
           id?: string;
@@ -120,6 +136,22 @@ export interface Database {
           sort_order?: number;
           created_at?: string;
           updated_at?: string;
+          // Comprehensive metadata columns
+          final_url?: string | null;
+          canonical_url?: string | null;
+          site_name?: string | null;
+          favicon_variants?: Record<string, unknown>[] | null;
+          preview_image_width?: number | null;
+          preview_image_height?: number | null;
+          theme_color?: string | null;
+          language?: string | null;
+          word_count?: number | null;
+          reading_time_minutes?: number | null;
+          status_code?: number | null;
+          fetch_status?: string;
+          fetched_at?: string | null;
+          etag?: string | null;
+          last_modified?: string | null;
         };
         Update: {
           id?: string;
@@ -149,6 +181,22 @@ export interface Database {
           sort_order?: number;
           created_at?: string;
           updated_at?: string;
+          // Comprehensive metadata columns
+          final_url?: string | null;
+          canonical_url?: string | null;
+          site_name?: string | null;
+          favicon_variants?: Record<string, unknown>[] | null;
+          preview_image_width?: number | null;
+          preview_image_height?: number | null;
+          theme_color?: string | null;
+          language?: string | null;
+          word_count?: number | null;
+          reading_time_minutes?: number | null;
+          status_code?: number | null;
+          fetch_status?: string;
+          fetched_at?: string | null;
+          etag?: string | null;
+          last_modified?: string | null;
         };
       };
       link_tags: {
