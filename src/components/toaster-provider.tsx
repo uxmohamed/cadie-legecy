@@ -3,5 +3,13 @@
 import { Toaster } from "sonner";
 
 export function ToasterProvider() {
-  return <Toaster />;
+  return (
+    <Toaster
+      position="bottom-center"
+      offset={102}
+      toastOptions={{
+        className: "toast-dock-style",
+      }}
+    />
+  );
 }

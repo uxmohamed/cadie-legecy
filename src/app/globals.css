@@ -61,3 +61,48 @@ body {
 * {
   scrollbar-width: thin;
 }
+
+/* Sonner toaster container - centering and z-index */
+[data-sonner-toaster] {
+  z-index: 40 !important;
+  /* Ensure proper centering */
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+/* Custom Toast Styling - Matches Dock */
+/* Override Sonner's internal CSS variables */
+[data-sonner-toast] {
+  /* Use fit-content for dynamic width based on content */
+  --width: fit-content !important;
+  width: fit-content !important;
+  min-width: 220px !important;
+  max-width: 90vw !important;
+
+  /* Sonner's internal variables */
+  --normal-bg: var(--overlay-blur-bg) !important;
+  --normal-border: var(--overlay-border) !important;
+  --normal-text: var(--overlay-text-primary) !important;
+  --border-radius: 9999px !important;
+
+  /* Also set properties directly for full coverage */
+  background: var(--overlay-blur-bg) !important;
+  box-shadow: var(--overlay-blur-shadow) !important;
+  backdrop-filter: var(--overlay-blur-backdrop) !important;
+  border-radius: 9999px !important;
+  border: 1px solid var(--overlay-border) !important;
+  color: var(--overlay-text-primary) !important;
+  padding: 8px 16px 8px 12px !important;
+
+  /* Ensure left-aligned content */
+  text-align: left !important;
+}
+
+/* Force toast text to single line with ellipsis */
+[data-sonner-toast] [data-content] {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  text-align: left !important;
+}
