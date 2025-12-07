@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { MetadataService } from "@/features/links/services/metadata.service";
 
+export const runtime = "edge";
+
 type BatchAction = "add" | "delete" | "restore" | "permanent_delete" | "pin" | "unpin";
 
 interface LinkData {
