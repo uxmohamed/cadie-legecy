@@ -14,8 +14,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverTrigger, PopoverPopup } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
-import { IconPlus, IconSearch, IconDots } from "@tabler/icons-react";
+import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCheck } from "@tabler/icons-react";
 import { Kbd } from "@/components/ui/kbd";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/menu";
 import {
   detectMultipleContentTypes,
   type DetectedContent,
@@ -103,11 +110,17 @@ export function Dashboard({ user }: DashboardProps) {
   }, [filteredLinks, sortBy, sortOrder]);
 
   const handleSortChange = React.useCallback(
-    (newSortBy: "date" | "title", newOrder: "asc" | "desc") => {
-      setSortBy(newSortBy);
-      setSortOrder(newOrder);
+    (newSortBy: "date" | "title") => {
+      if (sortBy === newSortBy) {
+        // Toggle order if same field
+        setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+      } else {
+        // New field, default to descending
+        setSortBy(newSortBy);
+        setSortOrder("desc");
+      }
     },
-    []
+    [sortBy, sortOrder]
   );
 
   const handleSearchClick = React.useCallback(() => {
@@ -216,6 +229,15 @@ export function Dashboard({ user }: DashboardProps) {
       },
     });
 
+    registerShortcut({
+      key: "1",
+      description: "Switch to All Items view",
+      category: "Navigation",
+      action: () => {
+        setSelectedCategoryId(null);
+      },
+    });
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "f") {
         e.preventDefault();
@@ -238,6 +260,20 @@ export function Dashboard({ user }: DashboardProps) {
 
       // Handle Shift+A for All Items view
       if (e.shiftKey && e.key === "A") {
+        const target = e.target as HTMLElement;
+        const isInputFocused =
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable;
+
+        if (!isInputFocused) {
+          e.preventDefault();
+          setSelectedCategoryId(null);
+        }
+      }
+
+      // Handle '1' key for All Items view
+      if (e.key === "1") {
         const target = e.target as HTMLElement;
         const isInputFocused =
           target.tagName === "INPUT" ||
@@ -294,7 +330,58 @@ export function Dashboard({ user }: DashboardProps) {
         <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 md:px-8">
           <div className="flex items-center justify-between gap-2 pt-2 pb-4 sm:pb-6">
             {/* Left side: Add button + All items */}
-            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              {/* Add Button with Popover (Outline style) */}
+              <Popover open={addPopoverOpen} onOpenChange={setAddPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9 rounded-md border-[var(--border-secondary)] bg-transparent hover:bg-[var(--bg-field-hover-light)]"
+                    aria-label="Add item"
+                  >
+                    <IconPlus className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverPopup
+                  side="bottom"
+                  align="start"
+                  sideOffset={8}
+                  className="w-[420px] p-3"
+                >
+                  <form onSubmit={handleAddSubmit} className="space-y-3">
+                    <div className="px-2 text-sm font-[470] text-[var(--overlay-text-primary)]">
+                      Add item
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        ref={addInputRef}
+                        type="text"
+                        value={addInputValue}
+                        onChange={handleAddInputChange}
+                        onKeyDown={handleAddKeyDown}
+                        placeholder="Add a link or color..."
+                        disabled={isLoading}
+                        unstyled
+                        className="flex-1 rounded-lg bg-[var(--overlay-hover)] px-3 py-2 text-sm placeholder:text-[var(--overlay-text-primary)]/70 text-[var(--overlay-text-primary)] outline-none"
+                        autoComplete="off"
+                      />
+                      <Button
+                        type="submit"
+                        disabled={!addInputValue.trim() || isLoading}
+                        variant="default"
+                        className="shrink-0 bg-white text-black hover:bg-white/90  disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Add
+                      </Button>
+                    </div>
+                  </form>
+                </PopoverPopup>
+              </Popover>
+
+              {/* Vertical Divider */}
+              <div className="h-8 w-px bg-[var(--border-secondary)]" />
+
               <div className="flex items-center gap-2">
                 <button
                   className="not-italic text-lg sm:text-[22px] font-[570] leading-tight sm:leading-[32px] tracking-[-0.16px] text-[var(--text-primary)] hover:text-[var(--text-primary)] truncate"
@@ -330,14 +417,75 @@ export function Dashboard({ user }: DashboardProps) {
                   </Kbd>
                 </div>
               </div>
-              <Button
-                variant="secondary"
-                size="icon"
-                className="hidden sm:flex h-9 w-9 rounded-md bg-[var(--bg-field-light)] hover:bg-[var(--bg-field-hover)]"
-                aria-label="Options"
-              >
-                <IconDots className="h-4 w-4" />
-              </Button>
+              
+              {/* Options Menu with Sorting */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="hidden sm:flex h-9 w-9 rounded-md bg-[var(--bg-field-light)] hover:bg-[var(--bg-field-hover)]"
+                    aria-label="Options"
+                  >
+                    <IconDots className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <div className="px-2 py-2">
+                    <p className="text-xs font-medium text-[var(--overlay-text-secondary)]">
+                      Sort by
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-0.5 px-0.75 pb-0.75">
+                    <DropdownMenuItem
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        handleSortChange("title");
+                      }}
+                      className={`cursor-pointer rounded-xl ${sortBy === "title" ? "bg-[rgba(255,255,255,0.1)]" : ""}`}
+                    >
+                      {sortBy === "title" ? (
+                        <div className="flex items-center justify-center w-5 h-5 rounded-full bg-white mr-2">
+                          <IconCheck className="h-3 w-3 text-black" />
+                        </div>
+                      ) : (
+                        <div className="w-5 h-5 mr-2" />
+                      )}
+                      Name
+                      {sortBy === "title" && (
+                        sortOrder === "asc" ? (
+                          <IconArrowUp className="ml-auto h-4 w-4" />
+                        ) : (
+                          <IconArrowDown className="ml-auto h-4 w-4" />
+                        )
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        handleSortChange("date");
+                      }}
+                      className={`cursor-pointer rounded-xl ${sortBy === "date" ? "bg-[rgba(255,255,255,0.1)]" : ""}`}
+                    >
+                      {sortBy === "date" ? (
+                        <div className="flex items-center justify-center w-5 h-5 rounded-full bg-white mr-2">
+                          <IconCheck className="h-3 w-3 text-black" />
+                        </div>
+                      ) : (
+                        <div className="w-5 h-5 mr-2" />
+                      )}
+                      Date Added
+                      {sortBy === "date" && (
+                        sortOrder === "asc" ? (
+                          <IconArrowUp className="ml-auto h-4 w-4" />
+                        ) : (
+                          <IconArrowDown className="ml-auto h-4 w-4" />
+                        )
+                      )}
+                    </DropdownMenuItem>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -396,19 +544,11 @@ export function Dashboard({ user }: DashboardProps) {
 
       {/* Dock */}
       <Dock
-        onAddSubmit={handleSubmit}
-        onSearchClick={handleSearchClick}
-        sortBy={sortBy}
-        sortOrder={sortOrder}
-        onSortChange={handleSortChange}
-        isLoading={isLoading}
         selectedCategoryId={selectedCategoryId}
         onViewChange={setSelectedCategoryId}
         allItemsCount={
           selectedCategoryId !== "trash" ? filteredLinks.length : undefined
         }
-        isAddPopoverOpen={addPopoverOpen}
-        onAddPopoverOpenChange={setAddPopoverOpen}
       />
     </div>
   );

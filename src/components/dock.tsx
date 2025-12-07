@@ -9,132 +9,25 @@ import {
 } from "@/components/ui/tooltip";
 import { Kbd } from "@/components/ui/kbd";
 import { Popover, PopoverTrigger, PopoverPopup } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
 import {
-  IconPlus,
-  IconSearch,
-  IconSortAscending,
-  IconSortDescending,
   IconCheck,
-  IconChevronDown,
-  IconArrowsSort,
   IconCapsuleHorizontalFilled,
   IconTrashFilled,
-  IconArrowUp,
-  IconArrowDown,
 } from "@tabler/icons-react";
 import { ChevronUpDown } from "@/components/icons/chevron-up-down";
-import {
-  detectMultipleContentTypes,
-  type DetectedContent,
-} from "@/lib/content-detector";
 
 interface DockProps {
-  onAddClick?: () => void;
-  onAddSubmit?: (items: DetectedContent[]) => void;
-  onSearchClick?: () => void;
-  sortBy?: "date" | "title";
-  sortOrder?: "asc" | "desc";
-  onSortChange?: (sortBy: "date" | "title", order: "asc" | "desc") => void;
-  isLoading?: boolean;
   selectedCategoryId?: string | null;
   onViewChange?: (view: string | null) => void;
   allItemsCount?: number;
-  isAddPopoverOpen?: boolean;
-  onAddPopoverOpenChange?: (open: boolean) => void;
 }
 
 export function Dock({
-  onAddClick,
-  onAddSubmit,
-  onSearchClick,
-  sortBy = "date",
-  sortOrder = "desc",
-  onSortChange,
-  isLoading = false,
   selectedCategoryId = null,
   onViewChange,
   allItemsCount,
-  isAddPopoverOpen: externalAddPopoverOpen,
-  onAddPopoverOpenChange,
 }: DockProps) {
-  const [sortPopoverOpen, setSortPopoverOpen] = React.useState(false);
-  const [internalAddPopoverOpen, setInternalAddPopoverOpen] = React.useState(false);
   const [viewPopoverOpen, setViewPopoverOpen] = React.useState(false);
-  const [addInputValue, setAddInputValue] = React.useState("");
-  const addInputRef = React.useRef<HTMLInputElement>(null);
-
-  // Use external state if provided, otherwise use internal state
-  const addPopoverOpen = externalAddPopoverOpen ?? internalAddPopoverOpen;
-  const setAddPopoverOpen = onAddPopoverOpenChange ?? setInternalAddPopoverOpen;
-
-  const handleSortChange = (newSortBy: "date" | "title") => {
-    if (sortBy === newSortBy) {
-      // Toggle order if same field
-      const newOrder = sortOrder === "asc" ? "desc" : "asc";
-      onSortChange?.(newSortBy, newOrder);
-    } else {
-      // New field, default to descending
-      onSortChange?.(newSortBy, "desc");
-    }
-  };
-
-  const handleAddClick = () => {
-    if (onAddSubmit) {
-      setAddPopoverOpen(true);
-    } else {
-      onAddClick?.();
-    }
-  };
-
-  // Auto-focus input when popover opens
-  React.useEffect(() => {
-    if (addPopoverOpen && addInputRef.current) {
-      // Small delay to ensure popover is fully rendered
-      const timer = setTimeout(() => {
-        addInputRef.current?.focus();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [addPopoverOpen]);
-
-  const handleAddSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!addInputValue.trim() || isLoading || !onAddSubmit) return;
-
-    const detectedItems = detectMultipleContentTypes(addInputValue);
-    if (detectedItems.length > 0) {
-      onAddSubmit(detectedItems);
-      setAddInputValue("");
-      setAddPopoverOpen(false);
-    }
-  };
-
-  const handleAddInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAddInputValue(e.target.value);
-  };
-
-  const handleAddKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Escape") {
-      setAddInputValue("");
-      setAddPopoverOpen(false);
-    }
-  };
-
-  const getSortIcon = () => {
-    if (sortBy === "date") {
-      return sortOrder === "desc" ? (
-        <IconSortDescending className="w-[18px] h-[18px]" />
-      ) : (
-        <IconSortAscending className="w-[18px] h-[18px]" />
-      );
-    }
-    return sortOrder === "desc" ? (
-      <IconSortDescending className="w-[18px] h-[18px]" />
-    ) : (
-      <IconSortAscending className="w-[18px] h-[18px]" />
-    );
-  };
 
   const handleViewChange = (view: string | null) => {
     onViewChange?.(view);
@@ -151,167 +44,6 @@ export function Dock({
           className="overlay-blur flex items-center gap-1 py-1.5 px-1.5 rounded-full border-[var(--overlay-border)]"
           aria-label="Dock actions"
         >
-          {/* Add Button with Popover */}
-          <Popover
-            open={addPopoverOpen && !!onAddSubmit}
-            onOpenChange={setAddPopoverOpen}
-          >
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <PopoverTrigger asChild>
-                  <Button
-                    onClick={handleAddClick}
-                    aria-label="Add link"
-                    variant="ghost"
-                    className="p-0 w-[50px] h-[50px] rounded-full bg-[var(--overlay-hover)] hover:bg-white/25 text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0 transition-colors"
-                  >
-                    <IconPlus className="w-[18px] h-[18px]" />
-                  </Button>
-                </PopoverTrigger>
-              </TooltipTrigger>
-              <TooltipContent side="top" sideOffset={12}>
-                <div className="flex items-center gap-2">
-                  <span>Add</span>
-                  <Kbd>C</Kbd>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-            {onAddSubmit && (
-              <PopoverPopup
-                side="top"
-                align="center"
-                sideOffset={12}
-                className="w-[420px] p-3"
-              >
-                <form onSubmit={handleAddSubmit} className="space-y-3">
-                  <div className="px-2 text-sm font-[470] text-[var(--overlay-text-primary)]">
-                    Add item
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      ref={addInputRef}
-                      type="text"
-                      value={addInputValue}
-                      onChange={handleAddInputChange}
-                      onKeyDown={handleAddKeyDown}
-                      placeholder="Add a link or color..."
-                      disabled={isLoading}
-                      unstyled
-                      className="flex-1 rounded-lg bg-[var(--overlay-hover)] px-3 py-2 text-sm placeholder:text-[var(--overlay-text-primary)]/70 text-[var(--overlay-text-primary)] outline-none"
-                      autoComplete="off"
-                    />
-                    <Button
-                      type="submit"
-                      disabled={!addInputValue.trim() || isLoading}
-                      variant="default"
-                      className="shrink-0 bg-white text-black hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Add
-                    </Button>
-                  </div>
-                </form>
-              </PopoverPopup>
-            )}
-          </Popover>
-
-          {/* Search Button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={onSearchClick}
-                aria-label="Search"
-                variant="ghost"
-                className="p-0 w-[50px] h-[50px] rounded-full bg-transparent hover:bg-[var(--overlay-hover)] text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0"
-              >
-                <IconSearch className="w-[18px] h-[18px]" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={12}>
-              <div className="flex items-center gap-2">
-                <span>Search</span>
-                <Kbd>/</Kbd>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-
-          {/* Sort Button with Popover */}
-          <Popover open={sortPopoverOpen} onOpenChange={setSortPopoverOpen}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <PopoverTrigger asChild>
-                  <Button
-                    aria-label="Sort"
-                    variant="ghost"
-                    className="p-0 w-[50px] h-[50px] rounded-full bg-transparent hover:bg-[var(--overlay-hover)] text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0"
-                  >
-                    {getSortIcon()}
-                  </Button>
-                </PopoverTrigger>
-              </TooltipTrigger>
-              <TooltipContent side="top" sideOffset={12}>
-                <span>Sort</span>
-              </TooltipContent>
-            </Tooltip>
-            <PopoverPopup
-              side="top"
-              align="center"
-              sideOffset={12}
-              className="w-64 p-2"
-            >
-              <div className="px-3 py-1.5 text-sm text-[var(--overlay-text-primary)] font-[570]">
-                Sort by
-              </div>
-              <div className="flex flex-col gap-1 mt-1">
-                <button
-                  onClick={() => handleSortChange("title")}
-                  className={`relative flex w-full cursor-default select-none items-center justify-between rounded-2xl px-3 py-2.5 text-[15px] font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.1)] ${
-                    sortBy === "title" ? "bg-[rgba(255,255,255,0.1)]" : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    {sortBy === "title" && (
-                      <div className="p-1 rounded-full bg-white">
-                        <IconCheck className="h-3 w-3 text-black" />
-                      </div>
-                    )}
-                    <span className={sortBy !== "title" ? "ml-7" : ""}>
-                      Name
-                    </span>
-                  </div>
-                  {sortBy === "title" &&
-                    (sortOrder === "asc" ? (
-                      <IconArrowUp className="h-4 w-4" />
-                    ) : (
-                      <IconArrowDown className="h-4 w-4" />
-                    ))}
-                </button>
-                <button
-                  onClick={() => handleSortChange("date")}
-                  className={`relative flex w-full cursor-default select-none items-center justify-between rounded-2xl px-3 py-2.5 text-[15px] font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.1)] ${
-                    sortBy === "date" ? "bg-[rgba(255,255,255,0.1)]" : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    {sortBy === "date" && (
-                      <div className="p-1 rounded-full bg-white">
-                        <IconCheck className="h-3 w-3 text-black" />
-                      </div>
-                    )}
-                    <span className={sortBy !== "date" ? "ml-7" : ""}>
-                      Date Added
-                    </span>
-                  </div>
-                  {sortBy === "date" &&
-                    (sortOrder === "asc" ? (
-                      <IconArrowUp className="h-4 w-4" />
-                    ) : (
-                      <IconArrowDown className="h-4 w-4" />
-                    ))}
-                </button>
-              </div>
-            </PopoverPopup>
-          </Popover>
-
           {/* View Switcher Chip with Dropdown */}
           {onViewChange && (
             <Popover open={viewPopoverOpen} onOpenChange={setViewPopoverOpen}>
@@ -341,44 +73,48 @@ export function Dock({
               </Tooltip>
               <PopoverPopup
                 side="top"
-                align="end"
+                align="center"
                 sideOffset={12}
-                className="w-48 p-2"
+                className="w-56 p-2"
               >
                 <div className="flex flex-col gap-1">
                   <button
                     onClick={() => handleViewChange(null)}
-                    className={`relative flex w-full cursor-default select-none items-center justify-between rounded-lg px-2 py-1.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] focus:bg-[var(--overlay-hover)] ${
-                      isAllItemsSelected ? "bg-[var(--overlay-hover)]" : ""
+                    className={`relative flex w-full cursor-pointer select-none items-center justify-between rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] ${
+                      isAllItemsSelected ? "bg-[rgba(255,255,255,0.1)]" : ""
                     }`}
                   >
-                    <div className="flex items-center gap-2">
-                      <IconCapsuleHorizontalFilled className="h-3 w-3 text-[var(--overlay-text-secondary)]" />
+                    <div className="flex items-center gap-2.5">
+                      <IconCapsuleHorizontalFilled className="h-4 w-4 text-[var(--overlay-text-secondary)]" />
                       <span>All items</span>
                     </div>
                     {isAllItemsSelected ? (
-                      <IconCheck className="h-4 w-4" />
-                    ) : allItemsCount !== undefined && allItemsCount > 0 ? (
-                      <span className="text-xs font-[470] text-[var(--overlay-text-secondary)] bg-[rgba(255,255,255,0.1)] px-1.5 py-0.5 rounded-full">
-                        {allItemsCount}
-                      </span>
-                    ) : null}
+                      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-white">
+                        <IconCheck className="h-3 w-3 text-black" />
+                      </div>
+                    ) : (
+                      <Kbd className="h-5 px-1.5 text-[10px] bg-[rgba(255,255,255,0.1)] text-[var(--overlay-text-secondary)]">
+                        1
+                      </Kbd>
+                    )}
                   </button>
                   <button
                     onClick={() => handleViewChange("trash")}
-                    className={`relative flex w-full cursor-default select-none items-center justify-between rounded-lg px-2 py-1.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] focus:bg-[var(--overlay-hover)] ${
-                      isTrashSelected ? "bg-[var(--overlay-hover)]" : ""
+                    className={`relative flex w-full cursor-pointer select-none items-center justify-between rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] ${
+                      isTrashSelected ? "bg-[rgba(255,255,255,0.1)]" : ""
                     }`}
                   >
-                    <div className="flex items-center gap-2">
-                      <IconTrashFilled className="h-3 w-3 text-[var(--accent-red-primary)]" />
+                    <div className="flex items-center gap-2.5">
+                      <IconTrashFilled className="h-4 w-4 text-[var(--accent-red-primary)]" />
                       <span>Trash</span>
                     </div>
                     {isTrashSelected ? (
-                      <IconCheck className="h-4 w-4" />
+                      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-white">
+                        <IconCheck className="h-3 w-3 text-black" />
+                      </div>
                     ) : (
                       <Kbd className="h-5 px-1.5 text-[10px] bg-[rgba(255,255,255,0.1)] text-[var(--overlay-text-secondary)]">
-                        ⇧T
+                        ⇧ T
                       </Kbd>
                     )}
                   </button>
