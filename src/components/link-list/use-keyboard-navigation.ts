@@ -13,9 +13,10 @@ interface UseKeyboardNavigationOptions {
   selectAll: () => void;
 
   onBatchDelete: () => void;
+  onBatchPermanentDelete?: () => void;
   onEdit?: (link: Link) => void;
   onDelete?: (id: string) => void;
-
+  isTrashView?: boolean;
 }
 
 import { useShortcuts } from "@/components/shortcut-context";
@@ -32,9 +33,10 @@ export function useKeyboardNavigation({
   selectAll,
 
   onBatchDelete,
+  onBatchPermanentDelete,
   onEdit,
   onDelete,
-
+  isTrashView,
 }: UseKeyboardNavigationOptions) {
   const { registerShortcut, unregisterShortcut } = useShortcuts();
 
@@ -125,7 +127,13 @@ export function useKeyboardNavigation({
       if (e.metaKey && selectedIds.size > 0) {
         if (e.key === "Backspace") {
           e.preventDefault();
-          onBatchDelete();
+          // In trash view, Cmd+Backspace should permanently delete
+          // In normal view, it should move to trash
+          if (isTrashView && onBatchPermanentDelete) {
+            onBatchPermanentDelete();
+          } else {
+            onBatchDelete();
+          }
         }
       }
 
@@ -152,15 +160,16 @@ export function useKeyboardNavigation({
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
   }, [
     focusedIndex,
-    displayLinks, // Added displayLinks to dependency
+    displayLinks,
     selectedIds,
     clearSelection,
     selectAll,
-
     onBatchDelete,
+    onBatchPermanentDelete,
     setFocusedIndex,
     linkRefs,
     onEdit,
     onDelete,
+    isTrashView,
   ]);
 }

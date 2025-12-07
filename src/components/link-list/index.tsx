@@ -92,6 +92,7 @@ export function LinkList({
     isOpen: boolean;
     type: "single" | "batch";
     itemId?: string;
+    batchIds?: string[];
   }>({ isOpen: false, type: "single" });
 
   const confirmPermanentDelete = React.useCallback((id: string) => {
@@ -99,18 +100,26 @@ export function LinkList({
   }, []);
 
   const confirmBatchPermanentDelete = React.useCallback(() => {
-    setDeleteConfirmation({ isOpen: true, type: "batch" });
-  }, []);
+    // Store the selected IDs NOW, before they get cleared
+    const idsToDelete = Array.from(selectedIds);
+    console.log('[DEBUG] confirmBatchPermanentDelete storing', idsToDelete.length, 'ids');
+    setDeleteConfirmation({ isOpen: true, type: "batch", batchIds: idsToDelete });
+  }, [selectedIds]);
 
   const executeDelete = async () => {
+    console.log('[DEBUG] executeDelete called, type:', deleteConfirmation.type, 'batchIds:', deleteConfirmation.batchIds);
     if (deleteConfirmation.type === "single" && deleteConfirmation.itemId) {
+      console.log('[DEBUG] Single delete for:', deleteConfirmation.itemId);
       onPermanentDelete?.(deleteConfirmation.itemId);
-    } else if (deleteConfirmation.type === "batch") {
+    } else if (deleteConfirmation.type === "batch" && deleteConfirmation.batchIds) {
+      console.log('[DEBUG] Batch delete, onBatchPermanentDelete exists:', !!onBatchPermanentDelete);
       if (onBatchPermanentDelete) {
-        await onBatchPermanentDelete(Array.from(selectedIds));
+        console.log('[DEBUG] Calling onBatchPermanentDelete with:', deleteConfirmation.batchIds);
+        await onBatchPermanentDelete(deleteConfirmation.batchIds);
       } else {
+        console.log('[DEBUG] Falling back to individual deletes');
         await Promise.all(
-          Array.from(selectedIds).map((id) => onPermanentDelete?.(id))
+          deleteConfirmation.batchIds.map((id) => onPermanentDelete?.(id))
         );
       }
       clearSelection();
@@ -139,8 +148,11 @@ export function LinkList({
   }, [selectedIds, onRestore, onBatchRestore, clearSelection]);
 
   const handleBatchPermanentDelete = React.useCallback(() => {
-    setDeleteConfirmation({ isOpen: true, type: "batch" });
-  }, []);
+    // Store the selected IDs NOW, before they get cleared
+    const idsToDelete = Array.from(selectedIds);
+    console.log('[DEBUG] handleBatchPermanentDelete storing', idsToDelete.length, 'ids');
+    setDeleteConfirmation({ isOpen: true, type: "batch", batchIds: idsToDelete });
+  }, [selectedIds]);
 
   const handleBatchPin = React.useCallback(() => {
     if (isTrashView) return;
@@ -171,11 +183,11 @@ export function LinkList({
     selectedIds,
     clearSelection,
     selectAll,
-
     onBatchDelete: handleBatchDelete,
+    onBatchPermanentDelete: isTrashView ? handleBatchPermanentDelete : undefined,
     onEdit,
     onDelete,
-
+    isTrashView,
   });
 
   const copyToClipboard = async (text: string, type: "url" | "color") => {
@@ -382,7 +394,7 @@ export function LinkList({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete permanently?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to permanently delete {deleteConfirmation.type === 'batch' ? `${selectedIds.size} items` : 'this item'}? This action cannot be undone.
+              Are you sure you want to permanently delete {deleteConfirmation.type === 'batch' ? `${deleteConfirmation.batchIds?.length || 0} items` : 'this item'}? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

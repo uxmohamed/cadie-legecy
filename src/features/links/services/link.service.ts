@@ -50,11 +50,13 @@ export class LinkService {
                     deleted_at: null,
                 });
 
-                // Trigger background metadata refresh for restored links
+                // Trigger background metadata refresh for restored links (with delay)
                 if (data.content_type === "url" || !data.content_type) {
-                    this.metadataService.enrichLink(restoredLink.id, data.url).catch(err => {
-                        log.error('Background metadata enrichment failed for restored link', err, { linkId: restoredLink.id, url: data.url });
-                    });
+                    setTimeout(() => {
+                        this.metadataService.enrichLink(restoredLink.id, data.url).catch(err => {
+                            log.error('Background metadata enrichment failed for restored link', err, { linkId: restoredLink.id, url: data.url });
+                        });
+                    }, 2500);
                 }
 
                 return { link: restoredLink, isDuplicate: false, isRestored: true };
@@ -67,12 +69,15 @@ export class LinkService {
         // Create new link
         const link = await this.linkRepository.create(userId, data);
 
-        // Trigger background metadata enrichment for URLs
+        // Trigger background metadata enrichment for URLs (with delay to ensure DB commit completes)
         if (data.content_type === "url" || !data.content_type) {
-            // Fire and forget - don't wait for metadata
-            this.metadataService.enrichLink(link.id, data.url).catch(err => {
-                log.error('Background metadata enrichment failed', err, { linkId: link.id, url: data.url });
-            });
+            // Delay enrichment by 2500ms to avoid race condition where metadata API 
+            // tries to fetch a link that hasn't been committed to DB yet
+            setTimeout(() => {
+                this.metadataService.enrichLink(link.id, data.url).catch(err => {
+                    log.error('Background metadata enrichment failed', err, { linkId: link.id, url: data.url });
+                });
+            }, 2500);
         }
 
         return { link, isDuplicate: false, isRestored: false };

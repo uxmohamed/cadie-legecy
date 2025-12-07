@@ -348,66 +348,85 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         async (ids: string[]) => {
             if (ids.length === 0) return;
 
-            // Optimistic update
+            // Optimistic update - remove from trash view immediately
             mutate(
                 (current) => current ? { links: current.links.filter((link: Link) => !ids.includes(link.id)) } : current,
                 false
             );
 
-            try {
-                await Promise.all(
-                    ids.map(async (id) => {
-                        const response = await fetch(`/api/links/${id}`, {
-                            method: "PUT",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ is_deleted: false, is_archived: false }),
-                        });
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            const errorMessage = errorData.error?.userMessage || `Failed to restore link ${id}`;
-                            throw new Error(errorMessage);
+            // Show toast immediately
+            toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} restored`);
+
+            // Process in batches with controlled concurrency to prevent ECONNRESET
+            const concurrency = 5;
+            const processBatch = async (batchIds: string[]) => {
+                await Promise.allSettled(
+                    batchIds.map(async (id) => {
+                        try {
+                            const response = await fetch(`/api/links/${id}`, {
+                                method: "PUT",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ is_deleted: false, is_archived: false }),
+                            });
+                            if (!response.ok) {
+                                log.error('Background restore failed', null, { linkId: id });
+                            }
+                        } catch (err) {
+                            log.error('Background restore failed', err, { linkId: id });
                         }
                     })
                 );
+            };
 
-                toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} restored`);
-            } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : "Failed to restore some links";
-                toast.error(errorMessage);
-                await mutate();
-            }
+            // Fire-and-forget with controlled concurrency
+            (async () => {
+                for (let i = 0; i < ids.length; i += concurrency) {
+                    await processBatch(ids.slice(i, i + concurrency));
+                }
+            })();
         },
         [mutate]
     );
 
     const handleBatchPermanentDeleteLinks = React.useCallback(
         async (ids: string[]) => {
+            console.log('[DEBUG] handleBatchPermanentDeleteLinks called with', ids.length, 'ids');
             if (ids.length === 0) return;
 
-            // Optimistic update
+            // Optimistic update - remove from UI immediately
             mutate(
                 (current) => current ? { links: current.links.filter((link: Link) => !ids.includes(link.id)) } : current,
                 false
             );
 
-            try {
-                await Promise.all(
-                    ids.map(async (id) => {
-                        const response = await fetch(`/api/links/${id}/permanent`, { method: "DELETE" });
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            const errorMessage = errorData.error?.userMessage || `Failed to permanently delete link ${id}`;
-                            throw new Error(errorMessage);
+            // Show toast immediately
+            toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} permanently deleted`);
+
+            // Process in batches with controlled concurrency to prevent ECONNRESET
+            const concurrency = 5;
+            const processBatch = async (batchIds: string[]) => {
+                console.log('[DEBUG] Processing batch of', batchIds.length, 'ids');
+                await Promise.allSettled(
+                    batchIds.map(async (id) => {
+                        try {
+                            console.log('[DEBUG] Calling DELETE /api/links/' + id + '/permanent');
+                            const response = await fetch(`/api/links/${id}/permanent`, { method: "DELETE" });
+                            if (!response.ok) {
+                                log.error('Background permanent delete failed', null, { linkId: id });
+                            }
+                        } catch (err) {
+                            log.error('Background permanent delete failed', err, { linkId: id });
                         }
                     })
                 );
+            };
 
-                toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} permanently deleted`);
-            } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : "Failed to permanently delete some links";
-                toast.error(errorMessage);
-                await mutate();
-            }
+            // Fire-and-forget with controlled concurrency
+            (async () => {
+                for (let i = 0; i < ids.length; i += concurrency) {
+                    await processBatch(ids.slice(i, i + concurrency));
+                }
+            })();
         },
         [mutate]
     );
@@ -418,30 +437,38 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         async (ids: string[]) => {
             if (ids.length === 0) return;
 
-            // Optimistic update
+            // Optimistic update - remove from UI immediately
             mutate(
                 (current) => current ? { links: current.links.filter((link: Link) => !ids.includes(link.id)) } : current,
                 false
             );
 
-            try {
-                await Promise.all(
-                    ids.map(async (id) => {
-                        const response = await fetch(`/api/links/${id}`, { method: "DELETE" });
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            const errorMessage = errorData.error?.userMessage || `Failed to delete link ${id}`;
-                            throw new Error(errorMessage);
+            // Show toast immediately (don't wait for API)
+            toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} moved to trash`);
+
+            // Process in batches with controlled concurrency to prevent ECONNRESET
+            const concurrency = 5;
+            const processBatch = async (batchIds: string[]) => {
+                await Promise.allSettled(
+                    batchIds.map(async (id) => {
+                        try {
+                            const response = await fetch(`/api/links/${id}`, { method: "DELETE" });
+                            if (!response.ok) {
+                                log.error('Background delete failed', null, { linkId: id });
+                            }
+                        } catch (err) {
+                            log.error('Background delete failed', err, { linkId: id });
                         }
                     })
                 );
+            };
 
-                toast.success(`${ids.length} links deleted`);
-            } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : "Failed to delete some links";
-                toast.error(errorMessage);
-                await mutate();
-            }
+            // Fire-and-forget with controlled concurrency
+            (async () => {
+                for (let i = 0; i < ids.length; i += concurrency) {
+                    await processBatch(ids.slice(i, i + concurrency));
+                }
+            })();
         },
         [mutate]
     );
@@ -614,6 +641,10 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         if (items.length === 0) return;
 
         setIsLoading(true);
+        const isBatch = items.length > 1;
+        
+        // For batch operations, show progress toast
+        const toastId = isBatch ? toast.loading(`Adding ${items.length} items...`) : null;
 
         try {
             // Convert DetectedContent to CreateLinkDTO
@@ -632,9 +663,15 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 return dto;
             });
 
-            // Make API calls
-            const results = await Promise.allSettled(
-                linkDTOs.map(async (dto) => {
+            // Track results
+            let successCount = 0;
+            let duplicateCount = 0;
+            let restoredCount = 0;
+            let failureCount = 0;
+
+            // Process items one by one for streaming updates
+            for (const dto of linkDTOs) {
+                try {
                     const response = await fetch("/api/links", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -643,49 +680,50 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
 
                     if (!response.ok) {
                         const errorData = await response.json();
-                        const errorMessage = errorData.error?.userMessage || errorData.error || "Failed to create link";
-                        throw new Error(errorMessage);
+                        throw new Error(errorData.error?.userMessage || "Failed to create link");
                     }
 
-                    return response.json();
-                })
-            );
+                    const { link, duplicate, restored } = await response.json();
 
-            // Process results
-            let successCount = 0;
-            let duplicateCount = 0;
-            let restoredCount = 0;
-            let failureCount = 0;
-            const newLinks: Link[] = [];
-
-            results.forEach((result) => {
-                if (result.status === "fulfilled") {
-                    const { link, duplicate, restored } = result.value;
                     if (duplicate) {
                         duplicateCount++;
-                    } else if (restored) {
-                        restoredCount++;
-                        newLinks.push(link);
                     } else {
-                        successCount++;
-                        newLinks.push(link);
+                        // Add link to UI immediately (streaming update)
+                        mutate(
+                            (current) => current 
+                                ? { links: [link, ...current.links] } 
+                                : { links: [link] },
+                            false
+                        );
+
+                        if (restored) {
+                            restoredCount++;
+                        } else {
+                            successCount++;
+                        }
                     }
-                } else {
+
+                    // Update progress toast for batch operations
+                    const completed = successCount + duplicateCount + restoredCount + failureCount;
+                    if (toastId && completed % 3 === 0) { // Update every 3 items to avoid flickering
+                        toast.loading(`Added ${completed}/${items.length}...`, { id: toastId });
+                    }
+                } catch {
                     failureCount++;
                 }
-            });
-
-            // Update state with new links
-            if (newLinks.length > 0) {
-                mutate(
-                    (current) => current ? { links: [...newLinks, ...current.links] } : { links: newLinks },
-                    false
-                );
             }
 
-            // Show toast notifications
+            // Dismiss progress toast
+            if (toastId) {
+                toast.dismiss(toastId);
+            }
+
+            // Show final toast
             showSubmitToast(items.length, successCount, duplicateCount, restoredCount, failureCount, items[0]?.type);
         } catch (error) {
+            if (toastId) {
+                toast.dismiss(toastId);
+            }
             toast.error(
                 error instanceof Error ? error.message : "Failed to save"
             );

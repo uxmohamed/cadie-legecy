@@ -11,13 +11,14 @@ interface FaviconProps {
 }
 
 /**
- * Fallback placeholder - simple light gray rectangle
+ * Fallback placeholder - skeleton loading with pulse animation
  */
-function FaviconFallback({ className }: { className?: string }) {
+function FaviconFallback({ className, isLoading = true }: { className?: string; isLoading?: boolean }) {
   return (
     <div
       className={cn(
         "h-5 w-5 flex-shrink-0 rounded-[3px]",
+        isLoading && "animate-pulse",
         className
       )}
       style={{ backgroundColor: "#E5E5E5" }}

@@ -301,6 +301,9 @@ export function Dashboard({ user }: DashboardProps) {
                   aria-label={selectedCategoryId === "trash" ? "Trash" : "All Items"}
                 >
                   {selectedCategoryId === "trash" ? "Trash" : "All Items"}
+                  {selectedCategoryId !== "trash" && (
+                    <span className="text-[var(--text-disabled)]"> {filteredLinks.length}</span>
+                  )}
                 </button>
                 {selectedCategoryId === "trash" && (
                   <Badge variant="secondary" className="bg-[var(--bg-field-light)] px-2 py-0.75 text-[var(--text-tertiary)] rounded-full">Auto-deletes in 60 days</Badge>
