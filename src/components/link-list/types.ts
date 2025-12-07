@@ -16,6 +16,13 @@ export interface LinkListProps {
   onBatchUnpin?: (ids: string[]) => Promise<void> | void;
 
   isTrashView?: boolean;
+
+  // Inline add mode props
+  isAddingItem?: boolean;
+  addInputValue?: string;
+  onAddInputChange?: (value: string) => void;
+  onAddSubmit?: () => void;
+  onAddCancel?: () => void;
 }
 
 export interface SelectionState {

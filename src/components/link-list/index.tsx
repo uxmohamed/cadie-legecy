@@ -8,6 +8,7 @@ import { useSelection } from "./use-selection";
 import { useKeyboardNavigation } from "./use-keyboard-navigation";
 import { LinkListEmpty } from "./link-list-empty";
 import { LinkListItem } from "./link-list-item";
+import { InlineAddItem } from "./inline-add-item";
 import { LinkContextMenu } from "./link-context-menu";
 import { SelectionToolbar } from "./selection-toolbar";
 import { LinkDetailSheet } from "./link-detail-sheet";
@@ -39,6 +40,11 @@ export function LinkList({
   onBatchPin,
   onBatchUnpin,
   isTrashView,
+  isAddingItem,
+  addInputValue = "",
+  onAddInputChange,
+  onAddSubmit,
+  onAddCancel,
 }: LinkListProps) {
   const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null);
   const [contextMenu, setContextMenu] = React.useState<ContextMenuState | null>(
@@ -214,7 +220,8 @@ export function LinkList({
     });
   };
 
-  if (links.length === 0) {
+  // Show empty state only when not in add mode
+  if (links.length === 0 && !isAddingItem) {
     return <LinkListEmpty />;
   }
 
@@ -225,6 +232,12 @@ export function LinkList({
   return (
     <div className="w-full" ref={containerRef}>
         <div className="space-y-px py-4 relative">
+          {/* Pinned section with opacity overlay when adding */}
+          <div
+            className={`transition-opacity duration-200 ${
+              isAddingItem ? "opacity-20 pointer-events-none" : "opacity-100"
+            }`}
+          >
           {pinnedLinks.length > 0 && (
             <>
               <div className="mb-4 mt-4 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none">
@@ -260,7 +273,24 @@ export function LinkList({
               ))}
             </>
           )}
+          </div>
 
+          {/* Inline add item - appears after pinned items */}
+          {isAddingItem && (
+            <InlineAddItem
+              value={addInputValue}
+              onChange={onAddInputChange || (() => {})}
+              onSubmit={onAddSubmit || (() => {})}
+              onCancel={onAddCancel || (() => {})}
+            />
+          )}
+
+          {/* Unpinned section with opacity overlay when adding */}
+          <div
+            className={`transition-opacity duration-200 ${
+              isAddingItem ? "opacity-20 pointer-events-none" : "opacity-100"
+            }`}
+          >
           {unpinnedLinks.length > 0 && (
             <>
               {pinnedLinks.length > 0 && (
@@ -301,6 +331,7 @@ export function LinkList({
               })}
             </>
           )}
+          </div>
         </div>
 
       {contextMenu && (

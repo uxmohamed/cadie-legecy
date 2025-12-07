@@ -12,8 +12,6 @@ import { useLinks } from "@/features/links/hooks";
 import type { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverTrigger, PopoverPopup } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
 import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCheck } from "@tabler/icons-react";
 import { Kbd } from "@/components/ui/kbd";
 import {
@@ -39,10 +37,9 @@ export function Dashboard({ user }: DashboardProps) {
   >(null);
   const [sortBy, setSortBy] = React.useState<"date" | "title">("date");
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("desc");
-  const [addPopoverOpen, setAddPopoverOpen] = React.useState(false);
+  const [isAddingItem, setIsAddingItem] = React.useState(false);
   const [addInputValue, setAddInputValue] = React.useState("");
   const [searchValue, setSearchValue] = React.useState("");
-  const addInputRef = React.useRef<HTMLInputElement>(null);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const [showTopMask, setShowTopMask] = React.useState(false);
@@ -127,48 +124,34 @@ export function Dashboard({ user }: DashboardProps) {
     searchInputRef.current?.focus();
   }, []);
 
-  // Auto-focus add input when popover opens
-  React.useEffect(() => {
-    if (addPopoverOpen && addInputRef.current) {
-      const timer = setTimeout(() => {
-        addInputRef.current?.focus();
-      }, 100);
-      return () => clearTimeout(timer);
+  // Handle inline add submit
+  const handleInlineAddSubmit = React.useCallback(() => {
+    if (!addInputValue.trim() || isLoading) return;
+
+    const detectedItems = detectMultipleContentTypes(addInputValue);
+    if (detectedItems.length > 0) {
+      handleSubmit(detectedItems);
+      setAddInputValue("");
+      setIsAddingItem(false);
     }
-  }, [addPopoverOpen]);
+  }, [addInputValue, isLoading, handleSubmit]);
 
-  // Handle add submit
-  const handleAddSubmit = React.useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!addInputValue.trim() || isLoading) return;
+  // Handle inline add input change
+  const handleInlineAddInputChange = React.useCallback((value: string) => {
+    setAddInputValue(value);
+  }, []);
 
-      const detectedItems = detectMultipleContentTypes(addInputValue);
-      if (detectedItems.length > 0) {
-        handleSubmit(detectedItems);
-        setAddInputValue("");
-        setAddPopoverOpen(false);
-      }
-    },
-    [addInputValue, isLoading, handleSubmit]
-  );
+  // Handle inline add cancel (when empty and click outside)
+  const handleInlineAddCancel = React.useCallback(() => {
+    setAddInputValue("");
+    setIsAddingItem(false);
+  }, []);
 
-  const handleAddInputChange = React.useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setAddInputValue(e.target.value);
-    },
-    []
-  );
-
-  const handleAddKeyDown = React.useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Escape") {
-        setAddInputValue("");
-        setAddPopoverOpen(false);
-      }
-    },
-    []
-  );
+  // Toggle inline add mode
+  const handleToggleAddMode = React.useCallback(() => {
+    if (selectedCategoryId === "trash") return; // Don't allow adding in trash view
+    setIsAddingItem((prev) => !prev);
+  }, [selectedCategoryId]);
 
   // Handle search input
   const handleSearchChange = React.useCallback(
@@ -195,10 +178,12 @@ export function Dashboard({ user }: DashboardProps) {
   React.useEffect(() => {
     registerShortcut({
       key: "c",
-      description: "Open add popover",
+      description: "Add new item",
       category: "Global",
       action: () => {
-        setAddPopoverOpen(true);
+        if (selectedCategoryId !== "trash") {
+          setIsAddingItem(true);
+        }
       },
     });
 
@@ -331,53 +316,18 @@ export function Dashboard({ user }: DashboardProps) {
           <div className="flex items-center justify-between gap-2 pt-2 pb-4 sm:pb-6">
             {/* Left side: Add button + All items */}
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              {/* Add Button with Popover (Outline style) */}
-              <Popover open={addPopoverOpen} onOpenChange={setAddPopoverOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-9 w-9 rounded-md border-[var(--border-secondary)] bg-transparent hover:bg-[var(--bg-field-hover-light)]"
-                    aria-label="Add item"
-                  >
-                    <IconPlus className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverPopup
-                  side="bottom"
-                  align="start"
-                  sideOffset={8}
-                  className="w-[420px] p-3"
+              {/* Add Button (toggles inline add mode) */}
+              {selectedCategoryId !== "trash" && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleToggleAddMode}
+                  className="h-9 w-9 rounded-md border-[var(--border-secondary)] bg-transparent hover:bg-[var(--bg-field-hover-light)]"
+                  aria-label="Add item"
                 >
-                  <form onSubmit={handleAddSubmit} className="space-y-3">
-                    <div className="px-2 text-sm font-[470] text-[var(--overlay-text-primary)]">
-                      Add item
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        ref={addInputRef}
-                        type="text"
-                        value={addInputValue}
-                        onChange={handleAddInputChange}
-                        onKeyDown={handleAddKeyDown}
-                        placeholder="Add a link or color..."
-                        disabled={isLoading}
-                        unstyled
-                        className="flex-1 rounded-lg bg-[var(--overlay-hover)] px-3 py-2 text-sm placeholder:text-[var(--overlay-text-primary)]/70 text-[var(--overlay-text-primary)] outline-none"
-                        autoComplete="off"
-                      />
-                      <Button
-                        type="submit"
-                        disabled={!addInputValue.trim() || isLoading}
-                        variant="default"
-                        className="shrink-0 bg-white text-black hover:bg-white/90  disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Add
-                      </Button>
-                    </div>
-                  </form>
-                </PopoverPopup>
-              </Popover>
+                  <IconPlus className="h-4 w-4" />
+                </Button>
+              )}
 
               {/* Vertical Divider */}
               <div className="h-8 w-px bg-[var(--border-secondary)]" />
@@ -528,6 +478,11 @@ export function Dashboard({ user }: DashboardProps) {
                 onBatchPin={handleBatchPinLinks}
                 onBatchUnpin={handleBatchUnpinLinks}
                 isTrashView={selectedCategoryId === "trash"}
+                isAddingItem={isAddingItem}
+                addInputValue={addInputValue}
+                onAddInputChange={handleInlineAddInputChange}
+                onAddSubmit={handleInlineAddSubmit}
+                onAddCancel={handleInlineAddCancel}
               />
             </>
           )}
