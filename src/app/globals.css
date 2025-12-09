@@ -55,6 +55,7 @@ body {
 
 ::selection {
   background-color: color-mix(in oklab, var(--caddy-color-6) 12%, transparent);
+  color: var(--caddy-color-6);
 }
 
 /* Thin native scrollbar */
