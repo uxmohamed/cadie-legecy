@@ -15,17 +15,6 @@ export class SupabaseLinkRepository implements ILinkRepository {
     async findAll(userId: string, filters?: LinkFilters): Promise<Link[]> {
         const supabase = await createClient();
 
-        // Lazy Cleanup: Permanently delete items in trash older than 60 days
-        const sixtyDaysAgo = new Date();
-        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-
-        await supabase
-            .from("links")
-            .delete()
-            .eq("user_id", userId)
-            .eq("is_deleted", true)
-            .lt("deleted_at", sixtyDaysAgo.toISOString());
-
         let query = supabase
             .from("links")
             .select("*")

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import type { Link } from "@/features/links/types";
 import { toast } from "sonner";
 import { detectContentType } from "@/lib/content-detector";
@@ -385,129 +386,186 @@ export function LinkList({
   const pinnedLinks = isTrashView ? [] : displayLinks.filter((link) => link.is_pinned);
   const unpinnedLinks = isTrashView ? displayLinks : displayLinks.filter((link) => !link.is_pinned);
 
+  // Build flat list of virtual items for virtualization
+  type VirtualItem = 
+    | { type: 'pinned-header' }
+    | { type: 'all-links-header' }
+    | { type: 'add-input' }
+    | { type: 'link'; link: Link; index: number; isPinned: boolean };
+  
+  const virtualItems: VirtualItem[] = [];
+  
+  // Pinned header
+  if (pinnedLinks.length > 0) {
+    virtualItems.push({ type: 'pinned-header' });
+  }
+  
+  // Pinned links
+  pinnedLinks.forEach((link, index) => {
+    virtualItems.push({ type: 'link', link, index, isPinned: true });
+  });
+  
+  // Add input (after pinned items)
+  if (isAddingItem) {
+    virtualItems.push({ type: 'add-input' });
+  }
+  
+  // All Links header (only if there are pinned items)
+  if (unpinnedLinks.length > 0 && pinnedLinks.length > 0) {
+    virtualItems.push({ type: 'all-links-header' });
+  }
+  
+  // Unpinned links  
+  unpinnedLinks.forEach((link, index) => {
+    virtualItems.push({ 
+      type: 'link', 
+      link, 
+      index: pinnedLinks.length + index, 
+      isPinned: false 
+    });
+  });
+
+  // Estimate heights for different row types
+  const getItemSize = (index: number) => {
+    const item = virtualItems[index];
+    if (item.type === 'pinned-header') return 40; // header with margin
+    if (item.type === 'all-links-header') return 56; // header with more margin
+    if (item.type === 'add-input') return 56;
+    return 56; // link item height
+  };
+
+  // Window virtualizer - uses native window scroll
+  const virtualizer = useWindowVirtualizer({
+    count: virtualItems.length,
+    estimateSize: getItemSize,
+    overscan: 5, // Render 5 extra items above/below viewport
+  });
+
+  const virtualRows = virtualizer.getVirtualItems();
 
   return (
     <div className="w-full" ref={containerRef}>
-        <div className="space-y-px py-4 relative">
-          {/* Pinned section */}
-          {pinnedLinks.length > 0 && (
-            <>
-              <div className={`mb-4 mt-4 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
-                isAddingItem || editingLinkId ? "opacity-20" : "opacity-100"
-              }`}>
-                Pinned
+      {/* Virtualized list container */}
+      <div 
+        className="py-4 relative"
+        style={{ height: `${virtualizer.getTotalSize()}px` }}
+      >
+        {virtualRows.map((virtualRow) => {
+          const item = virtualItems[virtualRow.index];
+          
+          // Render pinned header
+          if (item.type === 'pinned-header') {
+            return (
+              <div
+                key="pinned-header"
+                data-index={virtualRow.index}
+                ref={virtualizer.measureElement}
+                className="absolute top-0 left-0 w-full"
+                style={{ transform: `translateY(${virtualRow.start}px)` }}
+              >
+                <div className={`mb-4 mt-4 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
+                  isAddingItem || editingLinkId ? "opacity-20" : "opacity-100"
+                }`}>
+                  Pinned
+                </div>
               </div>
-              {pinnedLinks.map((link, index) => {
-                const isThisEditing = editingLinkId === link.id;
-                const shouldDim = (isAddingItem || editingLinkId) && !isThisEditing;
-                return (
-                  <div 
-                    key={link.id}
-                    className={`transition-opacity duration-200 ${shouldDim ? "opacity-20 pointer-events-none" : "opacity-100"}`}
-                  >
-                    <LinkListItem
-                      link={link}
-                      index={index}
-                      isPinned={true}
-                      isSelected={selectedIds.has(link.id)}
-                      isFocused={focusedIndex === index}
-                      linkRef={(el) => {
-                        linkRefs.current[index] = el;
-                      }}
-                      onMouseDown={handleItemMouseDown}
-                      onClick={handleItemClick}
-                      onMouseEnter={handleItemMouseEnter}
-                      onMouseLeave={(idx) => {
-                        if (focusedIndex === idx && !isDragging)
-                          setFocusedIndex(null);
-                      }}
-                      onFocus={setFocusedIndex}
-                      onContextMenu={handleContextMenu}
-                      onCopyUrl={onCopyUrl}
-                      onEdit={onEdit}
-                      onPin={!isTrashView ? onPin : undefined}
-                      onUnpin={!isTrashView ? onUnpin : undefined}
-                      onDelete={onDelete}
-                      isDragging={isDragging}
-                      isEditing={isThisEditing}
-                      editMode={isThisEditing ? editMode : null}
-                      editValue={isThisEditing ? editValue : ""}
-                      onEditChange={handleEditChange}
-                      onEditSubmit={handleEditSubmit}
-                      onEditCancel={handleEditCancel}
-                    />
-                  </div>
-                );
-              })}
-            </>
-          )}
-
-          {/* Inline add item - appears after pinned items */}
-          {isAddingItem && (
-            <InlineAddItem
-              value={addInputValue}
-              onChange={onAddInputChange || (() => {})}
-              onSubmit={onAddSubmit || (() => {})}
-              onCancel={onAddCancel || (() => {})}
-            />
-          )}
-
-          {/* Unpinned section */}
-          {unpinnedLinks.length > 0 && (
-            <>
-              {pinnedLinks.length > 0 && (
+            );
+          }
+          
+          // Render all-links header
+          if (item.type === 'all-links-header') {
+            return (
+              <div
+                key="all-links-header"
+                data-index={virtualRow.index}
+                ref={virtualizer.measureElement}
+                className="absolute top-0 left-0 w-full"
+                style={{ transform: `translateY(${virtualRow.start}px)` }}
+              >
                 <div className={`mb-4 mt-8 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
                   isAddingItem || editingLinkId ? "opacity-20" : "opacity-100"
                 }`}>
                   All Links
                 </div>
-              )}
-              {unpinnedLinks.map((link, index) => {
-                const actualIndex = pinnedLinks.length + index;
-                const isThisEditing = editingLinkId === link.id;
-                const shouldDim = (isAddingItem || editingLinkId) && !isThisEditing;
-                return (
-                  <div 
-                    key={link.id}
-                    className={`transition-opacity duration-200 ${shouldDim ? "opacity-20 pointer-events-none" : "opacity-100"}`}
-                  >
-                    <LinkListItem
-                      link={link}
-                      index={actualIndex}
-                      isPinned={false}
-                      isSelected={selectedIds.has(link.id)}
-                      isFocused={focusedIndex === actualIndex}
-                      linkRef={(el) => {
-                        linkRefs.current[actualIndex] = el;
-                      }}
-                      onMouseDown={handleItemMouseDown}
-                      onClick={handleItemClick}
-                      onMouseEnter={handleItemMouseEnter}
-                      onMouseLeave={(idx) => {
-                        if (focusedIndex === idx && !isDragging)
-                          setFocusedIndex(null);
-                      }}
-                      onFocus={setFocusedIndex}
-                      onContextMenu={handleContextMenu}
-                      onCopyUrl={onCopyUrl}
-                      onEdit={onEdit}
-                      onPin={!isTrashView ? onPin : undefined}
-                      onUnpin={!isTrashView ? onUnpin : undefined}
-                      onDelete={onDelete}
-                      isDragging={isDragging}
-                      isEditing={isThisEditing}
-                      editMode={isThisEditing ? editMode : null}
-                      editValue={isThisEditing ? editValue : ""}
-                      onEditChange={handleEditChange}
-                      onEditSubmit={handleEditSubmit}
-                      onEditCancel={handleEditCancel}
-                    />
-                  </div>
-                );
-              })}
-            </>
-          )}
-        </div>
+              </div>
+            );
+          }
+          
+          // Render add input
+          if (item.type === 'add-input') {
+            return (
+              <div
+                key="add-input"
+                data-index={virtualRow.index}
+                ref={virtualizer.measureElement}
+                className="absolute top-0 left-0 w-full"
+                style={{ transform: `translateY(${virtualRow.start}px)` }}
+              >
+                <InlineAddItem
+                  value={addInputValue}
+                  onChange={onAddInputChange || (() => {})}
+                  onSubmit={onAddSubmit || (() => {})}
+                  onCancel={onAddCancel || (() => {})}
+                />
+              </div>
+            );
+          }
+          
+          // Render link item
+          if (item.type === 'link') {
+            const { link, index, isPinned } = item;
+            const isThisEditing = editingLinkId === link.id;
+            const shouldDim = (isAddingItem || editingLinkId) && !isThisEditing;
+            
+            return (
+              <div
+                key={link.id}
+                data-index={virtualRow.index}
+                ref={virtualizer.measureElement}
+                className="absolute top-0 left-0 w-full"
+                style={{ transform: `translateY(${virtualRow.start}px)` }}
+              >
+                <div className={`transition-opacity duration-200 ${shouldDim ? "opacity-20 pointer-events-none" : "opacity-100"}`}>
+                  <LinkListItem
+                    link={link}
+                    index={index}
+                    isPinned={isPinned}
+                    isSelected={selectedIds.has(link.id)}
+                    isFocused={focusedIndex === index}
+                    linkRef={(el) => {
+                      linkRefs.current[index] = el;
+                    }}
+                    onMouseDown={handleItemMouseDown}
+                    onClick={handleItemClick}
+                    onMouseEnter={handleItemMouseEnter}
+                    onMouseLeave={(idx) => {
+                      if (focusedIndex === idx && !isDragging)
+                        setFocusedIndex(null);
+                    }}
+                    onFocus={setFocusedIndex}
+                    onContextMenu={handleContextMenu}
+                    onCopyUrl={onCopyUrl}
+                    onEdit={onEdit}
+                    onPin={!isTrashView ? onPin : undefined}
+                    onUnpin={!isTrashView ? onUnpin : undefined}
+                    onDelete={onDelete}
+                    isDragging={isDragging}
+                    isEditing={isThisEditing}
+                    editMode={isThisEditing ? editMode : null}
+                    editValue={isThisEditing ? editValue : ""}
+                    onEditChange={handleEditChange}
+                    onEditSubmit={handleEditSubmit}
+                    onEditCancel={handleEditCancel}
+                  />
+                </div>
+              </div>
+            );
+          }
+          
+          return null;
+        })}
+      </div>
+
 
       {contextMenu && (
         <Menu
