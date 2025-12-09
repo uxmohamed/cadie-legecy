@@ -64,6 +64,7 @@ export function Dashboard({ user }: DashboardProps) {
     handlePermanentDeleteLink,
     handleCopyUrl,
     handleEditLink,
+    handleUpdateLink,
     handlePinLink,
     handleUnpinLink,
     handleBatchDeleteLinks,
@@ -477,6 +478,7 @@ export function Dashboard({ user }: DashboardProps) {
                 onBatchPermanentDelete={handleBatchPermanentDeleteLinks}
                 onBatchPin={handleBatchPinLinks}
                 onBatchUnpin={handleBatchUnpinLinks}
+                onUpdateLink={handleUpdateLink}
                 isTrashView={selectedCategoryId === "trash"}
                 isAddingItem={isAddingItem}
                 addInputValue={addInputValue}

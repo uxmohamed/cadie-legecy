@@ -4,9 +4,9 @@ import type { Link } from "@/features/links/types";
 import {
   MenuItem,
   MenuSeparator,
-  MenuShortcut,
 } from "@/components/ui/menu";
-import { IconCopy, IconEdit, IconPin, IconPinnedOff, IconTrash, IconRestore, IconExternalLink } from "@tabler/icons-react";
+import { Kbd } from "@/components/ui/kbd";
+import { IconCopy, IconEdit, IconPin, IconPinnedOff, IconTrash, IconRestore, IconExternalLink, IconPencil } from "@tabler/icons-react";
 
 interface LinkContextMenuProps {
   link: Link;
@@ -16,6 +16,7 @@ interface LinkContextMenuProps {
   isTrashView?: boolean;
   onCopyUrl?: (url: string) => void;
   onEdit?: (link: Link) => void;
+  onRename?: (link: Link) => void;
   onPin?: (id: string) => void;
   onUnpin?: (id: string) => void;
   onDelete?: (id: string) => void;
@@ -36,6 +37,7 @@ export function LinkContextMenu({
   isTrashView = false,
   onCopyUrl,
   onEdit,
+  onRename,
   onPin,
   onUnpin,
   onDelete,
@@ -58,7 +60,7 @@ export function LinkContextMenu({
         <>
           {onBatchRestore && (
             <MenuItem onClick={onBatchRestore}>
-              <IconRestore className="h-4 w-4" />
+              <IconRestore className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
               Restore {selectedCount} items
             </MenuItem>
           )}
@@ -69,7 +71,7 @@ export function LinkContextMenu({
                 className="text-[var(--accent-red-primary)] focus:text-[var(--accent-red-primary)]"
                 onClick={onBatchPermanentDelete}
               >
-                <IconTrash className="h-4 w-4" />
+                <IconTrash className="mr-2 h-4 w-4" />
                 Delete {selectedCount} items permanently
               </MenuItem>
             </>
@@ -88,13 +90,13 @@ export function LinkContextMenu({
       <>
         {(allUnpinned || hasMixed) && onBatchPin && (
           <MenuItem onClick={onBatchPin}>
-            <IconPin className="h-4 w-4" />
+            <IconPin className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
             Pin {selectedCount} items
           </MenuItem>
         )}
         {(allPinned || hasMixed) && onBatchUnpin && (
           <MenuItem onClick={onBatchUnpin}>
-            <IconPinnedOff className="h-4 w-4" />
+            <IconPinnedOff className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
             Unpin {selectedCount} items
           </MenuItem>
         )}
@@ -103,7 +105,7 @@ export function LinkContextMenu({
           className="text-[var(--accent-red-primary)] focus:text-[var(--accent-red-primary)]"
           onClick={onBatchDelete}
         >
-          <IconTrash className="h-4 w-4" />
+          <IconTrash className="mr-2 h-4 w-4" />
           Delete {selectedCount} items
         </MenuItem>
       </>
@@ -116,19 +118,19 @@ export function LinkContextMenu({
     return (
       <>
         <MenuItem onClick={() => window.open(link.url, '_blank')}>
-          <IconExternalLink className="h-4 w-4" />
+          <IconExternalLink className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
           Open
         </MenuItem>
         <MenuItem onClick={() => onCopyUrl?.(link.url)}>
-          <IconCopy className="h-4 w-4" />
+          <IconCopy className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
           Copy URL
-          <MenuShortcut>⌘C</MenuShortcut>
+          <Kbd className="ml-auto">⌘C</Kbd>
         </MenuItem>
         {onRestore && (
           <>
             <MenuSeparator />
             <MenuItem onClick={() => onRestore(link.id)}>
-              <IconRestore className="h-4 w-4" />
+              <IconRestore className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
               Restore
             </MenuItem>
           </>
@@ -140,7 +142,7 @@ export function LinkContextMenu({
               className="text-[var(--accent-red-primary)] focus:text-[var(--accent-red-primary)]"
               onClick={() => onPermanentDelete(link.id)}
             >
-              <IconTrash className="h-4 w-4" />
+              <IconTrash className="mr-2 h-4 w-4" />
               Delete permanently
             </MenuItem>
           </>
@@ -149,30 +151,32 @@ export function LinkContextMenu({
     );
   }
 
+  const isColor = link.content_type === 'color';
+  const copyValue = isColor ? (link.color_value || link.title) : link.url;
+
   // Normal view single item actions
   return (
     <>
-      <MenuItem onClick={() => onCopyUrl?.(link.url)}>
-        <IconCopy className="h-4 w-4" />
-        Copy URL
-        <MenuShortcut>⌘C</MenuShortcut>
+      <MenuItem onClick={() => onCopyUrl?.(copyValue)}>
+        <IconCopy className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+        {isColor ? 'Copy Color' : 'Copy URL'}
+        <Kbd className="ml-auto">⌘C</Kbd>
       </MenuItem>
-      <MenuItem onClick={() => onEdit?.(link)}>
-        <IconEdit className="h-4 w-4" />
-        Edit
-        <MenuShortcut>⌘E</MenuShortcut>
+      <MenuItem onClick={() => onRename?.(link)}>
+        <IconPencil className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+        Rename
       </MenuItem>
       {link.is_pinned ? (
         onUnpin && (
           <MenuItem onClick={() => onUnpin(link.id)}>
-            <IconPinnedOff className="h-4 w-4" />
+            <IconPinnedOff className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
             Unpin
           </MenuItem>
         )
       ) : (
         onPin && (
           <MenuItem onClick={() => onPin(link.id)}>
-            <IconPin className="h-4 w-4" />
+            <IconPin className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
             Pin
           </MenuItem>
         )
@@ -183,9 +187,9 @@ export function LinkContextMenu({
         className="text-[var(--accent-red-primary)] focus:text-[var(--accent-red-primary)]"
         onClick={() => onDelete?.(link.id)}
       >
-        <IconTrash className="h-4 w-4" />
+        <IconTrash className="mr-2 h-4 w-4" />
         Delete
-        <MenuShortcut>⌘⇧⌫</MenuShortcut>
+        <Kbd className="ml-auto">⌘⌫</Kbd>
       </MenuItem>
     </>
   );

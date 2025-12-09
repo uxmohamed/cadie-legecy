@@ -475,18 +475,55 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         [mutate]
     );
 
-    const handleCopyUrl = async (url: string) => {
+    const handleCopyUrl = async (url: string, isColor?: boolean) => {
         try {
             await navigator.clipboard.writeText(url);
-            toast.success("URL copied to clipboard");
+            // Auto-detect color by checking for hex format
+            const isColorValue = isColor ?? /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(url);
+            toast.success(isColorValue ? "Color copied to clipboard" : "URL copied to clipboard");
         } catch (error) {
-            toast.error("Failed to copy URL");
+            const isColorValue = isColor ?? /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(url);
+            toast.error(isColorValue ? "Failed to copy color" : "Failed to copy URL");
         }
     };
 
     const handleEditLink = () => {
         toast("Edit functionality coming soon");
     };
+
+    const handleUpdateLink = React.useCallback(
+        async (id: string, updates: Partial<Link>) => {
+            // Optimistic update
+            mutate(
+                (current) => current ? {
+                    links: current.links.map((link: Link) =>
+                        link.id === id ? { ...link, ...updates } : link
+                    )
+                } : current,
+                false
+            );
+
+            try {
+                const response = await fetch(`/api/links/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(updates),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const errorMessage = errorData.error?.userMessage || "Failed to update link";
+                    throw new Error(errorMessage);
+                }
+                // No toast on success - the UI update is immediate feedback
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : "Failed to update link";
+                toast.error(errorMessage);
+                await mutate();
+            }
+        },
+        [mutate]
+    );
 
 
     const handlePinLink = React.useCallback(
@@ -632,6 +669,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         handlePermanentDeleteLink,
         handleCopyUrl,
         handleEditLink,
+        handleUpdateLink,
         handlePinLink,
         handleUnpinLink,
         handleBatchDeleteLinks,

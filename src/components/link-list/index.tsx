@@ -3,6 +3,8 @@
 import * as React from "react";
 import type { Link } from "@/features/links/types";
 import { toast } from "sonner";
+import { detectContentType } from "@/lib/content-detector";
+import { canonicalizeColor } from "@/lib/canonicalize";
 
 import { useSelection } from "./use-selection";
 import { useKeyboardNavigation } from "./use-keyboard-navigation";
@@ -34,6 +36,7 @@ export function LinkList({
   onCopyUrl,
   onPin,
   onUnpin,
+  onUpdateLink,
   onBatchDelete,
   onBatchRestore,
   onBatchPermanentDelete,
@@ -45,6 +48,14 @@ export function LinkList({
   onAddInputChange,
   onAddSubmit,
   onAddCancel,
+  // Inline edit mode props from parent (optional - we manage internally if not provided)
+  editingLinkId: externalEditingLinkId,
+  editMode: externalEditMode,
+  editValue: externalEditValue,
+  onRename: externalOnRename,
+  onEditChange: externalOnEditChange,
+  onEditSubmit: externalOnEditSubmit,
+  onEditCancel: externalOnEditCancel,
 }: LinkListProps) {
   const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null);
   const [contextMenu, setContextMenu] = React.useState<ContextMenuState | null>(
@@ -52,6 +63,31 @@ export function LinkList({
   );
   const [selectedLink, setSelectedLink] = React.useState<Link | null>(null);
   const [sheetOpen, setSheetOpen] = React.useState(false);
+
+  // Internal edit state (used if not provided externally)
+  const [internalEditingLinkId, setInternalEditingLinkId] = React.useState<string | null>(null);
+  const [internalEditMode, setInternalEditMode] = React.useState<'title' | 'url' | null>(null);
+  const [internalEditValue, setInternalEditValue] = React.useState("");
+
+  // Color change confirmation dialog state
+  const [colorChangeDialog, setColorChangeDialog] = React.useState<{
+    isOpen: boolean;
+    linkId: string | null;
+    newTitle: string;
+    newColorValue: string;
+    currentColorValue: string;
+  }>({
+    isOpen: false,
+    linkId: null,
+    newTitle: "",
+    newColorValue: "",
+    currentColorValue: "",
+  });
+
+  // Use external props if provided, otherwise use internal state
+  const editingLinkId = externalEditingLinkId ?? internalEditingLinkId;
+  const editMode = externalEditMode ?? internalEditMode;
+  const editValue = externalEditValue ?? internalEditValue;
 
   const linkRefs = React.useRef<(HTMLAnchorElement | null)[]>([]);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -171,6 +207,130 @@ export function LinkList({
     clearSelection();
   }, [selectedIds, onUnpin, onBatchUnpin, clearSelection, isTrashView]);
 
+  // Inline edit handlers
+  const handleRename = React.useCallback((link: Link) => {
+    if (externalOnRename) {
+      externalOnRename(link);
+    } else {
+      setInternalEditingLinkId(link.id);
+      setInternalEditMode('title');
+      setInternalEditValue(link.title || link.url);
+    }
+  }, [externalOnRename]);
+
+
+
+  const handleEditChange = React.useCallback((value: string) => {
+    if (externalOnEditChange) {
+      externalOnEditChange(value);
+    } else {
+      setInternalEditValue(value);
+    }
+  }, [externalOnEditChange]);
+
+  const handleEditSubmit = React.useCallback(() => {
+    if (externalOnEditSubmit) {
+      externalOnEditSubmit();
+      return;
+    }
+    
+    // Find the link being edited
+    const link = links.find(l => l.id === editingLinkId);
+    if (link && editValue.trim() && onUpdateLink) {
+      // Only update if the value actually changed
+      if (editMode === 'title') {
+        const currentTitle = link.title || link.url;
+        const newTitle = editValue.trim();
+        
+        if (newTitle !== currentTitle) {
+          // Check if this is a color item
+          if (link.content_type === 'color') {
+            // Check if the new title is a color
+            const detected = detectContentType(newTitle);
+            if (detected.type === 'color') {
+              // Get the new color's hex value
+              const newColorHex = canonicalizeColor(detected.value);
+              const currentColorHex = canonicalizeColor(link.color_value || link.title);
+              
+              // If the color would actually change, show confirmation dialog
+              if (newColorHex !== currentColorHex) {
+                setColorChangeDialog({
+                  isOpen: true,
+                  linkId: link.id,
+                  newTitle: newTitle,
+                  newColorValue: newColorHex,
+                  currentColorValue: currentColorHex,
+                });
+                // Don't clear edit state yet - keep showing until user decides
+                return;
+              }
+            }
+            // Not a color name or same color - just update title (keep color_value)
+          }
+          
+          // Regular rename (non-color or color with non-color new name)
+          onUpdateLink(link.id, { title: newTitle });
+          toast.success("Link updated");
+        }
+      }
+    }
+    // Clear edit state and focus immediately
+    setInternalEditingLinkId(null);
+    setInternalEditMode(null);
+    setInternalEditValue("");
+    setFocusedIndex(null);
+  }, [externalOnEditSubmit, editingLinkId, editMode, editValue, links, onUpdateLink]);
+
+  // Handle color change confirmation
+  const handleColorChangeConfirm = React.useCallback(() => {
+    if (colorChangeDialog.linkId && onUpdateLink) {
+      // Update both title and color_value
+      onUpdateLink(colorChangeDialog.linkId, {
+        title: colorChangeDialog.newTitle,
+        color_value: colorChangeDialog.newColorValue,
+      });
+      toast.success("Color updated");
+    }
+    // Clear dialog and edit state
+    setColorChangeDialog({
+      isOpen: false,
+      linkId: null,
+      newTitle: "",
+      newColorValue: "",
+      currentColorValue: "",
+    });
+    setInternalEditingLinkId(null);
+    setInternalEditMode(null);
+    setInternalEditValue("");
+    setFocusedIndex(null);
+  }, [colorChangeDialog, onUpdateLink]);
+
+  const handleColorChangeCancel = React.useCallback(() => {
+    // Close dialog but keep edit state so user can continue editing
+    setColorChangeDialog({
+      isOpen: false,
+      linkId: null,
+      newTitle: "",
+      newColorValue: "",
+      currentColorValue: "",
+    });
+    // Also clear edit mode to exit gracefully
+    setInternalEditingLinkId(null);
+    setInternalEditMode(null);
+    setInternalEditValue("");
+    setFocusedIndex(null);
+  }, []);
+
+  const handleEditCancel = React.useCallback(() => {
+    if (externalOnEditCancel) {
+      externalOnEditCancel();
+    } else {
+      setInternalEditingLinkId(null);
+      setInternalEditMode(null);
+      setInternalEditValue("");
+    }
+  }, [externalOnEditCancel]);
+
   // Keyboard navigation
   useKeyboardNavigation({
     displayLinks,
@@ -187,14 +347,11 @@ export function LinkList({
     isTrashView,
   });
 
-  const copyToClipboard = async (text: string, type: "url" | "color") => {
+  const copyToClipboard = async (text: string, type: "url" | "color", id?: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success(
-        type === "color"
-          ? "Color copied to clipboard"
-          : "URL copied to clipboard"
-      );
+      const isColor = id ? displayLinks.find(l => l.id === id)?.content_type === 'color' : type === 'color';
+      toast.success(isColor ? "Color copied to clipboard" : "URL copied to clipboard");
     } catch (error) {
       console.error("Failed to copy:", error);
       toast.error(
@@ -232,48 +389,58 @@ export function LinkList({
   return (
     <div className="w-full" ref={containerRef}>
         <div className="space-y-px py-4 relative">
-          {/* Pinned section with opacity overlay when adding */}
-          <div
-            className={`transition-opacity duration-200 ${
-              isAddingItem ? "opacity-20 pointer-events-none" : "opacity-100"
-            }`}
-          >
+          {/* Pinned section */}
           {pinnedLinks.length > 0 && (
             <>
-              <div className="mb-4 mt-4 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none">
+              <div className={`mb-4 mt-4 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
+                isAddingItem || editingLinkId ? "opacity-20" : "opacity-100"
+              }`}>
                 Pinned
               </div>
-              {pinnedLinks.map((link, index) => (
-                <LinkListItem
-                  key={link.id}
-                  link={link}
-                  index={index}
-                  isPinned={true}
-                  isSelected={selectedIds.has(link.id)}
-                  isFocused={focusedIndex === index}
-                  linkRef={(el) => {
-                    linkRefs.current[index] = el;
-                  }}
-                  onMouseDown={handleItemMouseDown}
-                  onClick={handleItemClick}
-                  onMouseEnter={handleItemMouseEnter}
-                  onMouseLeave={(idx) => {
-                    if (focusedIndex === idx && !isDragging)
-                      setFocusedIndex(null);
-                  }}
-                  onFocus={setFocusedIndex}
-                  onContextMenu={handleContextMenu}
-                  onCopyUrl={onCopyUrl}
-                  onEdit={onEdit}
-                  onPin={!isTrashView ? onPin : undefined}
-                  onUnpin={!isTrashView ? onUnpin : undefined}
-                  onDelete={onDelete}
-                  isDragging={isDragging}
-                />
-              ))}
+              {pinnedLinks.map((link, index) => {
+                const isThisEditing = editingLinkId === link.id;
+                const shouldDim = (isAddingItem || editingLinkId) && !isThisEditing;
+                return (
+                  <div 
+                    key={link.id}
+                    className={`transition-opacity duration-200 ${shouldDim ? "opacity-20 pointer-events-none" : "opacity-100"}`}
+                  >
+                    <LinkListItem
+                      link={link}
+                      index={index}
+                      isPinned={true}
+                      isSelected={selectedIds.has(link.id)}
+                      isFocused={focusedIndex === index}
+                      linkRef={(el) => {
+                        linkRefs.current[index] = el;
+                      }}
+                      onMouseDown={handleItemMouseDown}
+                      onClick={handleItemClick}
+                      onMouseEnter={handleItemMouseEnter}
+                      onMouseLeave={(idx) => {
+                        if (focusedIndex === idx && !isDragging)
+                          setFocusedIndex(null);
+                      }}
+                      onFocus={setFocusedIndex}
+                      onContextMenu={handleContextMenu}
+                      onCopyUrl={onCopyUrl}
+                      onEdit={onEdit}
+                      onPin={!isTrashView ? onPin : undefined}
+                      onUnpin={!isTrashView ? onUnpin : undefined}
+                      onDelete={onDelete}
+                      isDragging={isDragging}
+                      isEditing={isThisEditing}
+                      editMode={isThisEditing ? editMode : null}
+                      editValue={isThisEditing ? editValue : ""}
+                      onEditChange={handleEditChange}
+                      onEditSubmit={handleEditSubmit}
+                      onEditCancel={handleEditCancel}
+                    />
+                  </div>
+                );
+              })}
             </>
           )}
-          </div>
 
           {/* Inline add item - appears after pinned items */}
           {isAddingItem && (
@@ -285,53 +452,61 @@ export function LinkList({
             />
           )}
 
-          {/* Unpinned section with opacity overlay when adding */}
-          <div
-            className={`transition-opacity duration-200 ${
-              isAddingItem ? "opacity-20 pointer-events-none" : "opacity-100"
-            }`}
-          >
+          {/* Unpinned section */}
           {unpinnedLinks.length > 0 && (
             <>
               {pinnedLinks.length > 0 && (
-                <div className="mb-4 mt-8 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none">
+                <div className={`mb-4 mt-8 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
+                  isAddingItem || editingLinkId ? "opacity-20" : "opacity-100"
+                }`}>
                   All Links
                 </div>
               )}
               {unpinnedLinks.map((link, index) => {
                 const actualIndex = pinnedLinks.length + index;
+                const isThisEditing = editingLinkId === link.id;
+                const shouldDim = (isAddingItem || editingLinkId) && !isThisEditing;
                 return (
-                  <LinkListItem
+                  <div 
                     key={link.id}
-                    link={link}
-                    index={actualIndex}
-                    isPinned={false}
-                    isSelected={selectedIds.has(link.id)}
-                    isFocused={focusedIndex === actualIndex}
-                    linkRef={(el) => {
-                      linkRefs.current[actualIndex] = el;
-                    }}
-                    onMouseDown={handleItemMouseDown}
-                    onClick={handleItemClick}
-                    onMouseEnter={handleItemMouseEnter}
-                    onMouseLeave={(idx) => {
-                      if (focusedIndex === idx && !isDragging)
-                        setFocusedIndex(null);
-                    }}
-                    onFocus={setFocusedIndex}
-                    onContextMenu={handleContextMenu}
-                    onCopyUrl={onCopyUrl}
-                    onEdit={onEdit}
-                    onPin={!isTrashView ? onPin : undefined}
-                    onUnpin={!isTrashView ? onUnpin : undefined}
-                    onDelete={onDelete}
-                    isDragging={isDragging}
-                  />
+                    className={`transition-opacity duration-200 ${shouldDim ? "opacity-20 pointer-events-none" : "opacity-100"}`}
+                  >
+                    <LinkListItem
+                      link={link}
+                      index={actualIndex}
+                      isPinned={false}
+                      isSelected={selectedIds.has(link.id)}
+                      isFocused={focusedIndex === actualIndex}
+                      linkRef={(el) => {
+                        linkRefs.current[actualIndex] = el;
+                      }}
+                      onMouseDown={handleItemMouseDown}
+                      onClick={handleItemClick}
+                      onMouseEnter={handleItemMouseEnter}
+                      onMouseLeave={(idx) => {
+                        if (focusedIndex === idx && !isDragging)
+                          setFocusedIndex(null);
+                      }}
+                      onFocus={setFocusedIndex}
+                      onContextMenu={handleContextMenu}
+                      onCopyUrl={onCopyUrl}
+                      onEdit={onEdit}
+                      onPin={!isTrashView ? onPin : undefined}
+                      onUnpin={!isTrashView ? onUnpin : undefined}
+                      onDelete={onDelete}
+                      isDragging={isDragging}
+                      isEditing={isThisEditing}
+                      editMode={isThisEditing ? editMode : null}
+                      editValue={isThisEditing ? editValue : ""}
+                      onEditChange={handleEditChange}
+                      onEditSubmit={handleEditSubmit}
+                      onEditCancel={handleEditCancel}
+                    />
+                  </div>
                 );
               })}
             </>
           )}
-          </div>
         </div>
 
       {contextMenu && (
@@ -347,7 +522,7 @@ export function LinkList({
           >
             <span className="sr-only">Open context menu</span>
           </MenuTrigger>
-          <MenuPopup align="start">
+          <MenuPopup align="start" className="w-52">
             <LinkContextMenu
               link={contextMenu.link}
               selectedCount={selectedIds.size}
@@ -356,6 +531,7 @@ export function LinkList({
               isTrashView={isTrashView}
               onCopyUrl={onCopyUrl}
               onEdit={!isTrashView ? onEdit : undefined}
+              onRename={!isTrashView ? handleRename : undefined}
               onPin={!isTrashView ? onPin : undefined}
               onUnpin={!isTrashView ? onUnpin : undefined}
               onDelete={!isTrashView ? onDelete : undefined}
@@ -425,6 +601,45 @@ export function LinkList({
             </AlertDialogClose>
             <Button variant="destructive" onClick={executeDelete}>
               Delete permanently
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Color Change Confirmation Dialog */}
+      <AlertDialog open={colorChangeDialog.isOpen} onOpenChange={(open) => !open && handleColorChangeCancel()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Change color?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <p>This will change the actual color, not just the label.</p>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="h-5 w-5 flex-shrink-0 rounded-full border border-[var(--border-secondary)]" 
+                      style={{ backgroundColor: colorChangeDialog.currentColorValue }}
+                    />
+                    <span className="text-sm font-[470] text-[var(--text-primary)]">Current</span>
+                  </div>
+                  <span className="text-[var(--text-tertiary)]">→</span>
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="h-5 w-5 flex-shrink-0 rounded-full border border-[var(--border-secondary)]" 
+                      style={{ backgroundColor: colorChangeDialog.newColorValue }}
+                    />
+                    <span className="text-sm font-[470] text-[var(--text-primary)]">{colorChangeDialog.newTitle}</span>
+                  </div>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogClose asChild>
+              <Button variant="ghost">Cancel</Button>
+            </AlertDialogClose>
+            <Button onClick={handleColorChangeConfirm}>
+              Change Color
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
