@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { Switch } from "@/components/ui/switch";
 import { getDefaultAvatar } from "@/lib/avatar";
+import { getUserProfile } from "@/hooks/use-onboarding";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +32,16 @@ export function UserMenu({ user }: UserMenuProps) {
   const { toggleHelp } = useShortcuts();
   const { theme, setTheme } = useTheme();
   const menuRef = React.useRef<HTMLDivElement>(null);
+  
+  // Fetch profile from user_profiles table
+  const [profile, setProfile] = React.useState<{
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null>(null);
+  
+  React.useEffect(() => {
+    getUserProfile(user.id).then(setProfile);
+  }, [user.id]);
 
   const handleSignOut = React.useCallback(async () => {
     try {
@@ -135,7 +146,9 @@ export function UserMenu({ user }: UserMenuProps) {
     };
   }, [toggleHelp]);
 
-  const userName = user.user_metadata?.full_name || user.user_metadata?.name;
+  // Use profile data first, fall back to Google metadata
+  const userName = profile?.display_name || user.user_metadata?.full_name || user.user_metadata?.name;
+  const userAvatar = profile?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture || getDefaultAvatar(user.id);
 
   // Determine if dark mode is effectively active
   const [isDarkMode, setIsDarkMode] = React.useState(() => {
@@ -177,11 +190,11 @@ export function UserMenu({ user }: UserMenuProps) {
         >
           <Avatar className="h-9 w-9">
             <AvatarImage 
-              src={user.user_metadata?.avatar_url || user.user_metadata?.picture || getDefaultAvatar(user.id)} 
+              src={userAvatar} 
               alt={user.email} 
             />
             <AvatarFallback className="bg-[var(--bg-inverse)] text-[var(--text-inverse)]">
-              {user.email?.charAt(0).toUpperCase() || "U"}
+              {userName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
         </Button>

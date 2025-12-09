@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/logo";
+import { IconMail } from "@tabler/icons-react";
+
 // Google Logo SVG Component
 function GoogleLogo() {
   return (
@@ -29,8 +31,55 @@ function GoogleLogo() {
   );
 }
 
+// Success screen after magic link sent
+function MagicLinkSent({ email, onBack }: { email: string; onBack: () => void }) {
+  return (
+    <div className="w-full max-w-[400px] space-y-8">
+      {/* Logo/Icon Section */}
+      <div className="flex flex-col items-center space-y-6">
+        <Logo variant="neutral-200" className="h-7 mb-4 w-auto" />
+        
+        {/* Email Icon */}
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--bg-emphasis)]">
+          <IconMail className="h-8 w-8 text-[var(--text-primary)]" />
+        </div>
+        
+        <div className="space-y-2 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
+            Check your email
+          </h1>
+          <p className="text-base text-[var(--text-secondary)]">
+            We&apos;ve sent a magic link to
+          </p>
+          <p className="text-base font-medium text-[var(--text-primary)]">
+            {email}
+          </p>
+        </div>
+      </div>
+
+      {/* Instructions */}
+      <div className="space-y-4">
+        <p className="text-sm text-[var(--text-tertiary)] text-center">
+          Click the link in your email to sign in. If you don&apos;t see it, check your spam folder.
+        </p>
+        
+        <Button
+          type="button"
+          onClick={onBack}
+          variant="ghost"
+          size="xl"
+          className="w-full"
+        >
+          ← Back to sign in
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function AuthForm() {
   const [email, setEmail] = React.useState("");
+  const [sentToEmail, setSentToEmail] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [googleLoading, setGoogleLoading] = React.useState(false);
   const [success, setSuccess] = React.useState(false);
@@ -60,6 +109,7 @@ export function AuthForm() {
       });
 
       if (error) throw error;
+      setSentToEmail(email);
       setSuccess(true);
       setEmail("");
     } catch (err: unknown) {
@@ -102,6 +152,17 @@ export function AuthForm() {
       }
       setGoogleLoading(false);
     }
+  }
+
+  function handleBackFromSuccess() {
+    setSuccess(false);
+    setSentToEmail("");
+    setShowEmailForm(false);
+  }
+
+  // Show success screen when magic link is sent
+  if (success) {
+    return <MagicLinkSent email={sentToEmail} onBack={handleBackFromSuccess} />;
   }
 
   return (
@@ -198,11 +259,6 @@ export function AuthForm() {
                   {error}
                 </p>
               )}
-              {success && (
-                <p className="text-sm text-[var(--text-secondary)]">
-                  Check your email. We&apos;ve sent you a magic link.
-                </p>
-              )}
             </div>
 
             <Button
@@ -247,7 +303,6 @@ export function AuthForm() {
             onClick={() => {
               setShowEmailForm(false);
               setError("");
-              setSuccess(false);
             }}
             variant="ghost"
             size="xl"
@@ -260,5 +315,3 @@ export function AuthForm() {
     </div>
   );
 }
-
-
