@@ -28,13 +28,24 @@ async function fetcher<T>(url: string): Promise<T> {
  * Refactored to follow Single Responsibility Principle
  * Uses API routes for all data operations (proper client/server separation)
  */
+import useSWRInfinite from "swr/infinite";
+
+// ... (imports remain same)
+
+/**
+ * Hook for managing links with SWR caching and infinite scroll
+ */
 export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId?: string) {
     const [isLoading, setIsLoading] = React.useState(false);
     const [searchQuery, setSearchQuery] = React.useState("");
     const [hasInitiallyLoaded, setHasInitiallyLoaded] = React.useState(false);
 
     // Build query string from filters
-    const buildQueryString = React.useCallback(() => {
+    const buildQueryString = React.useCallback((index: number, previousPageData: { links: Link[], total: number } | null) => {
+        if (!isAuthenticated) return null;
+        // Reached the end
+        if (previousPageData && !previousPageData.links.length) return null;
+
         const params = new URLSearchParams();
         if (filters?.category_id) params.append("category_id", filters.category_id);
         if (filters?.is_deleted !== undefined) params.append("is_deleted", String(filters.is_deleted));
@@ -44,19 +55,22 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
             params.append("is_deleted", "false");
         }
 
-        return params.toString();
-    }, [filters]);
+        // Pagination params
+        params.append("limit", "50");
+        params.append("offset", String(index * 50));
 
-    const queryString = buildQueryString();
+        return `/api/links?${params.toString()}`;
+    }, [isAuthenticated, filters]);
 
-    // Use SWR for data fetching with caching
-    const { data, error, isValidating, mutate } = useSWR<{ links: Link[] }>(
-        isAuthenticated ? `/api/links?${queryString}` : null,
+    // Use SWRInfinite for pagination
+    const { data, error, size, setSize, isValidating, mutate } = useSWRInfinite<{ links: Link[], total: number }>(
+        buildQueryString,
         fetcher,
         {
-            revalidateOnFocus: false, // Don't refetch on window focus
-            revalidateOnReconnect: true, // Refetch on reconnect
-            dedupingInterval: 30000, // 30 seconds - prevent duplicate requests
+            revalidateOnFocus: false,
+            revalidateOnReconnect: false,
+            dedupingInterval: 5000,
+            keepPreviousData: true,
             onSuccess: () => {
                 setHasInitiallyLoaded(true);
             },
@@ -68,8 +82,21 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         }
     );
 
-    const links = data?.links || [];
+    // Flatten links from all pages
+    const links = React.useMemo(() => {
+        return data ? data.flatMap(page => page.links) : [];
+    }, [data]);
+
+    const totalCount = data?.[0]?.total || 0;
+    const isLoadingMore = isValidating && size > 1 && data && data.length > 0;
+    const hasMore = links.length < totalCount;
     const fetchingLinks = isValidating && !hasInitiallyLoaded;
+
+    const loadMore = React.useCallback(() => {
+        if (!isValidating && hasMore) {
+            setSize(size + 1);
+        }
+    }, [isValidating, hasMore, setSize, size]);
 
     // Refresh links from server
     const refreshLinks = React.useCallback(async () => {
@@ -80,117 +107,64 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         }
     }, [mutate]);
 
-    // Store filters in ref to avoid recreating subscription on filter changes
-    const filtersRef = React.useRef(filters);
-    React.useEffect(() => {
-        filtersRef.current = filters;
-    }, [filters]);
-
-    // Store mutate in ref for realtime subscription
+    // Realtime updates
     const mutateRef = React.useRef(mutate);
     React.useEffect(() => {
         mutateRef.current = mutate;
     }, [mutate]);
 
-    // Store channel ref to ensure proper cleanup and prevent leaks
-    const channelRef = React.useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null);
-    const userIdRef = React.useRef<string | null>(null);
-
-    // Supabase Realtime subscription for real-time updates (when extension saves a link)
-    // Only listens to INSERT events - displays new link immediately when saved from extension
-    // Non-blocking: uses userId from props instead of fetching auth
     React.useEffect(() => {
-        if (!isAuthenticated || !userId) {
-            // Clean up channel when not authenticated
-            if (channelRef.current) {
-                const supabase = createClient();
-                supabase.removeChannel(channelRef.current).catch(() => {
-                    // Ignore cleanup errors
-                });
-                channelRef.current = null;
-            }
-            userIdRef.current = null;
-            return;
-        }
+        if (!isAuthenticated || !userId) return;
 
         const supabase = createClient();
-        let isMounted = true;
+        // Use ref for channel to ensure cleanup works across renders
+        const channelRef = { current: null as ReturnType<typeof supabase.channel> | null };
+        let isMounted = true; // Flag to prevent updates on unmounted component
 
-        // Store user ID immediately (no auth fetch needed)
-        userIdRef.current = userId;
+        const setupSubscription = async () => {
+            if (!isMounted || !userId) return;
 
-        // Setup subscription asynchronously without blocking
-        function setupSubscription() {
             try {
-                if (!isMounted) return;
-
-                // Remove existing channel if any (from previous subscription)
-                if (channelRef.current) {
-                    supabase.removeChannel(channelRef.current).catch(() => {
-                        // Ignore cleanup errors
-                    });
-                    channelRef.current = null;
-                }
-
-                // Create stable channel name (without timestamp to reuse same channel)
-                const channelName = `links-realtime-${userId}`;
-
                 const channel = supabase
-                    .channel(channelName, {
-                        config: {
-                            // Configure for better Cloudflare compatibility
-                            broadcast: { self: false },
-                        },
-                    })
+                    .channel(`links_for_user_${userId}`)
                     .on(
                         "postgres_changes",
                         {
                             event: "INSERT",
                             schema: "public",
                             table: "links",
+                            filter: `user_id=eq.${userId}`,
                         },
                         (payload) => {
-                            // Use ref to get latest filters and setLinks
-                            if (!isMounted) return;
-
                             const newLink = payload.new as Link;
-                            const currentFilters = filtersRef.current;
-                            const currentUserId = userIdRef.current;
 
-                            // Filter by user_id in code (since we removed DB filter to avoid RLS issues)
-                            if (!currentUserId || newLink.user_id !== currentUserId) {
-                                return;
-                            }
-
-                            // Check if link matches current filters
+                            // Helper to check if the new link matches current filters
                             const matchesFilters = () => {
-                                if (currentFilters?.category_id && newLink.category_id !== currentFilters.category_id) {
-                                    return false;
-                                }
-                                if (currentFilters?.is_deleted !== undefined) {
-                                    if (currentFilters.is_deleted) {
-                                        // Trash view - show deleted or archived
-                                        return newLink.is_deleted || newLink.is_archived;
-                                    } else {
-                                        // Normal view - exclude deleted and archived
-                                        return !newLink.is_deleted && !newLink.is_archived;
-                                    }
-                                }
-                                // Default: show non-deleted, non-archived
-                                return !newLink.is_deleted && !newLink.is_archived;
+                                if (filters?.category_id && newLink.category_id !== filters.category_id) return false;
+                                if (filters?.is_deleted !== undefined && newLink.is_deleted !== filters.is_deleted) return false;
+                                // Default to active links if no specific view is requested
+                                if (filters?.is_deleted === undefined && newLink.is_deleted) return false;
+                                return true;
                             };
 
                             // Only add if matches current filters and doesn't already exist
                             if (matchesFilters()) {
                                 mutateRef.current(
                                     (current) => {
-                                        if (!current) return current;
+                                        if (!current) return [{ links: [newLink], total: 1 }];
                                         // Check if link already exists (avoid duplicates)
-                                        if (current.links.some((l: Link) => l.id === newLink.id)) {
-                                            return current;
-                                        }
-                                        // Add new link at the beginning (newest first)
-                                        return { links: [newLink, ...current.links] };
+                                        const exists = current.some(page => page.links.some(l => l.id === newLink.id));
+                                        if (exists) return current;
+
+                                        // Add new link to the first page
+                                        const firstPage = current[0];
+                                        const updatedFirstPage = {
+                                            ...firstPage,
+                                            links: [newLink, ...firstPage.links],
+                                            total: firstPage.total + 1
+                                        };
+
+                                        return [updatedFirstPage, ...current.slice(1)];
                                     },
                                     false // Don't revalidate
                                 );
@@ -228,7 +202,6 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 });
                 channelRef.current = null;
             }
-            userIdRef.current = null;
         };
     }, [isAuthenticated, userId]); // Depend on userId instead of fetching it
 
@@ -263,7 +236,14 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         async (id: string) => {
             // Optimistic update
             mutate(
-                (current) => current ? { links: current.links.filter((link: Link) => link.id !== id) } : current,
+                (current) => {
+                    if (!current) return current;
+                    return current.map(page => ({
+                        ...page,
+                        links: page.links.filter((link: Link) => link.id !== id),
+                        total: page.total - 1
+                    }));
+                },
                 false
             );
 
@@ -290,7 +270,14 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         async (id: string) => {
             // Optimistic update - remove from trash view
             mutate(
-                (current) => current ? { links: current.links.filter((link: Link) => link.id !== id) } : current,
+                (current) => {
+                    if (!current) return current;
+                    return current.map(page => ({
+                        ...page,
+                        links: page.links.filter((link: Link) => link.id !== id),
+                        total: page.total - 1
+                    }));
+                },
                 false
             );
 
@@ -321,7 +308,14 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         async (id: string) => {
             // Optimistic update
             mutate(
-                (current) => current ? { links: current.links.filter((link: Link) => link.id !== id) } : current,
+                (current) => {
+                    if (!current) return current;
+                    return current.map(page => ({
+                        ...page,
+                        links: page.links.filter((link: Link) => link.id !== id),
+                        total: page.total - 1
+                    }));
+                },
                 false
             );
 
@@ -350,7 +344,14 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
 
             // Optimistic update - remove from trash view immediately
             mutate(
-                (current) => current ? { links: current.links.filter((link: Link) => !ids.includes(link.id)) } : current,
+                (current) => {
+                    if (!current) return current;
+                    return current.map(page => ({
+                        ...page,
+                        links: page.links.filter((link: Link) => !ids.includes(link.id)),
+                        total: page.total - ids.length
+                    }));
+                },
                 false
             );
 
@@ -373,7 +374,14 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
 
             // Optimistic update - remove from UI immediately
             mutate(
-                (current) => current ? { links: current.links.filter((link: Link) => !ids.includes(link.id)) } : current,
+                (current) => {
+                    if (!current) return current;
+                    return current.map(page => ({
+                        ...page,
+                        links: page.links.filter((link: Link) => !ids.includes(link.id)),
+                        total: page.total - ids.length
+                    }));
+                },
                 false
             );
 
@@ -398,7 +406,14 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
 
             // Optimistic update - remove from UI immediately
             mutate(
-                (current) => current ? { links: current.links.filter((link: Link) => !ids.includes(link.id)) } : current,
+                (current) => {
+                    if (!current) return current;
+                    return current.map(page => ({
+                        ...page,
+                        links: page.links.filter((link: Link) => !ids.includes(link.id)),
+                        total: page.total - ids.length
+                    }));
+                },
                 false
             );
 
@@ -421,11 +436,15 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
 
             // Optimistic update
             mutate(
-                (current) => current ? {
-                    links: current.links.map((link: Link) =>
-                        ids.includes(link.id) ? { ...link, is_pinned: true } : link
-                    )
-                } : current,
+                (current) => {
+                    if (!current) return current;
+                    return current.map(page => ({
+                        ...page,
+                        links: page.links.map((link: Link) =>
+                            ids.includes(link.id) ? { ...link, is_pinned: true } : link
+                        )
+                    }));
+                },
                 false
             );
 
@@ -451,11 +470,15 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
 
             // Optimistic update
             mutate(
-                (current) => current ? {
-                    links: current.links.map((link: Link) =>
-                        ids.includes(link.id) ? { ...link, is_pinned: false } : link
-                    )
-                } : current,
+                (current) => {
+                    if (!current) return current;
+                    return current.map(page => ({
+                        ...page,
+                        links: page.links.map((link: Link) =>
+                            ids.includes(link.id) ? { ...link, is_pinned: false } : link
+                        )
+                    }));
+                },
                 false
             );
 
@@ -495,11 +518,15 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         async (id: string, updates: Partial<Link>) => {
             // Optimistic update
             mutate(
-                (current) => current ? {
-                    links: current.links.map((link: Link) =>
-                        link.id === id ? { ...link, ...updates } : link
-                    )
-                } : current,
+                (current) => {
+                    if (!current) return current;
+                    return current.map(page => ({
+                        ...page,
+                        links: page.links.map((link: Link) =>
+                            link.id === id ? { ...link, ...updates } : link
+                        )
+                    }));
+                },
                 false
             );
 
@@ -530,11 +557,15 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         async (id: string) => {
             // Optimistic update
             mutate(
-                (current) => current ? {
-                    links: current.links.map((link: Link) =>
-                        link.id === id ? { ...link, is_pinned: true } : link
-                    )
-                } : current,
+                (current) => {
+                    if (!current) return current;
+                    return current.map(page => ({
+                        ...page,
+                        links: page.links.map((link: Link) =>
+                            link.id === id ? { ...link, is_pinned: true } : link
+                        )
+                    }));
+                },
                 false
             );
 
@@ -565,11 +596,15 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         async (id: string) => {
             // Optimistic update
             mutate(
-                (current) => current ? {
-                    links: current.links.map((link: Link) =>
-                        link.id === id ? { ...link, is_pinned: false } : link
-                    )
-                } : current,
+                (current) => {
+                    if (!current) return current;
+                    return current.map(page => ({
+                        ...page,
+                        links: page.links.map((link: Link) =>
+                            link.id === id ? { ...link, is_pinned: false } : link
+                        )
+                    }));
+                },
                 false
             );
 
@@ -630,17 +665,27 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 const newLinkIds = new Set(createdLinks.map((l: Link) => l.id));
                 mutate(
                     (current) => {
-                        if (!current) return { links: createdLinks };
+                        if (!current) return [{ links: createdLinks, total: createdLinks.length }];
+
+                        // Add to first page
+                        const firstPage = current[0];
                         // Filter out any existing links with same IDs (realtime might have added them)
-                        const existingLinks = current.links.filter((link: Link) => !newLinkIds.has(link.id));
-                        return { links: [...createdLinks.reverse(), ...existingLinks] };
+                        const existingLinks = firstPage.links.filter((link: Link) => !newLinkIds.has(link.id));
+
+                        const updatedFirstPage = {
+                            ...firstPage,
+                            links: [...createdLinks.reverse(), ...existingLinks],
+                            total: firstPage.total + createdLinks.length
+                        };
+
+                        return [updatedFirstPage, ...current.slice(1)];
                     },
                     false
                 );
             }
 
             toast.dismiss(toastId);
-            
+
             if (count === 1) {
                 toast.success(items[0]?.type === "color" ? "Color saved" : "Link saved");
             } else {
@@ -677,6 +722,9 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         handleBatchPermanentDeleteLinks,
         handleBatchPinLinks,
         handleBatchUnpinLinks,
+        hasMore,
+        loadMore,
+        isLoadingMore,
     };
 }
 
@@ -717,7 +765,7 @@ function showSubmitToast(
         }
     } else {
         const parts: string[] = [];
-        
+
         if (successCount > 0) {
             parts.push(`${successCount} added`);
         }

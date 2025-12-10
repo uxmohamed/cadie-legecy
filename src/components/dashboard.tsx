@@ -72,6 +72,9 @@ export function Dashboard({ user }: DashboardProps) {
     handleBatchPermanentDeleteLinks,
     handleBatchPinLinks,
     handleBatchUnpinLinks,
+    isLoadingMore,
+    hasMore,
+    loadMore,
   } = useLinks(!!user, filters, user.id);
 
   // Sort links based on current sort settings, maintaining pinned/unpinned grouping
@@ -297,7 +300,7 @@ export function Dashboard({ user }: DashboardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-main-container)] relative">
+    <div className="min-h-screen bg-[var(--bg-main-container)] relative overflow-x-hidden">
       {/* Sticky Header Zone */}
       <div className="sticky top-0 z-20 bg-[var(--bg-main-container)]">
         {/* Top Header Bar */}
@@ -372,7 +375,7 @@ export function Dashboard({ user }: DashboardProps) {
               </div>
               
               {/* Options Menu with Sorting */}
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="secondary"
@@ -462,7 +465,7 @@ export function Dashboard({ user }: DashboardProps) {
         {/* Offset wrapper to align list items with headers */}
         <div className="-mx-2">
           {/* List Content */}
-          {fetchingLinks || !hasInitiallyLoaded ? (
+          {(!hasInitiallyLoaded && filteredLinks.length === 0) ? (
             <LinkListSkeleton />
           ) : (
             <>
@@ -472,7 +475,7 @@ export function Dashboard({ user }: DashboardProps) {
                 onRestore={handleRestoreLink}
                 onPermanentDelete={handlePermanentDeleteLink}
                 onEdit={handleEditLink}
-                onCopyUrl={handleCopyUrl}
+                onCopy={handleCopyUrl}
                 onPin={handlePinLink}
                 onUnpin={handleUnpinLink}
                 onBatchDelete={handleBatchDeleteLinks}
@@ -480,13 +483,16 @@ export function Dashboard({ user }: DashboardProps) {
                 onBatchPermanentDelete={handleBatchPermanentDeleteLinks}
                 onBatchPin={handleBatchPinLinks}
                 onBatchUnpin={handleBatchUnpinLinks}
-                onUpdateLink={handleUpdateLink}
+                onUpdate={handleUpdateLink}
                 isTrashView={selectedCategoryId === "trash"}
                 isAddingItem={isAddingItem}
                 addInputValue={addInputValue}
                 onAddInputChange={handleInlineAddInputChange}
                 onAddSubmit={handleInlineAddSubmit}
                 onAddCancel={handleInlineAddCancel}
+                isLoadingMore={isLoadingMore}
+                hasMore={hasMore}
+                onLoadMore={loadMore}
               />
             </>
           )}

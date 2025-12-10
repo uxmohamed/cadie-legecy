@@ -29,7 +29,7 @@ interface LinkListItemProps {
   onMouseLeave: (index: number) => void;
   onFocus: (index: number) => void;
   onContextMenu: (e: React.MouseEvent, link: Link) => void;
-  onCopyUrl?: (url: string) => void;
+  onCopy?: (url: string) => void;
   onEdit?: (link: Link) => void;
   onPin?: (id: string) => void;
   onUnpin?: (id: string) => void;
@@ -57,7 +57,7 @@ export function LinkListItem({
   onMouseLeave,
   onFocus,
   onContextMenu,
-  onCopyUrl,
+  onCopy,
   onEdit,
   onPin,
   onUnpin,
@@ -124,7 +124,7 @@ export function LinkListItem({
     if (e.metaKey || e.ctrlKey) {
       if (e.key === "c") {
         e.preventDefault();
-        onCopyUrl?.(link.url);
+        onCopy?.(link.url);
       } else if (e.key === "e") {
         e.preventDefault();
         onEdit?.(link);

@@ -8,7 +8,7 @@ export interface ILinkRepository {
     /**
      * Find all links for a user with optional filters
      */
-    findAll(userId: string, filters?: LinkFilters): Promise<Link[]>;
+    findAll(userId: string, filters?: LinkFilters, limit?: number, offset?: number): Promise<{ links: Link[], total: number }>;
 
     /**
      * Find a single link by ID

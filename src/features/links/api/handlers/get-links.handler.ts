@@ -43,18 +43,20 @@ export class GetLinksHandler {
 
             // Parse query parameters
             const searchParams = request.nextUrl.searchParams;
+            const limit = parseInt(searchParams.get("limit") || "50");
+            const offset = parseInt(searchParams.get("offset") || "0");
             const categoryId = searchParams.get("category_id") || undefined;
             const isArchived = searchParams.get("is_archived") === "true";
             const isDeleted = searchParams.get("is_deleted") === "true";
 
             // Get links using service
-            const links = await this.linkService.getLinks(userId, {
+            const result = await this.linkService.getLinks(userId, {
                 category_id: categoryId,
                 is_archived: isArchived,
                 is_deleted: isDeleted,
-            });
+            }, limit, offset);
 
-            return NextResponse.json({ links });
+            return NextResponse.json(result);
         } catch (error) {
             const appError = toAppError(error);
             return NextResponse.json(

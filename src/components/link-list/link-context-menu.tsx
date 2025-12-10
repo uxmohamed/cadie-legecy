@@ -14,7 +14,7 @@ interface LinkContextMenuProps {
   selectedIds?: Set<string>;
   links?: Link[];
   isTrashView?: boolean;
-  onCopyUrl?: (url: string) => void;
+  onCopy?: (url: string) => void;
   onEdit?: (link: Link) => void;
   onRename?: (link: Link) => void;
   onPin?: (id: string) => void;
@@ -35,7 +35,7 @@ export function LinkContextMenu({
   selectedIds,
   links = [],
   isTrashView = false,
-  onCopyUrl,
+  onCopy,
   onEdit,
   onRename,
   onPin,
@@ -121,7 +121,7 @@ export function LinkContextMenu({
           <IconExternalLink className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
           Open
         </MenuItem>
-        <MenuItem onClick={() => onCopyUrl?.(link.url)}>
+        <MenuItem onClick={() => onCopy?.(link.url)}>
           <IconCopy className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
           Copy URL
           <Kbd className="ml-auto">⌘C</Kbd>
@@ -157,7 +157,7 @@ export function LinkContextMenu({
   // Normal view single item actions
   return (
     <>
-      <MenuItem onClick={() => onCopyUrl?.(copyValue)}>
+      <MenuItem onClick={() => onCopy?.(copyValue)}>
         <IconCopy className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
         {isColor ? 'Copy Color' : 'Copy URL'}
         <Kbd className="ml-auto">⌘C</Kbd>

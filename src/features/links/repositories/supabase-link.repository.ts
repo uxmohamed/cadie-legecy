@@ -10,29 +10,31 @@ import { AppError, ErrorCode } from "@/lib/errors";
  */
 export class SupabaseLinkRepository implements ILinkRepository {
     /**
-     * Find all links for a user with optional filters
+     * Find all links for a user with optional filters and pagination
      */
-    async findAll(userId: string, filters?: LinkFilters): Promise<Link[]> {
+    async findAll(userId: string, filters?: LinkFilters, limit?: number, offset?: number): Promise<{ links: Link[], total: number }> {
         const supabase = await createClient();
 
         let query = supabase
             .from("links")
-            .select("*")
-            .eq("user_id", userId)
-            .order("is_pinned", { ascending: false })
-            .order("created_at", { ascending: false });
+            .select("*", { count: 'exact' });
+
+        query = query.eq("user_id", userId);
 
         if (filters?.category_id) {
-            query = query.eq("category_id", filters.category_id);
+            if (filters.category_id === "uncategorized") {
+                query = query.is("category_id", null);
+            } else if (filters.category_id !== "all") {
+                query = query.eq("category_id", filters.category_id);
+            }
         }
 
-        // If we are looking for deleted items (Trash), we also include archived items
-        // to merge the two concepts as requested.
-        if (filters?.is_deleted) {
-            query = query.or("is_deleted.eq.true,is_archived.eq.true");
-        } else {
-            // For normal views, we exclude both deleted and archived items
-            query = query.eq("is_deleted", false).eq("is_archived", false);
+        if (filters?.is_archived !== undefined) {
+            query = query.eq("is_archived", filters.is_archived);
+        }
+
+        if (filters?.is_deleted !== undefined) {
+            query = query.eq("is_deleted", filters.is_deleted);
         }
 
         if (filters?.is_pinned !== undefined) {
@@ -43,18 +45,23 @@ export class SupabaseLinkRepository implements ILinkRepository {
             query = query.eq("content_type", filters.content_type);
         }
 
-        const { data, error } = await query;
+        // Apply sorting
+        query = query.order("is_pinned", { ascending: false });
+        query = query.order("created_at", { ascending: false });
 
-        if (error) {
-            throw new AppError(
-                ErrorCode.QUERY_FAILED,
-                `Failed to fetch links: ${error.message}`,
-                500,
-                { originalError: error }
-            );
+        // Apply pagination
+        if (limit !== undefined && offset !== undefined) {
+            query = query.range(offset, offset + limit - 1);
         }
 
-        return data || [];
+        const { data, error, count } = await query;
+
+        if (error) {
+            console.error("Error fetching links:", error);
+            return { links: [], total: 0 };
+        }
+
+        return { links: data || [], total: count || 0 };
     }
 
     /**
@@ -190,7 +197,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
 
         const { error } = await supabase
             .from("links")
-            .update({ 
+            .update({
                 is_deleted: true,
                 is_archived: false,
                 deleted_at: new Date().toISOString()

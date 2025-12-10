@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/menu";
 import { Button } from "@/components/ui/button";
 import { IconX, IconTrash, IconDots, IconPin, IconPinnedOff, IconRestore } from "@tabler/icons-react";
+import type { Link } from "@/features/links/types";
 
 interface SelectionToolbarProps {
   selectedCount: number;
@@ -17,7 +18,7 @@ interface SelectionToolbarProps {
   onBatchPermanentDelete?: () => void;
   onBatchPin?: () => void;
   onBatchUnpin?: () => void;
-  selectedLinks?: Array<{ id: string; is_pinned: boolean }>;
+  selectedLinks?: Link[];
   isTrashView?: boolean;
 }
 

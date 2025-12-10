@@ -15,7 +15,8 @@ import { InlineAddItem } from "./inline-add-item";
 import { LinkContextMenu } from "./link-context-menu";
 import { SelectionToolbar } from "./selection-toolbar";
 import { LinkDetailSheet } from "./link-detail-sheet";
-import type { LinkListProps, ContextMenuState } from "./types";
+import { LinkItemSkeleton } from "../link-item-skeleton";
+import type { ContextMenuState } from "./types";
 import { Menu, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 import {
   AlertDialog,
@@ -28,35 +29,71 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 
+interface LinkListProps {
+  links: Link[];
+  onDelete: (id: string) => Promise<void>;
+  onRestore: (id: string) => Promise<void>;
+  onPermanentDelete: (id: string) => Promise<void>;
+  onPin: (id: string) => Promise<void>;
+  onUnpin: (id: string) => Promise<void>;
+  onCopy: (url: string, isColor?: boolean) => Promise<void>;
+  onEdit: (link: Link) => void;
+  onUpdate: (id: string, data: Partial<Link>) => Promise<void>;
+  onBatchDelete: (ids: string[]) => Promise<void>;
+  onBatchRestore: (ids: string[]) => Promise<void>;
+  onBatchPermanentDelete: (ids: string[]) => Promise<void>;
+  onBatchPin: (ids: string[]) => Promise<void>;
+  onBatchUnpin: (ids: string[]) => Promise<void>;
+  isTrashView?: boolean;
+  isAddingItem?: boolean;
+  addInputValue?: string;
+  onAddInputChange?: (value: string) => void;
+  onAddSubmit?: () => void;
+  onAddCancel: () => void;
+  // Inline edit mode props
+  editingLinkId?: string | null;
+  editMode?: "title" | "url" | null;
+  editValue?: string;
+  onRename?: (id: string, newTitle: string) => Promise<void>;
+  onEditChange?: (value: string) => void;
+  onEditSubmit?: () => Promise<void>;
+  onEditCancel?: () => void;
+  isLoadingMore?: boolean;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+}
+
 export function LinkList({
   links,
   onDelete,
   onRestore,
   onPermanentDelete,
-  onEdit,
-  onCopyUrl,
   onPin,
   onUnpin,
-  onUpdateLink,
+  onCopy,
+  onEdit,
+  onUpdate,
   onBatchDelete,
   onBatchRestore,
   onBatchPermanentDelete,
   onBatchPin,
   onBatchUnpin,
-  isTrashView,
-  isAddingItem,
+  isTrashView = false,
+  isAddingItem = false,
   addInputValue = "",
   onAddInputChange,
   onAddSubmit,
   onAddCancel,
-  // Inline edit mode props from parent (optional - we manage internally if not provided)
-  editingLinkId: externalEditingLinkId,
-  editMode: externalEditMode,
-  editValue: externalEditValue,
-  onRename: externalOnRename,
-  onEditChange: externalOnEditChange,
-  onEditSubmit: externalOnEditSubmit,
-  onEditCancel: externalOnEditCancel,
+  editingLinkId,
+  editMode,
+  editValue,
+  onRename,
+  onEditChange,
+  onEditSubmit,
+  onEditCancel,
+  isLoadingMore = false,
+  hasMore = false,
+  onLoadMore,
 }: LinkListProps) {
   const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null);
   const [contextMenu, setContextMenu] = React.useState<ContextMenuState | null>(
@@ -86,12 +123,19 @@ export function LinkList({
   });
 
   // Use external props if provided, otherwise use internal state
-  const editingLinkId = externalEditingLinkId ?? internalEditingLinkId;
-  const editMode = externalEditMode ?? internalEditMode;
-  const editValue = externalEditValue ?? internalEditValue;
+  const effectiveEditingLinkId = editingLinkId ?? internalEditingLinkId;
+  const effectiveEditMode = editMode ?? internalEditMode;
+  const effectiveEditValue = editValue ?? internalEditValue;
 
   const linkRefs = React.useRef<(HTMLAnchorElement | null)[]>([]);
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const [offset, setOffset] = React.useState(0);
+
+  React.useLayoutEffect(() => {
+    if (containerRef.current) {
+      setOffset(containerRef.current.offsetTop);
+    }
+  }, []);
 
   const previousLengthRef = React.useRef(links.length);
 
@@ -128,8 +172,6 @@ export function LinkList({
     previousLengthRef.current = displayLinks.length;
   }, [displayLinks.length, focusedIndex]);
 
-
-
   // Delete Dialog State
   const [deleteConfirmation, setDeleteConfirmation] = React.useState<{
     isOpen: boolean;
@@ -164,7 +206,6 @@ export function LinkList({
   };
 
   // Batch Actions
-
   const handleBatchDelete = React.useCallback(async () => {
     if (onBatchDelete) {
       await onBatchDelete(Array.from(selectedIds));
@@ -210,38 +251,36 @@ export function LinkList({
 
   // Inline edit handlers
   const handleRename = React.useCallback((link: Link) => {
-    if (externalOnRename) {
-      externalOnRename(link);
+    if (onRename) {
+      onRename(link.id, link.title || link.url);
     } else {
       setInternalEditingLinkId(link.id);
       setInternalEditMode('title');
       setInternalEditValue(link.title || link.url);
     }
-  }, [externalOnRename]);
-
-
+  }, [onRename]);
 
   const handleEditChange = React.useCallback((value: string) => {
-    if (externalOnEditChange) {
-      externalOnEditChange(value);
+    if (onEditChange) {
+      onEditChange(value);
     } else {
       setInternalEditValue(value);
     }
-  }, [externalOnEditChange]);
+  }, [onEditChange]);
 
   const handleEditSubmit = React.useCallback(() => {
-    if (externalOnEditSubmit) {
-      externalOnEditSubmit();
+    if (onEditSubmit) {
+      onEditSubmit();
       return;
     }
     
     // Find the link being edited
-    const link = links.find(l => l.id === editingLinkId);
-    if (link && editValue.trim() && onUpdateLink) {
+    const link = links.find(l => l.id === effectiveEditingLinkId);
+    if (link && effectiveEditValue.trim() && onUpdate) {
       // Only update if the value actually changed
-      if (editMode === 'title') {
+      if (effectiveEditMode === 'title') {
         const currentTitle = link.title || link.url;
-        const newTitle = editValue.trim();
+        const newTitle = effectiveEditValue.trim();
         
         if (newTitle !== currentTitle) {
           // Check if this is a color item
@@ -270,7 +309,7 @@ export function LinkList({
           }
           
           // Regular rename (non-color or color with non-color new name)
-          onUpdateLink(link.id, { title: newTitle });
+          onUpdate(link.id, { title: newTitle });
           toast.success("Link updated");
         }
       }
@@ -280,13 +319,13 @@ export function LinkList({
     setInternalEditMode(null);
     setInternalEditValue("");
     setFocusedIndex(null);
-  }, [externalOnEditSubmit, editingLinkId, editMode, editValue, links, onUpdateLink]);
+  }, [onEditSubmit, effectiveEditingLinkId, effectiveEditMode, effectiveEditValue, links, onUpdate]);
 
   // Handle color change confirmation
   const handleColorChangeConfirm = React.useCallback(() => {
-    if (colorChangeDialog.linkId && onUpdateLink) {
+    if (colorChangeDialog.linkId && onUpdate) {
       // Update both title and color_value
-      onUpdateLink(colorChangeDialog.linkId, {
+      onUpdate(colorChangeDialog.linkId, {
         title: colorChangeDialog.newTitle,
         color_value: colorChangeDialog.newColorValue,
       });
@@ -304,7 +343,7 @@ export function LinkList({
     setInternalEditMode(null);
     setInternalEditValue("");
     setFocusedIndex(null);
-  }, [colorChangeDialog, onUpdateLink]);
+  }, [colorChangeDialog, onUpdate]);
 
   const handleColorChangeCancel = React.useCallback(() => {
     // Close dialog but keep edit state so user can continue editing
@@ -323,14 +362,14 @@ export function LinkList({
   }, []);
 
   const handleEditCancel = React.useCallback(() => {
-    if (externalOnEditCancel) {
-      externalOnEditCancel();
+    if (onEditCancel) {
+      onEditCancel();
     } else {
       setInternalEditingLinkId(null);
       setInternalEditMode(null);
       setInternalEditValue("");
     }
-  }, [externalOnEditCancel]);
+  }, [onEditCancel]);
 
   // Keyboard navigation
   useKeyboardNavigation({
@@ -343,23 +382,10 @@ export function LinkList({
     selectAll,
     onBatchDelete: handleBatchDelete,
     onBatchPermanentDelete: isTrashView ? handleBatchPermanentDelete : undefined,
-    onEdit,
+    onEdit: (link) => onEdit(link),
     onDelete,
     isTrashView,
   });
-
-  const copyToClipboard = async (text: string, type: "url" | "color", id?: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      const isColor = id ? displayLinks.find(l => l.id === id)?.content_type === 'color' : type === 'color';
-      toast.success(isColor ? "Color copied to clipboard" : "URL copied to clipboard");
-    } catch (error) {
-      console.error("Failed to copy:", error);
-      toast.error(
-        type === "color" ? "Failed to copy color" : "Failed to copy URL"
-      );
-    }
-  };
 
   const handleContextMenu = (e: React.MouseEvent, link: Link) => {
     e.preventDefault();
@@ -388,7 +414,8 @@ export function LinkList({
     | { type: 'pinned-header' }
     | { type: 'all-links-header' }
     | { type: 'add-input' }
-    | { type: 'link'; link: Link; index: number; isPinned: boolean };
+    | { type: 'link'; link: Link; index: number; isPinned: boolean }
+    | { type: 'loading-more' };
   
   const virtualItems: VirtualItem[] = [];
   
@@ -423,6 +450,11 @@ export function LinkList({
         isPinned: false 
       });
     });
+
+    // Loading more skeleton
+    if (isLoadingMore) {
+      virtualItems.push({ type: 'loading-more' });
+    }
   }
 
   // Estimate heights for different row types
@@ -432,9 +464,9 @@ export function LinkList({
     if (item.type === 'pinned-header') return 40; // header with margin
     if (item.type === 'all-links-header') return 56; // header with more margin
     if (item.type === 'add-input') return 56;
+    if (item.type === 'loading-more') return 56 * 3; // 3 skeleton items
     return 56; // link item height
   };
-
   // Window virtualizer - uses native window scroll
   // This hook MUST be called unconditionally (React rules of hooks)
   const virtualizer = useWindowVirtualizer({
@@ -444,6 +476,25 @@ export function LinkList({
   });
 
   const virtualRows = virtualizer.getVirtualItems();
+
+  // Infinite scroll observer
+  const loadMoreRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore && onLoadMore) {
+          onLoadMore();
+        }
+      },
+      { threshold: 0.1, rootMargin: "100px" }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasMore, isLoadingMore, onLoadMore]);
 
   // Show empty state only when not in add mode
   if (showEmptyState) {
@@ -471,7 +522,7 @@ export function LinkList({
                 style={{ transform: `translateY(${virtualRow.start}px)` }}
               >
                 <div className={`mb-4 mt-4 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
-                  isAddingItem || editingLinkId ? "opacity-20" : "opacity-100"
+                  isAddingItem || effectiveEditingLinkId ? "opacity-20" : "opacity-100"
                 }`}>
                   Pinned
                 </div>
@@ -490,7 +541,7 @@ export function LinkList({
                 style={{ transform: `translateY(${virtualRow.start}px)` }}
               >
                 <div className={`mb-4 mt-8 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
-                  isAddingItem || editingLinkId ? "opacity-20" : "opacity-100"
+                  isAddingItem || effectiveEditingLinkId ? "opacity-20" : "opacity-100"
                 }`}>
                   All Links
                 </div>
@@ -521,8 +572,8 @@ export function LinkList({
           // Render link item
           if (item.type === 'link') {
             const { link, index, isPinned } = item;
-            const isThisEditing = editingLinkId === link.id;
-            const shouldDim = (isAddingItem || editingLinkId) && !isThisEditing;
+            const isThisEditing = effectiveEditingLinkId === link.id;
+            const shouldDim = (isAddingItem || effectiveEditingLinkId) && !isThisEditing;
             
             return (
               <div
@@ -551,19 +602,38 @@ export function LinkList({
                     }}
                     onFocus={setFocusedIndex}
                     onContextMenu={handleContextMenu}
-                    onCopyUrl={onCopyUrl}
-                    onEdit={onEdit}
+                    onCopy={onCopy}
+                    onEdit={() => onEdit(link)}
                     onPin={!isTrashView ? onPin : undefined}
                     onUnpin={!isTrashView ? onUnpin : undefined}
                     onDelete={onDelete}
                     isDragging={isDragging}
                     isEditing={isThisEditing}
-                    editMode={isThisEditing ? editMode : null}
-                    editValue={isThisEditing ? editValue : ""}
+                    editMode={isThisEditing ? effectiveEditMode : null}
+                    editValue={isThisEditing ? effectiveEditValue : ""}
                     onEditChange={handleEditChange}
                     onEditSubmit={handleEditSubmit}
                     onEditCancel={handleEditCancel}
                   />
+                </div>
+              </div>
+            );
+          }
+
+          // Render loading more skeleton
+          if (item.type === 'loading-more') {
+            return (
+              <div
+                key="loading-more"
+                data-index={virtualRow.index}
+                ref={virtualizer.measureElement}
+                className="absolute top-0 left-0 w-full"
+                style={{ transform: `translateY(${virtualRow.start}px)` }}
+              >
+                <div className="space-y-2">
+                  <LinkItemSkeleton />
+                  <LinkItemSkeleton />
+                  <LinkItemSkeleton />
                 </div>
               </div>
             );
@@ -573,11 +643,16 @@ export function LinkList({
         })}
       </div>
 
+      {/* Sentinel for infinite scroll */}
+      {hasMore && !isLoadingMore && (
+        <div ref={loadMoreRef} className="h-4 w-full" />
+      )}
 
       {contextMenu && (
         <Menu
           open={true}
           onOpenChange={(open: boolean) => !open && setContextMenu(null)}
+          modal={false}
         >
           <MenuTrigger
             className="fixed w-0 h-0 p-0 m-0 opacity-0 overflow-hidden pointer-events-none"
@@ -594,8 +669,8 @@ export function LinkList({
               selectedIds={selectedIds}
               links={displayLinks}
               isTrashView={isTrashView}
-              onCopyUrl={onCopyUrl}
-              onEdit={!isTrashView ? onEdit : undefined}
+              onCopy={onCopy}
+              onEdit={!isTrashView ? () => onEdit(contextMenu.link) : undefined}
               onRename={!isTrashView ? handleRename : undefined}
               onPin={!isTrashView ? onPin : undefined}
               onUnpin={!isTrashView ? onUnpin : undefined}
@@ -642,8 +717,8 @@ export function LinkList({
         onLinkChange={(link) => {
           setSelectedLink(link);
         }}
-        onEdit={!isTrashView ? onEdit : undefined}
-        onCopyUrl={onCopyUrl}
+        onEdit={!isTrashView ? () => onEdit(selectedLink!) : undefined}
+        onCopy={onCopy}
         onPin={!isTrashView ? onPin : undefined}
         onUnpin={!isTrashView ? onUnpin : undefined}
         onDelete={!isTrashView ? onDelete : undefined}

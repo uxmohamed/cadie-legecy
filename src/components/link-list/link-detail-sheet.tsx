@@ -29,7 +29,7 @@ interface LinkDetailSheetProps {
   onOpenChange: (open: boolean) => void;
   onLinkChange?: (link: Link) => void;
   onEdit?: (link: Link) => void;
-  onCopyUrl?: (url: string) => void;
+  onCopy?: (url: string) => void;
   onPin?: (id: string) => void;
   onUnpin?: (id: string) => void;
   onDelete?: (id: string) => void;
@@ -46,7 +46,7 @@ export function LinkDetailSheet({
   onOpenChange,
   onLinkChange,
   onEdit,
-  onCopyUrl,
+  onCopy,
   onPin,
   onUnpin,
   onDelete,
@@ -85,7 +85,7 @@ export function LinkDetailSheet({
       await navigator.clipboard.writeText(link.url);
     }
     setCopied(true);
-    onCopyUrl?.(link.url);
+    onCopy?.(link.url);
     setTimeout(() => setCopied(false), 2000);
   };
 

@@ -19,8 +19,8 @@ export class LinkService {
     /**
      * Get all links for a user with optional filters
      */
-    async getLinks(userId: string, filters?: LinkFilters): Promise<Link[]> {
-        return this.linkRepository.findAll(userId, filters);
+    async getLinks(userId: string, filters?: LinkFilters, limit?: number, offset?: number): Promise<{ links: Link[], total: number }> {
+        return this.linkRepository.findAll(userId, filters, limit, offset);
     }
 
     /**
