@@ -330,8 +330,10 @@ export function Dashboard({ user }: DashboardProps) {
                 </Button>
               )}
 
-              {/* Vertical Divider */}
-              <div className="h-8 w-px bg-[var(--border-secondary)]" />
+              {/* Vertical Divider - only show when Add button is visible */}
+              {selectedCategoryId !== "trash" && (
+                <div className="h-8 w-px bg-[var(--border-secondary)]" />
+              )}
 
               <div className="flex items-center gap-2">
                 <button

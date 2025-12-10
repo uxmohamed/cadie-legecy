@@ -378,13 +378,10 @@ export function LinkList({
     });
   };
 
-  // Show empty state only when not in add mode
-  if (links.length === 0 && !isAddingItem) {
-    return <LinkListEmpty />;
-  }
-
+  // Compute these values before the virtualizer hook (hooks must be called unconditionally)
   const pinnedLinks = isTrashView ? [] : displayLinks.filter((link) => link.is_pinned);
   const unpinnedLinks = isTrashView ? displayLinks : displayLinks.filter((link) => !link.is_pinned);
+  const showEmptyState = links.length === 0 && !isAddingItem;
 
   // Build flat list of virtual items for virtualization
   type VirtualItem = 
@@ -395,39 +392,43 @@ export function LinkList({
   
   const virtualItems: VirtualItem[] = [];
   
-  // Pinned header
-  if (pinnedLinks.length > 0) {
-    virtualItems.push({ type: 'pinned-header' });
-  }
-  
-  // Pinned links
-  pinnedLinks.forEach((link, index) => {
-    virtualItems.push({ type: 'link', link, index, isPinned: true });
-  });
-  
-  // Add input (after pinned items)
-  if (isAddingItem) {
-    virtualItems.push({ type: 'add-input' });
-  }
-  
-  // All Links header (only if there are pinned items)
-  if (unpinnedLinks.length > 0 && pinnedLinks.length > 0) {
-    virtualItems.push({ type: 'all-links-header' });
-  }
-  
-  // Unpinned links  
-  unpinnedLinks.forEach((link, index) => {
-    virtualItems.push({ 
-      type: 'link', 
-      link, 
-      index: pinnedLinks.length + index, 
-      isPinned: false 
+  // Only build virtual items if not showing empty state
+  if (!showEmptyState) {
+    // Pinned header
+    if (pinnedLinks.length > 0) {
+      virtualItems.push({ type: 'pinned-header' });
+    }
+    
+    // Pinned links
+    pinnedLinks.forEach((link, index) => {
+      virtualItems.push({ type: 'link', link, index, isPinned: true });
     });
-  });
+    
+    // Add input (after pinned items)
+    if (isAddingItem) {
+      virtualItems.push({ type: 'add-input' });
+    }
+    
+    // All Links header (only if there are pinned items)
+    if (unpinnedLinks.length > 0 && pinnedLinks.length > 0) {
+      virtualItems.push({ type: 'all-links-header' });
+    }
+    
+    // Unpinned links  
+    unpinnedLinks.forEach((link, index) => {
+      virtualItems.push({ 
+        type: 'link', 
+        link, 
+        index: pinnedLinks.length + index, 
+        isPinned: false 
+      });
+    });
+  }
 
   // Estimate heights for different row types
   const getItemSize = (index: number) => {
     const item = virtualItems[index];
+    if (!item) return 56; // fallback
     if (item.type === 'pinned-header') return 40; // header with margin
     if (item.type === 'all-links-header') return 56; // header with more margin
     if (item.type === 'add-input') return 56;
@@ -435,6 +436,7 @@ export function LinkList({
   };
 
   // Window virtualizer - uses native window scroll
+  // This hook MUST be called unconditionally (React rules of hooks)
   const virtualizer = useWindowVirtualizer({
     count: virtualItems.length,
     estimateSize: getItemSize,
@@ -442,6 +444,11 @@ export function LinkList({
   });
 
   const virtualRows = virtualizer.getVirtualItems();
+
+  // Show empty state only when not in add mode
+  if (showEmptyState) {
+    return <LinkListEmpty />;
+  }
 
   return (
     <div className="w-full" ref={containerRef}>
