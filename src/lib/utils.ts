@@ -23,32 +23,33 @@ export function cleanUrl(url: string): string {
 }
 
 /**
- * Format a date for display
+ * Format a date for display in compact format
  */
 export function formatDate(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   const now = new Date();
   const diffMs = now.getTime() - d.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   
-  if (diffDays === 0) {
-    return 'Today';
-  } else if (diffDays === 1) {
-    return 'Yesterday';
+  if (diffMins < 1) {
+    return 'now';
+  } else if (diffMins < 60) {
+    return `${diffMins}m`;
+  } else if (diffHours < 24) {
+    return `${diffHours}h`;
   } else if (diffDays < 7) {
-    return `${diffDays} days ago`;
+    return `${diffDays}d`;
   } else if (diffDays < 30) {
     const weeks = Math.floor(diffDays / 7);
-    return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`;
+    return `${weeks}w`;
   } else if (diffDays < 365) {
     const months = Math.floor(diffDays / 30);
-    return `${months} ${months === 1 ? 'month' : 'months'} ago`;
+    return `${months}mo`;
   } else {
-    return d.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    });
+    const years = Math.floor(diffDays / 365);
+    return `${years}y`;
   }
 }
 

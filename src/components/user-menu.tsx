@@ -129,11 +129,6 @@ export function UserMenu({ user }: UserMenuProps) {
   }, [isOpen]);
 
   React.useEffect(() => {
-    // We don't need to register Cmd+/ as it's already handled globally by the context provider
-    // but we do need to handle the keydown event for the specific combination if not handled there
-    // However, looking at the context, it seems ? is registered, but not Cmd+/ explicitly as a shortcut entry
-    // Let's register it for documentation purposes if nothing else, but the event listener below handles the actual logic
-    
     const handleKeyDown = (e: KeyboardEvent) => {
       // Shortcuts: Meta + /
       if ((e.metaKey || e.ctrlKey) && e.key === "/") {
@@ -185,128 +180,128 @@ export function UserMenu({ user }: UserMenuProps) {
 
   return (
     <>
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="h-9 w-9 rounded-full p-0 hover:bg-[var(--bg-field-hover)]"
-        >
-          <Avatar className="h-9 w-9">
-            <AvatarImage 
-              src={userAvatar} 
-              alt={user.email} 
-            />
-            <AvatarFallback className="bg-[var(--bg-inverse)] text-[var(--text-inverse)]">
-              {userName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || "U"}
-            </AvatarFallback>
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent ref={menuRef} align="end" className="w-64">
-        <div className="px-2 py-3">
-          {userName ? (
-            <>
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="h-9 w-9 rounded-full p-0 hover:bg-[var(--bg-field-hover)]"
+          >
+            <Avatar className="h-9 w-9">
+              <AvatarImage 
+                src={userAvatar} 
+                alt={user.email} 
+              />
+              <AvatarFallback className="bg-[var(--bg-inverse)] text-[var(--text-inverse)]">
+                {userName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || "U"}
+              </AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent ref={menuRef} align="end" className="w-64">
+          <div className="px-2 py-3">
+            {userName ? (
+              <>
+                <p className="text-sm font-medium text-[var(--overlay-text-primary)] truncate">
+                  {userName}
+                </p>
+                <p className="text-xs text-[var(--overlay-text-secondary)] truncate mt-0.5">
+                  {user.email}
+                </p>
+              </>
+            ) : (
               <p className="text-sm font-medium text-[var(--overlay-text-primary)] truncate">
-                {userName}
-              </p>
-              <p className="text-xs text-[var(--overlay-text-secondary)] truncate mt-0.5">
                 {user.email}
               </p>
-            </>
-          ) : (
-            <p className="text-sm font-medium text-[var(--overlay-text-primary)] truncate">
-              {user.email}
-            </p>
-          )}
-        </div>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <a 
-            href="https://x.com/messages/compose?recipient_id=1649994120725778432" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="cursor-pointer w-full flex items-center group"
+            )}
+          </div>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <a 
+              href="https://x.com/messages/compose?recipient_id=1649994120725778432" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="cursor-pointer w-full flex items-center group"
+            >
+              <IconMessage className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+              Beta Feedback
+              <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
+            </a>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onSelect={() => {
+              setIsOpen(false);
+              setIsSettingsOpen(true);
+            }}
           >
-            <IconMessage className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
-            Beta Feedback
-            <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
-          </a>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          className="cursor-pointer"
-          onSelect={() => {
-            setIsOpen(false);
-            setIsSettingsOpen(true);
-          }}
-        >
-          <IconSettings className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
-          Settings
-          <Kbd className="ml-auto">,</Kbd>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          className="cursor-pointer"
-          onSelect={(e) => {
-            e.preventDefault();
-            handleThemeToggle(!isDarkMode);
-          }}
-          onClick={(e) => {
-            e.preventDefault();
-            handleThemeToggle(!isDarkMode);
-          }}
-        >
-          <IconMoon className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
-          Dark mode
-          <Switch
-            checked={isDarkMode}
-            onCheckedChange={handleThemeToggle}
-            className="ml-auto"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/changelog" className="cursor-pointer w-full flex items-center group">
-            <IconShip className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
-            Changelog
-            <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a href="https://x.com/caddyapp_" target="_blank" rel="noopener noreferrer" className="cursor-pointer w-full flex items-center group">
-            <IconBrandX className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
-            Follow us on X
-            <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
-          </a>
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-          onSelect={(e) => {
-            e.preventDefault();
-            toggleHelp();
-          }}
-          className="cursor-pointer"
-        >
-          <IconKeyboard className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
-          Keyboard Shortcuts
-          <Kbd className="ml-auto">⌘/</Kbd>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={handleSignOut}
-          disabled={isSigningOut}
-          className="cursor-pointer"
-        >
-          <IconLogout className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
-          {isSigningOut ? "Signing out..." : "Log out"}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+            <IconSettings className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+            Settings
+            <Kbd className="ml-auto">,</Kbd>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem 
+            className="cursor-pointer"
+            onSelect={(e) => {
+              e.preventDefault();
+              handleThemeToggle(!isDarkMode);
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              handleThemeToggle(!isDarkMode);
+            }}
+          >
+            <IconMoon className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+            Dark mode
+            <Switch
+              checked={isDarkMode}
+              onCheckedChange={handleThemeToggle}
+              className="ml-auto"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href="/changelog" className="cursor-pointer w-full flex items-center group">
+              <IconShip className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+              Changelog
+              <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <a href="https://x.com/caddyapp_" target="_blank" rel="noopener noreferrer" className="cursor-pointer w-full flex items-center group">
+              <IconBrandX className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+              Follow us on X
+              <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
+            </a>
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            onSelect={(e) => {
+              e.preventDefault();
+              toggleHelp();
+            }}
+            className="cursor-pointer"
+          >
+            <IconKeyboard className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+            Keyboard Shortcuts
+            <Kbd className="ml-auto">⌘/</Kbd>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={handleSignOut}
+            disabled={isSigningOut}
+            className="cursor-pointer"
+          >
+            <IconLogout className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+            {isSigningOut ? "Signing out..." : "Log out"}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-    <SettingsDialog
-      user={user}
-      open={isSettingsOpen}
-      onOpenChange={setIsSettingsOpen}
-    />
-  </>
+      <SettingsDialog
+        user={user}
+        open={isSettingsOpen}
+        onOpenChange={setIsSettingsOpen}
+      />
+    </>
   );
 }
