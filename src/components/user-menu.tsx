@@ -21,6 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/menu";
+import { SettingsDialog } from "@/components/settings-dialog";
 
 interface UserMenuProps {
   user: User;
@@ -29,6 +30,7 @@ interface UserMenuProps {
 export function UserMenu({ user }: UserMenuProps) {
   const [isSigningOut, setIsSigningOut] = React.useState(false);
   const [isOpen, setIsOpen] = React.useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
   const { toggleHelp } = useShortcuts();
   const { theme, setTheme } = useTheme();
   const menuRef = React.useRef<HTMLDivElement>(null);
@@ -182,6 +184,7 @@ export function UserMenu({ user }: UserMenuProps) {
   }, [setTheme]);
 
   return (
+    <>
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
@@ -229,7 +232,13 @@ export function UserMenu({ user }: UserMenuProps) {
             <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
           </a>
         </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">
+        <DropdownMenuItem
+          className="cursor-pointer"
+          onSelect={() => {
+            setIsOpen(false);
+            setIsSettingsOpen(true);
+          }}
+        >
           <IconSettings className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
           Settings
           <Kbd className="ml-auto">,</Kbd>
@@ -292,5 +301,12 @@ export function UserMenu({ user }: UserMenuProps) {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+
+    <SettingsDialog
+      user={user}
+      open={isSettingsOpen}
+      onOpenChange={setIsSettingsOpen}
+    />
+  </>
   );
 }
