@@ -9,6 +9,7 @@ interface UseKeyboardNavigationOptions {
   focusedIndex: number | null;
   setFocusedIndex: React.Dispatch<React.SetStateAction<number | null>>;
   selectedIds: Set<string>;
+  setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
   clearSelection: () => void;
   selectAll: () => void;
 
@@ -17,6 +18,8 @@ interface UseKeyboardNavigationOptions {
   onEdit?: (link: Link) => void;
   onDelete?: (id: string) => void;
   isTrashView?: boolean;
+  lastSelectedIndex: number | null;
+  setLastSelectedIndex: (index: number | null) => void;
 }
 
 import { useShortcuts } from "@/components/shortcut-context";
@@ -29,6 +32,7 @@ export function useKeyboardNavigation({
   focusedIndex,
   setFocusedIndex,
   selectedIds,
+  setSelectedIds,
   clearSelection,
   selectAll,
 
@@ -37,6 +41,8 @@ export function useKeyboardNavigation({
   onEdit,
   onDelete,
   isTrashView,
+  lastSelectedIndex,
+  setLastSelectedIndex,
 }: UseKeyboardNavigationOptions) {
   const { registerShortcut, unregisterShortcut } = useShortcuts();
 
@@ -52,7 +58,7 @@ export function useKeyboardNavigation({
       { key: "Cmd+a", description: "Select all", category: "Actions", action: () => { } },
     ] as const;
 
-    shortcuts.forEach((s) => registerShortcut(s as any));
+    shortcuts.forEach((s) => registerShortcut(s));
     return () => shortcuts.forEach((s) => unregisterShortcut(s.key));
   }, [registerShortcut, unregisterShortcut]);
 
@@ -67,25 +73,76 @@ export function useKeyboardNavigation({
       // Navigation
       if (e.key === "ArrowDown" || e.key === "k") {
         e.preventDefault();
+        let nextIndex = 0;
+
         if (focusedIndex === null) {
-          setFocusedIndex(0);
-          linkRefs.current[0]?.focus();
+          nextIndex = 0;
         } else {
-          const nextIndex =
-            focusedIndex < displayLinks.length - 1 ? focusedIndex + 1 : 0;
-          setFocusedIndex(nextIndex);
-          linkRefs.current[nextIndex]?.focus();
+          nextIndex = focusedIndex < displayLinks.length - 1 ? focusedIndex + 1 : 0;
         }
+
+        setFocusedIndex(nextIndex);
+        linkRefs.current[nextIndex]?.focus();
+
+        // Handle selection
+        if (e.shiftKey) {
+          // Range selection
+          const anchor = lastSelectedIndex ?? (focusedIndex ?? 0);
+          if (lastSelectedIndex === null) {
+            setLastSelectedIndex(anchor);
+          }
+
+          const start = Math.min(anchor, nextIndex);
+          const end = Math.max(anchor, nextIndex);
+
+          const newSet = new Set<string>();
+          for (let i = start; i <= end; i++) {
+            newSet.add(displayLinks[i].id);
+          }
+          setSelectedIds(newSet);
+
+        } else if (!e.ctrlKey && !e.metaKey) {
+          // No modifiers: Move focus AND select ONLY the new item
+          const newSet = new Set<string>();
+          newSet.add(displayLinks[nextIndex].id);
+          setSelectedIds(newSet);
+          setLastSelectedIndex(nextIndex);
+        }
+
       } else if (e.key === "ArrowUp" || e.key === "j") {
         e.preventDefault();
+        let nextIndex = 0;
+
         if (focusedIndex === null) {
-          setFocusedIndex(displayLinks.length - 1);
-          linkRefs.current[displayLinks.length - 1]?.focus();
+          nextIndex = displayLinks.length - 1;
         } else {
-          const prevIndex =
-            focusedIndex > 0 ? focusedIndex - 1 : displayLinks.length - 1;
-          setFocusedIndex(prevIndex);
-          linkRefs.current[prevIndex]?.focus();
+          nextIndex = focusedIndex > 0 ? focusedIndex - 1 : displayLinks.length - 1;
+        }
+
+        setFocusedIndex(nextIndex);
+        linkRefs.current[nextIndex]?.focus();
+
+        // Handle selection (same logic as Down)
+        if (e.shiftKey) {
+          const anchor = lastSelectedIndex ?? (focusedIndex ?? displayLinks.length - 1);
+          if (lastSelectedIndex === null) {
+            setLastSelectedIndex(anchor);
+          }
+
+          const start = Math.min(anchor, nextIndex);
+          const end = Math.max(anchor, nextIndex);
+
+          const newSet = new Set<string>();
+          for (let i = start; i <= end; i++) {
+            newSet.add(displayLinks[i].id);
+          }
+          setSelectedIds(newSet);
+        } else if (!e.ctrlKey && !e.metaKey) {
+          // Select single
+          const newSet = new Set<string>();
+          newSet.add(displayLinks[nextIndex].id);
+          setSelectedIds(newSet);
+          setLastSelectedIndex(nextIndex);
         }
       }
 
@@ -151,8 +208,47 @@ export function useKeyboardNavigation({
           e.preventDefault();
           onDelete?.(focusedLink.id);
         }
+      }
 
+      // Space key selection
+      if (e.code === "Space" && focusedIndex !== null && !isInputFocused) {
+        e.preventDefault();
+        const focusedLink = displayLinks[focusedIndex];
 
+        if (e.shiftKey) {
+          // Range selection (same as Arrow keys)
+          const anchor = lastSelectedIndex ?? focusedIndex;
+          if (lastSelectedIndex === null) {
+            setLastSelectedIndex(anchor);
+          }
+
+          const start = Math.min(anchor, focusedIndex);
+          const end = Math.max(anchor, focusedIndex);
+
+          const newSet = new Set(selectedIds);
+          if (!e.metaKey && !e.ctrlKey) newSet.clear();
+
+          for (let i = start; i <= end; i++) {
+            newSet.add(displayLinks[i].id);
+          }
+          setSelectedIds(newSet);
+        } else if (e.metaKey || e.ctrlKey) {
+          // Toggle selection
+          const newSet = new Set(selectedIds);
+          if (newSet.has(focusedLink.id)) {
+            newSet.delete(focusedLink.id);
+          } else {
+            newSet.add(focusedLink.id);
+            setLastSelectedIndex(focusedIndex);
+          }
+          setSelectedIds(newSet);
+        } else {
+          // Select single
+          const newSet = new Set<string>();
+          newSet.add(focusedLink.id);
+          setSelectedIds(newSet);
+          setLastSelectedIndex(focusedIndex);
+        }
       }
     };
 
@@ -162,6 +258,7 @@ export function useKeyboardNavigation({
     focusedIndex,
     displayLinks,
     selectedIds,
+    setSelectedIds,
     clearSelection,
     selectAll,
     onBatchDelete,
@@ -171,5 +268,7 @@ export function useKeyboardNavigation({
     onEdit,
     onDelete,
     isTrashView,
+    lastSelectedIndex,
+    setLastSelectedIndex,
   ]);
 }

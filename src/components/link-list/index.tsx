@@ -149,12 +149,15 @@ export function LinkList({
 
   const {
     selectedIds,
+    setSelectedIds,
     isDragging,
     clearSelection,
     selectAll,
     handleItemMouseDown,
     handleItemMouseEnter,
     handleRowClick,
+    lastSelectedIndex,
+    setLastSelectedIndex,
   } = useSelection({ displayLinks });
 
   // Update refs and focused index when links change
@@ -378,6 +381,7 @@ export function LinkList({
     focusedIndex,
     setFocusedIndex,
     selectedIds,
+    setSelectedIds,
     clearSelection,
     selectAll,
     onBatchDelete: handleBatchDelete,
@@ -385,6 +389,8 @@ export function LinkList({
     onEdit: (link) => onEdit(link),
     onDelete,
     isTrashView,
+    lastSelectedIndex,
+    setLastSelectedIndex,
   });
 
   const handleContextMenu = (e: React.MouseEvent, link: Link) => {
@@ -464,8 +470,8 @@ export function LinkList({
     if (item.type === 'pinned-header') return 40; // header with margin
     if (item.type === 'all-links-header') return 56; // header with more margin
     if (item.type === 'add-input') return 56;
-    if (item.type === 'loading-more') return 56 * 3; // 3 skeleton items
-    return 56; // link item height
+    if (item.type === 'loading-more') return 64 * 3; // 3 skeleton items
+    return 64; // link item height
   };
   // Window virtualizer - uses native window scroll
   // This hook MUST be called unconditionally (React rules of hooks)
@@ -580,7 +586,7 @@ export function LinkList({
                 key={link.id}
                 data-index={virtualRow.index}
                 ref={virtualizer.measureElement}
-                className="absolute top-0 left-0 w-full"
+                className="absolute top-0 left-0 w-full pb-1"
                 style={{ transform: `translateY(${virtualRow.start}px)` }}
               >
                 <div className={`transition-opacity duration-200 ${shouldDim ? "opacity-20 pointer-events-none" : "opacity-100"}`}>
