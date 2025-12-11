@@ -5,7 +5,7 @@ import { DuplicateDetectionService } from "@/features/links/services";
 import { SupabaseLinkRepository } from "@/features/links/repositories";
 import { authenticateRequest } from "@/lib/auth-middleware";
 import type { CreateLinkDTO } from "@/features/links/types";
-import { isAppError, toAppError, ErrorCode } from "@/lib/errors";
+import { isAppError, toAppError, ErrorCode, AppError } from "@/lib/errors";
 
 /**
  * Handler for POST /api/links
@@ -23,6 +23,65 @@ export class CreateLinkHandler {
             metadataService,
             duplicateDetectionService
         );
+    }
+
+    private async validateLink(url: string, title: string): Promise<void> {
+        // 1. Basic URL validation
+        try {
+            new URL(url);
+        } catch {
+            throw new AppError(
+                ErrorCode.INVALID_INPUT,
+                "Invalid URL format",
+                400
+            );
+        }
+
+        // 2. Blocked content check (Basic list)
+        const blockedTerms = ["porn", "xxx", "gambling", "casino", "sex", "adult"];
+        const lowerUrl = url.toLowerCase();
+        const lowerTitle = title.toLowerCase();
+
+        const hasBlockedTerm = blockedTerms.some(term =>
+            lowerUrl.includes(term) || lowerTitle.includes(term)
+        );
+
+        if (hasBlockedTerm) {
+            throw new AppError(
+                ErrorCode.INVALID_INPUT,
+                "Link contains blocked content",
+                400
+            );
+        }
+
+        // 3. Reachability check (Head request)
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+
+            const response = await fetch(url, {
+                method: 'HEAD',
+                signal: controller.signal,
+                headers: { 'User-Agent': 'Caddy-Link-Validator/1.0' }
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok && response.status !== 405 && response.status !== 403) {
+                // 405 Method Not Allowed and 403 Forbidden are common for HEAD requests on some sites,
+                // so we might want to allow them or try GET. For now, fail on 404/500.
+                if (response.status === 404) {
+                    throw new Error("Not found");
+                }
+            }
+        } catch (error) {
+            // Network error or timeout
+            throw new AppError(
+                ErrorCode.INVALID_INPUT,
+                "Link is not reachable",
+                400
+            );
+        }
     }
 
     async handle(request: NextRequest): Promise<NextResponse> {
@@ -66,6 +125,11 @@ export class CreateLinkHandler {
                     },
                     { status: 400 }
                 );
+            }
+
+            // Validate Link (only if it's a URL type)
+            if (content_type === 'url') {
+                await this.validateLink(url, title);
             }
 
             // Create DTO

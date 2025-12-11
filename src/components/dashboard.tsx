@@ -25,6 +25,7 @@ import {
   detectMultipleContentTypes,
   type DetectedContent,
 } from "@/lib/content-detector";
+import { toast } from "sonner";
 import { useShortcuts } from "@/components/shortcut-context";
 
 interface DashboardProps {
@@ -134,7 +135,31 @@ export function Dashboard({ user }: DashboardProps) {
 
     const detectedItems = detectMultipleContentTypes(addInputValue);
     if (detectedItems.length > 0) {
-      handleSubmit(detectedItems);
+      // Validate items
+      const validItems = detectedItems.filter(item => {
+        if (item.type === 'url') {
+          // Basic URL validation
+          try {
+            const url = new URL(item.value);
+            // Require TLD (dot in hostname) unless localhost
+            return url.hostname === 'localhost' || url.hostname.includes('.');
+          } catch {
+            return false;
+          }
+        }
+        return true; // Colors are already validated by detector
+      });
+
+      if (validItems.length === 0) {
+        toast.error("Please enter a valid URL or color");
+        return;
+      }
+
+      if (validItems.length < detectedItems.length) {
+        toast.warning("Some invalid items were skipped");
+      }
+
+      handleSubmit(validItems);
       setAddInputValue("");
       setIsAddingItem(false);
     }
