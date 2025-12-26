@@ -325,7 +325,7 @@ export function Dashboard({ user }: DashboardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-main-container)] relative overflow-x-hidden">
+    <div className="min-h-screen bg-[var(--bg-main-container)] relative">
       {/* Sticky Header Zone */}
       <div className="sticky top-0 z-20 bg-[var(--bg-main-container)]">
         {/* Top Header Bar */}
@@ -369,9 +369,6 @@ export function Dashboard({ user }: DashboardProps) {
                   aria-label={selectedCategoryId === "trash" ? "Trash" : "All Items"}
                 >
                   {selectedCategoryId === "trash" ? "Trash" : "All Items"}
-                  {selectedCategoryId !== "trash" && (
-                    <span className="text-[var(--text-disabled)]"> {filteredLinks.length}</span>
-                  )}
                 </button>
                 {selectedCategoryId === "trash" && (
                   <Badge variant="secondary" className="bg-[var(--bg-field-light)] px-2 py-0.75 text-[var(--text-tertiary)] rounded-full">Auto-deletes in 60 days</Badge>
@@ -485,7 +482,7 @@ export function Dashboard({ user }: DashboardProps) {
       {/* Main Content Area (scrolls with page) */}
       <div
         ref={scrollContainerRef}
-        className="mx-auto w-full max-w-4xl px-4 sm:px-6 md:px-8 pb-32 sm:pb-28"
+        className="mx-auto w-full max-w-4xl px-4 sm:px-6 md:px-8 pt-6 pb-32 sm:pb-28"
       >
         {/* Offset wrapper to align list items with headers */}
         <div className="-mx-2">

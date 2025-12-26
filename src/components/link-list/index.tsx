@@ -140,10 +140,21 @@ export function LinkList({
   const previousLengthRef = React.useRef(links.length);
 
   // Links are already sorted by Dashboard, just separate pinned/unpinned
+  // Deduplicate by ID to prevent duplicate keys
   const displayLinks = React.useMemo(() => {
-    if (isTrashView) return links;
-    const pinned = links.filter((l) => l.is_pinned);
-    const unpinned = links.filter((l) => !l.is_pinned);
+    // Deduplicate links by ID (keep first occurrence)
+    const seenIds = new Set<string>();
+    const uniqueLinks = links.filter((link) => {
+      if (seenIds.has(link.id)) {
+        return false;
+      }
+      seenIds.add(link.id);
+      return true;
+    });
+
+    if (isTrashView) return uniqueLinks;
+    const pinned = uniqueLinks.filter((l) => l.is_pinned);
+    const unpinned = uniqueLinks.filter((l) => !l.is_pinned);
     return [...pinned, ...unpinned];
   }, [links, isTrashView]);
 
@@ -586,7 +597,7 @@ export function LinkList({
                 key={link.id}
                 data-index={virtualRow.index}
                 ref={virtualizer.measureElement}
-                className="absolute top-0 left-0 w-full pb-1"
+                className="absolute top-0 left-0 w-full pb-0.5"
                 style={{ transform: `translateY(${virtualRow.start}px)` }}
               >
                 <div className={`transition-opacity duration-200 ${shouldDim ? "opacity-20 pointer-events-none" : "opacity-100"}`}>
