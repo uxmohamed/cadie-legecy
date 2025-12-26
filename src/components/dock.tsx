@@ -75,7 +75,7 @@ export function Dock({
 
   // Measure widths when content changes
   React.useLayoutEffect(() => {
-    const measureContentWidth = (ref: React.RefObject<HTMLDivElement>): number | null => {
+    const measureContentWidth = (ref: React.RefObject<HTMLDivElement | null>): number | null => {
       if (!ref.current) return null;
       const wrapper = ref.current;
       const firstChild = wrapper.firstElementChild as HTMLElement;
