@@ -176,7 +176,7 @@ export function Dock({
                       <Button
                         aria-label="Switch view"
                         variant="ghost"
-                        className="rounded-full bg-[var(--overlay-hover)] hover:bg-white/25 text-[var(--overlay-text-primary)] shrink-0 transition-colors px-4 h-[50px] gap-2"
+                        className="rounded-full bg-transparent hover:!bg-transparent text-[var(--overlay-text-primary)] shrink-0 transition-colors px-4 h-[50px] gap-2"
                       >
                         {isTrashSelected ? (
                           <IconTrashFilled className="h-[18px] w-[18px] text-[var(--accent-red-primary)]" />
