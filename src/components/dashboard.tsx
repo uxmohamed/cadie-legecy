@@ -10,6 +10,7 @@ import { Dock } from "@/components/dock";
 import { useCategories } from "@/hooks/use-categories";
 import { useLinks } from "@/features/links/hooks";
 import type { User } from "@supabase/supabase-js";
+import type { Link } from "@/features/links/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCheck } from "@tabler/icons-react";
@@ -45,6 +46,9 @@ export function Dashboard({ user }: DashboardProps) {
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const [showTopMask, setShowTopMask] = React.useState(false);
   const [showBottomMask, setShowBottomMask] = React.useState(true);
+  const [selectedCount, setSelectedCount] = React.useState(0);
+  const [selectedLinks, setSelectedLinks] = React.useState<Link[]>([]);
+  const clearSelectionRef = React.useRef<(() => void) | null>(null);
   const { categories } = useCategories(!!user);
   const { registerShortcut, unregisterShortcut } = useShortcuts();
 
@@ -335,7 +339,11 @@ export function Dashboard({ user }: DashboardProps) {
             className={`focus:outline-none ${selectedCategoryId !== null ? 'cursor-pointer' : 'cursor-default'}`}
             aria-label="Go to All Items"
           >
-            <Logo />
+            <img
+              src="/icon.svg"
+              alt="Cadie"
+              className="h-8 w-8"
+            />
           </button>
           <UserMenu user={user} />
         </header>
@@ -515,6 +523,11 @@ export function Dashboard({ user }: DashboardProps) {
                 isLoadingMore={isLoadingMore}
                 hasMore={hasMore}
                 onLoadMore={loadMore}
+                onSelectionChange={(count, links, clearSelection) => {
+                  setSelectedCount(count);
+                  setSelectedLinks(links);
+                  clearSelectionRef.current = clearSelection;
+                }}
               />
             </>
           )}
@@ -536,6 +549,30 @@ export function Dashboard({ user }: DashboardProps) {
         allItemsCount={
           selectedCategoryId !== "trash" ? filteredLinks.length : undefined
         }
+        selectedCount={selectedCount}
+        onClearSelection={() => clearSelectionRef.current?.()}
+        onBatchDelete={async () => {
+          const ids = selectedLinks.map(link => link.id);
+          await handleBatchDeleteLinks(ids);
+        }}
+        onBatchRestore={selectedCategoryId === "trash" ? async () => {
+          const ids = selectedLinks.map(link => link.id);
+          await handleBatchRestoreLinks(ids);
+        } : undefined}
+        onBatchPermanentDelete={selectedCategoryId === "trash" ? async () => {
+          const ids = selectedLinks.map(link => link.id);
+          await handleBatchPermanentDeleteLinks(ids);
+        } : undefined}
+        onBatchPin={selectedCategoryId !== "trash" ? async () => {
+          const ids = selectedLinks.map(link => link.id);
+          await handleBatchPinLinks(ids);
+        } : undefined}
+        onBatchUnpin={selectedCategoryId !== "trash" ? async () => {
+          const ids = selectedLinks.map(link => link.id);
+          await handleBatchUnpinLinks(ids);
+        } : undefined}
+        selectedLinks={selectedLinks}
+        isTrashView={selectedCategoryId === "trash"}
       />
     </div>
   );

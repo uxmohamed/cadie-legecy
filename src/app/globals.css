@@ -225,3 +225,70 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Dock morphing animations */
+@keyframes dockEnterFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dockEnterFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dockExitToTop {
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes dockExitToBottom {
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.dock-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  animation-duration: 200ms;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+}
+
+.dock-selection[data-state="visible"] {
+  animation-name: dockEnterFromBottom;
+  pointer-events: auto;
+}
+
+.dock-selection[data-state="hidden"] {
+  animation-name: dockExitToTop;
+  pointer-events: none;
+}
+
+.dock-view-switcher[data-state="visible"] {
+  animation-name: dockEnterFromTop;
+  pointer-events: auto;
+}
+
+.dock-view-switcher[data-state="hidden"] {
+  animation-name: dockExitToBottom;
+  pointer-events: none;
+}

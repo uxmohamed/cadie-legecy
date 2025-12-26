@@ -47,9 +47,9 @@ export function SelectionToolbar({
 
   if (isTrashView) {
     return (
-      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-[var(--bg-l0-solid)] border border-[var(--border-primary)] shadow-xl rounded-lg p-1.5 animate-in fade-in slide-in-from-bottom-4 duration-200">
-        <div className="flex items-center gap-2 px-2 border-r border-[var(--border-primary)] pr-3 mr-1">
-          <span className="text-sm font-medium text-[var(--text-primary)] select-none">
+      <div className="flex items-center gap-1 py-1.5 px-1.5">
+        <div className="flex items-center gap-2 px-2 border-r border-[var(--overlay-border)] pr-3 mr-1">
+          <span className="text-sm font-[470] text-[var(--overlay-text-primary)] select-none whitespace-nowrap leading-none">
             {selectedCount} selected
           </span>
           <Button
@@ -57,7 +57,7 @@ export function SelectionToolbar({
             size="icon"
             onClick={onClearSelection}
             aria-label="Clear selection"
-            className="h-auto w-auto p-0 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-transparent"
+            className="h-auto w-auto p-0 text-[var(--overlay-text-secondary)] hover:text-[var(--overlay-text-primary)] hover:bg-transparent"
           >
             <IconX className="h-4 w-4" />
           </Button>
@@ -67,7 +67,7 @@ export function SelectionToolbar({
           <Button
             variant="ghost"
             onClick={onBatchRestore}
-            className="h-auto gap-1.5 px-3 py-1.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)]"
+            className="rounded-full h-auto gap-1.5 px-3 py-1.5 text-sm font-[470] text-[var(--overlay-text-primary)] hover:bg-white/25 transition-colors"
           >
             <IconRestore className="h-4 w-4" />
             Restore
@@ -78,7 +78,7 @@ export function SelectionToolbar({
           <Button
             variant="ghost"
             onClick={onBatchPermanentDelete}
-            className="h-auto gap-1.5 px-3 py-1.5 text-sm font-medium text-[var(--accent-red-primary)] hover:bg-[var(--accent-red-subtle)] hover:text-[var(--accent-red-strong)]"
+            className="rounded-full h-auto gap-1.5 px-3 py-1.5 text-sm font-[470] text-[var(--accent-red-primary)] hover:bg-white/25 transition-colors"
           >
             <IconTrash className="h-4 w-4" />
             Delete permanently
@@ -89,9 +89,9 @@ export function SelectionToolbar({
   }
 
   return (
-    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-[var(--bg-l0-solid)] border border-[var(--border-primary)] shadow-xl rounded-lg p-1.5 animate-in fade-in slide-in-from-bottom-4 duration-200">
-      <div className="flex items-center gap-2 px-2 border-r border-[var(--border-primary)] pr-3 mr-1">
-        <span className="text-sm font-medium text-[var(--text-primary)] select-none">
+    <div className="flex items-center gap-1 py-1.5 px-1.5">
+      <div className="flex items-center gap-2 px-2 border-r border-[var(--overlay-border)] pr-3 mr-1">
+        <span className="text-sm font-[470] text-[var(--overlay-text-primary)] select-none whitespace-nowrap leading-none">
           {selectedCount} selected
         </span>
         <Button
@@ -99,25 +99,23 @@ export function SelectionToolbar({
           size="icon"
           onClick={onClearSelection}
           aria-label="Clear selection"
-          className="h-auto w-auto p-0 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-transparent"
+          className="h-auto w-auto p-0 text-[var(--overlay-text-secondary)] hover:text-[var(--overlay-text-primary)] hover:bg-transparent"
         >
           <IconX className="h-4 w-4" />
         </Button>
       </div>
 
-
-
       <Button
         variant="ghost"
         onClick={onBatchDelete}
-        className="h-auto gap-1.5 px-3 py-1.5 text-sm font-medium text-[var(--accent-red-primary)] hover:bg-[var(--accent-red-subtle)] hover:text-[var(--accent-red-strong)]"
+        className="rounded-full h-auto gap-1.5 px-3 py-1.5 text-sm font-[470] text-[var(--accent-red-primary)] hover:bg-white/25 transition-colors"
       >
         <IconTrash className="h-4 w-4" />
         Delete
       </Button>
 
       <Menu>
-        <MenuTrigger className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)] rounded-md transition-colors select-none">
+        <MenuTrigger className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-[470] text-[var(--overlay-text-secondary)] hover:bg-white/25 rounded-full transition-colors select-none h-[50px]">
           <IconDots className="h-4 w-4" />
           Actions
         </MenuTrigger>

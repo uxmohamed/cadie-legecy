@@ -13,7 +13,6 @@ import { LinkListEmpty } from "./link-list-empty";
 import { LinkListItem } from "./link-list-item";
 import { InlineAddItem } from "./inline-add-item";
 import { LinkContextMenu } from "./link-context-menu";
-import { SelectionToolbar } from "./selection-toolbar";
 import { LinkDetailSheet } from "./link-detail-sheet";
 import { LinkItemSkeleton } from "../link-item-skeleton";
 import type { ContextMenuState } from "./types";
@@ -61,6 +60,7 @@ interface LinkListProps {
   isLoadingMore?: boolean;
   hasMore?: boolean;
   onLoadMore?: () => void;
+  onSelectionChange?: (selectedCount: number, selectedLinks: Link[], clearSelection: () => void) => void;
 }
 
 export function LinkList({
@@ -94,6 +94,7 @@ export function LinkList({
   isLoadingMore = false,
   hasMore = false,
   onLoadMore,
+  onSelectionChange,
 }: LinkListProps) {
   const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null);
   const [contextMenu, setContextMenu] = React.useState<ContextMenuState | null>(
@@ -170,6 +171,26 @@ export function LinkList({
     lastSelectedIndex,
     setLastSelectedIndex,
   } = useSelection({ displayLinks });
+
+  // Notify parent of selection changes
+  const onSelectionChangeRef = React.useRef(onSelectionChange);
+  const clearSelectionRef = React.useRef(clearSelection);
+  React.useEffect(() => {
+    onSelectionChangeRef.current = onSelectionChange;
+    clearSelectionRef.current = clearSelection;
+  }, [onSelectionChange, clearSelection]);
+
+  const prevSelectedIdsStrRef = React.useRef<string>('');
+  React.useEffect(() => {
+    const selectedIdsArray = Array.from(selectedIds).sort();
+    const selectedIdsStr = selectedIdsArray.join(',');
+    
+    if (selectedIdsStr !== prevSelectedIdsStrRef.current && onSelectionChangeRef.current) {
+      prevSelectedIdsStrRef.current = selectedIdsStr;
+      const selectedLinksArray = displayLinks.filter(link => selectedIds.has(link.id));
+      onSelectionChangeRef.current(selectedIds.size, selectedLinksArray, clearSelectionRef.current);
+    }
+  }, [selectedIds, displayLinks]);
 
   // Update refs and focused index when links change
   React.useEffect(() => {
@@ -703,18 +724,6 @@ export function LinkList({
           </MenuPopup>
         </Menu>
       )}
-
-      <SelectionToolbar
-        selectedCount={selectedIds.size}
-        onClearSelection={clearSelection}
-        onBatchDelete={handleBatchDelete}
-        onBatchRestore={isTrashView ? handleBatchRestore : undefined}
-        onBatchPermanentDelete={isTrashView ? handleBatchPermanentDelete : undefined}
-        onBatchPin={!isTrashView ? handleBatchPin : undefined}
-        onBatchUnpin={!isTrashView ? handleBatchUnpin : undefined}
-        selectedLinks={displayLinks.filter(link => selectedIds.has(link.id))}
-        isTrashView={isTrashView}
-      />
 
       <LinkDetailSheet
         link={selectedLink}
