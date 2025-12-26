@@ -7,6 +7,7 @@ compatibility_flags = ["nodejs_compat"]
 [env.production.vars]
 NEXT_PUBLIC_SUPABASE_URL = "https://bvgxievzgugjtnlokkgt.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2Z3hpZXZ6Z3VnanRubG9ra2d0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzOTM5ODIsImV4cCI6MjA3ODk2OTk4Mn0.1ZyhGDkCUd_w-1BSYGb0pWkgsNsqQ5dBWpjCwg1m5YY"
+NEXT_PUBLIC_SITE_URL = "https://cadie.app"
 
 # Environment variables for preview deployments
 [env.preview.vars]
