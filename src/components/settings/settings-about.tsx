@@ -13,14 +13,14 @@ export function SettingsAbout() {
         <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-secondary)] flex items-center justify-center shadow-sm overflow-hidden">
           <Image
             src="/icon.svg"
-            alt="Caddy"
+            alt="Cadie"
             width={32}
             height={32}
             className="text-white"
           />
         </div>
         <div>
-          <h3 className="text-base font-semibold">Caddy</h3>
+          <h3 className="text-base font-semibold">Cadie</h3>
           <p className="text-sm text-[var(--text-secondary)]">1.0.0-beta</p>
         </div>
       </div>
@@ -60,7 +60,7 @@ export function SettingsAbout() {
       <div>
         <h3 className="text-sm font-semibold mb-2">Social</h3>
         <p className="text-sm text-[var(--text-secondary)] mb-3">
-          Interested in new and upcoming features for Caddy? Follow us on X and be the first one to know!
+          Interested in new and upcoming features for Cadie? Follow us on X and be the first one to know!
         </p>
         <Button
           variant="outline"
@@ -69,12 +69,12 @@ export function SettingsAbout() {
           asChild
         >
           <a
-            href="https://x.com/caddyapp_"
+            href="https://x.com/cadieapp_"
             target="_blank"
             rel="noopener noreferrer"
           >
             <IconBrandX className="h-4 w-4" />
-            Follow @caddyapp_ on X
+            Follow @cadieapp_ on X
             <IconExternalLink className="h-3 w-3 opacity-50" />
           </a>
         </Button>

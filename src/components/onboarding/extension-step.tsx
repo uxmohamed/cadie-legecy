@@ -97,7 +97,7 @@ export function ExtensionStep({ onComplete, onSkip }: ExtensionStepProps) {
               size="xl"
               className="w-full"
             >
-              Continue to Caddy
+              Continue to Cadie
               <IconArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </>

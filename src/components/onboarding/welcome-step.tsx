@@ -45,7 +45,7 @@ export function WelcomeStep({ user, onComplete, isLoading = false }: WelcomeStep
         <Logo variant="neutral-200" className="h-7 mb-4 w-auto" />
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
-            Welcome to Caddy 👋
+            Welcome to Cadie 👋
           </h1>
           <p className="text-base text-[var(--text-secondary)]">
             Let&apos;s personalize your experience

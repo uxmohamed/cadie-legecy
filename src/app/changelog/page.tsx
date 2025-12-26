@@ -4,8 +4,8 @@ import { ChangelogHeader } from "@/components/changelog/changelog-header";
 import { ChangelogList } from "@/components/changelog/changelog-list";
 
 export const metadata: Metadata = {
-  title: "Changelog | Caddy",
-  description: "Stay up to date with the latest updates and improvements to Caddy",
+  title: "Changelog | Cadie",
+  description: "Stay up to date with the latest updates and improvements to Cadie",
 };
 
 export const runtime = 'edge';

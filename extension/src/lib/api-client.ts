@@ -1,8 +1,8 @@
 /**
- * Caddy API client for Chrome extension
+ * Cadie API client for Chrome extension
  */
 
-import { getApiToken, getCaddyUrl } from "./storage";
+import { getApiToken, getCadieUrl } from "./storage";
 
 export interface SaveLinkRequest {
   url: string;
@@ -23,7 +23,7 @@ export interface ApiResponse<T = any> {
 }
 
 /**
- * Save a link to Caddy
+ * Save a link to Cadie
  */
 export async function saveLink(request: SaveLinkRequest): Promise<ApiResponse> {
   try {
@@ -35,8 +35,8 @@ export async function saveLink(request: SaveLinkRequest): Promise<ApiResponse> {
       };
     }
 
-    const caddyUrl = await getCaddyUrl();
-    const response = await fetch(`${caddyUrl}/api/links`, {
+    const cadieUrl = await getCadieUrl();
+    const response = await fetch(`${cadieUrl}/api/links`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -82,8 +82,8 @@ export async function testConnection(): Promise<ApiResponse> {
       };
     }
 
-    const caddyUrl = await getCaddyUrl();
-    const response = await fetch(`${caddyUrl}/api/links`, {
+    const cadieUrl = await getCadieUrl();
+    const response = await fetch(`${cadieUrl}/api/links`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,

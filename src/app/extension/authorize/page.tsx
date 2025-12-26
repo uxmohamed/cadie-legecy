@@ -33,8 +33,8 @@ export default function ExtensionAuthorizePage() {
     } catch (error) {
       console.error("Error:", error);
       // Redirect to app even on error
-      const caddyUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-      window.location.href = caddyUrl;
+      const cadieUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      window.location.href = cadieUrl;
     }
   }
 
@@ -59,36 +59,36 @@ export default function ExtensionAuthorizePage() {
       const state = params.get("state");
 
       // Use production URL
-      const caddyUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      const cadieUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
 
       // Construct authorization response
       const authData = {
         token: data.token,
         email: currentUser.email,
-        caddyUrl: caddyUrl,
+        cadieUrl: cadieUrl,
         state: state || "",
       };
 
       // Store auth data in DOM for content script
       const authDataElement = document.createElement("div");
-      authDataElement.id = "caddy-auth-data";
+      authDataElement.id = "cadie-auth-data";
       authDataElement.setAttribute("data-auth", JSON.stringify({
         token: authData.token,
         email: authData.email || "",
-        url: authData.caddyUrl,
+        url: authData.cadieUrl,
         state: authData.state || "",
       }));
       authDataElement.style.display = "none";
       document.body.appendChild(authDataElement);
 
       // Dispatch custom event
-      const event = new CustomEvent("caddyAuthSuccess", {
+      const event = new CustomEvent("cadieAuthSuccess", {
         detail: {
           extensionId,
           token: authData.token,
           email: authData.email || "",
-          url: authData.caddyUrl,
-          caddyUrl: authData.caddyUrl,
+          url: authData.cadieUrl,
+          cadieUrl: authData.cadieUrl,
           state: authData.state || "",
         },
       });
@@ -100,13 +100,13 @@ export default function ExtensionAuthorizePage() {
       }, 100);
 
       // Redirect to app immediately
-      window.location.href = caddyUrl;
+      window.location.href = cadieUrl;
 
     } catch (error) {
       console.error("Error authorizing:", error);
       // Redirect to app even on error
-      const caddyUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-      window.location.href = caddyUrl;
+      const cadieUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      window.location.href = cadieUrl;
     }
   }
 

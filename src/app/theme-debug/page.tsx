@@ -276,10 +276,10 @@ export default function ThemeDebugPage() {
     cssVar: `--grey-${key}`,
   }));
 
-  const caddyColors = Object.entries(primitives.caddy).map(([key, value]) => ({
-    name: `caddy-${key}`,
+  const cadieColors = Object.entries(primitives.cadie).map(([key, value]) => ({
+    name: `cadie-${key}`,
     value,
-    cssVar: `--caddy-color-${key}`,
+    cssVar: `--cadie-color-${key}`,
   }));
 
   const greenColors = Object.entries(primitives.green).map(([key, value]) => ({
@@ -443,8 +443,8 @@ export default function ThemeDebugPage() {
                   colors={greyColors}
                 />
                 <ColorSection
-                  title="Caddy Scale"
-                  colors={caddyColors}
+                  title="Cadie Scale"
+                  colors={cadieColors}
                 />
                 <ColorSection
                   title="Green Scale"

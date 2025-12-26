@@ -333,7 +333,7 @@ export async function extractMetadata(url: string, timeoutMs: number = DEFAULT_T
     try {
         const response = await fetch(url, {
             headers: {
-                "User-Agent": "Mozilla/5.0 (compatible; CaddyBot/1.0; +https://caddy.app)",
+                "User-Agent": "Mozilla/5.0 (compatible; CadieBot/1.0; +https://cadie.app)",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
                 "Accept-Language": "en-US,en;q=0.5",
             },

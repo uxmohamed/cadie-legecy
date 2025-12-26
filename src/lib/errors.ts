@@ -1,5 +1,5 @@
 /**
- * Structured error handling for Caddy
+ * Structured error handling for Cadie
  * Provides typed error codes and a structured AppError class
  */
 

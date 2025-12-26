@@ -172,7 +172,7 @@ export function AuthForm() {
         <Logo variant="neutral-200" className="h-7 mb-8 w-auto" />
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
-            Welcome to Caddy
+            Welcome to Cadie
           </h1>
           <p className="text-base text-[var(--text-secondary)]">
             Log in or sign up to get started.

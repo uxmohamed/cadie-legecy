@@ -3,7 +3,7 @@
  */
 
 import { saveLink } from "../lib/api-client";
-import { getApiToken, getCaddyUrl } from "../lib/storage";
+import { getApiToken, getCadieUrl } from "../lib/storage";
 
 // DOM elements
 const pageTitle = document.getElementById("pageTitle") as HTMLDivElement;
@@ -11,7 +11,7 @@ const pageUrl = document.getElementById("pageUrl") as HTMLDivElement;
 const saveBtn = document.getElementById("saveBtn") as HTMLButtonElement;
 const saveBtnText = document.getElementById("saveBtnText") as HTMLSpanElement;
 const settingsBtn = document.getElementById("settingsBtn") as HTMLButtonElement;
-const openCaddyBtn = document.getElementById("openCaddyBtn") as HTMLButtonElement;
+const openCadieBtn = document.getElementById("openCadieBtn") as HTMLButtonElement;
 const statusMessage = document.getElementById("statusMessage") as HTMLDivElement;
 const statusText = document.getElementById("statusText") as HTMLSpanElement;
 
@@ -28,7 +28,7 @@ async function init() {
   if (!token) {
     // Not connected - show connect message
     pageTitle.textContent = "Not Connected";
-    pageUrl.textContent = "Connect your Caddy account to start saving links";
+    pageUrl.textContent = "Connect your Cadie account to start saving links";
     saveBtn.disabled = true;
     saveBtnText.textContent = "Open Settings";
     
@@ -91,7 +91,7 @@ async function savePage() {
     saveBtnText.textContent = "Saving...";
     hideStatus();
 
-    // Save to Caddy
+    // Save to Cadie
     const response = await saveLink({
       url: currentTab.url,
       title: currentTab.title,
@@ -102,18 +102,18 @@ async function savePage() {
       saveBtn.classList.remove("saving");
       saveBtn.classList.add("success");
       saveBtnText.textContent = "Saved!";
-      showStatus("Successfully saved to Caddy", "success");
+      showStatus("Successfully saved to Cadie", "success");
 
       // Reset after 2 seconds
       setTimeout(() => {
         saveBtn.classList.remove("success");
-        saveBtnText.textContent = "Save to Caddy";
+        saveBtnText.textContent = "Save to Cadie";
         saveBtn.disabled = false;
         isSaving = false;
       }, 2000);
     } else {
       saveBtn.classList.remove("saving");
-      saveBtnText.textContent = "Save to Caddy";
+      saveBtnText.textContent = "Save to Cadie";
       saveBtn.disabled = false;
       isSaving = false;
       showStatus(response.error || "Failed to save", "error");
@@ -121,7 +121,7 @@ async function savePage() {
   } catch (error) {
     console.error("Error saving page:", error);
     saveBtn.classList.remove("saving");
-    saveBtnText.textContent = "Save to Caddy";
+    saveBtnText.textContent = "Save to Cadie";
     saveBtn.disabled = false;
     isSaving = false;
     showStatus(
@@ -148,10 +148,10 @@ function openSettings() {
   chrome.runtime.openOptionsPage();
 }
 
-// Open Caddy in new tab
-async function openCaddy() {
-  const caddyUrl = await getCaddyUrl();
-  chrome.tabs.create({ url: caddyUrl });
+// Open Cadie in new tab
+async function openCadie() {
+  const cadieUrl = await getCadieUrl();
+  chrome.tabs.create({ url: cadieUrl });
 }
 
 // Event listeners - use { once: false } but check in handler to prevent double-binding
@@ -161,8 +161,8 @@ if (!saveBtn.onclick) {
 if (!settingsBtn.onclick) {
   settingsBtn.addEventListener("click", openSettings);
 }
-if (!openCaddyBtn.onclick) {
-  openCaddyBtn.addEventListener("click", openCaddy);
+if (!openCadieBtn.onclick) {
+  openCadieBtn.addEventListener("click", openCadie);
 }
 
 // Initialize on load

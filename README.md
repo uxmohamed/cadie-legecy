@@ -1,4 +1,4 @@
-# Caddy
+# Cadie
 
 A modern, keyboard-friendly read-it-later application with Chrome extension and automatic metadata extraction. Save links and colors with a beautiful, minimal interface.
 
@@ -50,7 +50,7 @@ A modern, keyboard-friendly read-it-later application with Chrome extension and 
 
 ```bash
 git clone <your-repo-url>
-cd caddy
+cd cadie
 ```
 
 2. **Install dependencies**
@@ -101,7 +101,7 @@ npm run extension:build
    - Select the `extension/dist` directory
 
 3. **Authorize the extension**
-   - Click the Caddy extension icon
+   - Click the Cadie extension icon
    - Follow the authorization flow
    - Your extension is ready to use!
 
@@ -121,7 +121,7 @@ For detailed extension setup, see the extension's README in the `extension/` dir
 ## 📁 Project Structure
 
 ```
-caddy/
+cadie/
 ├── src/
 │   ├── app/                        # Next.js app directory
 │   │   ├── api/                   # API routes
@@ -198,7 +198,7 @@ caddy/
 
 ## 📊 Analytics with PostHog
 
-Caddy includes PostHog analytics integration for both client-side and server-side tracking. All analytics data is sent to your own PostHog project.
+Cadie includes PostHog analytics integration for both client-side and server-side tracking. All analytics data is sent to your own PostHog project.
 
 ### Setup
 

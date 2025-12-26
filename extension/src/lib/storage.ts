@@ -4,18 +4,18 @@
 
 export interface ExtensionSettings {
   apiToken?: string;
-  caddyUrl?: string;
+  cadieUrl?: string;
   userEmail?: string;
 }
 
 // Default to production URL
 export const EXTENSION_CONFIG = {
-  API_URL: "https://caddy-ed0.pages.dev/api",
-  BASE_URL: "https://caddy-ed0.pages.dev",
+  API_URL: "https://cadie.app/api",
+  BASE_URL: "https://cadie.app",
 };
 
 // Default to production URL
-const DEFAULT_CADDY_URL = EXTENSION_CONFIG.BASE_URL;
+const DEFAULT_CADIE_URL = EXTENSION_CONFIG.BASE_URL;
 
 /**
  * Get extension settings from Chrome storage
@@ -25,7 +25,7 @@ export async function getSettings(): Promise<ExtensionSettings> {
     chrome.storage.sync.get(
       {
         apiToken: "",
-        caddyUrl: DEFAULT_CADDY_URL,
+        cadieUrl: DEFAULT_CADIE_URL,
         userEmail: "",
       },
       (items) => {
@@ -66,10 +66,10 @@ export async function getApiToken(): Promise<string | undefined> {
 }
 
 /**
- * Get Caddy URL
+ * Get Cadie URL
  */
-export async function getCaddyUrl(): Promise<string> {
+export async function getCadieUrl(): Promise<string> {
   const settings = await getSettings();
-  return settings.caddyUrl || DEFAULT_CADDY_URL;
+  return settings.cadieUrl || DEFAULT_CADIE_URL;
 }
 

@@ -19,15 +19,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "showSaveOverlay") {
     const { state, message } = request;
     if (state === "loading") {
-      showOverlay("Saving to Caddy...", "loading");
+      showOverlay("Saving to Cadie...", "loading");
     } else if (state === "success") {
-      showOverlay("Saved to Caddy ✨", "success");
+      showOverlay("Saved to Cadie ✨", "success");
       // Auto-hide after 2.5 seconds
       hideTimeout = window.setTimeout(() => {
         hideOverlay();
       }, 2500);
     } else if (state === "duplicate") {
-      showOverlay("Already in Caddy!", "duplicate");
+      showOverlay("Already in Cadie!", "duplicate");
       // Auto-hide after 2.5 seconds
       hideTimeout = window.setTimeout(() => {
         hideOverlay();
@@ -62,18 +62,18 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
 
   // Create overlay
   overlayElement = document.createElement("div");
-  overlayElement.id = "caddy-save-overlay";
+  overlayElement.id = "cadie-save-overlay";
 
   const content = document.createElement("div");
-  content.className = "caddy-overlay-content";
+  content.className = "cadie-overlay-content";
 
   // Icon
   const icon = document.createElement("div");
-  icon.className = "caddy-overlay-icon";
+  icon.className = "cadie-overlay-icon";
 
   if (state === "loading") {
     const spinner = document.createElement("div");
-    spinner.className = "caddy-spinner";
+    spinner.className = "cadie-spinner";
     icon.appendChild(spinner);
     icon.style.background = "#f3f4f6";
   } else if (state === "success") {
@@ -103,7 +103,7 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
 
   // Text
   const textEl = document.createElement("div");
-  textEl.className = "caddy-overlay-text";
+  textEl.className = "cadie-overlay-text";
   textEl.textContent = text;
 
   content.appendChild(icon);
@@ -128,7 +128,7 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
  */
 function hideOverlay() {
   if (overlayElement) {
-    overlayElement.classList.add("caddy-hiding");
+    overlayElement.classList.add("cadie-hiding");
     setTimeout(() => {
       if (overlayElement) {
         overlayElement.remove();
@@ -139,17 +139,17 @@ function hideOverlay() {
 }
 
 // Listen for authorization success events
-window.addEventListener("caddyAuthSuccess", (event: any) => {
+window.addEventListener("cadieAuthSuccess", (event: any) => {
   const detail = event.detail;
   if (detail && detail.token) {
     // Send auth data to background script
     chrome.runtime.sendMessage({
-      type: "CADDY_AUTH_SUCCESS",
+      type: "CADIE_AUTH_SUCCESS",
       data: {
         token: detail.token,
         email: detail.email,
-        url: detail.url || detail.caddyUrl,
-        caddyUrl: detail.url || detail.caddyUrl,
+        url: detail.url || detail.cadieUrl,
+        cadieUrl: detail.url || detail.cadieUrl,
         state: detail.state,
       },
     }, (response) => {
@@ -177,18 +177,18 @@ if (window.location.pathname.includes("/extension/authorize")) {
 }
 
 function checkForAuthData(): boolean {
-  const authDataElement = document.getElementById("caddy-auth-data");
+  const authDataElement = document.getElementById("cadie-auth-data");
   if (authDataElement) {
     try {
       const authData = JSON.parse(authDataElement.getAttribute("data-auth") || "{}");
       if (authData.token) {
         chrome.runtime.sendMessage({
-          type: "CADDY_AUTH_SUCCESS",
+          type: "CADIE_AUTH_SUCCESS",
           data: {
             token: authData.token,
             email: authData.email,
             url: authData.url,
-            caddyUrl: authData.url,
+            cadieUrl: authData.url,
             state: authData.state,
           },
         }, (response) => {

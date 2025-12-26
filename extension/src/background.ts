@@ -1,5 +1,5 @@
 /**
- * Background service worker for Caddy extension
+ * Background service worker for Cadie extension
  * Handles context menus, keyboard shortcuts, and notifications
  */
 
@@ -16,15 +16,15 @@ const savesInProgress = new Set<string>();
 // Install listener - Create context menu
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
-    id: "save-to-caddy",
-    title: "Save to Caddy",
+    id: "save-to-cadie",
+    title: "Save to Cadie",
     contexts: ["page", "link", "selection"],
   });
 });
 
 // Context menu click listener
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  if (info.menuItemId === "save-to-caddy" && tab?.id) {
+  if (info.menuItemId === "save-to-cadie" && tab?.id) {
     await saveCurrentTab(tab.id);
   }
 });
@@ -57,37 +57,37 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   // Handle authorization success from content script
-  if (request.type === "CADDY_AUTH_SUCCESS" && request.data) {
-    const { token, email, url, caddyUrl, state } = request.data;
+  if (request.type === "CADIE_AUTH_SUCCESS" && request.data) {
+    const { token, email, url, cadieUrl, state } = request.data;
 
     // Use the provided URL, or try to get it from the sender tab
-    let caddyUrlToUse = url || caddyUrl;
+    let cadieUrlToUse = url || cadieUrl;
 
     // If no URL provided, try to get it from the sender tab
-    if (!caddyUrlToUse && sender?.tab?.url) {
+    if (!cadieUrlToUse && sender?.tab?.url) {
       try {
         const tabUrl = new URL(sender.tab.url);
-        caddyUrlToUse = `${tabUrl.protocol}//${tabUrl.host}`;
+        cadieUrlToUse = `${tabUrl.protocol}//${tabUrl.host}`;
       } catch (e) {
         console.error("Error parsing sender URL:", e);
       }
     }
 
     // Fallback to production URL if we really can't determine the URL
-    if (!caddyUrlToUse) {
-      caddyUrlToUse = "https://caddy-ed0.pages.dev";
+    if (!cadieUrlToUse) {
+      cadieUrlToUse = "https://cadie.app";
     }
 
     // Save settings directly to storage
     chrome.storage.sync.set({
       apiToken: token,
-      caddyUrl: caddyUrlToUse,
+      cadieUrl: cadieUrlToUse,
       userEmail: email || "",
     }, () => {
       // Notify any open options pages that auth completed
       chrome.runtime.sendMessage({
-        type: "CADDY_AUTH_COMPLETE",
-        data: { caddyUrl: caddyUrlToUse },
+        type: "CADIE_AUTH_COMPLETE",
+        data: { cadieUrl: cadieUrlToUse },
       }).catch(() => {
         // Options page might not be listening, that's okay
       });
@@ -103,7 +103,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // ============================================================================
 
 /**
- * Save the current tab to Caddy
+ * Save the current tab to Cadie
  */
 async function saveCurrentTab(tabId: number): Promise<void> {
   try {
@@ -151,7 +151,7 @@ async function saveCurrentTab(tabId: number): Promise<void> {
     // Show loading overlay immediately (fast feedback)
     showOverlayInTab(tabId, "loading");
 
-    // Save to Caddy
+    // Save to Cadie
     const response = await saveLink({
       url: tab.url,
       title: tab.title,
@@ -204,14 +204,14 @@ function showOverlayInTab(
     state,
     message,
   }).catch(() => {
-    // Content script might not be loaded, fall back to notification
-    if (state === "success") {
-      showNotification("Saved to Caddy! ✨", "Page saved successfully", "success");
-    } else if (state === "duplicate") {
-      showNotification("Already in Caddy!", "This page was already saved", "info");
-    } else if (state === "error") {
-      showNotification("Error", message || "Failed to save", "error");
-    }
+      // Content script might not be loaded, fall back to notification
+      if (state === "success") {
+        showNotification("Saved to Cadie! ✨", "Page saved successfully", "success");
+      } else if (state === "duplicate") {
+        showNotification("Already in Cadie!", "This page was already saved", "info");
+      } else if (state === "error") {
+        showNotification("Error", message || "Failed to save", "error");
+      }
   });
 }
 
@@ -224,7 +224,7 @@ function showNotification(
   type: "info" | "success" | "error" = "info"
 ): string {
   const iconUrl = chrome.runtime.getURL("icons/icon-48.png");
-  const notificationId = `caddy-${Date.now()}`;
+  const notificationId = `cadie-${Date.now()}`;
 
   chrome.notifications.create(notificationId, {
     type: "basic",

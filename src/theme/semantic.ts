@@ -29,7 +29,7 @@ export const getSemanticTokens = (mode: ThemeMode = 'light') => {
     "text-secondary": isLight ? mix(p.base.black, 57) : mix(p.base.white, 60),
     "text-tertiary": isLight ? mix(p.base.black, 44) : mix(p.base.white, 56),
     "text-disabled": isLight ? mix(p.base.black, 34) : mix(p.base.white, 27),
-    "text-link": p.caddy[5],
+    "text-link": p.cadie[5],
     "text-destructive": isLight ? p.red[600] : p.red[400],
     "text-inverse": isLight ? p.base.white : p.base.black,
     "text-always-white": p.base.white,
@@ -40,17 +40,17 @@ export const getSemanticTokens = (mode: ThemeMode = 'light') => {
     "icon-secondary": p.grey[500],
     "icon-tertiary": isLight ? p.grey[600] : p.grey[500],
     "icon-disabled": isLight ? p.grey[700] : p.grey[600],
-    "icon-link": p.caddy[5],
+    "icon-link": p.cadie[5],
     "icon-destructive": isLight ? p.red[600] : p.red[400],
     "icon-inverse": isLight ? p.base.white : p.base.black,
     "icon-always-white": p.base.white,
     "icon-always-black": p.base.black,
 
     // CTA (Buttons) - adapts to theme
-    "cta-primary-default": p.caddy[5],
-    "cta-primary-hover": p.caddy[4],
-    "cta-primary-active": p.caddy[3],
-    "cta-primary-disabled": isLight ? mix(p.caddy[5], 32) : mix(p.caddy[5], 32),
+    "cta-primary-default": p.cadie[5],
+    "cta-primary-hover": p.cadie[4],
+    "cta-primary-active": p.cadie[3],
+    "cta-primary-disabled": isLight ? mix(p.cadie[5], 32) : mix(p.cadie[5], 32),
 
     "cta-neutral-default": p.grey[800],
     "cta-neutral-hover": p.grey[900],
@@ -140,8 +140,8 @@ export const getSemanticTokens = (mode: ThemeMode = 'light') => {
 
     "accent-yellow-primary": p.yellow[500],
     "accent-yellow-secondary": mix(p.yellow[400], 48),
-    "accent-blue-primary": p.caddy[5],
-    "accent-blue-secondary": mix(p.caddy[4], 36),
+    "accent-blue-primary": p.cadie[5],
+    "accent-blue-secondary": mix(p.cadie[4], 36),
     "accent-red-primary": p.red[500],
     "accent-red-secondary": mix(p.red[400], 36),
 
@@ -154,9 +154,9 @@ export const getSemanticTokens = (mode: ThemeMode = 'light') => {
     "accent-error-fg": p.red[700],
     "accent-error-border": p.red[200],
 
-    "accent-info-bg": p.caddy[9],
-    "accent-info-fg": p.caddy[1],
-    "accent-info-border": p.caddy[8],
+    "accent-info-bg": p.cadie[9],
+    "accent-info-fg": p.cadie[1],
+    "accent-info-border": p.cadie[8],
 
     "button-primary-bg": isLight ? p.base.black : p.base.white,
     "button-primary-bg-hover": isLight ? mix(p.base.black, 84, p.base.white) : mix(p.base.white, 84, p.base.black),

@@ -62,7 +62,7 @@ export class CreateLinkHandler {
             const response = await fetch(url, {
                 method: 'HEAD',
                 signal: controller.signal,
-                headers: { 'User-Agent': 'Caddy-Link-Validator/1.0' }
+                headers: { 'User-Agent': 'Cadie-Link-Validator/1.0' }
             });
 
             clearTimeout(timeoutId);

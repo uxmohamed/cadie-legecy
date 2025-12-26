@@ -11,14 +11,14 @@ const connectedView = document.getElementById("connectedView") as HTMLDivElement
 const connectBtn = document.getElementById("connectBtn") as HTMLButtonElement;
 const disconnectBtn = document.getElementById("disconnectBtn") as HTMLButtonElement;
 const testConnectionBtn = document.getElementById("testConnectionBtn") as HTMLButtonElement;
-const openCaddyBtn = document.getElementById("openCaddyBtn") as HTMLAnchorElement;
+const openCadieBtn = document.getElementById("openCadieBtn") as HTMLAnchorElement;
 const statusMessage = document.getElementById("statusMessage") as HTMLDivElement;
 const statusText = document.getElementById("statusText") as HTMLSpanElement;
 const connectedEmail = document.getElementById("connectedEmail") as HTMLParagraphElement;
 const connectedUrl = document.getElementById("connectedUrl") as HTMLParagraphElement;
 
 // Manual config elements
-const manualCaddyUrl = document.getElementById("manualCaddyUrl") as HTMLInputElement;
+const manualCadieUrl = document.getElementById("manualCadieUrl") as HTMLInputElement;
 const manualApiToken = document.getElementById("manualApiToken") as HTMLInputElement;
 const manualToggleTokenBtn = document.getElementById("manualToggleTokenBtn") as HTMLButtonElement;
 const manualToggleTokenText = document.getElementById("manualToggleTokenText") as HTMLSpanElement;
@@ -28,7 +28,7 @@ const manualTestBtn = document.getElementById("manualTestBtn") as HTMLButtonElem
 // State
 let currentSettings = {
   apiToken: "",
-  caddyUrl: "https://caddy-ed0.pages.dev", // Default to production
+  cadieUrl: "https://cadie.app", // Default to production
   userEmail: "",
 };
 
@@ -43,8 +43,8 @@ async function init() {
   // Update UI based on connection status
   updateView();
 
-  // Update Open Caddy link
-  openCaddyBtn.href = currentSettings.caddyUrl || "https://caddy-ed0.pages.dev";
+  // Update Open Cadie link
+  openCadieBtn.href = currentSettings.cadieUrl || "https://cadie.app";
 }
 
 /**
@@ -61,7 +61,7 @@ function checkAuthorizationParams() {
     // Save settings
     saveSettings({
       apiToken: token,
-      caddyUrl: url || "https://caddy-ed0.pages.dev",
+      cadieUrl: url || "https://cadie.app",
       userEmail: email || "",
     }).then(() => {
       // Clear URL params
@@ -70,7 +70,7 @@ function checkAuthorizationParams() {
       // Reload to show connected state
       init();
       
-      showStatus("Successfully connected to Caddy!", "success");
+      showStatus("Successfully connected to Cadie!", "success");
     });
   }
 }
@@ -80,23 +80,23 @@ function checkAuthorizationParams() {
  */
 async function loadSettings() {
   const settings = await getSettings();
-  let caddyUrl = settings.caddyUrl || "https://caddy-ed0.pages.dev";
+  let cadieUrl = settings.cadieUrl || "https://cadie.app";
   
-  // If caddyUrl is localhost, replace with production URL
-  if (caddyUrl === "http://localhost:3000" || caddyUrl.startsWith("http://localhost")) {
-    caddyUrl = "https://caddy-ed0.pages.dev";
+  // If cadieUrl is localhost, replace with production URL
+  if (cadieUrl === "http://localhost:3000" || cadieUrl.startsWith("http://localhost")) {
+    cadieUrl = "https://cadie.app";
     // Save the corrected URL
-    await saveSettings({ caddyUrl });
+    await saveSettings({ cadieUrl });
   }
   
   currentSettings = {
     apiToken: settings.apiToken || "",
-    caddyUrl: caddyUrl,
+    cadieUrl: cadieUrl,
     userEmail: settings.userEmail || "",
   };
 
   // Update manual config fields
-  if (manualCaddyUrl) manualCaddyUrl.value = currentSettings.caddyUrl;
+  if (manualCadieUrl) manualCadieUrl.value = currentSettings.cadieUrl;
 }
 
 /**
@@ -115,7 +115,7 @@ function updateView() {
       connectedEmail.textContent = currentSettings.userEmail || "Connected";
     }
     if (connectedUrl) {
-      connectedUrl.textContent = currentSettings.caddyUrl;
+      connectedUrl.textContent = currentSettings.cadieUrl;
     }
   } else {
     // Show not connected view
@@ -135,42 +135,42 @@ async function handleConnect() {
     // Get the extension ID
     const extensionId = chrome.runtime.id;
 
-    // Determine Caddy URL - always default to production, never localhost
-    let caddyUrl = currentSettings.caddyUrl;
+    // Determine Cadie URL - always default to production, never localhost
+    let cadieUrl = currentSettings.cadieUrl;
     
     // If no URL set, or if it's localhost, use production
-    if (!caddyUrl || caddyUrl === "http://localhost:3000" || caddyUrl.startsWith("http://localhost")) {
-      caddyUrl = "https://caddy-ed0.pages.dev";
+    if (!cadieUrl || cadieUrl === "http://localhost:3000" || cadieUrl.startsWith("http://localhost")) {
+      cadieUrl = "https://cadie.app";
     }
     
-    // Try to detect if user is on a Caddy page and use that URL (async)
+    // Try to detect if user is on a Cadie page and use that URL (async)
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tabs[0]?.url) {
       try {
         const tabUrl = new URL(tabs[0].url);
-        // Check if this is a Caddy domain (production)
-        if (tabUrl.hostname.includes("caddy-ed0.pages.dev")) {
-          caddyUrl = `${tabUrl.protocol}//${tabUrl.host}`;
+        // Check if this is a Cadie domain (production)
+        if (tabUrl.hostname.includes("cadie.app")) {
+          cadieUrl = `${tabUrl.protocol}//${tabUrl.host}`;
         }
       } catch (e) {
         // Invalid URL, use default
       }
     }
     
-    const authUrl = `${caddyUrl}/extension/authorize?extensionId=${extensionId}`;
+    const authUrl = `${cadieUrl}/extension/authorize?extensionId=${extensionId}`;
 
     // Open authorization page in new tab
     await chrome.tabs.create({ url: authUrl });
 
     // Listen for auth completion message from background script
     const messageListener = (message: any) => {
-      if (message.type === "CADDY_AUTH_COMPLETE") {
+      if (message.type === "CADIE_AUTH_COMPLETE") {
         chrome.runtime.onMessage.removeListener(messageListener);
         loadSettings().then(() => {
           updateView();
           connectBtn.classList.remove("loading");
           connectBtn.disabled = false;
-          showStatus("Successfully connected to Caddy!", "success");
+          showStatus("Successfully connected to Cadie!", "success");
         });
       }
     };
@@ -198,13 +198,13 @@ async function handleDisconnect() {
     await clearSettings();
     currentSettings = {
       apiToken: "",
-      caddyUrl: "https://caddy-ed0.pages.dev",
+      cadieUrl: "https://cadie.app",
       userEmail: "",
     };
 
     // Update view
     updateView();
-    showStatus("Disconnected from Caddy", "info");
+    showStatus("Disconnected from Cadie", "info");
   } catch (error) {
     showStatus("Failed to disconnect", "error");
   } finally {
@@ -239,11 +239,11 @@ async function handleTestConnection() {
  * Handle manual save (advanced config)
  */
 async function handleManualSave() {
-  const caddyUrl = manualCaddyUrl.value.trim();
+  const cadieUrl = manualCadieUrl.value.trim();
   const apiToken = manualApiToken.value.trim();
 
-  if (!caddyUrl) {
-    showStatus("Please enter a Caddy URL", "error");
+  if (!cadieUrl) {
+    showStatus("Please enter a Cadie URL", "error");
     return;
   }
 
@@ -254,7 +254,7 @@ async function handleManualSave() {
 
   // Validate URL
   try {
-    new URL(caddyUrl);
+    new URL(cadieUrl);
   } catch {
     showStatus("Please enter a valid URL", "error");
     return;
@@ -264,7 +264,7 @@ async function handleManualSave() {
     manualSaveBtn.disabled = true;
     manualSaveBtn.classList.add("loading");
 
-    await saveSettings({ caddyUrl, apiToken });
+    await saveSettings({ cadieUrl, apiToken });
     await loadSettings();
     updateView();
 
@@ -336,7 +336,7 @@ manualTestBtn?.addEventListener("click", handleManualTest);
 manualToggleTokenBtn?.addEventListener("click", toggleManualTokenVisibility);
 
 // Save on Enter key in manual inputs
-manualCaddyUrl?.addEventListener("keydown", (e) => {
+manualCadieUrl?.addEventListener("keydown", (e) => {
   if (e.key === "Enter") handleManualSave();
 });
 

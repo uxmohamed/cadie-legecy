@@ -1,7 +1,7 @@
 @import "./tokens.css";
 
-/* Caddy Save Overlay */
-#caddy-save-overlay {
+/* Cadie Save Overlay */
+#cadie-save-overlay {
   position: fixed !important;
   top: 24px !important;
   right: 24px !important;
@@ -10,16 +10,16 @@
     Ubuntu, Cantarell, sans-serif !important;
   -webkit-font-smoothing: antialiased !important;
   text-rendering: optimizeLegibility !important;
-  animation: caddySlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  animation: cadieSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
   pointer-events: none !important;
 }
 
-#caddy-save-overlay.caddy-hiding {
-  animation: caddySlideOut 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+#cadie-save-overlay.cadie-hiding {
+  animation: cadieSlideOut 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   opacity: 0;
 }
 
-.caddy-overlay-content {
+.cadie-overlay-content {
   background: var(--bg-l2-solid) !important;
   border-radius: 16px !important;
   box-shadow: 0 12px 40px oklch(0 0 0 / 0.15),
@@ -32,7 +32,7 @@
   pointer-events: auto !important;
 }
 
-.caddy-overlay-icon {
+.cadie-overlay-icon {
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -44,12 +44,12 @@
   transition: background-color 0.3s ease;
 }
 
-.caddy-overlay-icon svg {
+.cadie-overlay-icon svg {
   width: 28px;
   height: 28px;
 }
 
-.caddy-spinner {
+.cadie-spinner {
   width: 28px;
   height: 28px;
   border: 3px solid color-mix(
@@ -59,10 +59,10 @@
     );
   border-top-color: var(--accent-blue-primary);
   border-radius: 50%;
-  animation: caddySpin 0.7s linear infinite;
+  animation: cadieSpin 0.7s linear infinite;
 }
 
-.caddy-overlay-text {
+.cadie-overlay-text {
   font-size: 17px;
   font-weight: 600;
   color: var(--text-primary);
@@ -70,7 +70,7 @@
   letter-spacing: -0.01em;
 }
 
-@keyframes caddySlideIn {
+@keyframes cadieSlideIn {
   from {
     opacity: 0;
     transform: translateX(8px);
@@ -81,7 +81,7 @@
   }
 }
 
-@keyframes caddySlideOut {
+@keyframes cadieSlideOut {
   from {
     opacity: 1;
     transform: translateX(0);
@@ -92,7 +92,7 @@
   }
 }
 
-@keyframes caddySpin {
+@keyframes cadieSpin {
   to {
     transform: rotate(360deg);
   }

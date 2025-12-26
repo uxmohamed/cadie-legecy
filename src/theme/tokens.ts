@@ -42,7 +42,7 @@ const addPaletteToTheme = (themeTokens: Record<string, string>) => {
 
   // Scales
   add("grey", p.grey);
-  add("caddy-color", p.caddy);
+  add("cadie-color", p.cadie);
   add("green", p.green);
   add("yellow", p.yellow);
   add("red", p.red);

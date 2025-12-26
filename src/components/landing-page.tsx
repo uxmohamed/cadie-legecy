@@ -42,7 +42,7 @@ export function LandingPage() {
                 </Button>
               </Link>
               <a
-                href="https://x.com/caddyapp_"
+                href="https://x.com/cadieapp_"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -113,7 +113,7 @@ export function LandingPage() {
                           Changelog
                         </Link>
                         <a
-                          href="https://x.com/caddyapp_"
+                          href="https://x.com/cadieapp_"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-2xl font-medium text-[var(--text-primary)] hover:text-[var(--text-secondary)] transition-colors"
@@ -144,7 +144,7 @@ export function LandingPage() {
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-[var(--text-primary)] mb-4 sm:mb-6 font-custom leading-tight sm:leading-snug">
             The simplest way <br className="hidden sm:block" />{" "}
             to <span
-              className="bg-[color-mix(in_oklab,var(--caddy-color-6)_12%,transparent)] text-[var(--text-link)] px-1"
+              className="bg-[color-mix(in_oklab,var(--cadie-color-6)_12%,transparent)] text-[var(--text-link)] px-1"
             >save links</span>
           </h1>
 
@@ -170,7 +170,7 @@ export function LandingPage() {
               <div className="relative w-full overflow-hidden rounded-2xl bg-[var(--bg-l2-solid)]">
                 <Image
                   src="/product-landing.png"
-                  alt="Caddy Interface"
+                  alt="Cadie Interface"
                   width={1200}
                   height={800}
                   className="w-full h-auto"

@@ -15,7 +15,7 @@ export const primitives = {
     800: "oklch(0.309 0 0)",
     900: "oklch(0.13 0 0)",
   },
-  caddy: {
+  cadie: {
     1: "oklch(0.258 0.069 252.3)",
     2: "oklch(0.345 0.092 252.3)",
     3: "oklch(0.431 0.115 252.3)",

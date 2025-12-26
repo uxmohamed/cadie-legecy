@@ -35,8 +35,8 @@ const customFont = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://caddy-ed0.pages.dev"),
-  title: "Caddy",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://cadie.app"),
+  title: "Cadie",
   description: "Personal read-it-later app",
   icons: {
     icon: [
@@ -47,22 +47,22 @@ export const metadata: Metadata = {
     shortcut: "/icon.png",
   },
   openGraph: {
-    title: "Caddy",
+    title: "Cadie",
     description: "Personal read-it-later app",
     type: "website",
-    url: process.env.NEXT_PUBLIC_SITE_URL || "https://caddy-ed0.pages.dev",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://cadie.app",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Caddy - Personal read-it-later app",
+        alt: "Cadie - Personal read-it-later app",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Caddy",
+    title: "Cadie",
     description: "Personal read-it-later app",
     images: ["/og-image.png"],
   },
