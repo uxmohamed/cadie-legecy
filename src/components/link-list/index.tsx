@@ -13,7 +13,7 @@ import { LinkListEmpty } from "./link-list-empty";
 import { LinkListItem } from "./link-list-item";
 import { InlineAddItem } from "./inline-add-item";
 import { LinkContextMenu } from "./link-context-menu";
-import { LinkDetailSheet } from "./link-detail-sheet";
+import { LinkDetailDialog } from "./link-detail-dialog";
 import { LinkItemSkeleton } from "@/components/skeletons";
 import type { ContextMenuState } from "./types";
 import { Menu, MenuPopup, MenuTrigger } from "@/components/ui/menu";
@@ -784,14 +784,8 @@ export function LinkList({
         </Menu>
       )}
 
-      <LinkDetailSheet
+      <LinkDetailDialog
         link={selectedLink}
-        links={displayLinks}
-        currentIndex={
-          selectedLink
-            ? displayLinks.findIndex((l) => l.id === selectedLink.id)
-            : -1
-        }
         open={sheetOpen}
         onOpenChange={(open) => {
           setSheetOpen(open);
@@ -799,17 +793,6 @@ export function LinkList({
             setSelectedLink(null);
           }
         }}
-        onLinkChange={(link) => {
-          setSelectedLink(link);
-        }}
-        onEdit={!isTrashView ? () => onEdit(selectedLink!) : undefined}
-        onCopy={onCopy}
-        onPin={!isTrashView ? onPin : undefined}
-        onUnpin={!isTrashView ? onUnpin : undefined}
-        onDelete={!isTrashView ? onDelete : undefined}
-        onRestore={isTrashView ? onRestore : undefined}
-        onPermanentDelete={isTrashView ? confirmPermanentDelete : undefined}
-        isTrashView={isTrashView}
       />
 
       <AlertDialog open={deleteConfirmation.isOpen} onOpenChange={(open) => setDeleteConfirmation(prev => ({ ...prev, isOpen: open }))}>

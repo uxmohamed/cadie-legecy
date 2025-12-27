@@ -217,7 +217,7 @@ export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
         src={currentImageUrl}
         alt={alt}
         className={cn(
-          "h-5 w-5 rounded object-cover",
+          "h-full w-full rounded object-cover",
           imageLoaded ? "opacity-100" : "opacity-0"
         )}
         onLoad={handleLoad}

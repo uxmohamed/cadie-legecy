@@ -37,7 +37,7 @@ const customFont = localFont({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://cadie.app"),
   title: "Cadie",
-  description: "Personal read-it-later app",
+  description: "Your personal library for the internet",
   icons: {
     icon: [
       { url: "/icon.svg", type: "image/svg+xml" },
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Cadie",
-    description: "Personal read-it-later app",
+    description: "Your personal library for the internet",
     type: "website",
     url: process.env.NEXT_PUBLIC_SITE_URL || "https://cadie.app",
     images: [
@@ -56,14 +56,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Cadie - Personal read-it-later app",
+        alt: "Cadie - Your personal library for the internet",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Cadie",
-    description: "Personal read-it-later app",
+    description: "Your personal library for the internet",
     images: ["/og-image.png"],
   },
 };
