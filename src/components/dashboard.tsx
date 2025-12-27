@@ -210,7 +210,7 @@ export function Dashboard({ user }: DashboardProps) {
   // Register keyboard shortcuts
   React.useEffect(() => {
     registerShortcut({
-      key: "c",
+      key: "a",
       description: "Add new item",
       category: "Global",
       action: () => {
@@ -235,15 +235,6 @@ export function Dashboard({ user }: DashboardProps) {
       category: "Navigation",
       action: () => {
         setSelectedCategoryId("trash");
-      },
-    });
-
-    registerShortcut({
-      key: "A",
-      description: "Switch to All Items view",
-      category: "Navigation",
-      action: () => {
-        setSelectedCategoryId(null);
       },
     });
 
@@ -276,20 +267,6 @@ export function Dashboard({ user }: DashboardProps) {
         }
       }
 
-      // Handle Shift+A for All Items view
-      if (e.shiftKey && e.key === "A") {
-        const target = e.target as HTMLElement;
-        const isInputFocused =
-          target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable;
-
-        if (!isInputFocused) {
-          e.preventDefault();
-          setSelectedCategoryId(null);
-        }
-      }
-
       // Handle '1' key for All Items view
       if (e.key === "1") {
         const target = e.target as HTMLElement;
@@ -308,7 +285,7 @@ export function Dashboard({ user }: DashboardProps) {
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      unregisterShortcut("c");
+      unregisterShortcut("a");
       unregisterShortcut("/");
     };
   }, [registerShortcut, unregisterShortcut]);
@@ -426,29 +403,6 @@ export function Dashboard({ user }: DashboardProps) {
                     <DropdownMenuItem
                       onSelect={(e) => {
                         e.preventDefault();
-                        handleSortChange("title");
-                      }}
-                      className={`cursor-pointer rounded-xl ${sortBy === "title" ? "bg-[rgba(255,255,255,0.1)]" : ""}`}
-                    >
-                      {sortBy === "title" ? (
-                        <div className="flex items-center justify-center w-5 h-5 rounded-full bg-white mr-2">
-                          <IconCheck className="h-3 w-3 text-black" />
-                        </div>
-                      ) : (
-                        <div className="w-5 h-5 mr-2" />
-                      )}
-                      Name
-                      {sortBy === "title" && (
-                        sortOrder === "asc" ? (
-                          <IconArrowUp className="ml-auto h-4 w-4" />
-                        ) : (
-                          <IconArrowDown className="ml-auto h-4 w-4" />
-                        )
-                      )}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={(e) => {
-                        e.preventDefault();
                         handleSortChange("date");
                       }}
                       className={`cursor-pointer rounded-xl ${sortBy === "date" ? "bg-[rgba(255,255,255,0.1)]" : ""}`}
@@ -462,6 +416,29 @@ export function Dashboard({ user }: DashboardProps) {
                       )}
                       Date Added
                       {sortBy === "date" && (
+                        sortOrder === "asc" ? (
+                          <IconArrowUp className="ml-auto h-4 w-4" />
+                        ) : (
+                          <IconArrowDown className="ml-auto h-4 w-4" />
+                        )
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        handleSortChange("title");
+                      }}
+                      className={`cursor-pointer rounded-xl ${sortBy === "title" ? "bg-[rgba(255,255,255,0.1)]" : ""}`}
+                    >
+                      {sortBy === "title" ? (
+                        <div className="flex items-center justify-center w-5 h-5 rounded-full bg-white mr-2">
+                          <IconCheck className="h-3 w-3 text-black" />
+                        </div>
+                      ) : (
+                        <div className="w-5 h-5 mr-2" />
+                      )}
+                      Name
+                      {sortBy === "title" && (
                         sortOrder === "asc" ? (
                           <IconArrowUp className="ml-auto h-4 w-4" />
                         ) : (
@@ -515,7 +492,7 @@ export function Dashboard({ user }: DashboardProps) {
                 onBatchUnpin={handleBatchUnpinLinks}
                 onUpdate={handleUpdateLink}
                 isTrashView={selectedCategoryId === "trash"}
-                isAddingItem={isAddingItem}
+                isAddingItem={isAddingItem && selectedCategoryId !== "trash"}
                 addInputValue={addInputValue}
                 onAddInputChange={handleInlineAddInputChange}
                 onAddSubmit={handleInlineAddSubmit}

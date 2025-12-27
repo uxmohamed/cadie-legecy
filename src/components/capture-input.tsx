@@ -47,7 +47,7 @@ export function CaptureInput({
   React.useEffect(() => {
 
     registerShortcut({
-      key: "c",
+      key: "a",
       description: "Focus capture input",
       category: "Global",
       action: () => {
@@ -74,7 +74,7 @@ export function CaptureInput({
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      unregisterShortcut("c");
+      unregisterShortcut("a");
       unregisterShortcut("/");
     };
   }, [registerShortcut, unregisterShortcut]);

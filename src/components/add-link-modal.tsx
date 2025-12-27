@@ -29,7 +29,7 @@ export function AddLinkModal({
   // Register keyboard shortcuts to open modal
   React.useEffect(() => {
     registerShortcut({
-      key: "c",
+      key: "a",
       description: "Add new item",
       category: "Global",
       action: () => {
@@ -54,7 +54,7 @@ export function AddLinkModal({
     });
 
     return () => {
-      unregisterShortcut("c");
+      unregisterShortcut("a");
       unregisterShortcut("/");
     };
   }, [registerShortcut, unregisterShortcut, isOpen]);
