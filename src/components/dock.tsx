@@ -237,7 +237,7 @@ export function Dock({
                         </div>
                       ) : (
                         <Kbd className="h-5 px-1.5 text-[10px] bg-[rgba(255,255,255,0.1)] text-[var(--overlay-text-secondary)]">
-                          ⇧ T
+                          ⇧T
                         </Kbd>
                       )}
                     </button>

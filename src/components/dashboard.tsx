@@ -3,7 +3,7 @@
 import * as React from "react";
 
 import { LinkList } from "@/components/link-list";
-import { LinkListSkeleton } from "@/components/link-list-skeleton";
+import { LinkListSkeleton } from "@/components/skeletons";
 import { UserMenu } from "@/components/user-menu";
 import { Logo } from "@/components/logo";
 import { Dock } from "@/components/dock";

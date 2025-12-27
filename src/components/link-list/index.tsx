@@ -14,7 +14,7 @@ import { LinkListItem } from "./link-list-item";
 import { InlineAddItem } from "./inline-add-item";
 import { LinkContextMenu } from "./link-context-menu";
 import { LinkDetailSheet } from "./link-detail-sheet";
-import { LinkItemSkeleton } from "../link-item-skeleton";
+import { LinkItemSkeleton } from "@/components/skeletons";
 import type { ContextMenuState } from "./types";
 import { Menu, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 import {
