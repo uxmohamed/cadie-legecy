@@ -505,13 +505,72 @@ export function LinkList({
     if (item.type === 'loading-more') return 64 * 3; // 3 skeleton items
     return 64; // link item height
   };
+
+  // Track mount state to prevent flushSync during initial render
+  // This fixes the React 18 "flushSync during render" warning from TanStack Virtual
+  // Reference: https://github.com/TanStack/virtual/issues/628
+  const isMountedRef = React.useRef(false);
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // Custom observeElementOffset that guards the callback with isMounted check
+  // This prevents flushSync from being called during React's render phase
+  const observeElementOffset = React.useCallback(
+    (_instance: unknown, cb: (offset: number, isScrolling: boolean) => void) => {
+      const handleScroll = () => {
+        // Only call the callback if the component is mounted
+        // This prevents the flushSync warning during initial render
+        if (isMountedRef.current) {
+          cb(window.scrollY, false);
+        }
+      };
+
+      // Initial call (deferred to avoid flushSync during render)
+      queueMicrotask(() => {
+        if (isMountedRef.current) {
+          cb(window.scrollY, false);
+        }
+      });
+
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      window.addEventListener('resize', handleScroll, { passive: true });
+
+      return () => {
+        window.removeEventListener('scroll', handleScroll);
+        window.removeEventListener('resize', handleScroll);
+      };
+    },
+    []
+  );
+
   // Window virtualizer - uses native window scroll
   // This hook MUST be called unconditionally (React rules of hooks)
   const virtualizer = useWindowVirtualizer({
     count: virtualItems.length,
     estimateSize: getItemSize,
     overscan: 5, // Render 5 extra items above/below viewport
+    observeElementOffset, // Custom offset observer to fix flushSync warning
   });
+
+  // Wrap measureElement to avoid flushSync during render
+  // This defers the measurement to avoid React's "flushSync during render" warning
+  const measureElement = React.useCallback(
+    (node: HTMLElement | null) => {
+      if (node) {
+        // Defer measurement to next microtask to avoid flushSync during render
+        queueMicrotask(() => {
+          if (isMountedRef.current) {
+            virtualizer.measureElement(node);
+          }
+        });
+      }
+    },
+    [virtualizer]
+  );
 
   const virtualRows = virtualizer.getVirtualItems();
 
@@ -555,7 +614,7 @@ export function LinkList({
               <div
                 key="pinned-header"
                 data-index={virtualRow.index}
-                ref={virtualizer.measureElement}
+                ref={measureElement}
                 className="absolute top-0 left-0 w-full"
                 style={{ transform: `translateY(${virtualRow.start}px)` }}
               >
@@ -574,7 +633,7 @@ export function LinkList({
               <div
                 key="all-links-header"
                 data-index={virtualRow.index}
-                ref={virtualizer.measureElement}
+                ref={measureElement}
                 className="absolute top-0 left-0 w-full"
                 style={{ transform: `translateY(${virtualRow.start}px)` }}
               >
@@ -593,7 +652,7 @@ export function LinkList({
               <div
                 key="add-input"
                 data-index={virtualRow.index}
-                ref={virtualizer.measureElement}
+                ref={measureElement}
                 className="absolute top-0 left-0 w-full"
                 style={{ transform: `translateY(${virtualRow.start}px)` }}
               >
@@ -617,7 +676,7 @@ export function LinkList({
               <div
                 key={link.id}
                 data-index={virtualRow.index}
-                ref={virtualizer.measureElement}
+                ref={measureElement}
                 className="absolute top-0 left-0 w-full pb-0.5"
                 style={{ transform: `translateY(${virtualRow.start}px)` }}
               >
@@ -664,7 +723,7 @@ export function LinkList({
               <div
                 key="loading-more"
                 data-index={virtualRow.index}
-                ref={virtualizer.measureElement}
+                ref={measureElement}
                 className="absolute top-0 left-0 w-full"
                 style={{ transform: `translateY(${virtualRow.start}px)` }}
               >
