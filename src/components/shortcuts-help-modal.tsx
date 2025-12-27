@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useShortcuts } from "./shortcut-context";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Kbd } from "@/components/ui/kbd";
 
 export function ShortcutsHelpModal() {
   const { isHelpOpen, toggleHelp, shortcuts } = useShortcuts();
@@ -19,6 +20,65 @@ export function ShortcutsHelpModal() {
     return groups;
   }, [shortcuts]);
 
+  // Format keyboard shortcut key for display
+  const formatKey = (key: string): string[] => {
+    // Map modifier keys to symbols
+    const modifierSymbols: Record<string, string> = {
+      "cmd": "⌘",
+      "command": "⌘",
+      "ctrl": "⌃",
+      "control": "⌃",
+      "alt": "⌥",
+      "option": "⌥",
+      "shift": "⇧",
+    };
+    
+    // Handle modifier key combinations (Cmd+/ -> ⌘, /)
+    if (key.includes("+")) {
+      const parts = key.split(/\+/);
+      return parts.map((p) => {
+        const normalized = p.toLowerCase();
+        if (modifierSymbols[normalized]) {
+          return modifierSymbols[normalized];
+        }
+        return p.toUpperCase();
+      });
+    }
+    
+    // Handle special keys
+    const specialKeys: Record<string, string> = {
+      "Enter": "ENTER",
+      "Backspace": "BACKSPACE",
+      "Escape": "ESC",
+      "Space": "SPACE",
+      "ArrowUp": "↑",
+      "ArrowDown": "↓",
+      "ArrowLeft": "←",
+      "ArrowRight": "→",
+    };
+    
+    if (specialKeys[key]) {
+      return [specialKeys[key]];
+    }
+    
+    // Single character keys - uppercase
+    if (key.length === 1) {
+      return [key.toUpperCase()];
+    }
+    
+    // Check if the key itself is a modifier
+    const normalizedKey = key.toLowerCase();
+    if (modifierSymbols[normalizedKey]) {
+      return [modifierSymbols[normalizedKey]];
+    }
+    
+    // Default: uppercase and split by spaces if needed
+    return key.split(" ").map((k) => {
+      const normalized = k.toLowerCase();
+      return modifierSymbols[normalized] || k.toUpperCase();
+    });
+  };
+
   return (
     <Dialog open={isHelpOpen} onOpenChange={toggleHelp}>
       <DialogContent className="sm:max-w-[600px]">
@@ -30,24 +90,27 @@ export function ShortcutsHelpModal() {
             <div key={category}>
               <h3 className="font-semibold text-[var(--text-primary)] mb-3">{category}</h3>
               <div className="space-y-2">
-                {items.map((shortcut) => (
-                  <div
-                    key={shortcut.key + shortcut.description}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span className="text-[var(--text-secondary)]">{shortcut.description}</span>
-                    <div className="flex gap-1">
-                      {shortcut.key.split(" ").map((k) => (
-                        <kbd
-                          key={k}
-                          className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border border-[var(--border-primary)] bg-[var(--bg-l1-solid)] px-1.5 font-mono text-[10px] font-medium text-[var(--text-tertiary)] uppercase"
-                        >
-                          {k}
-                        </kbd>
-                      ))}
+                {items.map((shortcut) => {
+                  const formattedKeys = formatKey(shortcut.key);
+                  return (
+                    <div
+                      key={shortcut.key + shortcut.description}
+                      className="flex items-center justify-between text-sm"
+                    >
+                      <span className="text-[var(--text-secondary)]">{shortcut.description}</span>
+                      <div className="flex gap-1">
+                        {formattedKeys.map((k, index) => (
+                          <Kbd
+                            key={`${k}-${index}`}
+                            className="pointer-events-none h-5 px-1.5 text-[10px] uppercase bg-[var(--bg-l1-solid)] text-[var(--text-tertiary)]"
+                          >
+                            {k}
+                          </Kbd>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
