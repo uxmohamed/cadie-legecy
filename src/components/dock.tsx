@@ -63,7 +63,7 @@ export function Dock({
 
   const isAllItemsSelected = selectedCategoryId === null;
   const isTrashSelected = selectedCategoryId === "trash";
-  const hasSelection = selectedCount > 0;
+  const hasSelection = selectedCount >= 2;
 
   // Track animation direction
   React.useEffect(() => {

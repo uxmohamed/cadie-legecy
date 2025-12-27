@@ -55,7 +55,7 @@ export function useKeyboardNavigation({
       { key: "e", description: "Edit selected link", category: "Actions", action: () => { } },
       { key: "d", description: "Move to Trash", category: "Actions", action: () => { } },
       { key: "Backspace", description: "Delete selection", category: "Actions", action: () => { } },
-      { key: "Shift+a", description: "Select all", category: "Actions", action: () => { } },
+      { key: "Cmd+a", description: "Select all", category: "Actions", action: () => { } },
     ] as const;
 
     shortcuts.forEach((s) => registerShortcut(s));
@@ -174,8 +174,8 @@ export function useKeyboardNavigation({
         linkRefs.current[lastIndex]?.focus();
       }
 
-      // Batch / Selection actions - Shift+A to select all
-      if (e.shiftKey && e.key.toLowerCase() === "a") {
+      // Batch / Selection actions - Cmd+A to select all
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a") {
         e.preventDefault();
         selectAll();
         return;

@@ -33,7 +33,7 @@ export function SelectionToolbar({
   selectedLinks = [],
   isTrashView = false,
 }: SelectionToolbarProps) {
-  if (selectedCount === 0) return null;
+  if (selectedCount < 2) return null;
 
   // Determine which pin/unpin actions to show
   const allPinned = selectedLinks.length > 0 && selectedLinks.every(link => link.is_pinned);
@@ -115,7 +115,7 @@ export function SelectionToolbar({
       </Button>
 
       <Menu>
-        <MenuTrigger className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-[470] text-[var(--overlay-text-secondary)] hover:bg-white/25 rounded-full transition-colors select-none h-[50px]">
+        <MenuTrigger className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-[470] text-[var(--overlay-text-secondary)] hover:bg-white/25 rounded-full transition-colors select-none h-auto">
           <IconDots className="h-4 w-4" />
           Actions
         </MenuTrigger>

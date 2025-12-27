@@ -322,6 +322,10 @@ export function Dashboard({ user }: DashboardProps) {
               className="h-8 w-8"
             />
           </button>
+          <span className="ml-2 px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)] border border-dashed border-[var(--border-primary)] rounded-full">
+            Beta
+          </span>
+          <div className="flex-1" />
           <UserMenu user={user} />
         </header>
 
