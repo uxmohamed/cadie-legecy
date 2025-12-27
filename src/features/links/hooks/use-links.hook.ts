@@ -634,12 +634,38 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
     const handleSubmit = async (items: DetectedContent[]) => {
         if (items.length === 0) return;
 
+        // Client-side duplicate detection - check against existing links
+        const existingUrls = new Set(links.map((link) => link.url.toLowerCase()));
+        const newItems: DetectedContent[] = [];
+        const duplicateItems: DetectedContent[] = [];
+
+        for (const item of items) {
+            if (existingUrls.has(item.value.toLowerCase())) {
+                duplicateItems.push(item);
+            } else {
+                newItems.push(item);
+            }
+        }
+
+        // If all items are duplicates, show toast and return early (no server call)
+        if (newItems.length === 0) {
+            showSubmitToast(
+                items.length,
+                0, // successCount
+                duplicateItems.length,
+                0, // restored
+                0, // failures
+                items[0]?.type
+            );
+            return;
+        }
+
         setIsLoading(true);
-        const toastId = toast.loading(`Adding ${items.length} ${items.length === 1 ? 'item' : 'items'}...`);
+        const toastId = toast.loading(`Adding ${newItems.length} ${newItems.length === 1 ? 'item' : 'items'}...`);
 
         try {
-            // Convert DetectedContent to links array for batch API
-            const links = items.map(({ value, type }) => ({
+            // Convert DetectedContent to links array for batch API (only new items)
+            const linksToAdd = newItems.map(({ value, type }) => ({
                 url: value,
                 title: value,
                 content_type: type,
@@ -650,7 +676,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
             const response = await fetch('/api/links/batch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'add', links }),
+                body: JSON.stringify({ action: 'add', links: linksToAdd }),
             });
 
             if (!response.ok) {
@@ -658,7 +684,10 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 throw new Error(errorData.error || 'Failed to add links');
             }
 
-            const { count, links: createdLinks } = await response.json();
+            const responseData = await response.json();
+            const createdLinks = responseData.links || [];
+            const count = responseData.count || createdLinks.length;
+            const restored = responseData.restored || 0;
 
             // Add all links to UI at once (deduping to prevent duplicate keys)
             if (createdLinks && createdLinks.length > 0) {
@@ -686,11 +715,18 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
 
             toast.dismiss(toastId);
 
-            if (count === 1) {
-                toast.success(items[0]?.type === "color" ? "Color saved" : "Link saved");
-            } else {
-                toast.success(`${count} ${items[0]?.type === "color" ? "colors" : "links"} saved`);
-            }
+            // Calculate success count (new links only, not restored)
+            const successCount = count - restored;
+            
+            // Use the comprehensive toast helper (include client-side detected duplicates)
+            showSubmitToast(
+                items.length,
+                successCount,
+                duplicateItems.length,
+                restored,
+                0, // failures
+                items[0]?.type
+            );
         } catch (error) {
             toast.dismiss(toastId);
             toast.error(
