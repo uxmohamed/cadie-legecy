@@ -71,7 +71,7 @@ export function ChangelogHeader() {
                     </Button>
                   </Link>
                   <Link href="/auth">
-                    <Button className="py-2 px-4 bg-[var(--bg-inverse-primary)] border-0 text-[var(--text-inverse)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--bg-inverse-strong)] transition-colors duration-150">
+                    <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-9 px-3.5 py-2 text-base rounded-lg bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
                       Get Started
                     </Button>
                   </Link>
@@ -109,7 +109,7 @@ export function ChangelogHeader() {
                         </Link>
                       ) : (
                         <Link href="/auth" onClick={() => setIsMenuOpen(false)}>
-                          <Button className="py-2 px-4 bg-[var(--bg-inverse-primary)] border-0 text-[var(--text-inverse)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--bg-inverse-strong)] transition-colors duration-150">
+                          <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
                             Get Started
                           </Button>
                         </Link>
