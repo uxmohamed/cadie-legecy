@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ChangelogHeader } from "@/components/changelog/changelog-header";
+import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
   title: "Terms of Service | Cadie",
@@ -287,6 +288,7 @@ export default function TermsPage() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

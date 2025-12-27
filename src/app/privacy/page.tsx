@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ChangelogHeader } from "@/components/changelog/changelog-header";
+import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | Cadie",
@@ -187,6 +188,7 @@ export default function PrivacyPage() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useState } from "react";
+import { Footer } from "@/components/footer";
 
 export function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -183,6 +184,7 @@ export function LandingPage() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

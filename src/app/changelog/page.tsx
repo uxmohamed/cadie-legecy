@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { allChangelogs } from "contentlayer/generated";
 import { ChangelogHeader } from "@/components/changelog/changelog-header";
 import { ChangelogList } from "@/components/changelog/changelog-list";
+import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
   title: "Changelog | Cadie",
@@ -41,6 +42,7 @@ export default function ChangelogPage() {
           <ChangelogList entries={sortedEntries} />
         </div>
       </main>
+      <Footer />
     </div>
   );
 }
