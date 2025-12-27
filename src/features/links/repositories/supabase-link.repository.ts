@@ -309,4 +309,50 @@ export class SupabaseLinkRepository implements ILinkRepository {
             isInTrash: existingLink.is_deleted || existingLink.is_archived
         };
     }
+
+    /**
+     * Permanently delete links that have been in trash for more than the specified days
+     * This is called automatically when fetching links to implement 60-day auto-cleanup
+     */
+    async cleanupExpiredTrash(userId: string, daysOld: number = 60): Promise<number> {
+        const supabase = await createClient();
+
+        // Calculate the cutoff date
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+        const cutoffISOString = cutoffDate.toISOString();
+
+        // First, count how many will be deleted (for returning the count)
+        const { data: expiredLinks } = await supabase
+            .from("links")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("is_deleted", true)
+            .not("deleted_at", "is", null)
+            .lt("deleted_at", cutoffISOString);
+
+        const count = expiredLinks?.length || 0;
+
+        if (count === 0) {
+            return 0;
+        }
+
+        // Permanently delete the expired links
+        const { error } = await supabase
+            .from("links")
+            .delete()
+            .eq("user_id", userId)
+            .eq("is_deleted", true)
+            .not("deleted_at", "is", null)
+            .lt("deleted_at", cutoffISOString);
+
+        if (error) {
+            // Log but don't throw - cleanup is best-effort
+            console.error("Error cleaning up expired trash:", error);
+            return 0;
+        }
+
+        return count;
+    }
 }
+

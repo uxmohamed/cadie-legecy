@@ -159,4 +159,24 @@ export class LinkService {
 
         return { successful, duplicates, failures };
     }
+
+    /**
+     * Clean up links that have been in trash for more than 60 days
+     * This is called automatically when fetching links
+     * @returns Number of links permanently deleted
+     */
+    async cleanupExpiredTrash(userId: string): Promise<number> {
+        try {
+            const deletedCount = await this.linkRepository.cleanupExpiredTrash(userId, 60);
+            if (deletedCount > 0) {
+                log.info('Cleaned up expired trash items', { userId, deletedCount });
+            }
+            return deletedCount;
+        } catch (error) {
+            // Log but don't throw - cleanup is best-effort and shouldn't block user operations
+            log.error('Failed to cleanup expired trash', error, { userId });
+            return 0;
+        }
+    }
 }
+
