@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--bg-l0-solid)]">
+    <div className="flex min-h-screen flex-col bg-[var(--bg-main-container)]">
       <ChangelogHeader />
       <main className="flex-1">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pt-6 sm:pt-8 lg:pt-10 pb-12">

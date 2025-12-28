@@ -18,7 +18,7 @@ export function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--bg-l2-solid)] selection:bg-brand/10 selection:text-brand">
+    <div className="flex min-h-screen flex-col bg-[var(--bg-main-container)] selection:bg-brand/10 selection:text-brand">
       {/* Header */}
       <div>
         <div className="max-w-5xl mx-auto relative">
@@ -33,12 +33,12 @@ export function LandingPage() {
             {/* Desktop Navigation - Centered */}
             <div className="hidden md:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
               <Link href="#">
-                <Button className="relative text-black/60 hover:text-black inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
+                <Button className="relative text-[var(--text-secondary)] hover:text-[var(--text-primary)] inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
                   Extension
                 </Button>
               </Link>
               <Link href="/changelog">
-                <Button className="relative text-black/60 hover:text-black inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
+                <Button className="relative text-[var(--text-secondary)] hover:text-[var(--text-primary)] inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
                   Changelog
                 </Button>
               </Link>
@@ -47,7 +47,7 @@ export function LandingPage() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <Button className="relative text-black/60 hover:text-black inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
+                <Button className="relative text-[var(--text-secondary)] hover:text-[var(--text-primary)] inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
                   X (Twitter)
                 </Button>
               </a>
@@ -75,7 +75,7 @@ export function LandingPage() {
                   showCloseButton={false}
                 >
                   <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                  <div className="flex flex-col h-full bg-[var(--bg-l2-solid)]">
+                  <div className="flex flex-col h-full bg-[var(--bg-main-container)]">
                     {/* Mobile Menu Header */}
                     <div className="flex items-center justify-between p-4 border-b border-[var(--border-primary)]">
                       <Link href="/" onClick={() => setIsMenuOpen(false)}>
@@ -168,7 +168,7 @@ export function LandingPage() {
           <div className="mt-12 sm:mt-16 md:mt-20 relative mx-auto w-full max-w-4xl ">
             {/* Gradient border wrapper */}
             <div className="relative rounded-2xl p-[1px] bg-gradient-to-b from-[var(--border-primary)] from-60% to-transparent to-100%">
-              <div className="relative w-full overflow-hidden rounded-2xl bg-[var(--bg-l2-solid)]">
+              <div className="relative w-full overflow-hidden rounded-2xl bg-[var(--bg-main-container)]">
                 <Image
                   src="/product-landing.png"
                   alt="Cadie Interface"
@@ -178,7 +178,7 @@ export function LandingPage() {
                   priority
                 />
                 {/* Gradient mask overlay */}
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent from-60% to-[var(--bg-l2-solid)] to-100%"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent from-60% to-[var(--bg-main-container)] to-100%"></div>
               </div>
             </div>
           </div>

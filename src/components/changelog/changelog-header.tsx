@@ -31,12 +31,12 @@ export function ChangelogHeader() {
           {/* Desktop Navigation - Centered */}
           <div className="hidden md:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
             <Link href="#">
-              <Button className="relative text-black/60 hover:text-black inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
+              <Button className="relative text-[var(--text-secondary)] hover:text-[var(--text-primary)] inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
                 Extension
               </Button>
             </Link>
             <Link href="/changelog">
-              <Button className="relative text-black/60 hover:text-black inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
+              <Button className="relative text-[var(--text-secondary)] hover:text-[var(--text-primary)] inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
                 Changelog
               </Button>
             </Link>
@@ -45,7 +45,7 @@ export function ChangelogHeader() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <Button className="relative text-black/60 hover:text-black inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
+              <Button className="relative text-[var(--text-secondary)] hover:text-[var(--text-primary)] inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
                 X (Twitter)
               </Button>
             </a>
@@ -59,7 +59,7 @@ export function ChangelogHeader() {
                 <div className="w-[100px]" />
               ) : user ? (
                 <Link href="/">
-                  <Button className="py-2 px-4 bg-[var(--bg-inverse-primary)] border-0 text-[var(--text-inverse)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--bg-inverse-strong)] transition-colors duration-150">
+                  <Button className="py-2 px-4 bg-[var(--cta-primary-default)] border-0 text-[var(--text-inverse)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--cta-primary-hover)] transition-colors duration-150">
                     Back to Dashboard
                   </Button>
                 </Link>
@@ -92,7 +92,7 @@ export function ChangelogHeader() {
                 showCloseButton={false}
               >
                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                <div className="flex flex-col h-full bg-[var(--bg-l0-solid)]">
+                <div className="flex flex-col h-full bg-[var(--bg-main-container)]">
                   {/* Mobile Menu Header */}
                   <div className="flex items-center justify-between p-4 border-b border-[var(--border-primary)]">
                     <Link href="/" onClick={() => setIsMenuOpen(false)}>
@@ -103,7 +103,7 @@ export function ChangelogHeader() {
                         <div className="w-[100px]" />
                       ) : user ? (
                         <Link href="/" onClick={() => setIsMenuOpen(false)}>
-                          <Button className="py-2 px-4 bg-[var(--bg-inverse-primary)] border-0 text-[var(--text-inverse)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--bg-inverse-strong)] transition-colors duration-150">
+                          <Button className="py-2 px-4 bg-[var(--cta-primary-default)] border-0 text-[var(--text-inverse)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--cta-primary-hover)] transition-colors duration-150">
                             Back to Dashboard
                           </Button>
                         </Link>

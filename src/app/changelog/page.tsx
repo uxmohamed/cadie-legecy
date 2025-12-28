@@ -26,7 +26,7 @@ export default function ChangelogPage() {
 
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--bg-l0-solid)]">
+    <div className="flex min-h-screen flex-col bg-[var(--bg-main-container)]">
       {/* Header */}
       <ChangelogHeader />
 
