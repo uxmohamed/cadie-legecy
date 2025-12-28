@@ -6,6 +6,7 @@ import { LinkList } from "@/components/link-list";
 import { LinkListSkeleton } from "@/components/skeletons";
 import { UserMenu } from "@/components/user-menu";
 import { Logo } from "@/components/logo";
+import { LogoIcon } from "@/components/logo-icon";
 import { Dock } from "@/components/dock";
 import { useCategories } from "@/hooks/use-categories";
 import { useLinks } from "@/features/links/hooks";
@@ -316,11 +317,7 @@ export function Dashboard({ user }: DashboardProps) {
             className={`focus:outline-none ${selectedCategoryId !== null ? 'cursor-pointer' : 'cursor-default'}`}
             aria-label="Go to All Items"
           >
-            <img
-              src="/icon.svg"
-              alt="Cadie"
-              className="h-8 w-8"
-            />
+            <LogoIcon className="h-8 w-8" />
           </button>
           <span className="ml-2 px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)] border border-dashed border-[var(--border-primary)] rounded-full">
             Beta
@@ -340,7 +337,7 @@ export function Dashboard({ user }: DashboardProps) {
                   variant="outline"
                   size="icon"
                   onClick={handleToggleAddMode}
-                  className="h-9 w-9 rounded-md border-[var(--border-secondary)] bg-transparent hover:bg-[var(--bg-field-hover-light)]"
+                  className="h-9 w-9 rounded-md border-[var(--border-primary)] bg-[var(--bg-field-light)] hover:bg-[var(--bg-field-hover)]"
                   aria-label="Add item"
                 >
                   <IconPlus className="h-4 w-4" />
@@ -513,7 +510,7 @@ export function Dashboard({ user }: DashboardProps) {
 
       {/* Bottom fade mask overlay - fixed position */}
       <div 
-        className="fixed bottom-0 left-0 right-0 h-24 z-10 pointer-events-none transition-opacity duration-150 bg-gradient-to-t from-[var(--bg-pure-white)] to-transparent"
+        className="fixed bottom-0 left-0 right-0 h-24 z-10 pointer-events-none transition-opacity duration-150 bg-gradient-to-t from-[var(--bg-main-container)] to-transparent"
         style={{
           opacity: showBottomMask ? 1 : 0,
         }}

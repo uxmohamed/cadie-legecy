@@ -61,11 +61,10 @@ function FaviconFallback({ className, isLoading = false }: { className?: string;
   return (
     <div
       className={cn(
-        "h-5 w-5 flex-shrink-0 rounded-[3px]",
+        "h-5 w-5 flex-shrink-0 rounded-[3px] bg-[var(--bg-field-default)]",
         isLoading && "animate-pulse",
         className
       )}
-      style={{ backgroundColor: "#E5E5E5" }}
     />
   );
 }
