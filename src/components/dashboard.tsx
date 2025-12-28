@@ -337,7 +337,7 @@ export function Dashboard({ user }: DashboardProps) {
                   variant="outline"
                   size="icon"
                   onClick={handleToggleAddMode}
-                  className="h-9 w-9 rounded-md border-[var(--border-primary)] bg-[var(--bg-field-light)] hover:bg-[var(--bg-field-hover)]"
+                  className="h-9 w-9 rounded-md border-[var(--border-primary)] bg-transparent dark:bg-[var(--bg-field-light)] hover:bg-[var(--bg-field-hover)]"
                   aria-label="Add item"
                 >
                   <IconPlus className="h-4 w-4" />
