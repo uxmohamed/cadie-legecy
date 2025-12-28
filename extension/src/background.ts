@@ -154,11 +154,34 @@ async function saveCurrentTab(tabId: number): Promise<void> {
     // Show loading overlay immediately (fast feedback)
     showOverlayInTab(tabId, "loading");
 
-    // Save to Cadie
+    // Try to get page metadata from content script
+    let metadata: {
+      favicon_url?: string;
+      og_image_url?: string;
+      description?: string;
+    } = {};
+
+    try {
+      metadata = await chrome.tabs.sendMessage(tabId, { action: "getPageMetadata" });
+    } catch (e) {
+      // Content script not available, continue without metadata
+      // Use default favicon from URL origin
+      try {
+        const url = new URL(tab.url);
+        metadata.favicon_url = `${url.origin}/favicon.ico`;
+      } catch (e) {
+        // Ignore
+      }
+    }
+
+    // Save to Cadie with metadata
     const response = await saveLink({
       url: tab.url,
       title: tab.title,
       content_type: "url",
+      favicon_url: metadata.favicon_url,
+      og_image_url: metadata.og_image_url,
+      description: metadata.description,
     });
 
     if (response.success) {
@@ -207,14 +230,8 @@ function showOverlayInTab(
     state,
     message,
   }).catch(() => {
-      // Content script might not be loaded, fall back to notification
-      if (state === "success") {
-        showNotification("Saved to Cadie! ✨", "Page saved successfully", "success");
-      } else if (state === "duplicate") {
-        showNotification("Already in Cadie!", "This page was already saved", "info");
-      } else if (state === "error") {
-        showNotification("Error", message || "Failed to save", "error");
-      }
+    // Content script not available on this page, silently ignore
+    // (no OS notifications)
   });
 }
 

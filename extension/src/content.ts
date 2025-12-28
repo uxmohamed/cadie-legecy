@@ -16,6 +16,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ selectedText });
   }
 
+  if (request.action === "getPageMetadata") {
+    const metadata = extractPageMetadata();
+    sendResponse(metadata);
+  }
+
   if (request.action === "showSaveOverlay") {
     const { state, message } = request;
     if (state === "loading") {
@@ -46,6 +51,70 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 /**
+ * Extract page metadata (favicon, og:image, description)
+ */
+function extractPageMetadata(): {
+  favicon_url?: string;
+  og_image_url?: string;
+  description?: string;
+} {
+  const metadata: {
+    favicon_url?: string;
+    og_image_url?: string;
+    description?: string;
+  } = {};
+
+  // Get favicon - try multiple sources
+  const iconLink = document.querySelector<HTMLLinkElement>(
+    'link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]'
+  );
+  if (iconLink?.href) {
+    metadata.favicon_url = iconLink.href;
+  } else {
+    // Fallback to /favicon.ico
+    try {
+      const url = new URL(window.location.href);
+      metadata.favicon_url = `${url.origin}/favicon.ico`;
+    } catch (e) {
+      // Ignore
+    }
+  }
+
+  // Get OG image
+  const ogImage = document.querySelector<HTMLMetaElement>(
+    'meta[property="og:image"], meta[name="og:image"]'
+  );
+  if (ogImage?.content) {
+    metadata.og_image_url = ogImage.content;
+  } else {
+    // Try Twitter image
+    const twitterImage = document.querySelector<HTMLMetaElement>(
+      'meta[name="twitter:image"], meta[property="twitter:image"]'
+    );
+    if (twitterImage?.content) {
+      metadata.og_image_url = twitterImage.content;
+    }
+  }
+
+  // Get description - try OG first, then meta description
+  const ogDescription = document.querySelector<HTMLMetaElement>(
+    'meta[property="og:description"], meta[name="og:description"]'
+  );
+  if (ogDescription?.content) {
+    metadata.description = ogDescription.content;
+  } else {
+    const metaDescription = document.querySelector<HTMLMetaElement>(
+      'meta[name="description"]'
+    );
+    if (metaDescription?.content) {
+      metadata.description = metaDescription.content;
+    }
+  }
+
+  return metadata;
+}
+
+/**
  * Show the save overlay
  */
 function showOverlay(text: string, state: "loading" | "success" | "error" | "duplicate") {
@@ -55,12 +124,23 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
     hideTimeout = null;
   }
 
-  // Remove existing overlay if present
-  if (overlayElement) {
-    overlayElement.remove();
+  // If overlay already exists, just update the content (don't re-render)
+  if (overlayElement && document.body.contains(overlayElement)) {
+    const icon = overlayElement.querySelector(".cadie-overlay-icon");
+    const textEl = overlayElement.querySelector(".cadie-overlay-text");
+    
+    if (icon && textEl) {
+      // Update icon state and content
+      icon.setAttribute("data-state", state);
+      icon.innerHTML = getIconHTML(state);
+      
+      // Update text
+      textEl.textContent = text;
+      return;
+    }
   }
 
-  // Create overlay
+  // Create new overlay
   overlayElement = document.createElement("div");
   overlayElement.id = "cadie-save-overlay";
 
@@ -71,32 +151,7 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
   const icon = document.createElement("div");
   icon.className = "cadie-overlay-icon";
   icon.setAttribute("data-state", state);
-
-  if (state === "loading") {
-    const spinner = document.createElement("div");
-    spinner.className = "cadie-spinner";
-    icon.appendChild(spinner);
-  } else if (state === "success") {
-    icon.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="20 6 9 17 4 12"></polyline>
-      </svg>
-    `;
-  } else if (state === "duplicate") {
-    icon.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-      </svg>
-    `;
-  } else if (state === "error") {
-    icon.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="15" y1="9" x2="9" y2="15"></line>
-        <line x1="9" y1="9" x2="15" y2="15"></line>
-      </svg>
-    `;
-  }
+  icon.innerHTML = getIconHTML(state);
 
   // Text
   const textEl = document.createElement("div");
@@ -108,15 +163,42 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
   overlayElement.appendChild(content);
 
   try {
-    // Try appending to body first
     if (document.body) {
       document.body.appendChild(overlayElement);
     } else {
-      // Fallback to documentElement if body doesn't exist
       document.documentElement.appendChild(overlayElement);
     }
   } catch (error) {
     console.error("Failed to add overlay to DOM:", error);
+  }
+}
+
+/**
+ * Get icon HTML based on state
+ */
+function getIconHTML(state: "loading" | "success" | "error" | "duplicate"): string {
+  if (state === "loading") {
+    return `<div class="cadie-spinner"></div>`;
+  } else if (state === "success") {
+    return `
+      <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    `;
+  } else if (state === "duplicate") {
+    return `
+      <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+    `;
+  } else {
+    return `
+      <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="15" y1="9" x2="9" y2="15"></line>
+        <line x1="9" y1="9" x2="15" y2="15"></line>
+      </svg>
+    `;
   }
 }
 
