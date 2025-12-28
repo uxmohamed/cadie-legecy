@@ -19,9 +19,6 @@ export function LinkListEmpty() {
       </svg>
       <div className="text-center">
         <p className="text-sm font-medium text-[var(--text-primary)]">No links yet</p>
-        <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-          Start by adding a link using the input above
-        </p>
       </div>
     </div>
   );

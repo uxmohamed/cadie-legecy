@@ -211,7 +211,7 @@ export function Dashboard({ user }: DashboardProps) {
   // Register keyboard shortcuts
   React.useEffect(() => {
     registerShortcut({
-      key: "a",
+      key: "d",
       description: "Add new item",
       category: "Global",
       action: () => {
@@ -286,7 +286,7 @@ export function Dashboard({ user }: DashboardProps) {
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      unregisterShortcut("a");
+      unregisterShortcut("d");
       unregisterShortcut("/");
     };
   }, [registerShortcut, unregisterShortcut]);
