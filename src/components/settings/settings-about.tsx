@@ -2,103 +2,99 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { IconBrandX, IconExternalLink } from "@tabler/icons-react";
+import { Separator } from "@/components/ui/separator";
+import { IconBrandX, IconExternalLink, IconMail, IconArrowRight } from "@tabler/icons-react";
 import Image from "next/image";
 
 export function SettingsAbout() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* App Info */}
-      <div className="flex items-center gap-3">
-        <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-secondary)] flex items-center justify-center shadow-sm overflow-hidden">
+      <div className="flex items-center gap-4">
+        <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-secondary)] flex items-center justify-center shadow-lg shadow-[var(--brand-primary)]/20 overflow-hidden ring-4 ring-[var(--bg-field)]">
           <Image
             src="/icon.svg"
             alt="Cadie"
-            width={32}
-            height={32}
+            width={36}
+            height={36}
             className="text-white"
           />
         </div>
         <div>
-          <h3 className="text-base font-semibold">Cadie</h3>
-          <p className="text-sm text-[var(--text-secondary)]">1.0.0-beta</p>
+          <h3 className="text-xl font-semibold tracking-tight">Cadie</h3>
+          <p className="text-sm text-[var(--text-secondary)]">Version 1.0.0-beta</p>
         </div>
       </div>
+
+      <Separator />
 
       {/* Legal */}
-      <div>
-        <h3 className="text-sm font-semibold mb-2">Legal</h3>
-        <div className="space-y-1">
-          <a
-            href="/terms"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block text-sm text-[var(--brand-primary)] hover:opacity-80 transition-opacity"
-          >
-            Terms and Conditions
-          </a>
-          <a
-            href="/privacy"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block text-sm text-[var(--brand-primary)] hover:opacity-80 transition-opacity"
-          >
-            Privacy Policy
-          </a>
-          <a
-            href="/licenses"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block text-sm text-[var(--brand-primary)] hover:opacity-80 transition-opacity"
-          >
-            License and Open Source Notes
-          </a>
+      <div className="space-y-4">
+        <h3 className="text-sm font-medium text-[var(--text-primary)]">Legal</h3>
+        <div className="grid gap-2">
+          {[
+            { label: "Terms and Conditions", href: "/terms" },
+            { label: "Privacy Policy", href: "/privacy" },
+            { label: "License and Open Source Notes", href: "/licenses" },
+          ].map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center justify-between rounded-lg bg-[var(--bg-field)] p-3 text-sm transition-all hover:bg-[var(--bg-element-hover)]"
+            >
+              <span className="text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">
+                {item.label}
+              </span>
+              <IconExternalLink className="h-4 w-4 text-[var(--icon-tertiary)] group-hover:text-[var(--icon-secondary)]" />
+            </a>
+          ))}
         </div>
       </div>
 
-      {/* Social */}
-      <div>
-        <h3 className="text-sm font-semibold mb-2">Social</h3>
-        <p className="text-sm text-[var(--text-secondary)] mb-3">
-          Interested in new and upcoming features for Cadie? Follow us on X and be the first one to know!
-        </p>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2"
-          asChild
-        >
-          <a
-            href="https://x.com/cadieapp_"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <IconBrandX className="h-4 w-4" />
-            Follow @cadieapp_ on X
-            <IconExternalLink className="h-3 w-3 opacity-50" />
-          </a>
-        </Button>
-      </div>
+      <Separator />
 
-      {/* Send Feedback */}
-      <div>
-        <h3 className="text-sm font-semibold mb-2">Send Feedback</h3>
-        <p className="text-sm text-[var(--text-secondary)] mb-3">
-          Have an idea, feature request, or found a bug? Let us know, and we&apos;ll take a look at it!
-        </p>
-        <Button
-          variant="outline"
-          size="sm"
-          asChild
-        >
-          <a
-            href="https://x.com/messages/compose?recipient_id=1649994120725778432"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Send Feedback
-          </a>
-        </Button>
+      {/* Social & Feedback */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-medium text-[var(--text-primary)]">Connect</h3>
+        <div className="grid gap-3">
+          <div className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-field)] p-4">
+            <div className="mb-3 flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-black text-white">
+                <IconBrandX className="h-5 w-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-medium">Follow us on X</h4>
+                <p className="text-xs text-[var(--text-secondary)]">Get the latest updates and features</p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" className="w-full gap-2" asChild>
+              <a href="https://x.com/cadieapp_" target="_blank" rel="noopener noreferrer">
+                Follow @cadieapp_
+                <IconArrowRight className="h-3 w-3 opacity-50" />
+              </a>
+            </Button>
+          </div>
+
+          <div className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-field)] p-4">
+            <div className="mb-3 flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand-primary)] text-white">
+                <IconMail className="h-5 w-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-medium">Share Feedback</h4>
+                <p className="text-xs text-[var(--text-secondary)]">Found a bug or have an idea?</p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" className="w-full gap-2" asChild>
+              <a href="https://x.com/messages/compose?recipient_id=1649994120725778432" target="_blank" rel="noopener noreferrer">
+                Send Message
+                <IconArrowRight className="h-3 w-3 opacity-50" />
+              </a>
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { Popover, PopoverTrigger, PopoverPopup } from "@/components/ui/popover";
 import {
   IconCheck,
+  IconCircleCheckFilled,
   IconCapsuleHorizontalFilled,
   IconTrashFilled,
 } from "@tabler/icons-react";
@@ -212,9 +213,7 @@ export function Dock({
                         <span>All items</span>
                       </div>
                       {isAllItemsSelected ? (
-                        <div className="flex items-center justify-center w-5 h-5 rounded-full bg-white">
-                          <IconCheck className="h-3 w-3 text-black" />
-                        </div>
+                        <IconCircleCheckFilled className="h-5 w-5 text-white" />
                       ) : (
                         <Kbd className="h-5 px-1.5 text-[10px] bg-[rgba(255,255,255,0.1)] text-[var(--overlay-text-secondary)]">
                           1
@@ -232,9 +231,7 @@ export function Dock({
                         <span>Trash</span>
                       </div>
                       {isTrashSelected ? (
-                        <div className="flex items-center justify-center w-5 h-5 rounded-full bg-white">
-                          <IconCheck className="h-3 w-3 text-black" />
-                        </div>
+                        <IconCircleCheckFilled className="h-5 w-5 text-white" />
                       ) : (
                         <Kbd className="h-5 px-1.5 text-[10px] bg-[rgba(255,255,255,0.1)] text-[var(--overlay-text-secondary)]">
                           ⇧T

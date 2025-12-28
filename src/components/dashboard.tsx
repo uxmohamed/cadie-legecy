@@ -13,7 +13,7 @@ import type { User } from "@supabase/supabase-js";
 import type { Link } from "@/features/links/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCheck } from "@tabler/icons-react";
+import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCheck, IconCircleCheckFilled } from "@tabler/icons-react";
 import { Kbd } from "@/components/ui/kbd";
 import {
   DropdownMenu,
@@ -412,9 +412,7 @@ export function Dashboard({ user }: DashboardProps) {
                       className={`cursor-pointer rounded-xl ${sortBy === "date" ? "bg-[rgba(255,255,255,0.1)]" : ""}`}
                     >
                       {sortBy === "date" ? (
-                        <div className="flex items-center justify-center w-5 h-5 rounded-full bg-white mr-2">
-                          <IconCheck className="h-3 w-3 text-black" />
-                        </div>
+                        <IconCircleCheckFilled className="w-5 h-5 text-white mr-2" />
                       ) : (
                         <div className="w-5 h-5 mr-2" />
                       )}
@@ -435,9 +433,7 @@ export function Dashboard({ user }: DashboardProps) {
                       className={`cursor-pointer rounded-xl ${sortBy === "title" ? "bg-[rgba(255,255,255,0.1)]" : ""}`}
                     >
                       {sortBy === "title" ? (
-                        <div className="flex items-center justify-center w-5 h-5 rounded-full bg-white mr-2">
-                          <IconCheck className="h-3 w-3 text-black" />
-                        </div>
+                        <IconCircleCheckFilled className="w-5 h-5 text-white mr-2" />
                       ) : (
                         <div className="w-5 h-5 mr-2" />
                       )}

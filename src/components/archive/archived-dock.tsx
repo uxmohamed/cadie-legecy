@@ -30,6 +30,7 @@ import {
   IconSortAscending,
   IconSortDescending,
   IconCheck,
+  IconCircleCheckFilled,
   IconChevronDown,
   IconArrowsSort,
   IconCapsuleHorizontalFilled,
@@ -284,9 +285,7 @@ export function ArchivedDock({
                 >
                   <div className="flex items-center gap-2">
                     {sortBy === "title" && (
-                      <div className="p-1 rounded-full bg-white">
-                        <IconCheck className="h-3 w-3 text-black" />
-                      </div>
+                      <IconCircleCheckFilled className="h-5 w-5 text-white" />
                     )}
                     <span className={sortBy !== "title" ? "ml-7" : ""}>
                       Name
@@ -307,9 +306,7 @@ export function ArchivedDock({
                 >
                   <div className="flex items-center gap-2">
                     {sortBy === "date" && (
-                      <div className="p-1 rounded-full bg-white">
-                        <IconCheck className="h-3 w-3 text-black" />
-                      </div>
+                      <IconCircleCheckFilled className="h-5 w-5 text-white" />
                     )}
                     <span className={sortBy !== "date" ? "ml-7" : ""}>
                       Date Added

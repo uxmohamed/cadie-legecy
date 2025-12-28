@@ -15,9 +15,7 @@
     "dev:clean": "npm run clean && npm run dev",
     "extension:dev": "cd extension && npm run dev",
     "extension:build": "cd extension && npm run build",
-    "extension:install": "cd extension && npm install",
-    "build:theme": "npx tsx scripts/build-theme-css.ts",
-    "generate:tokens": "npx tsx scripts/generate-tokens-json.ts"
+    "extension:install": "cd extension && npm install"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",
