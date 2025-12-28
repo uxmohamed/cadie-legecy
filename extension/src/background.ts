@@ -15,10 +15,13 @@ const savesInProgress = new Set<string>();
 
 // Install listener - Create context menu
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
-    id: "save-to-cadie",
-    title: "Save to Cadie",
-    contexts: ["page", "link", "selection"],
+  // Remove any existing context menus first to prevent duplicate ID errors
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: "save-to-cadie",
+      title: "Save to Cadie",
+      contexts: ["page", "link", "selection"],
+    });
   });
 });
 

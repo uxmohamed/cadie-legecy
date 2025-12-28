@@ -67,29 +67,27 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
   const content = document.createElement("div");
   content.className = "cadie-overlay-content";
 
-  // Icon
+  // Icon with data-state for CSS styling
   const icon = document.createElement("div");
   icon.className = "cadie-overlay-icon";
+  icon.setAttribute("data-state", state);
 
   if (state === "loading") {
     const spinner = document.createElement("div");
     spinner.className = "cadie-spinner";
     icon.appendChild(spinner);
-    icon.style.background = "#f3f4f6";
   } else if (state === "success") {
     icon.innerHTML = `
       <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="20 6 9 17 4 12"></polyline>
       </svg>
     `;
-    icon.style.background = "#dcfce7";
   } else if (state === "duplicate") {
     icon.innerHTML = `
       <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
       </svg>
     `;
-    icon.style.background = "#fef3c7";
   } else if (state === "error") {
     icon.innerHTML = `
       <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -98,7 +96,6 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
         <line x1="9" y1="9" x2="15" y2="15"></line>
       </svg>
     `;
-    icon.style.background = "#fee2e2";
   }
 
   // Text
