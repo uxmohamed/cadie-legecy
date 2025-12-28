@@ -44,7 +44,7 @@ export default function ExtensionAuthorizePage() {
       const response = await fetch("/api/extension/authorize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Chrome Extension" }),
+        body: JSON.stringify({ name: "Extension" }),
       });
 
       if (!response.ok) {

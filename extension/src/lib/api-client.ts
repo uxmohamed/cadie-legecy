@@ -2,7 +2,7 @@
  * Cadie API client for Chrome extension
  */
 
-import { getApiToken, getCadieUrl } from "./storage";
+import { getApiToken, getCadieUrl, clearSettings } from "./storage";
 
 export interface SaveLinkRequest {
   url: string;
@@ -20,6 +20,7 @@ export interface ApiResponse<T = any> {
   data?: T;
   error?: string;
   duplicate?: boolean;
+  tokenRevoked?: boolean;
 }
 
 /**
@@ -46,6 +47,16 @@ export async function saveLink(request: SaveLinkRequest): Promise<ApiResponse> {
     });
 
     if (!response.ok) {
+      // Handle token revocation - clear stored token on 401
+      if (response.status === 401) {
+        await clearSettings();
+        return {
+          success: false,
+          error: "Extension disconnected. Please reconnect in settings.",
+          tokenRevoked: true,
+        };
+      }
+      
       const errorData = await response.json().catch(() => ({}));
       return {
         success: false,
@@ -92,9 +103,11 @@ export async function testConnection(): Promise<ApiResponse> {
 
     if (!response.ok) {
       if (response.status === 401) {
+        await clearSettings();
         return {
           success: false,
-          error: "Invalid API token",
+          error: "Extension disconnected. Please reconnect.",
+          tokenRevoked: true,
         };
       }
       return {

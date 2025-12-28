@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { User } from "@supabase/supabase-js";
-import { IconUser, IconPalette, IconInfoCircle } from "@tabler/icons-react";
+import { IconUser, IconPalette, IconInfoCircle, IconPuzzle } from "@tabler/icons-react";
 
 import {
   Dialog,
@@ -23,12 +23,14 @@ import {
 import { SettingsProfile } from "@/components/settings/settings-profile";
 import { SettingsAppearance } from "@/components/settings/settings-appearance";
 import { SettingsAbout } from "@/components/settings/settings-about";
+import { SettingsExtensions } from "@/components/settings/settings-extensions";
 
-type SettingsSection = "profile" | "appearance" | "about";
+type SettingsSection = "profile" | "appearance" | "extensions" | "about";
 
 const navItems = [
   { id: "profile" as const, name: "Profile", icon: IconUser },
   { id: "appearance" as const, name: "Appearance", icon: IconPalette },
+  { id: "extensions" as const, name: "Extensions", icon: IconPuzzle },
   { id: "about" as const, name: "About", icon: IconInfoCircle },
 ];
 
@@ -105,6 +107,7 @@ export function SettingsDialog({ user, open, onOpenChange }: SettingsDialogProps
               </h2>
               {activeSection === "profile" && <SettingsProfile user={user} />}
               {activeSection === "appearance" && <SettingsAppearance />}
+              {activeSection === "extensions" && <SettingsExtensions />}
               {activeSection === "about" && <SettingsAbout />}
             </div>
           </main>

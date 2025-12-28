@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const name = body.name || "Chrome Extension";
+    const name = body.name || "Extension";
 
     // Generate a new token (plaintext)
     const token = generateToken(32); // 32 bytes = 43 characters in base64url
