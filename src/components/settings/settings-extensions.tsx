@@ -87,14 +87,6 @@ export function SettingsExtensions() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-sm text-[var(--text-secondary)]">
-          Manage browser extensions connected to your Cadie account.
-        </p>
-      </div>
-
-      <Separator />
-
       {tokens.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <div className="rounded-full bg-[var(--bg-field)] p-4 mb-4">

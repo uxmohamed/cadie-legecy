@@ -34,6 +34,7 @@ export function SettingsProfile({ user }: SettingsProfileProps) {
   const [isSaving, setIsSaving] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = React.useState(false);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = React.useState("");
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Load profile on mount
@@ -127,12 +128,22 @@ export function SettingsProfile({ user }: SettingsProfileProps) {
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
     try {
+      const response = await fetch("/api/auth/delete-account", {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to delete account");
+      }
+
+      // Sign out and redirect after successful deletion
       const supabase = createClient();
       await supabase.auth.signOut();
       window.location.href = "/";
     } catch (error) {
       console.error("Error deleting account:", error);
-      toast.error("Failed to delete account");
+      toast.error(error instanceof Error ? error.message : "Failed to delete account");
       setIsDeleting(false);
     }
   };
@@ -178,13 +189,8 @@ export function SettingsProfile({ user }: SettingsProfileProps) {
         </div>
         <div>
           <h3 className="text-lg font-medium text-[var(--text-primary)]">Profile Photo</h3>
-          <p className="text-sm text-[var(--text-secondary)]">
-            Click the camera icon to upload a new photo.
-          </p>
         </div>
       </div>
-
-      <Separator />
 
       {/* Form Section */}
       <div className="space-y-6">
@@ -230,10 +236,8 @@ export function SettingsProfile({ user }: SettingsProfileProps) {
         </div>
       </div>
 
-      <Separator />
-
       {/* Account Actions */}
-      <div className="space-y-6 pt-2">
+      <div className="space-y-6">
         <div>
           <h3 className="text-sm font-medium text-[var(--text-primary)] mb-4">Account Actions</h3>
           <div className="flex flex-col gap-4">
@@ -254,7 +258,7 @@ export function SettingsProfile({ user }: SettingsProfileProps) {
               <p className="text-sm text-[var(--text-secondary)] mb-4">
                 Permanently delete your account and all associated data.
               </p>
-              <AlertDialog>
+              <AlertDialog onOpenChange={(open) => !open && setDeleteConfirmEmail("")}>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" className="w-full sm:w-auto">
                     Delete Account
@@ -263,8 +267,24 @@ export function SettingsProfile({ user }: SettingsProfileProps) {
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete Account</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete your account? This action cannot be undone and will permanently delete all your data.
+                    <AlertDialogDescription asChild>
+                      <div className="space-y-4">
+                        <p>
+                          This action cannot be undone. This will permanently delete your account and all associated data.
+                        </p>
+                        <div className="space-y-2">
+                          <Label htmlFor="confirm-email" className="text-[var(--text-secondary)]">
+                            Type <span className="font-medium text-[var(--text-primary)]">{user.email}</span> to confirm
+                          </Label>
+                          <Input
+                            id="confirm-email"
+                            value={deleteConfirmEmail}
+                            onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+                            placeholder="Enter your email"
+                            className="bg-[var(--bg-field)]"
+                          />
+                        </div>
+                      </div>
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -274,9 +294,9 @@ export function SettingsProfile({ user }: SettingsProfileProps) {
                     <Button
                       variant="destructive"
                       onClick={handleDeleteAccount}
-                      disabled={isDeleting}
+                      disabled={isDeleting || deleteConfirmEmail !== user.email}
                     >
-                      {isDeleting ? "Deleting..." : "Yes, Delete My Account"}
+                      {isDeleting ? "Deleting..." : "Delete My Account"}
                     </Button>
                   </AlertDialogFooter>
                 </AlertDialogContent>

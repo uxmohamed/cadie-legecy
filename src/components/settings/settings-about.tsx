@@ -11,7 +11,7 @@ export function SettingsAbout() {
     <div className="space-y-8">
       {/* App Info */}
       <div className="flex items-center gap-4">
-        <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-secondary)] flex items-center justify-center shadow-lg shadow-[var(--brand-primary)]/20 overflow-hidden ring-4 ring-[var(--bg-field)]">
+        <div className="h-16 w-16 flex items-center justify-center overflow-hidden">
           <Image
             src="/icon.svg"
             alt="Cadie"
