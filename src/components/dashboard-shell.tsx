@@ -93,12 +93,13 @@ export function DashboardShell({
   }, [debouncedSearch, router, searchParams]);
 
   // Sync with URL changes (e.g., from back/forward navigation)
+  // Only sync if URL changed externally (not from our own debounced update)
   React.useEffect(() => {
     const urlSearch = searchParams.get("q") || "";
-    if (urlSearch !== searchInput) {
+    if (urlSearch !== debouncedSearch && urlSearch !== searchInput) {
       setSearchInput(urlSearch);
     }
-  }, [searchParams]);
+  }, [searchParams, debouncedSearch, searchInput]);
 
   const handleSearchChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
