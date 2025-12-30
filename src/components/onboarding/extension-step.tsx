@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { Logo } from "@/components/logo";
 import { IconPuzzle, IconArrowRight } from "@tabler/icons-react";
 
 interface ExtensionStepProps {
@@ -39,69 +38,77 @@ export function ExtensionStep({ onComplete, onSkip }: ExtensionStepProps) {
   };
 
   return (
-    <div className="w-full max-w-[400px] space-y-8">
-      {/* Logo/Icon Section */}
-      <div className="flex flex-col items-center space-y-6">
-        <Logo variant="neutral-200" className="h-7 mb-4 w-auto" />
-        
-        {/* Extension Icon */}
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--bg-emphasis)]">
-          <IconPuzzle className="h-8 w-8 text-[var(--text-primary)]" />
+    <div className="w-full max-w-[450px] flex justify-center">
+      {/* Card Container - Matching Figma Design */}
+      <div 
+        className="bg-[var(--bg-pure-white)] rounded-[24px] p-[48px] flex flex-col gap-[48px] items-center w-full max-w-[500px] text-[15px]"
+        style={{
+          boxShadow: '0 2px 2px 0 rgba(0, 0, 0, 0.01), 0 4px 4px 0 rgba(0, 0, 0, 0.01), 0 2px 24px 0 rgba(0, 0, 0, 0.03), 0 0 0 1px #E5E5E5',
+          borderWidth: '0px'
+        }}
+      >
+        {/* Icon Section */}
+        <div className="flex flex-col items-center w-full">
+          {/* Extension Icon */}
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--bg-emphasis)]">
+            <IconPuzzle className="h-8 w-8 text-[var(--text-primary)]" />
+          </div>
         </div>
-        
-        <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
+
+        {/* Header Section */}
+        <div className="flex flex-col gap-[2px] items-center w-full">
+          <h1 className="text-[18px] font-semibold leading-[32px] text-[var(--text-primary)] text-center">
             Save from anywhere
           </h1>
-          <p className="text-base text-[var(--text-secondary)]">
+          <p className="text-[16px] font-medium leading-[32px] text-[var(--grey-400)] text-center">
             Add our Chrome extension to save links with one click while browsing.
           </p>
         </div>
-      </div>
 
-      {/* Action Buttons */}
-      <div className="space-y-3">
-        {!hasClicked ? (
-          <>
-            <Button
-              type="button"
-              onClick={handleInstallClick}
-              variant="secondary"
-              size="xl"
-              className="w-full"
-            >
-              <ChromeIcon className="size-5 mr-2" />
-              Add to Chrome
-            </Button>
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-[12px] items-start w-full">
+          {!hasClicked ? (
+            <>
+              <button
+                type="button"
+                onClick={handleInstallClick}
+                className="bg-[#f5f5f5] flex items-center justify-center p-3 rounded-[12px] w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+              >
+                <ChromeIcon className="h-5 w-5 mr-2" />
+                <span className="font-medium text-[14px] leading-[24px] text-[#171717]">
+                  Add to Chrome
+                </span>
+              </button>
 
-            <Button
-              type="button"
-              onClick={onSkip}
-              variant="ghost"
-              size="xl"
-              className="w-full"
-            >
-              I&apos;ll do this later
-            </Button>
-          </>
-        ) : (
-          <>
-            <p className="text-sm text-[var(--text-tertiary)] text-center">
-              After installing, click the extension icon to save any page!
-            </p>
-            
-            <Button
-              type="button"
-              onClick={onComplete}
-              variant="secondary"
-              size="xl"
-              className="w-full"
-            >
-              Continue to Cadie
-              <IconArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          </>
-        )}
+              <button
+                type="button"
+                onClick={onSkip}
+                className="bg-transparent flex items-center justify-center p-3 rounded-[12px] w-full cursor-pointer hover:bg-[var(--bg-field-hover)] transition-colors"
+              >
+                <span className="font-medium text-[14px] leading-[24px] text-[var(--text-primary)]">
+                  I&apos;ll do this later
+                </span>
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-[var(--text-tertiary)] text-center w-full">
+                After installing, click the extension icon to save any page!
+              </p>
+              
+              <button
+                type="button"
+                onClick={onComplete}
+                className="bg-[#2783de] text-white flex items-center justify-center p-3 rounded-[12px] w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+              >
+                <span className="font-medium text-[14px] leading-[24px] text-white">
+                  Continue to Cadie
+                </span>
+                <IconArrowRight className="h-4 w-4 ml-2" />
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

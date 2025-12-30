@@ -105,7 +105,10 @@ export function AvatarPicker({ value, onChange, userId, userInitial = "U" }: Ava
         type="button"
         onClick={handleEditClick}
         disabled={isUploading}
-        className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bg-inverse)] text-[var(--text-inverse)] shadow-md transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-l0-solid)] disabled:opacity-50"
+        className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--background)] text-[var(--icon-secondary)] transition-transform hover:scale-110 hover:text-[var(--icon-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-l0-solid)] disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+        style={{
+          boxShadow: '0 1.556px 4.667px 0 rgba(0, 0, 0, .1)'
+        }}
         aria-label="Change avatar"
       >
         {isUploading ? (

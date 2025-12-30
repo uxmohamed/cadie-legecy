@@ -15,9 +15,16 @@ async function fetcher<T>(url: string): Promise<T> {
     const response = await fetch(url);
 
     if (!response.ok) {
-        const errorData = await response.json();
-        const error = new Error(errorData.error?.userMessage || "Failed to fetch");
-        throw error;
+        // Safely try to parse JSON error, fall back to status text if HTML is returned
+        let errorMessage = "Failed to fetch";
+        try {
+            const errorData = await response.json();
+            errorMessage = errorData.error?.userMessage || errorData.error || "Failed to fetch";
+        } catch {
+            // Response was not JSON (likely HTML error page)
+            errorMessage = `Server error: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
     }
 
     return response.json();
@@ -680,8 +687,16 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to add links');
+                // Safely try to parse JSON error, fall back to status text if HTML is returned
+                let errorMessage = 'Failed to add links';
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.error || 'Failed to add links';
+                } catch {
+                    // Response was not JSON (likely HTML error page)
+                    errorMessage = `Server error: ${response.status} ${response.statusText}`;
+                }
+                throw new Error(errorMessage);
             }
 
             const responseData = await response.json();
