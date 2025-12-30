@@ -64,34 +64,57 @@ export function DashboardShell({
   const { registerShortcut, unregisterShortcut } = useShortcuts();
 
   const isTrashView = selectedCategoryId === "trash";
-  const searchValue = searchParams.get("q") || "";
+
+  // Local state for immediate input updates
+  const [searchInput, setSearchInput] = React.useState(searchParams.get("q") || "");
+
+  // Debounced value that updates URL
+  const [debouncedSearch, setDebouncedSearch] = React.useState(searchInput);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Update URL when debounced value changes
+  React.useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (debouncedSearch) {
+      params.set("q", debouncedSearch);
+    } else {
+      params.delete("q");
+    }
+
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }, [debouncedSearch, router, searchParams]);
+
+  // Sync with URL changes (e.g., from back/forward navigation)
+  React.useEffect(() => {
+    const urlSearch = searchParams.get("q") || "";
+    if (urlSearch !== searchInput) {
+      setSearchInput(urlSearch);
+    }
+  }, [searchParams]);
 
   const handleSearchChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newValue = e.target.value;
-      const params = new URLSearchParams(searchParams.toString());
-
-      if (newValue) {
-        params.set("q", newValue);
-      } else {
-        params.delete("q");
-      }
-
-      router.replace(`?${params.toString()}`, { scroll: false });
+      setSearchInput(e.target.value);
     },
-    [searchParams, router]
+    []
   );
 
   const handleSearchKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Escape") {
-        const params = new URLSearchParams(searchParams.toString());
-        params.delete("q");
-        router.replace(`?${params.toString()}`, { scroll: false });
+        setSearchInput("");
         searchInputRef.current?.blur();
       }
     },
-    [searchParams, router]
+    []
   );
 
   const handleSortChange = React.useCallback(
@@ -247,7 +270,7 @@ export function DashboardShell({
                 <input
                   ref={searchInputRef}
                   type="text"
-                  value={searchValue}
+                  value={searchInput}
                   onChange={handleSearchChange}
                   onKeyDown={handleSearchKeyDown}
                   placeholder="Search..."
