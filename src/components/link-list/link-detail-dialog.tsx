@@ -111,7 +111,7 @@ export function LinkDetailDialog({
                 <a
                   href={link.url}
                   target="_blank"
-                  rel="noopener noreferrer"
+                  rel="noopener noreferrer nofollow"
                   className="inline-flex items-center gap-2 text-sm text-[var(--accent-blue-primary)] hover:underline"
                 >
                   <IconExternalLink className="h-4 w-4" />

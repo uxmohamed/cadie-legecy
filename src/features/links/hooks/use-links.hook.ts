@@ -45,7 +45,6 @@ import useSWRInfinite from "swr/infinite";
 export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId?: string) {
     const [isLoading, setIsLoading] = React.useState(false);
     const [searchQuery, setSearchQuery] = React.useState("");
-    const [hasInitiallyLoaded, setHasInitiallyLoaded] = React.useState(false);
 
     // Build query string from filters
     const buildQueryString = React.useCallback((index: number, previousPageData: { links: Link[], total: number } | null) => {
@@ -78,13 +77,9 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
             revalidateOnReconnect: false,
             dedupingInterval: 5000,
             keepPreviousData: true,
-            onSuccess: () => {
-                setHasInitiallyLoaded(true);
-            },
             onError: (err) => {
                 const errorMessage = err instanceof Error ? err.message : "Failed to load links";
                 toast.error(errorMessage);
-                setHasInitiallyLoaded(true);
             },
         }
     );
@@ -97,7 +92,11 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
     const totalCount = data?.[0]?.total || 0;
     const isLoadingMore = isValidating && size > 1 && data && data.length > 0;
     const hasMore = links.length < totalCount;
-    const fetchingLinks = isValidating && !hasInitiallyLoaded;
+
+    // Only show skeleton on true initial load (no data and currently validating)
+    // Once we have data, never show skeleton again even during revalidation
+    const hasInitiallyLoaded = data !== undefined;
+    const fetchingLinks = !hasInitiallyLoaded && isValidating;
 
     const loadMore = React.useCallback(() => {
         if (!isValidating && hasMore) {

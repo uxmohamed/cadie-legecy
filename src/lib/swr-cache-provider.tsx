@@ -64,7 +64,17 @@ interface SWRCacheProviderProps {
 
 export function SWRCacheProvider({ children }: SWRCacheProviderProps) {
   return (
-    <SWRConfig value={{ provider: localStorageProvider }}>
+    <SWRConfig
+      value={{
+        provider: localStorageProvider,
+        // Global SWR config to persist cache across navigation
+        revalidateOnFocus: false,
+        revalidateOnReconnect: false,
+        revalidateIfStale: false, // Don't auto-revalidate stale data
+        dedupingInterval: 60000, // 60 seconds - prevent duplicate requests
+        focusThrottleInterval: 60000, // Throttle focus revalidation
+      }}
+    >
       {children}
     </SWRConfig>
   );
