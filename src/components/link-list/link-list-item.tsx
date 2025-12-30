@@ -164,7 +164,7 @@ export function LinkListItem({
           ref={linkRef}
           href={isColor ? "#" : link.url}
           target={isColor ? undefined : "_blank"}
-          rel={isColor ? undefined : "noopener noreferrer"}
+          rel={isColor ? undefined : "noopener noreferrer nofollow"}
           onClick={(e) => e.preventDefault()}
           onFocus={() => onFocus(index)}
           className="flex min-w-0 items-center gap-3 focus:outline-none select-none"
