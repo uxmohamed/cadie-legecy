@@ -3,7 +3,9 @@
 import * as React from "react";
 import type { User } from "@supabase/supabase-js";
 import { AvatarPicker } from "./avatar-picker";
+import { useTheme } from "@/components/theme-provider";
 import { getInitialAvatar, getInitialDisplayName } from "@/hooks/use-onboarding";
+import { Button } from "@/components/ui/button";
 
 interface WelcomeStepProps {
   user: User;
@@ -12,6 +14,16 @@ interface WelcomeStepProps {
 }
 
 export function WelcomeStep({ user, onComplete, isLoading = false }: WelcomeStepProps) {
+  const { theme } = useTheme();
+  
+  // Determine if dark mode is effectively active
+  const isDarkMode = React.useMemo(() => {
+    if (theme === 'dark') return true;
+    if (theme === 'system' && typeof window !== 'undefined') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  }, [theme]);
   const initialAvatar = React.useMemo(() => getInitialAvatar(user), [user]);
   const initialName = React.useMemo(() => getInitialDisplayName(user), [user]);
   
@@ -39,10 +51,11 @@ export function WelcomeStep({ user, onComplete, isLoading = false }: WelcomeStep
     <div className="w-full max-w-[450px] flex justify-center">
       {/* Card Container - Matching Figma Design */}
       <div 
-        className="bg-[var(--bg-pure-white)] rounded-[24px] p-[48px] flex flex-col gap-[48px] items-center w-full max-w-[500px] text-[15px]"
+        className="rounded-[24px] p-[48px] flex flex-col gap-[48px] items-center w-full max-w-[500px] text-[15px]"
         style={{
-          boxShadow: '0 2px 2px 0 rgba(0, 0, 0, 0.01), 0 4px 4px 0 rgba(0, 0, 0, 0.01), 0 2px 24px 0 rgba(0, 0, 0, 0.03), 0 0 0 1px #E5E5E5',
-          borderWidth: '0px'
+          backgroundColor: 'color-mix(in oklab, oklch(1 0 0) 20%, oklch(0 0 0) 80%)',
+          boxShadow: '0 2px 2px 0 rgba(0, 0, 0, 0.2), 0 4px 4px 0 rgba(0, 0, 0, 0.15), 0 2px 24px 0 rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border-primary)',
+          borderWidth: '0px',
         }}
       >
         {/* Header Section */}
@@ -81,7 +94,7 @@ export function WelcomeStep({ user, onComplete, isLoading = false }: WelcomeStep
                 required
                 disabled={isLoading}
                 autoFocus
-                className="w-full px-4 py-4 bg-[#f5f5f5] border border-transparent text-[var(--text-primary)] text-[14px] font-medium rounded-[12px] outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#2783de] placeholder:text-[#a3a3a3] disabled:opacity-50 text-left"
+                className="w-full px-4 py-4 bg-[var(--bg-field-default)] border border-transparent text-[var(--text-primary)] text-[14px] font-medium rounded-[12px] outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#2783de] placeholder:text-[var(--text-tertiary)] disabled:opacity-50 text-left"
               />
             </div>
             {error && (
@@ -91,15 +104,16 @@ export function WelcomeStep({ user, onComplete, isLoading = false }: WelcomeStep
             )}
           </div>
 
-          <button
+          <Button
             type="submit"
             disabled={isLoading}
-            className="bg-[#2783de] text-white flex items-center justify-center p-3 rounded-[12px] w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+            variant="default"
+            className="w-full p-3 rounded-[12px] text-white"
           >
             {isLoading ? (
               <>
                 <svg
-                  className="size-4 animate-spin mr-2"
+                  className="size-4 animate-spin"
                   fill="none"
                   viewBox="0 0 24 24"
                 >
@@ -126,7 +140,7 @@ export function WelcomeStep({ user, onComplete, isLoading = false }: WelcomeStep
                 Continue
               </span>
             )}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

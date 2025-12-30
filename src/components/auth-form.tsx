@@ -4,7 +4,9 @@ import * as React from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
-import { IconMail } from "@tabler/icons-react";
+import { Button } from "@/components/ui/button";
+import { IconMail, IconArrowLeft } from "@tabler/icons-react";
+import { useTheme } from "@/components/theme-provider";
 
 // Google Logo SVG Component
 function GoogleLogo() {
@@ -32,13 +34,26 @@ function GoogleLogo() {
 
 // Success screen after magic link sent
 function MagicLinkSent({ email, onBack }: { email: string; onBack: () => void }) {
+  const { theme } = useTheme();
+  
+  // Determine if dark mode is effectively active
+  const isDarkMode = React.useMemo(() => {
+    if (theme === 'dark') return true;
+    if (theme === 'system' && typeof window !== 'undefined') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  }, [theme]);
+  
   return (
     <div className="w-full max-w-[450px] flex justify-center">
       {/* Card Container - Matching Figma Design */}
       <div 
-        className="bg-[var(--bg-pure-white)] rounded-[24px] p-[48px] flex flex-col gap-[48px] items-center w-full max-w-[500px] border border-[var(--border-primary)] text-[15px]"
+        className="rounded-[24px] p-[48px] flex flex-col gap-[24px] items-center w-full max-w-[500px] text-[15px]"
         style={{
-          boxShadow: '0px 2px 2px 0px rgba(0,0,0,0.01), 0px 4px 4px 0px rgba(0,0,0,0.01), 0px 2px 24px 0px rgba(0,0,0,0.03), 0px 0px 0px 1px var(--border-primary)'
+          backgroundColor: 'color-mix(in oklab, oklch(1 0 0) 20%, oklch(0 0 0) 80%)',
+          boxShadow: '0 2px 2px 0 rgba(0, 0, 0, 0.2), 0 4px 4px 0 rgba(0, 0, 0, 0.15), 0 2px 24px 0 rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border-primary)',
+          borderWidth: '0px',
         }}
       >
         {/* Header Section */}
@@ -65,19 +80,17 @@ function MagicLinkSent({ email, onBack }: { email: string; onBack: () => void })
 
         {/* Instructions */}
         <div className="flex flex-col gap-[12px] items-start w-full">
-          <p className="text-sm text-[var(--text-tertiary)] text-center w-full">
-            Click the link in your email to sign in. If you don&apos;t see it, check your spam folder.
-          </p>
-          
-          <button
+          <Button
             type="button"
             onClick={onBack}
-            className="bg-transparent flex items-center justify-center p-3 rounded-[12px] w-full hover:bg-[var(--bg-field-hover)] transition-colors cursor-pointer"
+            variant="secondary"
+            className="w-full p-3 rounded-[12px] flex items-center gap-2"
           >
-            <span className="font-medium text-[14px] leading-[24px] text-[var(--text-primary)]">
-              ← Back to sign in
+            <IconArrowLeft className="h-5 w-5 text-[var(--text-primary)]" />
+            <span className="font-medium text-[14px] leading-[24px]">
+              Back to sign in
             </span>
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -85,6 +98,7 @@ function MagicLinkSent({ email, onBack }: { email: string; onBack: () => void })
 }
 
 export function AuthForm() {
+  const { theme } = useTheme();
   const [email, setEmail] = React.useState("");
   const [sentToEmail, setSentToEmail] = React.useState("");
   const [loading, setLoading] = React.useState(false);
@@ -92,6 +106,15 @@ export function AuthForm() {
   const [success, setSuccess] = React.useState(false);
   const [error, setError] = React.useState("");
   const [showEmailForm, setShowEmailForm] = React.useState(false);
+  
+  // Determine if dark mode is effectively active
+  const isDarkMode = React.useMemo(() => {
+    if (theme === 'dark') return true;
+    if (theme === 'system' && typeof window !== 'undefined') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  }, [theme]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -176,10 +199,11 @@ export function AuthForm() {
     <div className="w-full max-w-[450px] flex justify-center">
       {/* Card Container - Matching Figma Design */}
       <div 
-        className="bg-[var(--bg-pure-white)] rounded-[24px] p-[48px] flex flex-col gap-[48px] items-center w-full max-w-[500px] text-[15px]"
+        className="rounded-[24px] p-[48px] flex flex-col gap-[48px] items-center w-full max-w-[500px] text-[15px]"
         style={{
-          boxShadow: '0 2px 2px 0 rgba(0, 0, 0, 0.01), 0 4px 4px 0 rgba(0, 0, 0, 0.01), 0 2px 24px 0 rgba(0, 0, 0, 0.03), 0 0 0 1px #E5E5E5',
-          borderWidth: '0px'
+          backgroundColor: 'color-mix(in oklab, oklch(1 0 0) 20%, oklch(0 0 0) 80%)',
+          boxShadow: '0 2px 2px 0 rgba(0, 0, 0, 0.2), 0 4px 4px 0 rgba(0, 0, 0, 0.15), 0 2px 24px 0 rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border-primary)',
+          borderWidth: '0px',
         }}
       >
         {/* Header Section */}
@@ -195,12 +219,13 @@ export function AuthForm() {
         {/* Auth Options */}
         {!showEmailForm ? (
           <div className="flex flex-col gap-[12px] items-start w-full">
-            {/* Google Sign In Button - Primary Blue */}
-            <button
+            {/* Google Sign In Button - Primary */}
+            <Button
               type="button"
               onClick={handleGoogleSignIn}
               disabled={googleLoading}
-              className="bg-[#2783de] flex gap-1 items-center justify-center p-3 rounded-[12px] w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+              variant="default"
+              className="w-full p-3 rounded-[12px] gap-2 text-white"
             >
               {googleLoading ? (
                 <>
@@ -214,16 +239,16 @@ export function AuthForm() {
                       cx="12"
                       cy="12"
                       r="10"
-                      stroke="white"
+                      stroke="currentColor"
                       strokeWidth="4"
                     />
                     <path
                       className="opacity-75"
-                      fill="white"
+                      fill="currentColor"
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     />
                   </svg>
-                  <span className="font-medium text-[14px] leading-[24px] text-white px-1">
+                  <span className="font-medium text-[14px] leading-[24px] text-white">
                     Signing in with Google...
                   </span>
                 </>
@@ -232,24 +257,25 @@ export function AuthForm() {
                   <div className="size-6 flex items-center justify-center">
                     <GoogleLogo />
                   </div>
-                  <span className="font-medium text-[14px] leading-[24px] text-white px-1">
+                  <span className="font-medium text-[14px] leading-[24px] text-white">
                     Continue with Google
                   </span>
                 </>
               )}
-            </button>
+            </Button>
 
-            {/* Email Button - Gray */}
-            <button
+            {/* Email Button - Secondary */}
+            <Button
               type="button"
               onClick={() => setShowEmailForm(true)}
               disabled={googleLoading}
-              className="bg-[#f5f5f5] flex gap-1 items-center justify-center p-3 rounded-[12px] w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+              variant="secondary"
+              className="w-full p-3 rounded-[12px]"
             >
-              <span className="font-medium text-[14px] leading-[24px] text-[#171717] px-1">
+              <span className="font-medium text-[14px] leading-[24px] px-1">
                 Continue with Email
               </span>
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="flex flex-col gap-[12px] items-start w-full">
@@ -268,7 +294,7 @@ export function AuthForm() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     disabled={loading}
-                    className="w-full px-4 py-4 bg-[#f5f5f5] border border-transparent text-[var(--text-primary)] text-[14px] font-medium rounded-[12px] outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#2783de] placeholder:text-[#a3a3a3] disabled:opacity-50"
+                    className="w-full px-4 py-4 bg-[var(--bg-field-default)] border border-transparent text-[var(--text-primary)] text-[14px] font-medium rounded-[12px] outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#2783de] placeholder:text-[var(--text-tertiary)] disabled:opacity-50"
                   />
                 </div>
                 {error && (
@@ -278,15 +304,16 @@ export function AuthForm() {
                 )}
               </div>
 
-              <button
+              <Button
                 type="submit"
                 disabled={loading}
-                className="bg-[#f5f5f5] flex items-center justify-center p-3 rounded-[12px] w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+                variant="secondary"
+                className="w-full p-3 rounded-[12px]"
               >
                 {loading ? (
                   <>
                     <svg
-                      className="size-4 animate-spin mr-2"
+                      className="size-4 animate-spin"
                       fill="none"
                       viewBox="0 0 24 24"
                     >
@@ -304,42 +331,43 @@ export function AuthForm() {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       />
                     </svg>
-                    <span className="font-medium text-[14px] leading-[24px] text-[#171717]">
+                    <span className="font-medium text-[14px] leading-[24px]">
                       Sending...
                     </span>
                   </>
                 ) : (
-                  <span className="font-medium text-[14px] leading-[24px] text-[#171717]">
+                  <span className="font-medium text-[14px] leading-[24px]">
                     Continue
                   </span>
                 )}
-              </button>
+              </Button>
             </form>
 
             {/* Back Button - Ghost */}
-            <button
+            <Button
               type="button"
               onClick={() => {
                 setShowEmailForm(false);
                 setError("");
               }}
-              className="bg-transparent flex items-center justify-center p-3 rounded-[12px] w-full hover:bg-[var(--bg-field-hover)] transition-colors cursor-pointer"
+              variant="ghost"
+              className="w-full p-3 rounded-[12px]"
             >
-              <span className="font-medium text-[14px] leading-[24px] text-[var(--text-primary)]">
+              <span className="font-medium text-[14px] leading-[24px]">
                 Back to sign in
               </span>
-            </button>
+            </Button>
           </div>
         )}
         
         {/* Terms & Conditions Text */}
-        <p className="font-normal leading-[16px] text-[12px] text-[#d4d4d4] text-center w-[344px]">
+        <p className="font-normal leading-[16px] text-[12px] text-[var(--text-tertiary)] text-center w-[344px]">
           <span>By continuing, you acknowledge that you understand and agree to the </span>
-          <Link href="/terms" className="underline text-[#a3a3a3] hover:text-[var(--text-primary)] transition-colors">
+          <Link href="/terms" className="underline text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
             Terms & Conditions
           </Link>
           <span> and </span>
-          <Link href="/privacy" className="underline text-[#a3a3a3] hover:text-[var(--text-primary)] transition-colors">
+          <Link href="/privacy" className="underline text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
             Privacy Policy
           </Link>.
         </p>
