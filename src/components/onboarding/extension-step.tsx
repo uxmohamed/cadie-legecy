@@ -106,8 +106,12 @@ export function ExtensionStep({ onComplete, onSkip }: ExtensionStepProps) {
       <div 
         className="rounded-[24px] p-[48px] flex flex-col gap-[48px] items-center w-full max-w-[500px] text-[15px]"
         style={{
-          backgroundColor: 'color-mix(in oklab, oklch(1 0 0) 20%, oklch(0 0 0) 80%)',
-          boxShadow: '0 2px 2px 0 rgba(0, 0, 0, 0.2), 0 4px 4px 0 rgba(0, 0, 0, 0.15), 0 2px 24px 0 rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border-primary)',
+          backgroundColor: isDarkMode 
+            ? 'color-mix(in oklab, oklch(1 0 0) 20%, oklch(0 0 0) 80%)'
+            : 'var(--bg-l2-solid)',
+          boxShadow: isDarkMode 
+            ? '0 2px 2px 0 rgba(0, 0, 0, 0.2), 0 4px 4px 0 rgba(0, 0, 0, 0.15), 0 2px 24px 0 rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border-primary)'
+            : '0 2px 2px 0 rgba(0, 0, 0, 0.01), 0 4px 4px 0 rgba(0, 0, 0, 0.01), 0 2px 24px 0 rgba(0, 0, 0, 0.03), 0 0 0 1px #E5E5E5',
           borderWidth: '0px',
         }}
       >
