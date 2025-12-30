@@ -2,10 +2,12 @@ import { createClient } from "@/lib/supabase/server";
 import { DashboardClient } from "@/components/dashboard-client";
 import { LandingPage } from "@/components/landing-page";
 import { OnboardingClient } from "@/components/onboarding-client";
+import { Suspense } from "react";
+import { DashboardSkeleton } from "@/components/skeletons";
 
 export const runtime = 'edge';
 
-export default async function Home() {
+async function DashboardWrapper() {
   const supabase = await createClient();
 
   // Server-side auth check (no client-side flash)
@@ -32,4 +34,12 @@ export default async function Home() {
 
   // Render dashboard (static shell renders immediately, content streams)
   return <DashboardClient user={JSON.parse(JSON.stringify(user))} />;
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardWrapper />
+    </Suspense>
+  );
 }
