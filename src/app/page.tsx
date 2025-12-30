@@ -1,57 +1,35 @@
-"use client";
-
-import { useAuth } from "@/hooks/use-auth";
-import { useOnboarding } from "@/hooks/use-onboarding";
-import { Dashboard } from "@/components/dashboard";
+import { createClient } from "@/lib/supabase/server";
+import { DashboardClient } from "@/components/dashboard-client";
 import { LandingPage } from "@/components/landing-page";
-import { OnboardingFlow } from "@/components/onboarding";
-import { DashboardSkeleton } from "@/components/skeletons";
-import { useSearchParams } from "next/navigation";
-import * as React from "react";
+import { OnboardingClient } from "@/components/onboarding-client";
 
-// TEMPORARY: Mock user for development - remove before production
-function createMockUser() {
-  return {
-    id: "dev-user-id",
-    email: "dev@example.com",
-    user_metadata: {
-      full_name: "Dev User",
-      name: "Dev User",
-    },
-  } as any;
-}
+export const runtime = 'edge';
 
-export default function Home() {
-  const searchParams = useSearchParams();
-  const devMode = searchParams.get("dev") === "onboarding";
-  const { user, authChecked } = useAuth();
-  const { isLoading: onboardingLoading, needsOnboarding, refetch } = useOnboarding(user);
+export default async function Home() {
+  const supabase = await createClient();
 
-  // TEMPORARY: Dev mode - show onboarding flow with mock user
-  if (devMode) {
-    const mockUser = createMockUser();
-    return <OnboardingFlow user={mockUser} onComplete={() => {}} />;
-  }
+  // Server-side auth check (no client-side flash)
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // Show skeleton while checking auth
-  if (!authChecked) {
-    return <DashboardSkeleton />;
-  }
-
-  // Render LandingPage for unauthenticated users
+  // Not authenticated - show landing page
   if (!user) {
     return <LandingPage />;
   }
 
-  // Show skeleton while checking onboarding status
-  if (onboardingLoading) {
-    return <DashboardSkeleton />;
+  // Check onboarding status
+  const { data: profile } = await supabase
+    .from("user_profiles")
+    .select("*")
+    .eq("user_id", user.id)
+    .single();
+
+  // Show onboarding for new users (no profile or hasn't completed onboarding)
+  if (!profile || profile.needs_onboarding) {
+    return <OnboardingClient user={JSON.parse(JSON.stringify(user))} />;
   }
 
-  // Show onboarding for new users
-  if (needsOnboarding) {
-    return <OnboardingFlow user={user} onComplete={refetch} />;
-  }
-
-  return <Dashboard user={user} />;
+  // Render dashboard (static shell renders immediately, content streams)
+  return <DashboardClient user={JSON.parse(JSON.stringify(user))} />;
 }

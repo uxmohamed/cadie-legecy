@@ -1,0 +1,170 @@
+"use client";
+
+import * as React from "react";
+import { useSearchParams } from "next/navigation";
+import { LinkList } from "@/components/link-list";
+import { LinkListSkeleton } from "@/components/skeletons";
+import { useLinks } from "@/features/links/hooks";
+import type { User } from "@supabase/supabase-js";
+import type { Link } from "@/features/links/types";
+import {
+  detectMultipleContentTypes,
+  type DetectedContent,
+} from "@/lib/content-detector";
+import { toast } from "sonner";
+
+interface DashboardContentProps {
+  user: User;
+  selectedCategoryId: string | null;
+  sortBy: "date" | "title";
+  sortOrder: "asc" | "desc";
+  isAddingItem: boolean;
+  addInputValue: string;
+  onAddInputChange: (value: string) => void;
+  onAddSubmit: () => void;
+  onAddCancel: () => void;
+  onSelectionChange: (count: number, links: Link[], clearSelection: () => void) => void;
+}
+
+export function DashboardContent({
+  user,
+  selectedCategoryId,
+  sortBy,
+  sortOrder,
+  isAddingItem,
+  addInputValue,
+  onAddInputChange,
+  onAddSubmit,
+  onAddCancel,
+  onSelectionChange,
+}: DashboardContentProps) {
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get("q") || "";
+
+  const filters = React.useMemo(() => {
+    if (selectedCategoryId === "trash") return { is_deleted: true };
+    return { is_archived: false };
+  }, [selectedCategoryId]);
+
+  const {
+    filteredLinks,
+    isLoading,
+    fetchingLinks,
+    hasInitiallyLoaded,
+    handleSearch,
+    handleSubmit,
+    handleDeleteLink,
+    handleRestoreLink,
+    handlePermanentDeleteLink,
+    handleCopyUrl,
+    handleEditLink,
+    handleUpdateLink,
+    handlePinLink,
+    handleUnpinLink,
+    handleBatchDeleteLinks,
+    handleBatchRestoreLinks,
+    handleBatchPermanentDeleteLinks,
+    handleBatchPinLinks,
+    handleBatchUnpinLinks,
+    isLoadingMore,
+    hasMore,
+    loadMore,
+  } = useLinks(!!user, filters, user.id);
+
+  // Apply search from URL params
+  React.useEffect(() => {
+    handleSearch(searchQuery);
+  }, [searchQuery, handleSearch]);
+
+  // Sort links based on current sort settings
+  const sortedLinks = React.useMemo(() => {
+    const pinned = filteredLinks.filter((link) => link.is_pinned);
+    const unpinned = filteredLinks.filter((link) => !link.is_pinned);
+
+    const sortFunction = (a: Link, b: Link) => {
+      if (sortBy === "date") {
+        const dateA = new Date(a.created_at).getTime();
+        const dateB = new Date(b.created_at).getTime();
+        return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+      } else {
+        const titleA = a.title.toLowerCase();
+        const titleB = b.title.toLowerCase();
+        if (sortOrder === "asc") {
+          return titleA.localeCompare(titleB);
+        } else {
+          return titleB.localeCompare(titleA);
+        }
+      }
+    };
+
+    pinned.sort(sortFunction);
+    unpinned.sort(sortFunction);
+
+    return [...pinned, ...unpinned];
+  }, [filteredLinks, sortBy, sortOrder]);
+
+  const handleInlineAddSubmit = React.useCallback(() => {
+    if (!addInputValue.trim() || isLoading) return;
+
+    const detectedItems = detectMultipleContentTypes(addInputValue);
+    if (detectedItems.length > 0) {
+      const validItems = detectedItems.filter(item => {
+        if (item.type === 'url') {
+          try {
+            const url = new URL(item.value);
+            return url.hostname === 'localhost' || url.hostname.includes('.');
+          } catch {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      if (validItems.length === 0) {
+        toast.error("Please enter a valid URL or color");
+        return;
+      }
+
+      if (validItems.length < detectedItems.length) {
+        toast.warning("Some invalid items were skipped");
+      }
+
+      handleSubmit(validItems);
+      onAddSubmit();
+    }
+  }, [addInputValue, isLoading, handleSubmit, onAddSubmit]);
+
+  // Show skeleton only on true initial load
+  if (!hasInitiallyLoaded && filteredLinks.length === 0) {
+    return <LinkListSkeleton />;
+  }
+
+  return (
+    <LinkList
+      links={sortedLinks}
+      onDelete={handleDeleteLink}
+      onRestore={handleRestoreLink}
+      onPermanentDelete={handlePermanentDeleteLink}
+      onEdit={handleEditLink}
+      onCopy={handleCopyUrl}
+      onPin={handlePinLink}
+      onUnpin={handleUnpinLink}
+      onBatchDelete={handleBatchDeleteLinks}
+      onBatchRestore={handleBatchRestoreLinks}
+      onBatchPermanentDelete={handleBatchPermanentDeleteLinks}
+      onBatchPin={handleBatchPinLinks}
+      onBatchUnpin={handleBatchUnpinLinks}
+      onUpdate={handleUpdateLink}
+      isTrashView={selectedCategoryId === "trash"}
+      isAddingItem={isAddingItem && selectedCategoryId !== "trash"}
+      addInputValue={addInputValue}
+      onAddInputChange={onAddInputChange}
+      onAddSubmit={handleInlineAddSubmit}
+      onAddCancel={onAddCancel}
+      isLoadingMore={isLoadingMore}
+      hasMore={hasMore}
+      onLoadMore={loadMore}
+      onSelectionChange={onSelectionChange}
+    />
+  );
+}
