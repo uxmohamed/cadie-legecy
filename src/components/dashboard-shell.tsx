@@ -68,38 +68,22 @@ export function DashboardShell({
   // Local state for immediate input updates
   const [searchInput, setSearchInput] = React.useState(searchParams.get("q") || "");
 
-  // Debounced value that updates URL
-  const [debouncedSearch, setDebouncedSearch] = React.useState(searchInput);
-
+  // Update URL with debounce (simple, no intermediate state)
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(searchInput);
+      const params = new URLSearchParams(searchParams.toString());
+
+      if (searchInput) {
+        params.set("q", searchInput);
+      } else {
+        params.delete("q");
+      }
+
+      router.replace(`?${params.toString()}`, { scroll: false });
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [searchInput]);
-
-  // Update URL when debounced value changes
-  React.useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    if (debouncedSearch) {
-      params.set("q", debouncedSearch);
-    } else {
-      params.delete("q");
-    }
-
-    router.replace(`?${params.toString()}`, { scroll: false });
-  }, [debouncedSearch, router, searchParams]);
-
-  // Sync with URL changes (e.g., from back/forward navigation)
-  // Only sync if URL changed externally (not from our own debounced update)
-  React.useEffect(() => {
-    const urlSearch = searchParams.get("q") || "";
-    if (urlSearch !== debouncedSearch && urlSearch !== searchInput) {
-      setSearchInput(urlSearch);
-    }
-  }, [searchParams, debouncedSearch, searchInput]);
+  }, [searchInput, router]);
 
   const handleSearchChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {

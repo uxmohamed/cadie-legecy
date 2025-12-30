@@ -70,7 +70,7 @@ export function SWRCacheProvider({ children }: SWRCacheProviderProps) {
         // Global SWR config to persist cache across navigation
         revalidateOnFocus: false,
         revalidateOnReconnect: false,
-        revalidateIfStale: false, // Don't auto-revalidate stale data
+        revalidateIfStale: true, // Revalidate stale cache on mount with fresh data
         dedupingInterval: 60000, // 60 seconds - prevent duplicate requests
         focusThrottleInterval: 60000, // Throttle focus revalidation
       }}
