@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useSearchParams } from "next/navigation";
 import { LinkList } from "@/components/link-list";
 import { LinkListSkeleton } from "@/components/skeletons";
 import { useLinks } from "@/features/links/hooks";
@@ -13,6 +12,14 @@ import {
 } from "@/lib/content-detector";
 import { toast } from "sonner";
 
+export interface BatchHandlers {
+  onBatchDelete: (ids: string[]) => Promise<void>;
+  onBatchRestore: (ids: string[]) => Promise<void>;
+  onBatchPermanentDelete: (ids: string[]) => Promise<void>;
+  onBatchPin: (ids: string[]) => void;
+  onBatchUnpin: (ids: string[]) => void;
+}
+
 interface DashboardContentProps {
   user: User;
   selectedCategoryId: string | null;
@@ -23,7 +30,8 @@ interface DashboardContentProps {
   onAddInputChange: (value: string) => void;
   onAddSubmit: () => void;
   onAddCancel: () => void;
-  onSelectionChange: (count: number, links: Link[], clearSelection: () => void) => void;
+  onSelectionChange: (count: number, links: Link[], clearSelection: () => void, batchHandlers: BatchHandlers) => void;
+  searchQuery: string;
 }
 
 export function DashboardContent({
@@ -37,21 +45,30 @@ export function DashboardContent({
   onAddSubmit,
   onAddCancel,
   onSelectionChange,
+  searchQuery,
 }: DashboardContentProps) {
-  const searchParams = useSearchParams();
-  const searchQuery = searchParams.get("q") || "";
 
   const filters = React.useMemo(() => {
     if (selectedCategoryId === "trash") return { is_deleted: true };
     return { is_archived: false };
   }, [selectedCategoryId]);
 
+  // Debounce the search query to avoid too many API requests
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = React.useState(searchQuery);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const {
     filteredLinks,
     isLoading,
     fetchingLinks,
     hasInitiallyLoaded,
-    handleSearch,
     handleSubmit,
     handleDeleteLink,
     handleRestoreLink,
@@ -69,12 +86,7 @@ export function DashboardContent({
     isLoadingMore,
     hasMore,
     loadMore,
-  } = useLinks(!!user, filters, user.id);
-
-  // Apply search from URL params
-  React.useEffect(() => {
-    handleSearch(searchQuery);
-  }, [searchQuery, handleSearch]);
+  } = useLinks(!!user, filters, user.id, debouncedSearchQuery);
 
   // Sort links based on current sort settings
   const sortedLinks = React.useMemo(() => {
@@ -133,6 +145,16 @@ export function DashboardContent({
       onAddSubmit();
     }
   }, [addInputValue, isLoading, handleSubmit, onAddSubmit]);
+
+  // Create stable batch handlers that accept IDs as parameters
+  // These are passed to onSelectionChange and stored in DashboardClient
+  const batchHandlers: BatchHandlers = React.useMemo(() => ({
+    onBatchDelete: handleBatchDeleteLinks,
+    onBatchRestore: handleBatchRestoreLinks,
+    onBatchPermanentDelete: handleBatchPermanentDeleteLinks,
+    onBatchPin: handleBatchPinLinks,
+    onBatchUnpin: handleBatchUnpinLinks,
+  }), [handleBatchDeleteLinks, handleBatchRestoreLinks, handleBatchPermanentDeleteLinks, handleBatchPinLinks, handleBatchUnpinLinks]);
 
   // Show skeleton only on true initial load
   if (!hasInitiallyLoaded && filteredLinks.length === 0) {

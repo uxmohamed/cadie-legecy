@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Suspense } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { DashboardContent } from "@/components/dashboard-content";
@@ -17,6 +17,7 @@ interface DashboardClientProps {
 
 export function DashboardClient({ user }: DashboardClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [profileChecked, setProfileChecked] = React.useState(false);
   const [needsOnboarding, setNeedsOnboarding] = React.useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = React.useState<string | null>(null);
@@ -24,9 +25,17 @@ export function DashboardClient({ user }: DashboardClientProps) {
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("desc");
   const [isAddingItem, setIsAddingItem] = React.useState(false);
   const [addInputValue, setAddInputValue] = React.useState("");
+  const [searchQuery, setSearchQuery] = React.useState(searchParams.get("q") || "");
   const [selectedCount, setSelectedCount] = React.useState(0);
   const [selectedLinks, setSelectedLinks] = React.useState<Link[]>([]);
   const clearSelectionRef = React.useRef<(() => void) | null>(null);
+  const batchHandlersRef = React.useRef<{
+    onBatchDelete: (ids: string[]) => Promise<void>;
+    onBatchRestore: (ids: string[]) => Promise<void>;
+    onBatchPermanentDelete: (ids: string[]) => Promise<void>;
+    onBatchPin: (ids: string[]) => void;
+    onBatchUnpin: (ids: string[]) => void;
+  } | null>(null);
 
   const handleSortChange = React.useCallback(
     (newSortBy: "date" | "title") => {
@@ -45,8 +54,17 @@ export function DashboardClient({ user }: DashboardClientProps) {
     setIsAddingItem((prev) => !prev);
   }, [selectedCategoryId]);
 
+  const handleOpenAddMode = React.useCallback(() => {
+    if (selectedCategoryId === "trash") return;
+    setIsAddingItem(true);
+  }, [selectedCategoryId]);
+
   const handleAddInputChange = React.useCallback((value: string) => {
     setAddInputValue(value);
+  }, []);
+
+  const handleSearchChange = React.useCallback((value: string) => {
+    setSearchQuery(value);
   }, []);
 
   const handleAddSubmit = React.useCallback(() => {
@@ -60,10 +78,17 @@ export function DashboardClient({ user }: DashboardClientProps) {
   }, []);
 
   const handleSelectionChange = React.useCallback(
-    (count: number, links: Link[], clearSelection: () => void) => {
+    (count: number, links: Link[], clearSelection: () => void, batchHandlers: {
+      onBatchDelete: (ids: string[]) => Promise<void>;
+      onBatchRestore: (ids: string[]) => Promise<void>;
+      onBatchPermanentDelete: (ids: string[]) => Promise<void>;
+      onBatchPin: (ids: string[]) => void;
+      onBatchUnpin: (ids: string[]) => void;
+    }) => {
       setSelectedCount(count);
       setSelectedLinks(links);
       clearSelectionRef.current = clearSelection;
+      batchHandlersRef.current = batchHandlers;
     },
     []
   );
@@ -110,37 +135,60 @@ export function DashboardClient({ user }: DashboardClientProps) {
       onSortChange={handleSortChange}
       isAddingItem={isAddingItem}
       onToggleAddMode={handleToggleAddMode}
+      onOpenAddMode={handleOpenAddMode}
+      searchQuery={searchQuery}
+      onSearchChange={handleSearchChange}
       selectedCount={selectedCount}
       selectedLinks={selectedLinks}
       onClearSelection={() => clearSelectionRef.current?.()}
       onBatchDelete={async () => {
-        // Handler will be called from DashboardContent
+        const ids = selectedLinks.map(link => link.id);
+        if (ids.length > 0 && batchHandlersRef.current) {
+          await batchHandlersRef.current.onBatchDelete(ids);
+          clearSelectionRef.current?.();
+        }
       }}
       onBatchRestore={
         selectedCategoryId === "trash"
           ? async () => {
-              // Handler will be called from DashboardContent
+              const ids = selectedLinks.map(link => link.id);
+              if (ids.length > 0 && batchHandlersRef.current) {
+                await batchHandlersRef.current.onBatchRestore(ids);
+                clearSelectionRef.current?.();
+              }
             }
           : undefined
       }
       onBatchPermanentDelete={
         selectedCategoryId === "trash"
           ? async () => {
-              // Handler will be called from DashboardContent
+              const ids = selectedLinks.map(link => link.id);
+              if (ids.length > 0 && batchHandlersRef.current) {
+                await batchHandlersRef.current.onBatchPermanentDelete(ids);
+                clearSelectionRef.current?.();
+              }
             }
           : undefined
       }
       onBatchPin={
         selectedCategoryId !== "trash"
           ? async () => {
-              // Handler will be called from DashboardContent
+              const ids = selectedLinks.map(link => link.id);
+              if (ids.length > 0 && batchHandlersRef.current) {
+                batchHandlersRef.current.onBatchPin(ids);
+                clearSelectionRef.current?.();
+              }
             }
           : undefined
       }
       onBatchUnpin={
         selectedCategoryId !== "trash"
           ? async () => {
-              // Handler will be called from DashboardContent
+              const ids = selectedLinks.map(link => link.id);
+              if (ids.length > 0 && batchHandlersRef.current) {
+                batchHandlersRef.current.onBatchUnpin(ids);
+                clearSelectionRef.current?.();
+              }
             }
           : undefined
       }
@@ -157,6 +205,7 @@ export function DashboardClient({ user }: DashboardClientProps) {
           onAddSubmit={handleAddSubmit}
           onAddCancel={handleAddCancel}
           onSelectionChange={handleSelectionChange}
+          searchQuery={searchQuery}
         />
       </Suspense>
     </DashboardShell>

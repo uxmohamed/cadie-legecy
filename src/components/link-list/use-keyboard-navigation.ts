@@ -51,7 +51,7 @@ export function useKeyboardNavigation({
     const shortcuts = [
       { key: "j", description: "Move selection up", category: "Navigation", action: () => { } },
       { key: "k", description: "Move selection down", category: "Navigation", action: () => { } },
-      { key: "Enter", description: "Open selected link", category: "Navigation", action: () => { } },
+      { key: "Enter", description: "Open selected link(s)", category: "Navigation", action: () => { } },
       { key: "e", description: "Edit selected link", category: "Actions", action: () => { } },
       { key: "d", description: "Move to Trash", category: "Actions", action: () => { } },
       { key: "Backspace", description: "Delete selection", category: "Actions", action: () => { } },
@@ -146,15 +146,23 @@ export function useKeyboardNavigation({
         }
       }
 
-      // Actions
-      if (e.key === "Enter" && focusedIndex !== null) {
-        // The link itself handles Enter by default if focused, but if we want to trigger the sheet:
-        // We might need a callback for "onSelect" or similar if it's not just a link click.
-        // For now, let default behavior happen (opening the link href).
-        // If we want to open the details sheet, we need to simulate the click or call a prop.
-        // The current implementation of LinkListItem handles onClick to open the sheet.
-        // So Enter on a focused link should trigger onClick natively?
-        // Yes, for <a> tags or buttons.
+      // Actions - Open selected links in new tabs
+      if (e.key === "Enter" && selectedIds.size > 0) {
+        e.preventDefault();
+        // Get all selected links and open each in a new tab
+        // Create and click anchor elements to bypass popup blockers
+        const selectedLinks = displayLinks.filter((link) => selectedIds.has(link.id));
+        selectedLinks.forEach((link) => {
+          if (link.url) {
+            const anchor = document.createElement("a");
+            anchor.href = link.url;
+            anchor.target = "_blank";
+            anchor.rel = "noopener noreferrer";
+            document.body.appendChild(anchor);
+            anchor.click();
+            document.body.removeChild(anchor);
+          }
+        });
       }
 
       if (e.key === "Escape") {

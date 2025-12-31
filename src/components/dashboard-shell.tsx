@@ -29,6 +29,9 @@ interface DashboardShellProps {
   onSortChange: (sortBy: "date" | "title") => void;
   isAddingItem: boolean;
   onToggleAddMode: () => void;
+  onOpenAddMode: () => void;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
   selectedCount: number;
   selectedLinks: Link[];
   onClearSelection: () => void;
@@ -49,6 +52,9 @@ export function DashboardShell({
   onSortChange,
   isAddingItem,
   onToggleAddMode,
+  onOpenAddMode,
+  searchQuery,
+  onSearchChange,
   selectedCount,
   selectedLinks,
   onClearSelection,
@@ -65,41 +71,36 @@ export function DashboardShell({
 
   const isTrashView = selectedCategoryId === "trash";
 
-  // Local state for immediate input updates
-  const [searchInput, setSearchInput] = React.useState(searchParams.get("q") || "");
+  // Update URL immediately using history API (no navigation, instant URL update)
+  const updateUrl = React.useCallback((value: string) => {
+    const params = new URLSearchParams(window.location.search);
+    if (value) {
+      params.set("q", value);
+    } else {
+      params.delete("q");
+    }
+    const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
+    window.history.replaceState(null, "", newUrl);
+  }, []);
 
-  // Update URL with debounce (simple, no intermediate state)
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      const params = new URLSearchParams(searchParams.toString());
-
-      if (searchInput) {
-        params.set("q", searchInput);
-      } else {
-        params.delete("q");
-      }
-
-      router.replace(`?${params.toString()}`, { scroll: false });
-    }, 400);
-
-    return () => clearTimeout(timer);
-  }, [searchInput, router]);
-
-  const handleSearchChange = React.useCallback(
+  const handleSearchInputChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearchInput(e.target.value);
+      const value = e.target.value;
+      onSearchChange(value);
+      updateUrl(value);
     },
-    []
+    [onSearchChange, updateUrl]
   );
 
   const handleSearchKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Escape") {
-        setSearchInput("");
+        onSearchChange("");
+        updateUrl("");
         searchInputRef.current?.blur();
       }
     },
-    []
+    [onSearchChange, updateUrl]
   );
 
   const handleSortChange = React.useCallback(
@@ -112,12 +113,12 @@ export function DashboardShell({
   // Register keyboard shortcuts
   React.useEffect(() => {
     registerShortcut({
-      key: "d",
+      key: "c",
       description: "Add new item",
       category: "Global",
       action: () => {
         if (selectedCategoryId !== "trash") {
-          onToggleAddMode();
+          onOpenAddMode();
         }
       },
     });
@@ -150,11 +151,6 @@ export function DashboardShell({
     });
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "f") {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-
       if (e.shiftKey && e.key === "T") {
         const target = e.target as HTMLElement;
         const isInputFocused =
@@ -180,15 +176,29 @@ export function DashboardShell({
           onViewChange(null);
         }
       }
+
+      if (e.key === "c" && !e.metaKey && !e.ctrlKey) {
+        const target = e.target as HTMLElement;
+        const isInputFocused =
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable;
+
+        if (!isInputFocused && selectedCategoryId !== "trash") {
+          e.preventDefault();
+          e.stopPropagation();
+          onOpenAddMode();
+        }
+      }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, true);
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      unregisterShortcut("d");
+      window.removeEventListener("keydown", handleKeyDown, true);
+      unregisterShortcut("c");
       unregisterShortcut("/");
     };
-  }, [registerShortcut, unregisterShortcut, selectedCategoryId, onToggleAddMode, onViewChange]);
+  }, [registerShortcut, unregisterShortcut, selectedCategoryId, onOpenAddMode, onViewChange]);
 
   return (
     <div className="min-h-screen bg-[var(--bg-main-container)] relative">
@@ -221,7 +231,8 @@ export function DashboardShell({
                   variant="outline"
                   size="icon"
                   onClick={onToggleAddMode}
-                  className="h-9 w-9 rounded-md border-[var(--border-primary)] bg-transparent dark:bg-[var(--bg-field-light)] hover:bg-[var(--bg-field-hover)]"
+                  disabled={isAddingItem}
+                  className={`h-9 w-9 rounded-md border-[var(--border-primary)] bg-transparent dark:bg-[var(--bg-field-light)] hover:bg-[var(--bg-field-hover)] ${isAddingItem ? "bg-[var(--bg-field-hover)] dark:bg-[var(--bg-field-hover)] pointer-events-none" : ""}`}
                   aria-label="Add item"
                 >
                   <IconPlus className="h-4 w-4" />
@@ -255,8 +266,8 @@ export function DashboardShell({
                 <input
                   ref={searchInputRef}
                   type="text"
-                  value={searchInput}
-                  onChange={handleSearchChange}
+                  value={searchQuery}
+                  onChange={handleSearchInputChange}
                   onKeyDown={handleSearchKeyDown}
                   placeholder="Search..."
                   className="h-9 w-32 sm:w-48 md:w-[250px] py-0 pl-[26px] pr-[22px] rounded-lg outline-none placeholder:text-[var(--text-tertiary)] text-[var(--text-primary)] bg-[var(--bg-field-light)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2 transition-shadow text-sm font-[470] tracking-[-0.1px]"

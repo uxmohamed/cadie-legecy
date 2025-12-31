@@ -42,9 +42,10 @@ import useSWRInfinite from "swr/infinite";
 /**
  * Hook for managing links with SWR caching and infinite scroll
  */
-export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId?: string) {
+const PAGE_SIZE = 20;
+
+export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId?: string, searchQuery: string = "") {
     const [isLoading, setIsLoading] = React.useState(false);
-    const [searchQuery, setSearchQuery] = React.useState("");
 
     // Build query string from filters
     const buildQueryString = React.useCallback((index: number, previousPageData: { links: Link[], total: number } | null) => {
@@ -61,12 +62,17 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
             params.append("is_deleted", "false");
         }
 
+        // Search query for server-side filtering
+        if (searchQuery.trim()) {
+            params.append("q", searchQuery.trim());
+        }
+
         // Pagination params
-        params.append("limit", "50");
-        params.append("offset", String(index * 50));
+        params.append("limit", String(PAGE_SIZE));
+        params.append("offset", String(index * PAGE_SIZE));
 
         return `/api/links?${params.toString()}`;
-    }, [isAuthenticated, filters]);
+    }, [isAuthenticated, filters, searchQuery]);
 
     // Use SWRInfinite for pagination
     const { data, error, size, setSize, isValidating, mutate } = useSWRInfinite<{ links: Link[], total: number }>(
@@ -211,32 +217,8 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         };
     }, [isAuthenticated, userId]); // Depend on userId instead of fetching it
 
-    // Filter links based on search query
-    const filteredLinks = React.useMemo(() => {
-        if (!searchQuery.trim()) {
-            return links;
-        }
-
-        const lowerQuery = searchQuery.toLowerCase();
-        return links.filter((link) => {
-            const searchableText = [
-                link.title,
-                link.url,
-                link.domain,
-                link.description,
-                link.color_value,
-            ]
-                .filter(Boolean)
-                .join(" ")
-                .toLowerCase();
-
-            return searchableText.includes(lowerQuery);
-        });
-    }, [links, searchQuery]);
-
-    const handleSearch = React.useCallback((query: string) => {
-        setSearchQuery(query);
-    }, []);
+    // Links are now filtered server-side, so filteredLinks is just the links
+    const filteredLinks = links;
 
     const handleDeleteLink = React.useCallback(
         async (id: string) => {
@@ -640,16 +622,21 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
     const handleSubmit = async (items: DetectedContent[]) => {
         if (items.length === 0) return;
 
-        // Client-side duplicate detection - check against existing links
+        // Client-side duplicate detection - check against existing links AND within the batch
         const existingUrls = new Set(links.map((link) => link.url.toLowerCase()));
+        const seenInBatch = new Set<string>();
         const newItems: DetectedContent[] = [];
         const duplicateItems: DetectedContent[] = [];
 
         for (const item of items) {
-            if (existingUrls.has(item.value.toLowerCase())) {
+            const normalizedUrl = item.value.toLowerCase();
+
+            // Check if duplicate of existing link or already seen in this batch
+            if (existingUrls.has(normalizedUrl) || seenInBatch.has(normalizedUrl)) {
                 duplicateItems.push(item);
             } else {
                 newItems.push(item);
+                seenInBatch.add(normalizedUrl);
             }
         }
 
@@ -757,7 +744,6 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         isLoading,
         fetchingLinks,
         hasInitiallyLoaded,
-        handleSearch,
         handleSubmit,
         handleDeleteLink,
         handleRestoreLink,

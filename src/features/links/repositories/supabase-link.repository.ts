@@ -12,7 +12,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
     /**
      * Find all links for a user with optional filters and pagination
      */
-    async findAll(userId: string, filters?: LinkFilters, limit?: number, offset?: number): Promise<{ links: Link[], total: number }> {
+    async findAll(userId: string, filters?: LinkFilters, limit?: number, offset?: number, searchQuery?: string): Promise<{ links: Link[], total: number }> {
         const supabase = await createClient();
 
         let query = supabase
@@ -43,6 +43,12 @@ export class SupabaseLinkRepository implements ILinkRepository {
 
         if (filters?.content_type) {
             query = query.eq("content_type", filters.content_type);
+        }
+
+        // Apply search filter - search across title, url, domain, description, color_value
+        if (searchQuery && searchQuery.trim()) {
+            const searchTerm = `%${searchQuery.trim()}%`;
+            query = query.or(`title.ilike.${searchTerm},url.ilike.${searchTerm},domain.ilike.${searchTerm},description.ilike.${searchTerm},color_value.ilike.${searchTerm}`);
         }
 
         // Apply sorting

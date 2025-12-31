@@ -132,9 +132,17 @@ export function useSelection({ displayLinks }: UseSelectionOptions) {
         setSelectedIds(newSet);
       }
     } else {
-      // No modifiers - select single item
+      // No modifiers
+      const id = displayLinks[index].id;
+
+      // If right-click on an already selected item, keep the selection for batch actions
+      if (e.button === 2 && selectedIds.has(id)) {
+        return;
+      }
+
+      // Otherwise select single item
       const newSet = new Set<string>();
-      newSet.add(displayLinks[index].id);
+      newSet.add(id);
       setSelectedIds(newSet);
       setLastSelectedIndex(index);
     }

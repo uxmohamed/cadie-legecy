@@ -60,7 +60,13 @@ interface LinkListProps {
   isLoadingMore?: boolean;
   hasMore?: boolean;
   onLoadMore?: () => void;
-  onSelectionChange?: (selectedCount: number, selectedLinks: Link[], clearSelection: () => void) => void;
+  onSelectionChange?: (selectedCount: number, selectedLinks: Link[], clearSelection: () => void, batchHandlers: {
+    onBatchDelete: (ids: string[]) => Promise<void>;
+    onBatchRestore: (ids: string[]) => Promise<void>;
+    onBatchPermanentDelete: (ids: string[]) => Promise<void>;
+    onBatchPin: (ids: string[]) => void;
+    onBatchUnpin: (ids: string[]) => void;
+  }) => void;
 }
 
 export function LinkList({
@@ -172,25 +178,13 @@ export function LinkList({
     setLastSelectedIndex,
   } = useSelection({ displayLinks });
 
-  // Notify parent of selection changes
+  // Notify parent of selection changes (refs declared here, effect after batch handlers)
   const onSelectionChangeRef = React.useRef(onSelectionChange);
   const clearSelectionRef = React.useRef(clearSelection);
   React.useEffect(() => {
     onSelectionChangeRef.current = onSelectionChange;
     clearSelectionRef.current = clearSelection;
   }, [onSelectionChange, clearSelection]);
-
-  const prevSelectedIdsStrRef = React.useRef<string>('');
-  React.useEffect(() => {
-    const selectedIdsArray = Array.from(selectedIds).sort();
-    const selectedIdsStr = selectedIdsArray.join(',');
-    
-    if (selectedIdsStr !== prevSelectedIdsStrRef.current && onSelectionChangeRef.current) {
-      prevSelectedIdsStrRef.current = selectedIdsStr;
-      const selectedLinksArray = displayLinks.filter(link => selectedIds.has(link.id));
-      onSelectionChangeRef.current(selectedIds.size, selectedLinksArray, clearSelectionRef.current);
-    }
-  }, [selectedIds, displayLinks]);
 
   // Update refs and focused index when links change
   React.useEffect(() => {
@@ -240,12 +234,14 @@ export function LinkList({
     setDeleteConfirmation((prev) => ({ ...prev, isOpen: false }));
   };
 
-  // Batch Actions
+  // Batch Actions - used by context menu and keyboard shortcuts
   const handleBatchDelete = React.useCallback(async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
     if (onBatchDelete) {
-      await onBatchDelete(Array.from(selectedIds));
+      await onBatchDelete(ids);
     } else {
-      await Promise.all(Array.from(selectedIds).map((id) => onDelete?.(id)));
+      await Promise.all(ids.map((id) => onDelete?.(id)));
     }
     clearSelection();
   }, [selectedIds, onDelete, onBatchDelete, clearSelection]);
@@ -283,6 +279,28 @@ export function LinkList({
     }
     clearSelection();
   }, [selectedIds, onUnpin, onBatchUnpin, clearSelection, isTrashView]);
+
+  // Selection change callback with batch handlers
+  // We pass the prop handlers directly - they accept IDs as parameters
+  // This avoids closure issues since the parent will call these with the current selectedLinks IDs
+  const prevSelectedIdsStrRef = React.useRef<string>('');
+  React.useEffect(() => {
+    const selectedIdsArray = Array.from(selectedIds).sort();
+    const selectedIdsStr = selectedIdsArray.join(',');
+
+    if (selectedIdsStr !== prevSelectedIdsStrRef.current && onSelectionChangeRef.current) {
+      prevSelectedIdsStrRef.current = selectedIdsStr;
+      const selectedLinksArray = displayLinks.filter(link => selectedIds.has(link.id));
+      // Pass the prop handlers directly - they accept IDs as parameters
+      onSelectionChangeRef.current(selectedIds.size, selectedLinksArray, clearSelectionRef.current, {
+        onBatchDelete: onBatchDelete,
+        onBatchRestore: onBatchRestore,
+        onBatchPermanentDelete: onBatchPermanentDelete,
+        onBatchPin: onBatchPin,
+        onBatchUnpin: onBatchUnpin,
+      });
+    }
+  }, [selectedIds, displayLinks, onBatchDelete, onBatchRestore, onBatchPermanentDelete, onBatchPin, onBatchUnpin]);
 
   // Inline edit handlers
   const handleRename = React.useCallback((link: Link) => {
@@ -427,6 +445,13 @@ export function LinkList({
 
   const handleContextMenu = (e: React.MouseEvent, link: Link) => {
     e.preventDefault();
+    // If the right-clicked item is not in the current selection, select only that item
+    // If it's already selected, keep the current selection (for batch actions)
+    if (!selectedIds.has(link.id)) {
+      const newSet = new Set<string>();
+      newSet.add(link.id);
+      setSelectedIds(newSet);
+    }
     setContextMenu({ x: e.clientX, y: e.clientY, link });
   };
 
