@@ -25,22 +25,11 @@ export function OnboardingFlow({ user, onComplete }: OnboardingFlowProps) {
     avatarUrl: string;
   } | null>(null);
 
-  const handleWelcomeComplete = React.useCallback(async (displayName: string, avatarUrl: string) => {
-    // Skip extension step for now (extension not ready for release)
-    // Complete onboarding directly after welcome step
-    setIsSubmitting(true);
-    
-    try {
-      const success = await complete(displayName, avatarUrl);
-      if (success) {
-        onComplete();
-      }
-    } catch (error) {
-      console.error("Error completing onboarding:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [complete, onComplete]);
+  const handleWelcomeComplete = React.useCallback((displayName: string, avatarUrl: string) => {
+    // Store profile data and move to extension step
+    setProfileData({ displayName, avatarUrl });
+    setCurrentStep("extension");
+  }, []);
 
   const handleExtensionComplete = React.useCallback(async () => {
     if (!profileData) {
