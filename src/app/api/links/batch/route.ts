@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { MetadataService } from "@/features/links/services/metadata.service";
 import { canonicalizeUrl } from "@/lib/canonicalize";
 
-
+export const runtime = "edge";
 
 /**
  * Extract domain from URL
