@@ -4,6 +4,17 @@ import { MetadataService } from "@/features/links/services/metadata.service";
 
 export const runtime = "edge";
 
+/**
+ * Extract domain from URL
+ */
+function extractDomain(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
 type BatchAction = "add" | "delete" | "restore" | "permanent_delete" | "pin" | "unpin";
 
 interface LinkData {
@@ -99,42 +110,51 @@ export async function POST(request: NextRequest) {
             // Update each link with comprehensive metadata
             const updatePromises = urlLinks.map(async (link: CreatedLink) => {
               const metadata = metadataMap.get(link.url);
-              if (!metadata) return link;
-              
+              const domain = metadata?.domain || extractDomain(link.url);
+
+              // Even if metadata fetch failed, at least set the domain
+              const updateData: Record<string, unknown> = {
+                domain,
+              };
+
+              // Add metadata fields if available
+              if (metadata) {
+                Object.assign(updateData, {
+                  title: metadata.title || link.title,
+                  favicon_url: metadata.favicon_url || link.favicon_url,
+                  description: metadata.description || link.description,
+                  og_image_url: metadata.preview_image_url || link.og_image_url,
+                  // Extended metadata
+                  site_name: metadata.site_name,
+                  final_url: metadata.final_url,
+                  canonical_url: metadata.canonical_url,
+                  favicon_variants: metadata.favicon_variants,
+                  preview_image_width: metadata.preview_image_width,
+                  preview_image_height: metadata.preview_image_height,
+                  theme_color: metadata.theme_color,
+                  language: metadata.language,
+                  word_count: metadata.word_count,
+                  reading_time_minutes: metadata.reading_time_minutes,
+                  status_code: metadata.status_code,
+                  fetch_status: metadata.fetch_status,
+                  fetched_at: metadata.fetched_at,
+                  etag: metadata.etag,
+                  last_modified: metadata.last_modified,
+                });
+              }
+
               try {
                 const { data: updatedLink } = await supabase
                   .from("links")
-                  .update({
-                    // Core fields
-                    title: metadata.title || link.title,
-                    favicon_url: metadata.favicon_url || link.favicon_url,
-                    description: metadata.description || link.description,
-                    og_image_url: metadata.preview_image_url || link.og_image_url,
-                    // Extended metadata
-                    site_name: metadata.site_name,
-                    final_url: metadata.final_url,
-                    canonical_url: metadata.canonical_url,
-                    favicon_variants: metadata.favicon_variants,
-                    preview_image_width: metadata.preview_image_width,
-                    preview_image_height: metadata.preview_image_height,
-                    theme_color: metadata.theme_color,
-                    language: metadata.language,
-                    word_count: metadata.word_count,
-                    reading_time_minutes: metadata.reading_time_minutes,
-                    status_code: metadata.status_code,
-                    fetch_status: metadata.fetch_status,
-                    fetched_at: metadata.fetched_at,
-                    etag: metadata.etag,
-                    last_modified: metadata.last_modified,
-                  })
+                  .update(updateData)
                   .eq("id", link.id)
                   .select()
                   .single();
-                
-                return updatedLink || link;
+
+                return updatedLink || { ...link, domain };
               } catch (err) {
                 console.error(`Metadata update failed for ${link.url}:`, err);
-                return link;
+                return { ...link, domain };
               }
             });
             
