@@ -1,36 +1,17 @@
-import { Skeleton } from "./skeleton";
-
 export function LinkItemSkeleton() {
   return (
-    <div className="group/item relative flex items-center gap-2 w-full p-2 border border-transparent rounded-lg">
-      {/* Drag Handle Skeleton */}
-      <div className="w-4 h-4 opacity-0" />
-
-      {/* Selection Checkbox Skeleton */}
-      <Skeleton className="h-4 w-4 rounded-sm" />
-
-      {/* Favicon Skeleton */}
-      <Skeleton className="h-4 w-4 rounded-full" />
-
-      {/* Title Skeleton */}
-      <div className="flex-1 min-w-0">
-        <Skeleton className="h-5 w-48" />
-      </div>
-
-      {/* URL/Domain Skeleton */}
-      <div className="hidden sm:block w-32">
-        <Skeleton className="h-4 w-24" />
-      </div>
-
-      {/* Date Skeleton */}
-      <div className="w-24 text-right">
-        <Skeleton className="h-4 w-16 ml-auto" />
-      </div>
-
-      {/* Actions Skeleton */}
-      <div className="flex items-center gap-1 opacity-0">
-        <div className="w-8 h-8" />
-        <div className="w-8 h-8" />
+    <div className="group/item relative flex items-center gap-2 w-full">
+      <div className="group relative flex-1 grid grid-cols-[1fr_80px] sm:grid-cols-[1fr_120px] md:grid-cols-[1fr_150px] ease-in will-change-transform items-center gap-1 rounded-lg py-4 px-2 select-none">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="h-5 w-5 flex-shrink-0 animate-pulse rounded bg-[var(--grey-200)] dark:bg-[var(--grey-700)]" />
+          <div className="min-w-0 flex-1 flex items-center gap-2">
+            <div className="h-[15px] w-[60%] animate-pulse rounded bg-[var(--grey-200)] dark:bg-[var(--grey-700)]" />
+            <div className="h-[15px] w-[40%] animate-pulse rounded bg-[var(--grey-200)] dark:bg-[var(--grey-700)] opacity-50" />
+          </div>
+        </div>
+        <div className="flex items-center justify-end">
+          <div className="h-[13px] w-16 animate-pulse rounded bg-[var(--grey-200)] dark:bg-[var(--grey-700)]" />
+        </div>
       </div>
     </div>
   );

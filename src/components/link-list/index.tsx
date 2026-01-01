@@ -60,13 +60,18 @@ interface LinkListProps {
   isLoadingMore?: boolean;
   hasMore?: boolean;
   onLoadMore?: () => void;
-  onSelectionChange?: (selectedCount: number, selectedLinks: Link[], clearSelection: () => void, batchHandlers: {
-    onBatchDelete: (ids: string[]) => Promise<void>;
-    onBatchRestore: (ids: string[]) => Promise<void>;
-    onBatchPermanentDelete: (ids: string[]) => Promise<void>;
-    onBatchPin: (ids: string[]) => void;
-    onBatchUnpin: (ids: string[]) => void;
-  }) => void;
+  onSelectionChange?: (
+    selectedCount: number,
+    selectedLinks: Link[],
+    clearSelection: () => void,
+    batchHandlers: {
+      onBatchDelete: (ids: string[]) => Promise<void>;
+      onBatchRestore: (ids: string[]) => Promise<void>;
+      onBatchPermanentDelete: (ids: string[]) => Promise<void>;
+      onBatchPin: (ids: string[]) => void;
+      onBatchUnpin: (ids: string[]) => void;
+    }
+  ) => void;
 }
 
 export function LinkList({
@@ -110,8 +115,12 @@ export function LinkList({
   const [sheetOpen, setSheetOpen] = React.useState(false);
 
   // Internal edit state (used if not provided externally)
-  const [internalEditingLinkId, setInternalEditingLinkId] = React.useState<string | null>(null);
-  const [internalEditMode, setInternalEditMode] = React.useState<'title' | 'url' | null>(null);
+  const [internalEditingLinkId, setInternalEditingLinkId] = React.useState<
+    string | null
+  >(null);
+  const [internalEditMode, setInternalEditMode] = React.useState<
+    "title" | "url" | null
+  >(null);
   const [internalEditValue, setInternalEditValue] = React.useState("");
 
   // Color change confirmation dialog state
@@ -215,13 +224,20 @@ export function LinkList({
 
   const confirmBatchPermanentDelete = React.useCallback(() => {
     const idsToDelete = Array.from(selectedIds);
-    setDeleteConfirmation({ isOpen: true, type: "batch", batchIds: idsToDelete });
+    setDeleteConfirmation({
+      isOpen: true,
+      type: "batch",
+      batchIds: idsToDelete,
+    });
   }, [selectedIds]);
 
   const executeDelete = async () => {
     if (deleteConfirmation.type === "single" && deleteConfirmation.itemId) {
       onPermanentDelete?.(deleteConfirmation.itemId);
-    } else if (deleteConfirmation.type === "batch" && deleteConfirmation.batchIds) {
+    } else if (
+      deleteConfirmation.type === "batch" &&
+      deleteConfirmation.batchIds
+    ) {
       if (onBatchPermanentDelete) {
         await onBatchPermanentDelete(deleteConfirmation.batchIds);
       } else {
@@ -257,7 +273,11 @@ export function LinkList({
 
   const handleBatchPermanentDelete = React.useCallback(() => {
     const idsToDelete = Array.from(selectedIds);
-    setDeleteConfirmation({ isOpen: true, type: "batch", batchIds: idsToDelete });
+    setDeleteConfirmation({
+      isOpen: true,
+      type: "batch",
+      batchIds: idsToDelete,
+    });
   }, [selectedIds]);
 
   const handleBatchPin = React.useCallback(() => {
@@ -283,68 +303,94 @@ export function LinkList({
   // Selection change callback with batch handlers
   // We pass the prop handlers directly - they accept IDs as parameters
   // This avoids closure issues since the parent will call these with the current selectedLinks IDs
-  const prevSelectedIdsStrRef = React.useRef<string>('');
+  const prevSelectedIdsStrRef = React.useRef<string>("");
   React.useEffect(() => {
     const selectedIdsArray = Array.from(selectedIds).sort();
-    const selectedIdsStr = selectedIdsArray.join(',');
+    const selectedIdsStr = selectedIdsArray.join(",");
 
-    if (selectedIdsStr !== prevSelectedIdsStrRef.current && onSelectionChangeRef.current) {
+    if (
+      selectedIdsStr !== prevSelectedIdsStrRef.current &&
+      onSelectionChangeRef.current
+    ) {
       prevSelectedIdsStrRef.current = selectedIdsStr;
-      const selectedLinksArray = displayLinks.filter(link => selectedIds.has(link.id));
+      const selectedLinksArray = displayLinks.filter((link) =>
+        selectedIds.has(link.id)
+      );
       // Pass the prop handlers directly - they accept IDs as parameters
-      onSelectionChangeRef.current(selectedIds.size, selectedLinksArray, clearSelectionRef.current, {
-        onBatchDelete: onBatchDelete,
-        onBatchRestore: onBatchRestore,
-        onBatchPermanentDelete: onBatchPermanentDelete,
-        onBatchPin: onBatchPin,
-        onBatchUnpin: onBatchUnpin,
-      });
+      onSelectionChangeRef.current(
+        selectedIds.size,
+        selectedLinksArray,
+        clearSelectionRef.current,
+        {
+          onBatchDelete: onBatchDelete,
+          onBatchRestore: onBatchRestore,
+          onBatchPermanentDelete: onBatchPermanentDelete,
+          onBatchPin: onBatchPin,
+          onBatchUnpin: onBatchUnpin,
+        }
+      );
     }
-  }, [selectedIds, displayLinks, onBatchDelete, onBatchRestore, onBatchPermanentDelete, onBatchPin, onBatchUnpin]);
+  }, [
+    selectedIds,
+    displayLinks,
+    onBatchDelete,
+    onBatchRestore,
+    onBatchPermanentDelete,
+    onBatchPin,
+    onBatchUnpin,
+  ]);
 
   // Inline edit handlers
-  const handleRename = React.useCallback((link: Link) => {
-    if (onRename) {
-      onRename(link.id, link.title || link.url);
-    } else {
-      setInternalEditingLinkId(link.id);
-      setInternalEditMode('title');
-      setInternalEditValue(link.title || link.url);
-    }
-  }, [onRename]);
+  const handleRename = React.useCallback(
+    (link: Link) => {
+      if (onRename) {
+        onRename(link.id, link.title || link.url);
+      } else {
+        setInternalEditingLinkId(link.id);
+        setInternalEditMode("title");
+        setInternalEditValue(link.title || link.url);
+      }
+    },
+    [onRename]
+  );
 
-  const handleEditChange = React.useCallback((value: string) => {
-    if (onEditChange) {
-      onEditChange(value);
-    } else {
-      setInternalEditValue(value);
-    }
-  }, [onEditChange]);
+  const handleEditChange = React.useCallback(
+    (value: string) => {
+      if (onEditChange) {
+        onEditChange(value);
+      } else {
+        setInternalEditValue(value);
+      }
+    },
+    [onEditChange]
+  );
 
   const handleEditSubmit = React.useCallback(() => {
     if (onEditSubmit) {
       onEditSubmit();
       return;
     }
-    
+
     // Find the link being edited
-    const link = links.find(l => l.id === effectiveEditingLinkId);
+    const link = links.find((l) => l.id === effectiveEditingLinkId);
     if (link && effectiveEditValue.trim() && onUpdate) {
       // Only update if the value actually changed
-      if (effectiveEditMode === 'title') {
+      if (effectiveEditMode === "title") {
         const currentTitle = link.title || link.url;
         const newTitle = effectiveEditValue.trim();
-        
+
         if (newTitle !== currentTitle) {
           // Check if this is a color item
-          if (link.content_type === 'color') {
+          if (link.content_type === "color") {
             // Check if the new title is a color
             const detected = detectContentType(newTitle);
-            if (detected.type === 'color') {
+            if (detected.type === "color") {
               // Get the new color's hex value
               const newColorHex = canonicalizeColor(detected.value);
-              const currentColorHex = canonicalizeColor(link.color_value || link.title);
-              
+              const currentColorHex = canonicalizeColor(
+                link.color_value || link.title
+              );
+
               // If the color would actually change, show confirmation dialog
               if (newColorHex !== currentColorHex) {
                 setColorChangeDialog({
@@ -360,7 +406,7 @@ export function LinkList({
             }
             // Not a color name or same color - just update title (keep color_value)
           }
-          
+
           // Regular rename (non-color or color with non-color new name)
           onUpdate(link.id, { title: newTitle });
           toast.success("Link updated");
@@ -372,7 +418,14 @@ export function LinkList({
     setInternalEditMode(null);
     setInternalEditValue("");
     setFocusedIndex(null);
-  }, [onEditSubmit, effectiveEditingLinkId, effectiveEditMode, effectiveEditValue, links, onUpdate]);
+  }, [
+    onEditSubmit,
+    effectiveEditingLinkId,
+    effectiveEditMode,
+    effectiveEditValue,
+    links,
+    onUpdate,
+  ]);
 
   // Handle color change confirmation
   const handleColorChangeConfirm = React.useCallback(() => {
@@ -435,7 +488,9 @@ export function LinkList({
     clearSelection,
     selectAll,
     onBatchDelete: handleBatchDelete,
-    onBatchPermanentDelete: isTrashView ? handleBatchPermanentDelete : undefined,
+    onBatchPermanentDelete: isTrashView
+      ? handleBatchPermanentDelete
+      : undefined,
     onEdit: (link) => onEdit(link),
     onDelete,
     isTrashView,
@@ -468,55 +523,55 @@ export function LinkList({
   };
 
   // Compute these values before the virtualizer hook (hooks must be called unconditionally)
-  const pinnedLinks = isTrashView ? [] : displayLinks.filter((link) => link.is_pinned);
-  const unpinnedLinks = isTrashView ? displayLinks : displayLinks.filter((link) => !link.is_pinned);
+  const pinnedLinks = isTrashView
+    ? []
+    : displayLinks.filter((link) => link.is_pinned);
+  const unpinnedLinks = isTrashView
+    ? displayLinks
+    : displayLinks.filter((link) => !link.is_pinned);
   const showEmptyState = links.length === 0 && !isAddingItem;
 
   // Build flat list of virtual items for virtualization
-  type VirtualItem = 
-    | { type: 'pinned-header' }
-    | { type: 'all-links-header' }
-    | { type: 'add-input' }
-    | { type: 'link'; link: Link; index: number; isPinned: boolean }
-    | { type: 'loading-more' };
-  
+  type VirtualItem =
+    | { type: "pinned-header" }
+    | { type: "all-links-header" }
+    | { type: "link"; link: Link; index: number; isPinned: boolean }
+    | { type: "loading-more" };
+
   const virtualItems: VirtualItem[] = [];
-  
+
   // Only build virtual items if not showing empty state
   if (!showEmptyState) {
     // Pinned header
     if (pinnedLinks.length > 0) {
-      virtualItems.push({ type: 'pinned-header' });
+      virtualItems.push({ type: "pinned-header" });
     }
-    
+
     // Pinned links
     pinnedLinks.forEach((link, index) => {
-      virtualItems.push({ type: 'link', link, index, isPinned: true });
+      virtualItems.push({ type: "link", link, index, isPinned: true });
     });
-    
-    // Add input (after pinned items)
-    if (isAddingItem) {
-      virtualItems.push({ type: 'add-input' });
-    }
-    
+
+    // Note: add-input is rendered separately as a fixed element, not in the virtualized list
+
     // All Links header (only if there are pinned items)
     if (unpinnedLinks.length > 0 && pinnedLinks.length > 0) {
-      virtualItems.push({ type: 'all-links-header' });
+      virtualItems.push({ type: "all-links-header" });
     }
-    
-    // Unpinned links  
+
+    // Unpinned links
     unpinnedLinks.forEach((link, index) => {
-      virtualItems.push({ 
-        type: 'link', 
-        link, 
-        index: pinnedLinks.length + index, 
-        isPinned: false 
+      virtualItems.push({
+        type: "link",
+        link,
+        index: pinnedLinks.length + index,
+        isPinned: false,
       });
     });
 
     // Loading more skeleton
     if (isLoadingMore) {
-      virtualItems.push({ type: 'loading-more' });
+      virtualItems.push({ type: "loading-more" });
     }
   }
 
@@ -524,10 +579,9 @@ export function LinkList({
   const getItemSize = (index: number) => {
     const item = virtualItems[index];
     if (!item) return 56; // fallback
-    if (item.type === 'pinned-header') return 40; // header with margin
-    if (item.type === 'all-links-header') return 56; // header with more margin
-    if (item.type === 'add-input') return 56;
-    if (item.type === 'loading-more') return 64 * 3; // 3 skeleton items
+    if (item.type === "pinned-header") return 40; // header with margin
+    if (item.type === "all-links-header") return 56; // header with more margin
+    if (item.type === "loading-more") return 64 * 3; // 3 skeleton items
     return 64; // link item height
   };
 
@@ -545,7 +599,10 @@ export function LinkList({
   // Custom observeElementOffset that guards the callback with isMounted check
   // This prevents flushSync from being called during React's render phase
   const observeElementOffset = React.useCallback(
-    (_instance: unknown, cb: (offset: number, isScrolling: boolean) => void) => {
+    (
+      _instance: unknown,
+      cb: (offset: number, isScrolling: boolean) => void
+    ) => {
       const handleScroll = () => {
         // Only call the callback if the component is mounted
         // This prevents the flushSync warning during initial render
@@ -561,12 +618,12 @@ export function LinkList({
         }
       });
 
-      window.addEventListener('scroll', handleScroll, { passive: true });
-      window.addEventListener('resize', handleScroll, { passive: true });
+      window.addEventListener("scroll", handleScroll, { passive: true });
+      window.addEventListener("resize", handleScroll, { passive: true });
 
       return () => {
-        window.removeEventListener('scroll', handleScroll);
-        window.removeEventListener('resize', handleScroll);
+        window.removeEventListener("scroll", handleScroll);
+        window.removeEventListener("resize", handleScroll);
       };
     },
     []
@@ -604,7 +661,12 @@ export function LinkList({
   React.useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoadingMore && onLoadMore) {
+        if (
+          entries[0].isIntersecting &&
+          hasMore &&
+          !isLoadingMore &&
+          onLoadMore
+        ) {
           onLoadMore();
         }
       },
@@ -618,6 +680,13 @@ export function LinkList({
     return () => observer.disconnect();
   }, [hasMore, isLoadingMore, onLoadMore]);
 
+  // Scroll to very top when add input is triggered
+  React.useEffect(() => {
+    if (isAddingItem) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [isAddingItem]);
+
   // Show empty state only when not in add mode
   if (showEmptyState) {
     return <LinkListEmpty />;
@@ -625,16 +694,26 @@ export function LinkList({
 
   return (
     <div className="w-full" ref={containerRef}>
+      {/* Add input - appears at top of list, pushes links down */}
+      {isAddingItem && (
+        <InlineAddItem
+          value={addInputValue}
+          onChange={onAddInputChange || (() => {})}
+          onSubmit={onAddSubmit || (() => {})}
+          onCancel={onAddCancel || (() => {})}
+        />
+      )}
+
       {/* Virtualized list container */}
-      <div 
+      <div
         className="py-4 relative"
         style={{ height: `${virtualizer.getTotalSize()}px` }}
       >
         {virtualRows.map((virtualRow) => {
           const item = virtualItems[virtualRow.index];
-          
+
           // Render pinned header
-          if (item.type === 'pinned-header') {
+          if (item.type === "pinned-header") {
             return (
               <div
                 key="pinned-header"
@@ -643,17 +722,21 @@ export function LinkList({
                 className="absolute top-0 left-0 w-full"
                 style={{ transform: `translateY(${virtualRow.start}px)` }}
               >
-                <div className={`mb-4 mt-4 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
-                  isAddingItem || effectiveEditingLinkId ? "opacity-20" : "opacity-100"
-                }`}>
+                <div
+                  className={`mb-4 mt-4 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
+                    isAddingItem || effectiveEditingLinkId
+                      ? "opacity-20"
+                      : "opacity-100"
+                  }`}
+                >
                   Pinned
                 </div>
               </div>
             );
           }
-          
+
           // Render all-links header
-          if (item.type === 'all-links-header') {
+          if (item.type === "all-links-header") {
             return (
               <div
                 key="all-links-header"
@@ -662,41 +745,26 @@ export function LinkList({
                 className="absolute top-0 left-0 w-full"
                 style={{ transform: `translateY(${virtualRow.start}px)` }}
               >
-                <div className={`mb-4 mt-8 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
-                  isAddingItem || effectiveEditingLinkId ? "opacity-20" : "opacity-100"
-                }`}>
+                <div
+                  className={`mb-4 mt-8 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
+                    isAddingItem || effectiveEditingLinkId
+                      ? "opacity-20"
+                      : "opacity-100"
+                  }`}
+                >
                   All Links
                 </div>
               </div>
             );
           }
-          
-          // Render add input
-          if (item.type === 'add-input') {
-            return (
-              <div
-                key="add-input"
-                data-index={virtualRow.index}
-                ref={measureElement}
-                className="absolute top-0 left-0 w-full"
-                style={{ transform: `translateY(${virtualRow.start}px)` }}
-              >
-                <InlineAddItem
-                  value={addInputValue}
-                  onChange={onAddInputChange || (() => {})}
-                  onSubmit={onAddSubmit || (() => {})}
-                  onCancel={onAddCancel || (() => {})}
-                />
-              </div>
-            );
-          }
-          
+
           // Render link item
-          if (item.type === 'link') {
+          if (item.type === "link") {
             const { link, index, isPinned } = item;
             const isThisEditing = effectiveEditingLinkId === link.id;
-            const shouldDim = (isAddingItem || effectiveEditingLinkId) && !isThisEditing;
-            
+            const shouldDim =
+              (isAddingItem || effectiveEditingLinkId) && !isThisEditing;
+
             return (
               <div
                 key={link.id}
@@ -705,7 +773,11 @@ export function LinkList({
                 className="absolute top-0 left-0 w-full pb-0.5"
                 style={{ transform: `translateY(${virtualRow.start}px)` }}
               >
-                <div className={`transition-opacity duration-200 ${shouldDim ? "opacity-20 pointer-events-none" : "opacity-100"}`}>
+                <div
+                  className={`transition-opacity duration-200 ${
+                    shouldDim ? "opacity-20 pointer-events-none" : "opacity-100"
+                  }`}
+                >
                   <LinkListItem
                     link={link}
                     index={index}
@@ -743,7 +815,7 @@ export function LinkList({
           }
 
           // Render loading more skeleton
-          if (item.type === 'loading-more') {
+          if (item.type === "loading-more") {
             return (
               <div
                 key="loading-more"
@@ -752,7 +824,7 @@ export function LinkList({
                 className="absolute top-0 left-0 w-full"
                 style={{ transform: `translateY(${virtualRow.start}px)` }}
               >
-                <div className="space-y-2">
+                <div className="space-y-px">
                   <LinkItemSkeleton />
                   <LinkItemSkeleton />
                   <LinkItemSkeleton />
@@ -760,7 +832,7 @@ export function LinkList({
               </div>
             );
           }
-          
+
           return null;
         })}
       </div>
@@ -798,12 +870,16 @@ export function LinkList({
               onUnpin={!isTrashView ? onUnpin : undefined}
               onDelete={!isTrashView ? onDelete : undefined}
               onRestore={isTrashView ? onRestore : undefined}
-              onPermanentDelete={isTrashView ? confirmPermanentDelete : undefined}
+              onPermanentDelete={
+                isTrashView ? confirmPermanentDelete : undefined
+              }
               onBatchPin={!isTrashView ? handleBatchPin : undefined}
               onBatchUnpin={!isTrashView ? handleBatchUnpin : undefined}
               onBatchDelete={!isTrashView ? handleBatchDelete : undefined}
               onBatchRestore={isTrashView ? handleBatchRestore : undefined}
-              onBatchPermanentDelete={isTrashView ? handleBatchPermanentDelete : undefined}
+              onBatchPermanentDelete={
+                isTrashView ? handleBatchPermanentDelete : undefined
+              }
             />
           </MenuPopup>
         </Menu>
@@ -820,12 +896,21 @@ export function LinkList({
         }}
       />
 
-      <AlertDialog open={deleteConfirmation.isOpen} onOpenChange={(open) => setDeleteConfirmation(prev => ({ ...prev, isOpen: open }))}>
+      <AlertDialog
+        open={deleteConfirmation.isOpen}
+        onOpenChange={(open) =>
+          setDeleteConfirmation((prev) => ({ ...prev, isOpen: open }))
+        }
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete permanently?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to permanently delete {deleteConfirmation.type === 'batch' ? `${deleteConfirmation.batchIds?.length || 0} items` : 'this item'}? This action cannot be undone.
+              Are you sure you want to permanently delete{" "}
+              {deleteConfirmation.type === "batch"
+                ? `${deleteConfirmation.batchIds?.length || 0} items`
+                : "this item"}
+              ? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -840,7 +925,10 @@ export function LinkList({
       </AlertDialog>
 
       {/* Color Change Confirmation Dialog */}
-      <AlertDialog open={colorChangeDialog.isOpen} onOpenChange={(open) => !open && handleColorChangeCancel()}>
+      <AlertDialog
+        open={colorChangeDialog.isOpen}
+        onOpenChange={(open) => !open && handleColorChangeCancel()}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Change color?</AlertDialogTitle>
@@ -849,19 +937,27 @@ export function LinkList({
                 <p>This will change the actual color, not just the label.</p>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
-                    <div 
-                      className="h-5 w-5 flex-shrink-0 rounded-full border border-[var(--border-secondary)]" 
-                      style={{ backgroundColor: colorChangeDialog.currentColorValue }}
+                    <div
+                      className="h-5 w-5 flex-shrink-0 rounded-full border border-[var(--border-secondary)]"
+                      style={{
+                        backgroundColor: colorChangeDialog.currentColorValue,
+                      }}
                     />
-                    <span className="text-sm font-[470] text-[var(--text-primary)]">Current</span>
+                    <span className="text-sm font-[470] text-[var(--text-primary)]">
+                      Current
+                    </span>
                   </div>
                   <span className="text-[var(--text-tertiary)]">→</span>
                   <div className="flex items-center gap-2">
-                    <div 
-                      className="h-5 w-5 flex-shrink-0 rounded-full border border-[var(--border-secondary)]" 
-                      style={{ backgroundColor: colorChangeDialog.newColorValue }}
+                    <div
+                      className="h-5 w-5 flex-shrink-0 rounded-full border border-[var(--border-secondary)]"
+                      style={{
+                        backgroundColor: colorChangeDialog.newColorValue,
+                      }}
                     />
-                    <span className="text-sm font-[470] text-[var(--text-primary)]">{colorChangeDialog.newTitle}</span>
+                    <span className="text-sm font-[470] text-[var(--text-primary)]">
+                      {colorChangeDialog.newTitle}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -871,9 +967,7 @@ export function LinkList({
             <AlertDialogClose asChild>
               <Button variant="ghost">Cancel</Button>
             </AlertDialogClose>
-            <Button onClick={handleColorChangeConfirm}>
-              Change Color
-            </Button>
+            <Button onClick={handleColorChangeConfirm}>Change Color</Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

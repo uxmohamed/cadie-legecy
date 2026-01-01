@@ -114,12 +114,12 @@ export function SelectionToolbar({
         Delete
       </Button>
 
-      <Menu>
+      <Menu modal={false}>
         <MenuTrigger className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-[470] text-[var(--overlay-text-secondary)] hover:bg-white/25 rounded-full transition-colors select-none h-auto">
           <IconDots className="h-4 w-4" />
           Actions
         </MenuTrigger>
-        <MenuPopup align="center" side="top">
+        <MenuPopup align="center" side="top" sideOffset={16}>
           {showPin && (
             <MenuItem onClick={onBatchPin}>
               <IconPin className="h-4 w-4" />

@@ -89,9 +89,18 @@ export async function POST(request: NextRequest) {
           p_user_id: user.id,
           p_links: links,
         });
-        
+
         // Enrich links with comprehensive metadata immediately
         if (!result.error && result.data?.links) {
+          // Safety: ensure all links have is_deleted set to false
+          // (in case the RPC doesn't set it explicitly)
+          const linkIds = result.data.links.map((l: CreatedLink) => l.id);
+          if (linkIds.length > 0) {
+            await supabase
+              .from("links")
+              .update({ is_deleted: false, is_archived: false })
+              .in("id", linkIds);
+          }
           const metadataService = new MetadataService();
           
           // Fetch metadata for all URL links in parallel with concurrency control

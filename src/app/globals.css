@@ -720,19 +720,23 @@ body {
 .dock-selection[data-state="visible"] {
   animation-name: dockEnterFromBottom;
   pointer-events: auto;
+  z-index: 10;
 }
 
 .dock-selection[data-state="hidden"] {
   animation-name: dockExitToTop;
   pointer-events: none;
+  z-index: 0;
 }
 
 .dock-view-switcher[data-state="visible"] {
   animation-name: dockEnterFromTop;
   pointer-events: auto;
+  z-index: 10;
 }
 
 .dock-view-switcher[data-state="hidden"] {
   animation-name: dockExitToBottom;
   pointer-events: none;
+  z-index: 0;
 }

@@ -77,15 +77,19 @@ export function ShortcutProvider({ children }: { children: React.ReactNode }) {
       // Don't trigger other shortcuts if help is open
       if (isHelpOpen) return;
 
+      // Don't trigger single-key shortcuts when Ctrl/Cmd is pressed (allow copy/paste/etc)
+      if (e.metaKey || e.ctrlKey) {
+        return;
+      }
+
       const matchedShortcut = shortcuts.find((s) => s.key === e.key);
 
       if (matchedShortcut) {
-        // If input is focused, only allow shortcuts that use modifier keys or specific exceptions
-        // For now, we'll be conservative: if input is focused, block single-key shortcuts
-        if (isInputFocused && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        // If input is focused, block single-key shortcuts
+        if (isInputFocused) {
           return;
         }
-        
+
         e.preventDefault();
         matchedShortcut.action();
       }

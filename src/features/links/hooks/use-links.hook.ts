@@ -42,7 +42,7 @@ import useSWRInfinite from "swr/infinite";
 /**
  * Hook for managing links with SWR caching and infinite scroll
  */
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 50;
 
 export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId?: string, searchQuery: string = "") {
     const [isLoading, setIsLoading] = React.useState(false);
