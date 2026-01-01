@@ -148,6 +148,8 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                             filter: `user_id=eq.${userId}`,
                         },
                         (payload) => {
+                            if (!isMounted) return; // Don't process if unmounted
+
                             const newLink = payload.new as Link;
 
                             // Helper to check if the new link matches current filters
@@ -159,28 +161,41 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                                 return true;
                             };
 
-                            // Only add if matches current filters and doesn't already exist
-                            if (matchesFilters()) {
-                                mutateRef.current(
-                                    (current) => {
-                                        if (!current) return [{ links: [newLink], total: 1 }];
-                                        // Check if link already exists (avoid duplicates)
-                                        const exists = current.some(page => page.links.some(l => l.id === newLink.id));
-                                        if (exists) return current;
+                            // Only add if matches current filters
+                            if (!matchesFilters()) return;
 
-                                        // Add new link to the first page
-                                        const firstPage = current[0];
-                                        const updatedFirstPage = {
-                                            ...firstPage,
-                                            links: [newLink, ...firstPage.links],
-                                            total: firstPage.total + 1
-                                        };
+                            // Use a flag to prevent multiple updates for the same link
+                            const currentMutate = mutateRef.current;
+                            if (!currentMutate) return;
 
-                                        return [updatedFirstPage, ...current.slice(1)];
-                                    },
-                                    false // Don't revalidate
-                                );
-                            }
+                            currentMutate(
+                                (current) => {
+                                    if (!current || current.length === 0) {
+                                        return [{ links: [newLink], total: 1 }];
+                                    }
+
+                                    // Check if link already exists in ANY page (avoid duplicates)
+                                    const exists = current.some(page =>
+                                        page.links.some(l => l.id === newLink.id)
+                                    );
+
+                                    if (exists) {
+                                        // Link already exists, don't modify state
+                                        return current;
+                                    }
+
+                                    // Add new link to the first page
+                                    const firstPage = current[0];
+                                    const updatedFirstPage = {
+                                        ...firstPage,
+                                        links: [newLink, ...firstPage.links],
+                                        total: firstPage.total + 1
+                                    };
+
+                                    return [updatedFirstPage, ...current.slice(1)];
+                                },
+                                { revalidate: false } // Don't revalidate to prevent cascade
+                            );
                         }
                     )
                     .subscribe((status) => {
@@ -718,7 +733,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
 
             // Calculate success count (new links only, not restored)
             const successCount = count - restored;
-            
+
             // Use the comprehensive toast helper (include client-side detected duplicates)
             showSubmitToast(
                 items.length,

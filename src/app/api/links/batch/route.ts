@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { MetadataService } from "@/features/links/services/metadata.service";
+import { canonicalizeUrl } from "@/lib/canonicalize";
 
 export const runtime = "edge";
 
@@ -85,29 +86,45 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case "add":
-        result = await supabase.rpc("batch_add_links", {
-          p_user_id: user.id,
-          p_links: links,
-        });
+        // Direct insert instead of RPC to ensure proper defaults
+        const linksToInsert = links!.map((link) => ({
+          user_id: user.id,
+          url: link.url,
+          clean_url: link.content_type === "color" ? link.url : canonicalizeUrl(link.url),
+          title: link.title || link.url,
+          content_type: link.content_type || "url",
+          category_id: link.category_id || null,
+          favicon_url: link.favicon_url || null,
+          color_value: (link as any).color_value || null,
+          domain: link.content_type === "color" ? "color" : extractDomain(link.url),
+          is_deleted: false,
+          is_archived: false,
+          is_pinned: false,
+        }));
+
+        const insertResult = await supabase
+          .from("links")
+          .insert(linksToInsert)
+          .select();
+
+        result = {
+          data: {
+            links: insertResult.data || [],
+            count: insertResult.data?.length || 0,
+            restored: 0,
+          },
+          error: insertResult.error,
+        };
 
         // Enrich links with comprehensive metadata immediately
         if (!result.error && result.data?.links) {
-          // Safety: ensure all links have is_deleted set to false
-          // (in case the RPC doesn't set it explicitly)
-          const linkIds = result.data.links.map((l: CreatedLink) => l.id);
-          if (linkIds.length > 0) {
-            await supabase
-              .from("links")
-              .update({ is_deleted: false, is_archived: false })
-              .in("id", linkIds);
-          }
           const metadataService = new MetadataService();
-          
+
           // Fetch metadata for all URL links in parallel with concurrency control
           const urlLinks = result.data.links.filter(
             (link: CreatedLink) => link.content_type === "url" || !link.content_type
           );
-          
+
           if (urlLinks.length > 0) {
             // Fetch metadata for all URLs
             const urls = urlLinks.map((link: CreatedLink) => link.url);
@@ -115,7 +132,7 @@ export async function POST(request: NextRequest) {
               concurrency: 5,
               timeout: 5000,
             });
-            
+
             // Update each link with comprehensive metadata
             const updatePromises = urlLinks.map(async (link: CreatedLink) => {
               const metadata = metadataMap.get(link.url);
@@ -166,14 +183,14 @@ export async function POST(request: NextRequest) {
                 return { ...link, domain };
               }
             });
-            
+
             const enrichedUrls = await Promise.all(updatePromises);
-            
+
             // Merge enriched URLs back with non-URL links
             const nonUrlLinks = result.data.links.filter(
               (link: CreatedLink) => link.content_type && link.content_type !== "url"
             );
-            
+
             result.data.links = [...nonUrlLinks, ...enrichedUrls];
           }
         }
