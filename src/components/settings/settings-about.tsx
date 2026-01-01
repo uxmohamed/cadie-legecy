@@ -4,51 +4,39 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { IconBrandX, IconExternalLink, IconMail, IconArrowRight } from "@tabler/icons-react";
-import Image from "next/image";
+import { LogoIcon } from "@/components/logo-icon";
 
 export function SettingsAbout() {
   return (
     <div className="space-y-8">
       {/* App Info */}
       <div className="flex items-center gap-4">
-        <div className="h-16 w-16 flex items-center justify-center overflow-hidden">
-          <Image
-            src="/icon.svg"
-            alt="Cadie"
-            width={36}
-            height={36}
-            className="text-white"
-          />
-        </div>
+        <LogoIcon className="h-12 w-12" />
         <div>
-          <h3 className="text-xl font-semibold tracking-tight">Cadie</h3>
+          <h3 className="text-lg font-semibold tracking-tight">Cadie</h3>
           <p className="text-sm text-[var(--text-secondary)]">Version 1.0.0-beta</p>
         </div>
       </div>
 
-      <Separator />
-
       {/* Legal */}
       <div className="space-y-4">
         <h3 className="text-sm font-medium text-[var(--text-primary)]">Legal</h3>
-        <div className="grid gap-2">
+        <div className="flex flex-wrap items-center gap-2 text-sm">
           {[
             { label: "Terms and Conditions", href: "/terms" },
             { label: "Privacy Policy", href: "/privacy" },
-            { label: "License and Open Source Notes", href: "/licenses" },
-          ].map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex items-center justify-between rounded-lg bg-[var(--bg-field)] p-3 text-sm transition-all hover:bg-[var(--bg-element-hover)]"
-            >
-              <span className="text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">
+          ].map((item, index, array) => (
+            <React.Fragment key={item.href}>
+              <a
+                href={item.href}
+                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              >
                 {item.label}
-              </span>
-              <IconExternalLink className="h-4 w-4 text-[var(--icon-tertiary)] group-hover:text-[var(--icon-secondary)]" />
-            </a>
+              </a>
+              {index < array.length - 1 && (
+                <span className="text-[var(--text-tertiary)]">·</span>
+              )}
+            </React.Fragment>
           ))}
         </div>
       </div>
@@ -69,7 +57,7 @@ export function SettingsAbout() {
                 <p className="text-xs text-[var(--text-secondary)]">Get the latest updates and features</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="w-full gap-2" asChild>
+            <Button variant="secondary" size="sm" className="w-full gap-2" asChild>
               <a href="https://x.com/cadieapp_" target="_blank" rel="noopener noreferrer">
                 Follow @cadieapp_
                 <IconArrowRight className="h-3 w-3 opacity-50" />
@@ -87,7 +75,7 @@ export function SettingsAbout() {
                 <p className="text-xs text-[var(--text-secondary)]">Found a bug or have an idea?</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="w-full gap-2" asChild>
+            <Button variant="secondary" size="sm" className="w-full gap-2" asChild>
               <a href="https://x.com/messages/compose?recipient_id=1649994120725778432" target="_blank" rel="noopener noreferrer">
                 Send Message
                 <IconArrowRight className="h-3 w-3 opacity-50" />

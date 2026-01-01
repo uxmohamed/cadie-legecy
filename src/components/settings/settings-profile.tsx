@@ -17,10 +17,16 @@ import {
   AlertDialogTrigger,
   AlertDialogClose,
 } from "@/components/ui/alert-dialog";
+import {
+  TooltipProvider,
+  Tooltip,
+  TooltipTrigger,
+  TooltipPopup,
+} from "@/components/ui/tooltip";
 import { getUserProfile, completeOnboarding } from "@/hooks/use-onboarding";
 import { getDefaultAvatar } from "@/lib/avatar";
 import { createClient } from "@/lib/supabase/client";
-import { IconCamera, IconLoader2, IconTrash, IconLogout } from "@tabler/icons-react";
+import { IconPencil, IconLoader2, IconLogout } from "@tabler/icons-react";
 import { toast } from "sonner";
 
 interface SettingsProfileProps {
@@ -29,6 +35,7 @@ interface SettingsProfileProps {
 
 export function SettingsProfile({ user }: SettingsProfileProps) {
   const [displayName, setDisplayName] = React.useState("");
+  const [originalDisplayName, setOriginalDisplayName] = React.useState("");
   const [avatarUrl, setAvatarUrl] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
@@ -45,6 +52,7 @@ export function SettingsProfile({ user }: SettingsProfileProps) {
       const avatar = profile?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture || getDefaultAvatar(user.id);
       
       setDisplayName(name);
+      setOriginalDisplayName(name);
       setAvatarUrl(avatar);
       setIsLoading(false);
     };
@@ -105,8 +113,10 @@ export function SettingsProfile({ user }: SettingsProfileProps) {
 
     setIsSaving(true);
     try {
-      const result = await completeOnboarding(user.id, displayName.trim(), avatarUrl);
+      const trimmedName = displayName.trim();
+      const result = await completeOnboarding(user.id, trimmedName, avatarUrl);
       if (result.success) {
+        setOriginalDisplayName(trimmedName);
         toast.success("Profile updated");
       } else {
         toast.error(result.error || "Failed to update profile");
@@ -171,12 +181,16 @@ export function SettingsProfile({ user }: SettingsProfileProps) {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploadingAvatar}
-            className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bg-inverse)] text-[var(--text-inverse)] shadow-md transition-all hover:bg-[var(--text-primary)] disabled:opacity-50 cursor-pointer"
+            className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--secondary)] text-[var(--icon-secondary)] transition-transform hover:scale-110 hover:text-[var(--icon-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-l0-solid)] disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            style={{
+              boxShadow: 'none'
+            }}
+            aria-label="Change avatar"
           >
             {isUploadingAvatar ? (
               <IconLoader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <IconCamera className="h-4 w-4" />
+              <IconPencil className="h-4 w-4" />
             )}
           </button>
           <input
@@ -188,34 +202,35 @@ export function SettingsProfile({ user }: SettingsProfileProps) {
           />
         </div>
         <div>
-          <h3 className="text-lg font-medium text-[var(--text-primary)]">Profile Photo</h3>
+          <h3 className="text-sm font-normal text-[var(--text-primary)]">Profile Photo</h3>
         </div>
       </div>
 
       {/* Form Section */}
       <div className="space-y-6">
         <div className="grid gap-2">
-          <Label htmlFor="name">Display Name</Label>
-          <div className="flex gap-2">
+          <Label htmlFor="name">Your name</Label>
+          <div className="relative w-full">
             <Input
               id="name"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Your name"
-              className="max-w-md bg-[var(--bg-field)]"
+              className="w-full bg-[var(--bg-field-default)] border-transparent shadow-none before:shadow-none [&_input]:px-4 [&_input]:pr-24 [&_input]:py-[12px]"
             />
             <Button 
               onClick={handleSaveName} 
-              disabled={isSaving}
+              disabled={isSaving || displayName.trim() === originalDisplayName.trim()}
               variant="default"
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-4 text-sm text-[var(--text-always-white)]"
             >
               {isSaving ? (
                 <>
                   <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving
+                  Updating
                 </>
               ) : (
-                "Save"
+                "Update"
               )}
             </Button>
           </div>
@@ -223,46 +238,58 @@ export function SettingsProfile({ user }: SettingsProfileProps) {
 
         <div className="grid gap-2">
           <Label htmlFor="email">Email Address</Label>
-          <Input
-            id="email"
-            value={user.email}
-            readOnly
-            disabled
-            className="max-w-md bg-[var(--bg-field)] opacity-75"
-          />
-          <p className="text-sm text-[var(--text-secondary)]">
-            Your email address is managed via your login provider.
-          </p>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="inline-block w-full cursor-not-allowed">
+                  <Input
+                    id="email"
+                    value={user.email}
+                    readOnly
+                    disabled
+                    className="w-full bg-[var(--bg-field-default)] border-transparent shadow-none before:shadow-none opacity-75 [&_input]:px-4 [&_input]:py-[12px]"
+                    style={{ cursor: 'not-allowed' }}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipPopup>
+                <p>Your email address is managed via your login provider.</p>
+              </TooltipPopup>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 
       {/* Account Actions */}
       <div className="space-y-6">
         <div>
-          <h3 className="text-sm font-medium text-[var(--text-primary)] mb-4">Account Actions</h3>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-8">
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={handleSignOut}
-              className="w-full justify-start text-[var(--text-secondary)] hover:text-[var(--text-primary)] max-w-xs"
+              className="w-fit justify-start"
             >
-              <IconLogout className="mr-2 h-4 w-4" />
+              <IconLogout />
               Sign Out
             </Button>
 
-            <div className="rounded-lg border border-[var(--cadie-red)]/20 bg-[var(--cadie-red)]/5 p-4 mt-2">
-              <h4 className="text-sm font-medium text-[var(--cadie-red)] flex items-center gap-2 mb-2">
-                <IconTrash className="h-4 w-4" /> 
-                Danger Zone
-              </h4>
-              <p className="text-sm text-[var(--text-secondary)] mb-4">
-                Permanently delete your account and all associated data.
-              </p>
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-[var(--text-primary)]">Danger Zone</h3>
               <AlertDialog onOpenChange={(open) => !open && setDeleteConfirmEmail("")}>
                 <AlertDialogTrigger asChild>
-                  <Button variant="destructive" className="w-full sm:w-auto">
-                    Delete Account
-                  </Button>
+                  <div 
+                    className="rounded-lg bg-[var(--bg-field)] p-4 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-active)] focus-visible:ring-offset-2" 
+                    style={{ backgroundColor: 'rgba(255, 80, 80, 0.1)' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 80, 80, 0.14)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 80, 80, 0.1)'; }}
+                  >
+                    <div className="text-sm font-medium text-[var(--cadie-red)] mb-3">
+                      Delete Account
+                    </div>
+                    <p className="text-sm text-[var(--text-secondary)]">
+                      Deleting your account will permanently delete all your data. This action cannot be undone.
+                    </p>
+                  </div>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
@@ -281,7 +308,7 @@ export function SettingsProfile({ user }: SettingsProfileProps) {
                             value={deleteConfirmEmail}
                             onChange={(e) => setDeleteConfirmEmail(e.target.value)}
                             placeholder="Enter your email"
-                            className="bg-[var(--bg-field)]"
+                            className="bg-[var(--bg-field-default)] border-transparent shadow-none before:shadow-none"
                           />
                         </div>
                       </div>

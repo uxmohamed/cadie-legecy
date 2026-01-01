@@ -122,7 +122,7 @@ export function Sidebar({
               className={cn(
                 "w-full justify-between gap-2 h-auto px-2 py-1.5 text-sm font-normal",
                 isSelected
-                  ? "bg-[var(--bg-field-hover)] text-[var(--text-primary)]"
+                  ? "bg-[var(--bg-selected)] text-[var(--text-primary)]"
                   : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)] hover:text-[var(--text-primary)]",
               )}
             >

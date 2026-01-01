@@ -43,7 +43,7 @@ const TabsTab = React.forwardRef<
       "gap-1.5 px-[calc(--spacing(2.5)-1px)] py-[calc(--spacing(1.5)-1px)]",
       "data-[orientation=vertical]:w-full data-[orientation=vertical]:justify-start",
       variant === "default" &&
-        "data-[state=active]:bg-[var(--bg-l2-solid)] data-[state=active]:shadow-sm",
+        "data-[state=active]:bg-[var(--bg-selected)] data-[state=active]:shadow-sm",
       variant === "underline" &&
         "rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--border-active)]",
       className,

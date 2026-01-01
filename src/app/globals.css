@@ -226,10 +226,11 @@ body {
 
   --bg-emphasis: color-mix(in oklab, oklch(0 0 0) 16%, oklch(1 0 0) 84%);
   --bg-inverse: oklch(0 0 0);
-  --bg-scrim: color-mix(in oklab, oklch(1 0 0) 80%, transparent 20%);
+  --bg-scrim: color-mix(in oklab, oklch(0 0 0) 50%, transparent 50%);
 
   --bg-cell-hover: color-mix(in oklab, oklch(0 0 0) 6%, transparent 94%);
   --bg-cell-active: color-mix(in oklab, oklch(0 0 0) 8%, transparent 92%);
+  --bg-selected: color-mix(in oklab, oklch(0 0 0) 6%, transparent 94%);
 
   --bg-field-default: color-mix(in oklab, oklch(0 0 0) 6%, transparent 94%);
   --bg-field-light: color-mix(in oklab, oklch(0 0 0) 4%, transparent 94%);
@@ -435,10 +436,11 @@ body {
 
   --bg-emphasis: oklch(0.309 0 0);
   --bg-inverse: oklch(1 0 0);
-  --bg-scrim: color-mix(in oklab, oklch(0 0 0) 42%, transparent 58%);
+  --bg-scrim: color-mix(in oklab, oklch(0 0 0) 50%, transparent 50%);
 
-  --bg-cell-hover: color-mix(in oklab, oklch(1 0 0) 8%, transparent 92%);
+  --bg-cell-hover: color-mix(in oklab, oklch(1 0 0) 6%, transparent 94%);
   --bg-cell-active: color-mix(in oklab, oklch(1 0 0) 12%, transparent 88%);
+  --bg-selected: color-mix(in oklab, oklch(1 0 0) 6%, transparent 94%);
 
   --bg-field-default: color-mix(in oklab, oklch(1 0 0) 8%, transparent 92%);
   --bg-field-light: color-mix(in oklab, oklch(1 0 0) 6%, transparent 94%);

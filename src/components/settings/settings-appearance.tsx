@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useTheme } from "@/components/theme-provider";
 import { Label } from "@/components/ui/label";
-import { IconCheck } from "@tabler/icons-react";
+import { IconCircleCheckFilled } from "@tabler/icons-react";
 
 const themeOptions = [
   {
@@ -11,22 +11,29 @@ const themeOptions = [
     label: "System",
     description: "Match system settings",
     preview: (
-      <div className="relative h-full w-full flex">
-        {/* Light half */}
-        <div className="w-1/2 bg-[#F5F5F5] relative">
-          <div className="absolute inset-1 right-0 rounded-l bg-white border-l border-t border-b border-gray-100">
-            <div className="space-y-1 p-1.5">
-              <div className="h-1.5 w-6 rounded-full bg-gray-200" />
-              <div className="h-1.5 w-8 rounded-full bg-gray-200" />
+      <div className="relative h-full w-full bg-[#F5F5F5]">
+        {/* Container with border */}
+        <div className="absolute inset-2 rounded border border-gray-100 shadow-sm overflow-hidden">
+          {/* Light half - left side */}
+          <div 
+            className="absolute inset-0 bg-white"
+            style={{ clipPath: 'inset(0 50% 0 0)' }}
+          >
+            <div className="space-y-1.5 p-2">
+              <div className="h-1.5 w-8 rounded-full bg-gray-100" />
+              <div className="h-1.5 w-16 rounded-full bg-gray-100" />
+              <div className="h-1.5 w-12 rounded-full bg-gray-100" />
             </div>
           </div>
-        </div>
-        {/* Dark half */}
-        <div className="w-1/2 bg-[#111] relative">
-          <div className="absolute inset-1 left-0 rounded-r bg-[#1C1C1C] border-r border-t border-b border-[#333]">
-            <div className="space-y-1 p-1.5">
-              <div className="h-1.5 w-6 rounded-full bg-[#333]" />
+          {/* Dark half - right side */}
+          <div 
+            className="absolute inset-0 bg-[#1C1C1C]"
+            style={{ clipPath: 'inset(0 0 0 50%)' }}
+          >
+            <div className="space-y-1.5 p-2">
               <div className="h-1.5 w-8 rounded-full bg-[#333]" />
+              <div className="h-1.5 w-16 rounded-full bg-[#333]" />
+              <div className="h-1.5 w-12 rounded-full bg-[#333]" />
             </div>
           </div>
         </div>
@@ -42,8 +49,8 @@ const themeOptions = [
         <div className="absolute inset-2 rounded bg-white shadow-sm border border-gray-100">
           <div className="space-y-1.5 p-2">
             <div className="h-1.5 w-8 rounded-full bg-gray-100" />
+            <div className="h-1.5 w-16 rounded-full bg-gray-100" />
             <div className="h-1.5 w-12 rounded-full bg-gray-100" />
-            <div className="h-1.5 w-16 rounded-full bg-blue-50" />
           </div>
         </div>
       </div>
@@ -55,11 +62,11 @@ const themeOptions = [
     description: "For low light",
     preview: (
       <div className="relative h-full w-full bg-[#111]">
-        <div className="absolute inset-2 rounded bg-[#1C1C1C] shadow-sm border border-[#333]">
+        <div className="absolute inset-2 rounded bg-[#1C1C1C]">
           <div className="space-y-1.5 p-2">
             <div className="h-1.5 w-8 rounded-full bg-[#333]" />
+            <div className="h-1.5 w-16 rounded-full bg-[#333]" />
             <div className="h-1.5 w-12 rounded-full bg-[#333]" />
-            <div className="h-1.5 w-16 rounded-full bg-blue-900/40" />
           </div>
         </div>
       </div>
@@ -87,7 +94,7 @@ export function SettingsAppearance() {
             <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-[var(--border-secondary)] shadow-sm transition-all group-hover:shadow-md">
               {option.preview}
             </div>
-            <div className="px-1 pb-1">
+            <div className="px-1 pb-1 flex items-center justify-between">
               <span
                 className={`block text-sm font-semibold transition-colors ${
                   theme === option.id
@@ -97,6 +104,9 @@ export function SettingsAppearance() {
               >
                 {option.label}
               </span>
+              {theme === option.id && (
+                <IconCircleCheckFilled className="h-4 w-4 text-[var(--accent-blue-primary)]" />
+              )}
             </div>
           </button>
         ))}

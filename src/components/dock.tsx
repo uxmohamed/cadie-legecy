@@ -205,7 +205,7 @@ export function Dock({
                     <button
                       onClick={() => handleViewChange(null)}
                       className={`relative flex w-full cursor-pointer select-none items-center justify-between rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] ${
-                        isAllItemsSelected ? "bg-[rgba(255,255,255,0.1)]" : ""
+                        isAllItemsSelected ? "bg-[var(--bg-selected)]" : ""
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
@@ -223,7 +223,7 @@ export function Dock({
                     <button
                       onClick={() => handleViewChange("trash")}
                       className={`relative flex w-full cursor-pointer select-none items-center justify-between rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] ${
-                        isTrashSelected ? "bg-[rgba(255,255,255,0.1)]" : ""
+                        isTrashSelected ? "bg-[var(--bg-selected)]" : ""
                       }`}
                     >
                       <div className="flex items-center gap-2.5">

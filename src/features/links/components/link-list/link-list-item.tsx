@@ -87,7 +87,7 @@ export function LinkListItem({
       className={cn(
         "group relative w-full grid grid-cols-[1fr_auto] ease-in will-change-transform duration-100 items-center gap-2 rounded-lg px-3 py-2 select-none cursor-pointer transition-transform",
         isSelected
-          ? "bg-[var(--bg-field-hover)]"
+          ? "bg-[var(--bg-selected)]"
           : isFocused
           ? "bg-[var(--bg-field-hover)]"
           : "hover:bg-[var(--bg-field-hover)]"

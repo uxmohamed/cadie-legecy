@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { User } from "@supabase/supabase-js";
-import { IconUser, IconPalette, IconInfoCircle, IconPuzzle } from "@tabler/icons-react";
+import { IconUserFilled, IconPaletteFilled, IconInfoCircleFilled, IconPuzzleFilled } from "@tabler/icons-react";
 
 import {
   Dialog,
@@ -28,10 +28,10 @@ import { SettingsExtensions } from "@/components/settings/settings-extensions";
 type SettingsSection = "profile" | "appearance" | "extensions" | "about";
 
 const navItems = [
-  { id: "profile" as const, name: "Profile", icon: IconUser },
-  { id: "appearance" as const, name: "Appearance", icon: IconPalette },
-  { id: "extensions" as const, name: "Extensions", icon: IconPuzzle },
-  { id: "about" as const, name: "About", icon: IconInfoCircle },
+  { id: "profile" as const, name: "Profile", icon: IconUserFilled },
+  { id: "appearance" as const, name: "Appearance", icon: IconPaletteFilled },
+  { id: "extensions" as const, name: "Extensions", icon: IconPuzzleFilled },
+  { id: "about" as const, name: "About", icon: IconInfoCircleFilled },
 ];
 
 interface SettingsDialogProps {
@@ -68,9 +68,9 @@ export function SettingsDialog({ user, open, onOpenChange }: SettingsDialogProps
                         <SidebarMenuButton
                           isActive={activeSection === item.id}
                           onClick={() => setActiveSection(item.id)}
-                          className="cursor-pointer"
+                          className="cursor-pointer py-[18px] px-3 data-[active=true]:!font-normal"
                         >
-                          <item.icon className="h-4 w-4" />
+                          <item.icon className="h-6 w-6" />
                           <span>{item.name}</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -94,7 +94,7 @@ export function SettingsDialog({ user, open, onOpenChange }: SettingsDialogProps
                         : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                     }`}
                   >
-                    <item.icon className="h-4 w-4" />
+                    <item.icon className="h-6 w-6" />
                     {item.name}
                   </button>
                 ))}

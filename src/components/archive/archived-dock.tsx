@@ -360,7 +360,7 @@ export function ArchivedDock({
                   <button
                     onClick={() => handleViewChange(null)}
                     className={`relative flex w-full cursor-default select-none items-center justify-between rounded-lg px-2 py-1.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] focus:bg-[var(--overlay-hover)] ${
-                      isAllItemsSelected ? "bg-[var(--overlay-hover)]" : ""
+                      isAllItemsSelected ? "bg-[var(--bg-selected)]" : ""
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -378,7 +378,7 @@ export function ArchivedDock({
                   <button
                     onClick={() => handleViewChange("trash")}
                     className={`relative flex w-full cursor-default select-none items-center justify-between rounded-lg px-2 py-1.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] focus:bg-[var(--overlay-hover)] ${
-                      isTrashSelected ? "bg-[var(--overlay-hover)]" : ""
+                      isTrashSelected ? "bg-[var(--bg-selected)]" : ""
                     }`}
                   >
                     <div className="flex items-center gap-2">
