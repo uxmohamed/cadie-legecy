@@ -36,6 +36,7 @@ body {
 
 :root,
 [data-theme="light"] {
+  color-scheme: light;
   /* ============================================
      COLOR PRIMITIVES
      ============================================ */
@@ -366,6 +367,8 @@ body {
 }
 
 [data-theme="dark"] {
+  color-scheme: dark;
+
   /* ============================================
      SEMANTIC TOKENS - DARK MODE
      ============================================ */

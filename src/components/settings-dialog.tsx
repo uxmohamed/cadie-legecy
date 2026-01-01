@@ -52,7 +52,7 @@ export function SettingsDialog({ user, open, onOpenChange }: SettingsDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-hidden p-0 md:max-h-[500px] md:max-w-[700px] lg:max-w-[800px]">
+      <DialogContent className="overflow-hidden p-0 md:max-h-[640px] md:max-w-[800px] lg:max-w-[900px]">
         <DialogTitle className="sr-only">Settings</DialogTitle>
         <DialogDescription className="sr-only">
           Manage your profile and preferences.
@@ -80,7 +80,7 @@ export function SettingsDialog({ user, open, onOpenChange }: SettingsDialogProps
               </SidebarGroup>
             </SidebarContent>
           </Sidebar>
-          <main className="flex h-[480px] flex-1 flex-col overflow-hidden">
+          <main className="flex h-[620px] flex-1 flex-col overflow-hidden">
             {/* Mobile navigation */}
             <header className="flex h-12 shrink-0 items-center gap-2 border-b border-[var(--border-primary)] px-4 md:hidden">
               <nav className="flex gap-2">
