@@ -18,7 +18,7 @@ export function ChangelogEntryComponent({ entry }: ChangelogEntryProps) {
       <div className="space-y-6 relative z-10">
         {/* Title and Tags */}
         <div className="flex flex-col gap-2">
-          <h2 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)] font-custom">
+          <h2 className="text-2xl font-medium tracking-tight text-[var(--text-primary)] font-custom">
             {entry.title}
           </h2>
 
