@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { GetLinksHandler, CreateLinkHandler } from "@/features/links/api/handlers";
 
-export const runtime = 'edge';
+
 
 /**
  * GET /api/links

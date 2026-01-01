@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { extractMetadata } from "@/lib/metadata";
 
-export const runtime = 'edge';
+
 
 interface RouteParams {
   params: Promise<{
@@ -16,11 +16,11 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    
+
     // This is an internal endpoint for background processing
     // Check if this is an internal request
     const isInternal = request.headers.get('X-Internal-Request') === 'true';
-    
+
     if (!isInternal) {
       return NextResponse.json(
         { error: "This endpoint is for internal use only" },
@@ -47,17 +47,17 @@ export async function POST(
 
     // Skip if content type is not URL
     if (link.content_type && link.content_type !== "url") {
-      return NextResponse.json({ 
+      return NextResponse.json({
         message: "Skipping non-URL content type",
-        updated: false 
+        updated: false
       });
     }
 
     // Skip if already has complete metadata with success status
     if (link.fetch_status === "success" && link.favicon_url && link.description) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         message: "Link already has complete metadata",
-        updated: false 
+        updated: false
       });
     }
 
@@ -69,7 +69,7 @@ export async function POST(
       fetch_status: metadata.fetch_status,
       fetched_at: metadata.fetched_at,
     };
-    
+
     // Core fields - update if missing or if we got better data
     if (!link.favicon_url && metadata.favicon_url) {
       updates.favicon_url = metadata.favicon_url;
@@ -84,7 +84,7 @@ export async function POST(
     if (link.title === link.url && metadata.title !== metadata.domain) {
       updates.title = metadata.title;
     }
-    
+
     // Extended metadata fields - always update if available
     if (metadata.site_name) {
       updates.site_name = metadata.site_name;
@@ -139,7 +139,7 @@ export async function POST(
       );
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: "Metadata updated successfully",
       updated: true,
       fetch_status: metadata.fetch_status,
