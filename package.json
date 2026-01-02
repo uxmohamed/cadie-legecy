@@ -13,6 +13,7 @@
     "clean:full": "rm -rf .next node_modules/.cache .contentlayer .open-next node_modules && pnpm install",
     "dev:clean": "pnpm run clean && pnpm run dev",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "build:cf": "opennextjs-cloudflare build && cp .open-next/worker.js .open-next/assets/_worker.js",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
