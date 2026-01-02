@@ -76,7 +76,17 @@ export async function POST(request: NextRequest) {
   }
   
   // Continue with handler
-  const response = await createLinkHandler.handle(request, validatedData);
+  // Convert undefined to null for optional fields to match DTO type
+  const dto: CreateLinkDTO = {
+    ...validatedData,
+    og_image_url: validatedData.og_image_url ?? null,
+    favicon_url: validatedData.favicon_url ?? null,
+    description: validatedData.description ?? null,
+    category_id: validatedData.category_id ?? null,
+    color_value: validatedData.color_value ?? null,
+  };
+  
+  const response = await createLinkHandler.handle(request, dto);
   
   // Add rate limit headers to response
   const headers = getRateLimitHeaders(limit, remaining, reset);
