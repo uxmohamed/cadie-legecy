@@ -6,6 +6,8 @@ import { validateRequestBody } from "@/lib/validation/validate";
 import { createLinkSchema } from "@/lib/validation/link.schemas";
 import type { CreateLinkDTO } from "@/features/links/types";
 
+export const runtime = 'edge';
+
 // Create singleton instances (instantiated once, reused across requests)
 const getLinksHandler = new GetLinksHandler();
 const createLinkHandler = new CreateLinkHandler();
