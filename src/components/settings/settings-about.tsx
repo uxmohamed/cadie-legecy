@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { IconBrandX, IconExternalLink, IconMessage, IconArrowRight } from "@tabler/icons-react";
+import { IconBrandX, IconExternalLink, IconMail, IconArrowRight } from "@tabler/icons-react";
 import { LogoIcon } from "@/components/logo-icon";
 
 export function SettingsAbout() {
@@ -67,8 +67,8 @@ export function SettingsAbout() {
 
           <div className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-field)] p-4">
             <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-black text-white">
-                <IconMessage className="h-5 w-5" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand-primary)] text-white">
+                <IconMail className="h-5 w-5" />
               </div>
               <div>
                 <h4 className="text-sm font-medium">Share Feedback</h4>

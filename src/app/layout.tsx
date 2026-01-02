@@ -20,23 +20,13 @@ const inter = Inter({
 const customFont = localFont({
   src: [
     {
-      path: "./fonts/OpenRunde-Regular.woff2",
+      path: "./fonts/ce9ace6cc2f44efb-s.p.otf",
       weight: "400",
       style: "normal",
     },
     {
-      path: "./fonts/OpenRunde-Medium.woff2",
-      weight: "500",
-      style: "normal",
-    },
-    {
-      path: "./fonts/OpenRunde-Semibold.woff2",
+      path: "./fonts/eb239f2fc2466938-s.p.otf",
       weight: "600",
-      style: "normal",
-    },
-    {
-      path: "./fonts/OpenRunde-Bold.woff2",
-      weight: "700",
       style: "normal",
     },
   ],

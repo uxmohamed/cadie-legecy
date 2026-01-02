@@ -14,7 +14,7 @@ export default function PrivacyPage() {
       <main className="flex-1">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pt-6 sm:pt-8 lg:pt-10 pb-12">
           <div className="mb-8 sm:mb-10 lg:mb-12">
-            <h1 className="text-3xl sm:text-4xl font-medium tracking-tight text-[var(--text-primary)] font-custom">
+            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[var(--text-primary)] font-custom">
               Privacy Policy
             </h1>
           </div>

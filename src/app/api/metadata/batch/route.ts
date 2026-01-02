@@ -62,10 +62,10 @@ export async function POST(request: NextRequest) {
         // No hard limit - we process all URLs in chunks with concurrency control
 
         const opts = { ...DEFAULT_OPTIONS, ...options };
-
+        
         // Limit concurrency to reasonable maximum
         opts.concurrency = Math.min(Math.max(1, opts.concurrency), 10);
-
+        
         // Process URLs with concurrency control
         const results: Record<string, ExtractedMetadata | { error: string; fetch_status: FetchStatus }> = {};
         let success = 0;
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
         // Process in batches
         for (let i = 0; i < urls.length; i += opts.concurrency) {
             const batch = urls.slice(i, i + opts.concurrency);
-
+            
             const batchPromises = batch.map(async (url: string) => {
                 try {
                     const metadata = await extractMetadata(url, opts.timeout);
