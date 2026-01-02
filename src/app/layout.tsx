@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import localFont from "next/font/local";
 import { ToasterProvider } from "@/components/toaster-provider";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { PostHogPageView } from "@/components/posthog-pageview";
@@ -17,31 +16,13 @@ const inter = Inter({
   adjustFontFallback: true,
 });
 
-const customFont = localFont({
-  src: [
-    {
-      path: "./fonts/OpenRunde-Regular.woff2",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "./fonts/OpenRunde-Medium.woff2",
-      weight: "500",
-      style: "normal",
-    },
-    {
-      path: "./fonts/OpenRunde-Semibold.woff2",
-      weight: "600",
-      style: "normal",
-    },
-    {
-      path: "./fonts/OpenRunde-Bold.woff2",
-      weight: "700",
-      style: "normal",
-    },
-  ],
+const customFont = Inter({
+  subsets: ["latin"],
   variable: "--font-custom",
   display: "swap",
+  fallback: ["system-ui", "arial"],
+  preload: true,
+  adjustFontFallback: true,
 });
 
 export const metadata: Metadata = {
