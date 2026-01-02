@@ -4,6 +4,7 @@ import { rateLimitLinks, getIdentifier, getRateLimitHeaders } from "@/lib/rate-l
 import { authenticateRequest } from "@/lib/auth-middleware";
 import { validateRequestBody } from "@/lib/validation/validate";
 import { createLinkSchema } from "@/lib/validation/link.schemas";
+import type { CreateLinkDTO } from "@/features/links/types";
 
 // Create singleton instances (instantiated once, reused across requests)
 const getLinksHandler = new GetLinksHandler();
