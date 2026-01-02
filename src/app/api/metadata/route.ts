@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { extractMetadata } from "@/lib/metadata";
 
-export const runtime = 'edge';
 
 export async function POST(request: NextRequest) {
   try {

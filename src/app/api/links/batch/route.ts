@@ -6,7 +6,6 @@ import { rateLimitLinks, getIdentifier, getRateLimitHeaders } from "@/lib/rate-l
 import { validateRequestBody } from "@/lib/validation/validate";
 import { batchActionSchema } from "@/lib/validation/link.schemas";
 
-export const runtime = 'edge';
 /**
  * Extract domain from URL
  */

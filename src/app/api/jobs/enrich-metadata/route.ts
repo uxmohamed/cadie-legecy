@@ -4,7 +4,6 @@ import { MetadataService } from "@/features/links/services/metadata.service";
 import { log } from "@/lib/logger";
 import type { EnrichMetadataJob } from "@/lib/job-queue";
 
-export const runtime = "edge";
 
 /**
  * POST /api/jobs/enrich-metadata

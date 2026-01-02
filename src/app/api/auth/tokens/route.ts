@@ -5,7 +5,6 @@ import { rateLimitAuth, getIdentifier, getRateLimitHeaders } from "@/lib/rate-li
 import { validateRequestBody } from "@/lib/validation/validate";
 import { createTokenSchema } from "@/lib/validation/auth.schemas";
 
-export const runtime = 'edge';
 
 /**
  * GET /api/auth/tokens

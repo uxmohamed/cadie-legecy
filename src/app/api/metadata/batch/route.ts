@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { extractMetadata } from "@/lib/metadata";
 import type { ExtractedMetadata, BatchMetadataOptions, FetchStatus } from "@/features/links/types/link.types";
 
-export const runtime = 'edge';
 
 /**
  * Default options for batch metadata fetching
