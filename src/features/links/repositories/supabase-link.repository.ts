@@ -63,6 +63,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
         const { data, error, count } = await query;
 
         if (error) {
+            // Log error but return empty results rather than throwing
             console.error("Error fetching links:", error);
             return { links: [], total: 0 };
         }
@@ -139,8 +140,9 @@ export class SupabaseLinkRepository implements ILinkRepository {
             })
             .select()
             .single();
-
+        
         if (error) {
+            console.error('[SUPABASE CREATE] ERROR:', error);
             if (error.code === "23505") {
                 // Unique constraint violation
                 throw new AppError(
@@ -157,7 +159,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
                 { originalError: error }
             );
         }
-
+        
         return link;
     }
 
@@ -174,8 +176,9 @@ export class SupabaseLinkRepository implements ILinkRepository {
             .eq("user_id", userId)
             .select()
             .single();
-
+        
         if (error) {
+            console.error('[SUPABASE UPDATE] ERROR:', error);
             if (error.code === "PGRST116") {
                 throw new AppError(
                     ErrorCode.NOT_FOUND,
@@ -191,7 +194,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
                 { originalError: error }
             );
         }
-
+        
         return link;
     }
 
@@ -201,7 +204,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
     async delete(id: string, userId: string): Promise<void> {
         const supabase = await createClient();
 
-        const { error } = await supabase
+        const { data, error } = await supabase
             .from("links")
             .update({
                 is_deleted: true,
@@ -209,9 +212,11 @@ export class SupabaseLinkRepository implements ILinkRepository {
                 deleted_at: new Date().toISOString()
             })
             .eq("id", id)
-            .eq("user_id", userId);
-
+            .eq("user_id", userId)
+            .select();
+        
         if (error) {
+            console.error('[SUPABASE DELETE] ERROR:', error);
             if (error.code === "PGRST116") {
                 throw new AppError(
                     ErrorCode.NOT_FOUND,

@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { MetadataService } from "@/features/links/services/metadata.service";
 import { canonicalizeUrl } from "@/lib/canonicalize";
+import { rateLimitLinks, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 
-export const runtime = "edge";
 
 /**
  * Extract domain from URL
@@ -53,6 +53,20 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Apply rate limiting
+    const identifier = getIdentifier(request, user.id);
+    const { success, limit, reset, remaining } = await rateLimitLinks.limit(identifier);
+    
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { 
+          status: 429,
+          headers: getRateLimitHeaders(limit, remaining, reset)
+        }
+      );
     }
 
     const body: BatchRequest = await request.json();
@@ -202,8 +216,9 @@ export async function POST(request: NextRequest) {
           .from("links")
           .update({ is_deleted: true, deleted_at: new Date().toISOString() })
           .eq("user_id", user.id)
-          .in("id", ids!);
-        result = { data: { count: ids!.length }, error: deleteResult.error };
+          .in("id", ids!)
+          .select();
+        result = { data: { count: deleteResult.data?.length || ids!.length }, error: deleteResult.error };
         break;
 
       case "restore":
@@ -211,8 +226,9 @@ export async function POST(request: NextRequest) {
           .from("links")
           .update({ is_deleted: false, is_archived: false, deleted_at: null })
           .eq("user_id", user.id)
-          .in("id", ids!);
-        result = { data: { count: ids!.length }, error: restoreResult.error };
+          .in("id", ids!)
+          .select();
+        result = { data: { count: restoreResult.data?.length || ids!.length }, error: restoreResult.error };
         break;
 
       case "permanent_delete":
@@ -220,8 +236,9 @@ export async function POST(request: NextRequest) {
           .from("links")
           .delete()
           .eq("user_id", user.id)
-          .in("id", ids!);
-        result = { data: { count: ids!.length }, error: permDeleteResult.error };
+          .in("id", ids!)
+          .select();
+        result = { data: { count: permDeleteResult.data?.length || ids!.length }, error: permDeleteResult.error };
         break;
 
       case "pin":
@@ -229,8 +246,9 @@ export async function POST(request: NextRequest) {
           .from("links")
           .update({ is_pinned: true })
           .eq("user_id", user.id)
-          .in("id", ids!);
-        result = { data: { count: ids!.length }, error: pinResult.error };
+          .in("id", ids!)
+          .select();
+        result = { data: { count: pinResult.data?.length || ids!.length }, error: pinResult.error };
         break;
 
       case "unpin":
@@ -238,8 +256,9 @@ export async function POST(request: NextRequest) {
           .from("links")
           .update({ is_pinned: false })
           .eq("user_id", user.id)
-          .in("id", ids!);
-        result = { data: { count: ids!.length }, error: unpinResult.error };
+          .in("id", ids!)
+          .select();
+        result = { data: { count: unpinResult.data?.length || ids!.length }, error: unpinResult.error };
         break;
 
       default:
@@ -251,8 +270,20 @@ export async function POST(request: NextRequest) {
 
     if (result.error) {
       console.error(`Batch ${action} error:`, result.error);
+      console.error('Error details:', {
+        action,
+        ids: ids || [],
+        linksCount: links?.length || 0,
+        errorCode: result.error.code,
+        errorMessage: result.error.message,
+        errorDetails: result.error.details,
+        hint: result.error.hint,
+      });
       return NextResponse.json(
-        { error: `Failed to ${action} links` },
+        { 
+          error: `Failed to ${action} links`,
+          details: result.error.message,
+        },
         { status: 500 }
       );
     }

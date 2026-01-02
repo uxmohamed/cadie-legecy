@@ -45,35 +45,46 @@ export async function authenticateRequest(
  */
 async function authenticateWithToken(token: string): Promise<string | null> {
   if (!token || token.length < 32) {
-    console.log("[AUTH] Token too short or missing");
+    if (process.env.NODE_ENV === 'development') {
+      log.debug("[AUTH] Token validation failed", { reason: 'too_short_or_missing', length: token?.length || 0 });
+    }
     return null;
   }
 
   try {
     // Hash the token using SHA-256 (matching the hash we store)
     const tokenHash = await hashToken(token);
-    console.log("[AUTH] Looking up token hash:", tokenHash.substring(0, 16) + "...");
+    if (process.env.NODE_ENV === 'development') {
+      log.debug("[AUTH] Looking up token", { hashPrefix: tokenHash.substring(0, 16) });
+    }
     
     // Use service role to query api_tokens table
     // We need to use service role because RLS won't let us query without auth
     const supabase = await createClient();
     
-    // Look up token in database
+    // Current timestamp for expiration check
+    const now = new Date().toISOString();
+    
+    // Look up token in database and check expiration
     const { data: tokenRecord, error } = await supabase
       .from("api_tokens")
-      .select("user_id, id")
+      .select("user_id, id, expires_at")
       .eq("token_hash", tokenHash)
+      .gt("expires_at", now) // Only return non-expired tokens
       .single();
 
-    console.log("[AUTH] Token lookup result:", { found: !!tokenRecord, error: error?.message });
-
     if (error || !tokenRecord) {
-      log.error("Token authentication failed", error);
-      console.log("[AUTH] Token NOT found in database - returning null");
+      const reason = error?.code === 'PGRST116' ? 'token_not_found_or_expired' : 'query_error';
+      log.error("Token authentication failed", error, { found: false, reason });
+      if (process.env.NODE_ENV === 'development') {
+        log.debug("[AUTH] Token not found or expired", { reason });
+      }
       return null;
     }
 
-    console.log("[AUTH] Token FOUND - user_id:", tokenRecord.user_id);
+    if (process.env.NODE_ENV === 'development') {
+      log.debug("[AUTH] Token authenticated successfully", { userId: tokenRecord.user_id });
+    }
 
     // Update last_used_at timestamp asynchronously (don't await)
     updateTokenLastUsed(tokenRecord.id).catch((err) => {
@@ -83,7 +94,6 @@ async function authenticateWithToken(token: string): Promise<string | null> {
     return tokenRecord.user_id;
   } catch (error) {
     log.error("Error during token authentication", error);
-    console.log("[AUTH] Error during authentication:", error);
     return null;
   }
 }

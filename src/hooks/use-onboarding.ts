@@ -3,6 +3,7 @@
 import * as React from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { log } from "@/lib/logger";
 import { getDefaultAvatar } from "@/lib/avatar";
 
 interface UserProfile {
@@ -45,7 +46,9 @@ export async function completeOnboarding(
   displayName: string,
   avatarUrl: string
 ): Promise<{ success: boolean; error?: string }> {
-  console.log("completeOnboarding called with:", { userId, displayName, avatarUrl });
+  if (process.env.NODE_ENV === 'development') {
+    log.debug("Completing onboarding", { userId, displayName });
+  }
   
   const supabase = createClient();
 
@@ -57,8 +60,6 @@ export async function completeOnboarding(
     onboarding_completed_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
-  
-  console.log("Upserting payload:", payload);
 
   // Save to user_profiles table
   const { data, error } = await supabase
@@ -67,8 +68,6 @@ export async function completeOnboarding(
       onConflict: "user_id",
     })
     .select();
-
-  console.log("Upsert result - data:", data, "error:", error);
 
   if (error) {
     console.error("Error completing onboarding:", error);

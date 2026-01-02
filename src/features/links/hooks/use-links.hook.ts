@@ -358,15 +358,26 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 false
             );
 
-            // Show toast immediately
-            toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} restored`);
+            try {
+                const response = await fetch('/api/links/batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'restore', ids }),
+                });
 
-            // Single atomic batch request (fire-and-forget)
-            fetch('/api/links/batch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'restore', ids }),
-            }).catch(err => log.error('Background restore failed', err, { ids }));
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to restore links');
+                }
+
+                // Show success toast only after confirmed save
+                toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} restored`);
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : 'Failed to restore links';
+                toast.error(errorMessage);
+                // Revert optimistic update
+                await mutate();
+            }
         },
         [mutate]
     );
@@ -388,15 +399,26 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 false
             );
 
-            // Show toast immediately
-            toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} permanently deleted`);
+            try {
+                const response = await fetch('/api/links/batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'permanent_delete', ids }),
+                });
 
-            // Single atomic batch request (fire-and-forget)
-            fetch('/api/links/batch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'permanent_delete', ids }),
-            }).catch(err => log.error('Background permanent delete failed', err, { ids }));
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to permanently delete links');
+                }
+
+                // Show success toast only after confirmed save
+                toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} permanently deleted`);
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : 'Failed to permanently delete links';
+                toast.error(errorMessage);
+                // Revert optimistic update
+                await mutate();
+            }
         },
         [mutate]
     );
@@ -420,15 +442,26 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 false
             );
 
-            // Show toast immediately (don't wait for API)
-            toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} moved to trash`);
+            try {
+                const response = await fetch('/api/links/batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'delete', ids }),
+                });
 
-            // Single atomic batch request (fire-and-forget)
-            fetch('/api/links/batch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'delete', ids }),
-            }).catch(err => log.error('Background delete failed', err, { ids }));
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to delete links');
+                }
+
+                // Show success toast only after confirmed save
+                toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} moved to trash`);
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : 'Failed to delete links';
+                toast.error(errorMessage);
+                // Revert optimistic update
+                await mutate();
+            }
         },
         [mutate]
     );
@@ -451,18 +484,26 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 false
             );
 
-            // Show toast immediately
-            toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} pinned`);
+            try {
+                const response = await fetch('/api/links/batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'pin', ids }),
+                });
 
-            // Single atomic batch request (fire-and-forget)
-            fetch('/api/links/batch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'pin', ids }),
-            }).catch(async (err) => {
-                log.error('Background pin failed', err, { ids });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to pin links');
+                }
+
+                // Show success toast only after confirmed save
+                toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} pinned`);
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : 'Failed to pin links';
+                toast.error(errorMessage);
+                // Revert optimistic update
                 await mutate();
-            });
+            }
         },
         [mutate]
     );
@@ -485,18 +526,26 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 false
             );
 
-            // Show toast immediately
-            toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} unpinned`);
+            try {
+                const response = await fetch('/api/links/batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'unpin', ids }),
+                });
 
-            // Single atomic batch request (fire-and-forget)
-            fetch('/api/links/batch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'unpin', ids }),
-            }).catch(async (err) => {
-                log.error('Background unpin failed', err, { ids });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to unpin links');
+                }
+
+                // Show success toast only after confirmed save
+                toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} unpinned`);
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : 'Failed to unpin links';
+                toast.error(errorMessage);
+                // Revert optimistic update
                 await mutate();
-            });
+            }
         },
         [mutate]
     );

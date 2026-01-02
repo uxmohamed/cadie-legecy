@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import { UpdateLinkHandler, DeleteLinkHandler } from "@/features/links/api/handlers";
 
-export const runtime = 'edge';
 
 /**
  * PUT /api/links/[id]
