@@ -3,6 +3,7 @@ import type { Link, CreateLinkDTO, UpdateLinkDTO, LinkFilters } from "../types/l
 import { MetadataService } from "./metadata.service";
 import { DuplicateDetectionService } from "./duplicate-detection.service";
 import { log } from "@/lib/logger";
+import { enqueueMetadataEnrichment } from "@/lib/job-queue";
 
 /**
  * Service for managing link operations
@@ -50,13 +51,13 @@ export class LinkService {
                     deleted_at: null,
                 });
 
-                // Trigger background metadata refresh for restored links (with delay)
+                // Enqueue background metadata refresh for restored links
                 if (data.content_type === "url" || !data.content_type) {
-                    setTimeout(() => {
-                        this.metadataService.enrichLink(restoredLink.id, data.url).catch(err => {
-                            log.error('Background metadata enrichment failed for restored link', err, { linkId: restoredLink.id, url: data.url });
-                        });
-                    }, 2500);
+                    await enqueueMetadataEnrichment({
+                        linkId: restoredLink.id,
+                        url: data.url,
+                        userId,
+                    });
                 }
 
                 return { link: restoredLink, isDuplicate: false, isRestored: true };
@@ -69,15 +70,14 @@ export class LinkService {
         // Create new link
         const link = await this.linkRepository.create(userId, data);
 
-        // Trigger background metadata enrichment for URLs (with delay to ensure DB commit completes)
+        // Enqueue background metadata enrichment for URLs
+        // QStash handles the delay (2s) and retries automatically
         if (data.content_type === "url" || !data.content_type) {
-            // Delay enrichment by 2500ms to avoid race condition where metadata API 
-            // tries to fetch a link that hasn't been committed to DB yet
-            setTimeout(() => {
-                this.metadataService.enrichLink(link.id, data.url).catch(err => {
-                    log.error('Background metadata enrichment failed', err, { linkId: link.id, url: data.url });
-                });
-            }, 2500);
+            await enqueueMetadataEnrichment({
+                linkId: link.id,
+                url: data.url,
+                userId,
+            });
         }
 
         return { link, isDuplicate: false, isRestored: false };

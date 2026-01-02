@@ -84,7 +84,7 @@ export class CreateLinkHandler {
         }
     }
 
-    async handle(request: NextRequest): Promise<NextResponse> {
+    async handle(request: NextRequest, validatedData?: CreateLinkDTO): Promise<NextResponse> {
         try {
             // Authenticate
             const userId = await authenticateRequest(request);
@@ -101,48 +101,54 @@ export class CreateLinkHandler {
                 );
             }
 
-            // Parse and validate request body
-            const body = await request.json();
-            const {
-                url,
-                title,
-                content_type = "url",
-                category_id,
-                color_value,
-                favicon_url,
-                og_image_url,
-                description,
-            } = body;
+            // Use validated data if provided, otherwise fall back to old validation
+            let createLinkDTO: CreateLinkDTO;
+            
+            if (validatedData) {
+                createLinkDTO = validatedData;
+            } else {
+                // Old validation (for backward compatibility)
+                const body = await request.json();
+                const {
+                    url,
+                    title,
+                    content_type = "url",
+                    category_id,
+                    color_value,
+                    favicon_url,
+                    og_image_url,
+                    description,
+                } = body;
 
-            if (!url || !title) {
-                return NextResponse.json(
-                    {
-                        error: {
-                            code: ErrorCode.INVALID_INPUT,
-                            message: "URL and title are required",
-                            userMessage: "Please check your input and try again"
-                        }
-                    },
-                    { status: 400 }
-                );
+                if (!url || !title) {
+                    return NextResponse.json(
+                        {
+                            error: {
+                                code: ErrorCode.INVALID_INPUT,
+                                message: "URL and title are required",
+                                userMessage: "Please check your input and try again"
+                            }
+                        },
+                        { status: 400 }
+                    );
+                }
+
+                createLinkDTO = {
+                    url,
+                    title,
+                    content_type,
+                    category_id: category_id || null,
+                    color_value: color_value || null,
+                    favicon_url: favicon_url || null,
+                    og_image_url: og_image_url || null,
+                    description: description || null,
+                };
             }
 
             // Validate Link (only if it's a URL type)
-            if (content_type === 'url') {
-                await this.validateLink(url, title);
+            if (createLinkDTO.content_type === 'url') {
+                await this.validateLink(createLinkDTO.url, createLinkDTO.title);
             }
-
-            // Create DTO
-            const createLinkDTO: CreateLinkDTO = {
-                url,
-                title,
-                content_type,
-                category_id: category_id || null,
-                color_value: color_value || null,
-                favicon_url: favicon_url || null,
-                og_image_url: og_image_url || null,
-                description: description || null,
-            };
 
             // Create link using service
             const { link, isDuplicate, isRestored } = await this.linkService.createLink(

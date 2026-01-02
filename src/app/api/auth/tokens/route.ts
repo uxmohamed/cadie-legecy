@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateToken, hashToken } from "@/lib/auth-middleware";
 import { rateLimitAuth, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
+import { validateRequestBody } from "@/lib/validation/validate";
+import { createTokenSchema } from "@/lib/validation/auth.schemas";
 
 export const runtime = 'edge';
 
@@ -87,22 +89,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
-    const { name } = body;
-
-    if (!name || typeof name !== "string" || name.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Token name is required" },
-        { status: 400 }
-      );
+    // Validate request body
+    const { data: validatedData, error: validationError } = await validateRequestBody(
+      request,
+      createTokenSchema
+    );
+    
+    if (validationError) {
+      return validationError;
     }
 
-    if (name.length > 100) {
-      return NextResponse.json(
-        { error: "Token name must be 100 characters or less" },
-        { status: 400 }
-      );
-    }
+    const { name } = validatedData;
 
     // Generate a new token (plaintext)
     const token = generateToken(32); // 32 bytes = 43 characters in base64url

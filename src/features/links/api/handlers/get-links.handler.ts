@@ -57,15 +57,6 @@ export class GetLinksHandler {
                 is_deleted: isDeleted,
             }, limit, offset, searchQuery);
 
-            // Trigger background cleanup of expired trash items (only on first page load)
-            // This runs in the background without blocking the response
-            if (offset === 0 && !isDeleted) {
-                // Fire-and-forget: cleanup expired trash items older than 60 days
-                this.linkService.cleanupExpiredTrash(userId).catch(() => {
-                    // Silently ignore errors - cleanup is best-effort
-                });
-            }
-
             return NextResponse.json(result);
         } catch (error) {
             const appError = toAppError(error);

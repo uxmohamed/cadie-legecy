@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { GetLinksHandler, CreateLinkHandler } from "@/features/links/api/handlers";
 import { rateLimitLinks, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 import { authenticateRequest } from "@/lib/auth-middleware";
+import { validateRequestBody } from "@/lib/validation/validate";
+import { createLinkSchema } from "@/lib/validation/link.schemas";
+
+// Create singleton instances (instantiated once, reused across requests)
+const getLinksHandler = new GetLinksHandler();
+const createLinkHandler = new CreateLinkHandler();
 
 /**
  * GET /api/links
@@ -26,8 +32,7 @@ export async function GET(request: NextRequest) {
   }
   
   // Continue with handler
-  const handler = new GetLinksHandler();
-  const response = await handler.handle(request);
+  const response = await getLinksHandler.handle(request);
   
   // Add rate limit headers to response
   const headers = getRateLimitHeaders(limit, remaining, reset);
@@ -60,9 +65,18 @@ export async function POST(request: NextRequest) {
     );
   }
   
+  // Validate request body
+  const { data: validatedData, error: validationError } = await validateRequestBody(
+    request,
+    createLinkSchema
+  );
+  
+  if (validationError) {
+    return validationError;
+  }
+  
   // Continue with handler
-  const handler = new CreateLinkHandler();
-  const response = await handler.handle(request);
+  const response = await createLinkHandler.handle(request, validatedData);
   
   // Add rate limit headers to response
   const headers = getRateLimitHeaders(limit, remaining, reset);
@@ -72,3 +86,4 @@ export async function POST(request: NextRequest) {
   
   return response;
 }
+

@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { MetadataService } from "@/features/links/services/metadata.service";
 import { canonicalizeUrl } from "@/lib/canonicalize";
 import { rateLimitLinks, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
+import { validateRequestBody } from "@/lib/validation/validate";
+import { batchActionSchema } from "@/lib/validation/link.schemas";
 
 
 /**
@@ -69,32 +71,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body: BatchRequest = await request.json();
-    const { action, ids, links } = body;
-
-    if (!action) {
-      return NextResponse.json(
-        { error: "Invalid request: action required" },
-        { status: 400 }
-      );
+    // Validate request body
+    const { data: validatedData, error: validationError } = await validateRequestBody(
+      request,
+      batchActionSchema
+    );
+    
+    if (validationError) {
+      return validationError;
     }
 
-    // Validate based on action type
-    if (action === "add") {
-      if (!links || !Array.isArray(links) || links.length === 0) {
-        return NextResponse.json(
-          { error: "Invalid request: links array required for add action" },
-          { status: 400 }
-        );
-      }
-    } else {
-      if (!ids || !Array.isArray(ids) || ids.length === 0) {
-        return NextResponse.json(
-          { error: "Invalid request: ids array required" },
-          { status: 400 }
-        );
-      }
-    }
+    const { action, ids, links } = validatedData;
 
     let result;
 
