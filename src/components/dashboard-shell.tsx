@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/menu";
 import { useShortcuts } from "@/components/shortcut-context";
+import { trackViewChanged } from "@/lib/posthog-client";
 
 interface DashboardShellProps {
   user: User;
@@ -199,6 +200,14 @@ export function DashboardShell({
       unregisterShortcut("/");
     };
   }, [registerShortcut, unregisterShortcut, selectedCategoryId, onOpenAddMode, onViewChange]);
+
+  // Track view changes
+  React.useEffect(() => {
+    trackViewChanged({
+      view_name: isTrashView ? 'trash' : (selectedCategoryId ? 'category' : 'all_items'),
+      category_id: selectedCategoryId
+    });
+  }, [selectedCategoryId, isTrashView]);
 
   return (
     <div className="min-h-screen bg-[var(--bg-main-container)] relative">

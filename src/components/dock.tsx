@@ -15,6 +15,7 @@ import {
   IconCapsuleHorizontalFilled,
   IconTrashFilled,
 } from "@tabler/icons-react";
+import { trackBulkAction } from "@/lib/posthog-client";
 import { ChevronUpDown } from "@/components/icons/chevron-up-down";
 import { SelectionToolbar } from "@/components/link-list/selection-toolbar";
 import type { Link } from "@/features/links/types";
@@ -153,11 +154,26 @@ export function Dock({
             <SelectionToolbar
               selectedCount={selectedCount}
               onClearSelection={onClearSelection || (() => {})}
-              onBatchDelete={onBatchDelete || (() => {})}
-              onBatchRestore={onBatchRestore}
-              onBatchPermanentDelete={onBatchPermanentDelete}
-              onBatchPin={onBatchPin}
-              onBatchUnpin={onBatchUnpin}
+              onBatchDelete={onBatchDelete ? async () => {
+                trackBulkAction({ action_type: 'delete', item_count: selectedCount });
+                onBatchDelete();
+              } : (() => {})}
+              onBatchRestore={onBatchRestore ? async () => {
+                trackBulkAction({ action_type: 'restore', item_count: selectedCount });
+                onBatchRestore();
+              } : undefined}
+              onBatchPermanentDelete={onBatchPermanentDelete ? async () => {
+                trackBulkAction({ action_type: 'permanent_delete', item_count: selectedCount });
+                onBatchPermanentDelete();
+              } : undefined}
+              onBatchPin={onBatchPin ? async () => {
+                trackBulkAction({ action_type: 'pin', item_count: selectedCount });
+                onBatchPin();
+              } : undefined}
+              onBatchUnpin={onBatchUnpin ? async () => {
+                trackBulkAction({ action_type: 'unpin', item_count: selectedCount });
+                onBatchUnpin();
+              } : undefined}
               selectedLinks={selectedLinks}
               isTrashView={isTrashView}
             />

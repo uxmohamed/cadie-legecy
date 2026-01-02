@@ -6,6 +6,7 @@ import { WelcomeStep } from "./welcome-step";
 import { ExtensionStep } from "./extension-step";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { Logo } from "@/components/logo";
+import { trackOnboardingStarted, trackOnboardingStepCompleted, trackOnboardingCompleted } from "@/lib/posthog-client";
 
 type OnboardingStep = "welcome" | "extension";
 
@@ -25,6 +26,11 @@ export function OnboardingFlow({ user, onComplete }: OnboardingFlowProps) {
     avatarUrl: string;
   } | null>(null);
 
+  // Track onboarding start
+  React.useEffect(() => {
+    trackOnboardingStarted();
+  }, []);
+
   const handleWelcomeComplete = React.useCallback(async (displayName: string, avatarUrl: string) => {
     // Skip extension step for now (extension not ready for release)
     // Complete onboarding directly after welcome step
@@ -32,9 +38,11 @@ export function OnboardingFlow({ user, onComplete }: OnboardingFlowProps) {
     
     try {
       const success = await complete(displayName, avatarUrl);
-      if (success) {
-        onComplete();
-      }
+        if (success) {
+          trackOnboardingStepCompleted('welcome');
+          trackOnboardingCompleted();
+          onComplete();
+        }
     } catch (error) {
       console.error("Error completing onboarding:", error);
     } finally {
@@ -67,6 +75,8 @@ export function OnboardingFlow({ user, onComplete }: OnboardingFlowProps) {
     try {
       const success = await complete(profileData.displayName, profileData.avatarUrl);
       if (success) {
+        trackOnboardingStepCompleted('extension');
+        trackOnboardingCompleted();
         onComplete();
       }
     } catch (error) {

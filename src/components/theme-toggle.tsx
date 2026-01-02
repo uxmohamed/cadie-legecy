@@ -3,18 +3,22 @@
 import { IconMoon, IconSun } from '@tabler/icons-react';
 import { useTheme } from './theme-provider';
 import { Button } from './ui/button';
+import { trackThemeChanged } from '@/lib/posthog-client';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
 
   const toggleTheme = () => {
+    let newTheme: string;
     if (theme === 'light') {
-      setTheme('dark');
+      newTheme = 'dark';
     } else if (theme === 'dark') {
-      setTheme('system');
+      newTheme = 'system';
     } else {
-      setTheme('light');
+      newTheme = 'light';
     }
+    setTheme(newTheme);
+    trackThemeChanged({ theme: newTheme });
   };
 
   return (
