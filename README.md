@@ -34,7 +34,9 @@ A modern, keyboard-friendly read-it-later application with Chrome extension and 
 - 🎨 **Clean Design** - Minimal, Linear/Craft-inspired interface
 - 📱 **Fully Responsive** - Works beautifully on all devices
 - ⚡ **Optimistic UI** - Instant feedback with optimistic updates
-- 🌓 **Modern UI Components** - Built with Radix UI and Tailwind CSS
+- 🌓 **Dark Mode** - Beautiful dark and light themes with system preference support
+- 🔄 **Reliable Persistence** - Server-side retries ensure your data is always saved
+- 🎯 **Batch Operations** - Select multiple items for bulk delete, restore, pin/unpin
 
 ## 🚀 Quick Start
 
@@ -187,6 +189,7 @@ cadie/
 ### Development
 
 - **Linting**: ESLint 9
+- **Testing**: Jest with React Testing Library
 - **Package Manager**: npm/pnpm
 
 ## 🔐 Security
@@ -323,6 +326,8 @@ npm run dev          # Start development server
 npm run build        # Build for production
 npm start            # Start production server
 npm run lint         # Run ESLint
+npm run test         # Run all tests
+npm run test:watch   # Run tests in watch mode
 ```
 
 ### Extension
@@ -355,7 +360,6 @@ The app is optimized for Vercel with automatic deployments on push.
 
 - 📂 **Visual Category Management** - UI for organizing links
 - 🔍 **Full-text Search** - Search through page content
-- 📊 **Analytics** - Track reading habits and saved items
 - 🤖 **AI Summaries** - Automatic summarization of saved articles
 - 🏷️ **Auto-tagging with AI** - Smart categorization
 - 📱 **iOS Shortcut** - Save from iOS devices
@@ -363,10 +367,15 @@ The app is optimized for Vercel with automatic deployments on push.
 - 🎥 **YouTube Integration** - Save and summarize videos
 - 📡 **RSS Feed Support** - Import from RSS feeds
 - 🔄 **Sync Highlights** - Save and sync highlighted text
-- 🌙 **Dark Mode** - Full dark mode support
 
 ### Recently Completed
 
+- ✅ **Comprehensive Test Suite** - 125+ tests covering all functionality
+- ✅ **Dark Mode** - Full dark/light theme support with system preference
+- ✅ **Reliable Data Persistence** - Server-side retries for all operations
+- ✅ **Batch Operations** - Multi-select for bulk delete, restore, pin/unpin
+- ✅ **Trash with Auto-cleanup** - 60-day retention with scheduled cleanup
+- ✅ **PostHog Analytics** - Full event tracking for insights
 - ✅ Chrome Extension with full authentication
 - ✅ API token management
 - ✅ Pin/unpin functionality
