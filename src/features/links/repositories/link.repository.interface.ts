@@ -40,13 +40,4 @@ export interface ILinkRepository {
      * Returns the link and whether it's currently in trash
      */
     findByUrl(userId: string, url: string): Promise<{ link: Link; isInTrash: boolean } | null>;
-
-    /**
-     * Permanently delete links that have been in trash for more than the specified days
-     * @param userId - User ID to cleanup for
-     * @param daysOld - Number of days after which trashed items should be permanently deleted (default: 60)
-     * @returns Number of links deleted
-     */
-    cleanupExpiredTrash(userId: string, daysOld?: number): Promise<number>;
 }
-

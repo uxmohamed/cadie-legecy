@@ -1,0 +1,125 @@
+import '@testing-library/jest-dom';
+
+// =============================================================================
+// Mock: Supabase Client
+// =============================================================================
+
+const mockSupabaseClient = {
+  auth: {
+    getUser: jest.fn().mockResolvedValue({
+      data: { user: { id: 'test-user-id', email: 'test@example.com' } },
+      error: null,
+    }),
+    getSession: jest.fn().mockResolvedValue({
+      data: { session: { access_token: 'mock-token' } },
+      error: null,
+    }),
+    signOut: jest.fn().mockResolvedValue({ error: null }),
+  },
+  from: jest.fn(() => ({
+    select: jest.fn().mockReturnThis(),
+    insert: jest.fn().mockReturnThis(),
+    update: jest.fn().mockReturnThis(),
+    delete: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    in: jest.fn().mockReturnThis(),
+    order: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
+    range: jest.fn().mockReturnThis(),
+    single: jest.fn().mockResolvedValue({ data: null, error: null }),
+    maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+  })),
+  channel: jest.fn(() => ({
+    on: jest.fn().mockReturnThis(),
+    subscribe: jest.fn().mockReturnValue('SUBSCRIBED'),
+  })),
+  removeChannel: jest.fn().mockResolvedValue(undefined),
+};
+
+jest.mock('@/lib/supabase/client', () => ({
+  createClient: jest.fn(() => mockSupabaseClient),
+}));
+
+jest.mock('@/lib/supabase/server', () => ({
+  createClient: jest.fn(() => mockSupabaseClient),
+}));
+
+// =============================================================================
+// Mock: Toast Notifications
+// =============================================================================
+
+jest.mock('sonner', () => ({
+  toast: Object.assign(jest.fn(), {
+    success: jest.fn(),
+    error: jest.fn(),
+    loading: jest.fn().mockReturnValue('toast-id'),
+    dismiss: jest.fn(),
+  }),
+}));
+
+// =============================================================================
+// Mock: Navigator Clipboard
+// =============================================================================
+
+Object.defineProperty(navigator, 'clipboard', {
+  value: {
+    writeText: jest.fn().mockResolvedValue(undefined),
+    readText: jest.fn().mockResolvedValue(''),
+  },
+  writable: true,
+});
+
+// =============================================================================
+// Mock: Next.js Navigation
+// =============================================================================
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    refresh: jest.fn(),
+    back: jest.fn(),
+    prefetch: jest.fn(),
+  }),
+  usePathname: () => '/dashboard',
+  useSearchParams: () => new URLSearchParams(),
+}));
+
+// =============================================================================
+// Mock: Window methods
+// =============================================================================
+
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: jest.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })),
+});
+
+// =============================================================================
+// Global Fetch Mock (can be overridden per test)
+// =============================================================================
+
+global.fetch = jest.fn();
+
+// =============================================================================
+// Reset all mocks before each test
+// =============================================================================
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  (global.fetch as jest.Mock).mockReset();
+});
+
+// =============================================================================
+// Export mock for use in tests
+// =============================================================================
+
+export { mockSupabaseClient };
