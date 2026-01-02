@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifySignatureEdge } from "@upstash/qstash/nextjs";
+import { Receiver } from "@upstash/qstash";
 import { MetadataService } from "@/features/links/services/metadata.service";
 import { log } from "@/lib/logger";
 import type { EnrichMetadataJob } from "@/lib/job-queue";
+
+export const runtime = "edge";
 
 /**
  * POST /api/jobs/enrich-metadata
@@ -12,9 +14,33 @@ import type { EnrichMetadataJob } from "@/lib/job-queue";
  * 
  * This endpoint is secured by QStash signature verification
  */
-async function handler(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const job: EnrichMetadataJob = await request.json();
+    // Verify QStash signature
+    const receiver = new Receiver({
+      currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
+      nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY!,
+    });
+
+    const signature = request.headers.get("upstash-signature");
+    const body = await request.text();
+
+    if (!signature) {
+      log.error("[Job] Missing QStash signature");
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // Verify the signature
+    await receiver.verify({
+      signature,
+      body,
+    });
+
+    // Parse the job
+    const job: EnrichMetadataJob = JSON.parse(body);
     const { linkId, url, userId } = job;
     
     if (!linkId || !url || !userId) {
@@ -52,7 +78,3 @@ async function handler(request: NextRequest) {
   }
 }
 
-// Export with QStash signature verification
-export const POST = verifySignatureEdge(handler);
-
-export const runtime = "edge";
