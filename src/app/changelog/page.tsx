@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: "Stay up to date with the latest updates and improvements to Cadie",
 };
 
-export const runtime = 'edge';
+
 
 function sortEntriesByDate(entries: typeof allChangelogs) {
   return [...entries].sort((a, b) => {
