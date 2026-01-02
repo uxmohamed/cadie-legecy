@@ -81,8 +81,9 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         {
             revalidateOnFocus: false,
             revalidateOnReconnect: false,
-            dedupingInterval: 5000,
-            keepPreviousData: true,
+            revalidateOnMount: true, // Always fetch fresh data on mount
+            dedupingInterval: 1000,  // Reduced from 5000ms - allow faster revalidation
+            keepPreviousData: true,  // Keep showing data while fetching (smooth UX)
             onError: (err) => {
                 const errorMessage = err instanceof Error ? err.message : "Failed to load links";
                 toast.error(errorMessage);

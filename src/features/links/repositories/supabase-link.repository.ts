@@ -3,6 +3,7 @@ import type { Link, CreateLinkDTO, UpdateLinkDTO, LinkFilters } from "../types/l
 import { createClient } from "@/lib/supabase/server";
 import { canonicalizeUrl } from "@/lib/canonicalize";
 import { AppError, ErrorCode } from "@/lib/errors";
+import { withRetry, supabaseRetryPredicate } from "@/lib/retry";
 
 /**
  * Supabase implementation of the Link Repository
@@ -165,73 +166,94 @@ export class SupabaseLinkRepository implements ILinkRepository {
 
     /**
      * Update an existing link
+     * Uses retry logic for transient failures
+     * Throws NOT_FOUND if link doesn't exist or RLS blocks access
      */
     async update(id: string, userId: string, data: UpdateLinkDTO): Promise<Link> {
-        const supabase = await createClient();
+        return withRetry(
+            async () => {
+                const supabase = await createClient();
 
-        const { data: link, error } = await supabase
-            .from("links")
-            .update(data)
-            .eq("id", id)
-            .eq("user_id", userId)
-            .select()
-            .single();
-        
-        if (error) {
-            console.error('[SUPABASE UPDATE] ERROR:', error);
-            if (error.code === "PGRST116") {
-                throw new AppError(
-                    ErrorCode.NOT_FOUND,
-                    "Link not found",
-                    404,
-                    { originalError: error }
-                );
+                const { data: links, error } = await supabase
+                    .from("links")
+                    .update(data)
+                    .eq("id", id)
+                    .eq("user_id", userId)
+                    .select();
+                
+                if (error) {
+                    console.error('[SUPABASE UPDATE] ERROR:', error);
+                    throw new AppError(
+                        ErrorCode.DATABASE_ERROR,
+                        `Failed to update link: ${error.message}`,
+                        500,
+                        { originalError: error }
+                    );
+                }
+
+                // Critical fix: Check if any rows were actually affected
+                if (!links || links.length === 0) {
+                    throw new AppError(
+                        ErrorCode.NOT_FOUND,
+                        "Link not found or access denied",
+                        404
+                    );
+                }
+                
+                return links[0];
+            },
+            {
+                operationName: `update(${id})`,
+                shouldRetry: supabaseRetryPredicate,
             }
-            throw new AppError(
-                ErrorCode.DATABASE_ERROR,
-                `Failed to update link: ${error.message}`,
-                500,
-                { originalError: error }
-            );
-        }
-        
-        return link;
+        );
     }
 
     /**
      * Delete a link (Soft Delete)
+     * Uses retry logic for transient failures
+     * Throws NOT_FOUND if link doesn't exist or RLS blocks access
      */
     async delete(id: string, userId: string): Promise<void> {
-        const supabase = await createClient();
+        return withRetry(
+            async () => {
+                const supabase = await createClient();
 
-        const { data, error } = await supabase
-            .from("links")
-            .update({
-                is_deleted: true,
-                is_archived: false,
-                deleted_at: new Date().toISOString()
-            })
-            .eq("id", id)
-            .eq("user_id", userId)
-            .select();
-        
-        if (error) {
-            console.error('[SUPABASE DELETE] ERROR:', error);
-            if (error.code === "PGRST116") {
-                throw new AppError(
-                    ErrorCode.NOT_FOUND,
-                    "Link not found",
-                    404,
-                    { originalError: error }
-                );
+                const { data, error } = await supabase
+                    .from("links")
+                    .update({
+                        is_deleted: true,
+                        is_archived: false,
+                        deleted_at: new Date().toISOString()
+                    })
+                    .eq("id", id)
+                    .eq("user_id", userId)
+                    .select();
+                
+                if (error) {
+                    console.error('[SUPABASE DELETE] ERROR:', error);
+                    throw new AppError(
+                        ErrorCode.DATABASE_ERROR,
+                        `Failed to delete link: ${error.message}`,
+                        500,
+                        { originalError: error }
+                    );
+                }
+
+                // Critical fix: Check if any rows were actually affected
+                if (!data || data.length === 0) {
+                    throw new AppError(
+                        ErrorCode.NOT_FOUND,
+                        "Link not found or access denied",
+                        404
+                    );
+                }
+            },
+            {
+                operationName: `delete(${id})`,
+                shouldRetry: supabaseRetryPredicate,
             }
-            throw new AppError(
-                ErrorCode.DATABASE_ERROR,
-                `Failed to delete link: ${error.message}`,
-                500,
-                { originalError: error }
-            );
-        }
+        );
     }
 
     /**

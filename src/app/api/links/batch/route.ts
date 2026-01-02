@@ -5,6 +5,7 @@ import { canonicalizeUrl } from "@/lib/canonicalize";
 import { rateLimitLinks, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 import { validateRequestBody } from "@/lib/validation/validate";
 import { batchActionSchema } from "@/lib/validation/link.schemas";
+import { withRetry, supabaseRetryPredicate } from "@/lib/retry";
 
 /**
  * Extract domain from URL
@@ -197,54 +198,115 @@ export async function POST(request: NextRequest) {
         break;
 
       case "delete":
-        // Direct query instead of RPC to avoid type issues
-        const deleteResult = await supabase
-          .from("links")
-          .update({ is_deleted: true, deleted_at: new Date().toISOString() })
-          .eq("user_id", user.id)
-          .in("id", ids!)
-          .select();
-        result = { data: { count: deleteResult.data?.length || ids!.length }, error: deleteResult.error };
+        // Use retry for transient failures
+        const deleteResult = await withRetry(
+          async () => {
+            const supabase = await createClient();
+            return supabase
+              .from("links")
+              .update({ is_deleted: true, deleted_at: new Date().toISOString() })
+              .eq("user_id", user.id)
+              .in("id", ids!)
+              .select();
+          },
+          { operationName: "batchDelete", shouldRetry: supabaseRetryPredicate }
+        );
+        // Report ACTUAL affected count, not the requested count
+        result = {
+          data: {
+            count: deleteResult.data?.length || 0,
+            requested: ids!.length,
+          },
+          error: deleteResult.error,
+        };
         break;
 
       case "restore":
-        const restoreResult = await supabase
-          .from("links")
-          .update({ is_deleted: false, is_archived: false, deleted_at: null })
-          .eq("user_id", user.id)
-          .in("id", ids!)
-          .select();
-        result = { data: { count: restoreResult.data?.length || ids!.length }, error: restoreResult.error };
+        const restoreResult = await withRetry(
+          async () => {
+            const supabase = await createClient();
+            return supabase
+              .from("links")
+              .update({ is_deleted: false, is_archived: false, deleted_at: null })
+              .eq("user_id", user.id)
+              .in("id", ids!)
+              .select();
+          },
+          { operationName: "batchRestore", shouldRetry: supabaseRetryPredicate }
+        );
+        result = {
+          data: {
+            count: restoreResult.data?.length || 0,
+            requested: ids!.length,
+          },
+          error: restoreResult.error,
+        };
         break;
 
       case "permanent_delete":
-        const permDeleteResult = await supabase
-          .from("links")
-          .delete()
-          .eq("user_id", user.id)
-          .in("id", ids!)
-          .select();
-        result = { data: { count: permDeleteResult.data?.length || ids!.length }, error: permDeleteResult.error };
+        const permDeleteResult = await withRetry(
+          async () => {
+            const supabase = await createClient();
+            return supabase
+              .from("links")
+              .delete()
+              .eq("user_id", user.id)
+              .in("id", ids!)
+              .select();
+          },
+          { operationName: "batchPermanentDelete", shouldRetry: supabaseRetryPredicate }
+        );
+        result = {
+          data: {
+            count: permDeleteResult.data?.length || 0,
+            requested: ids!.length,
+          },
+          error: permDeleteResult.error,
+        };
         break;
 
       case "pin":
-        const pinResult = await supabase
-          .from("links")
-          .update({ is_pinned: true })
-          .eq("user_id", user.id)
-          .in("id", ids!)
-          .select();
-        result = { data: { count: pinResult.data?.length || ids!.length }, error: pinResult.error };
+        const pinResult = await withRetry(
+          async () => {
+            const supabase = await createClient();
+            return supabase
+              .from("links")
+              .update({ is_pinned: true })
+              .eq("user_id", user.id)
+              .in("id", ids!)
+              .select();
+          },
+          { operationName: "batchPin", shouldRetry: supabaseRetryPredicate }
+        );
+        result = {
+          data: {
+            count: pinResult.data?.length || 0,
+            requested: ids!.length,
+          },
+          error: pinResult.error,
+        };
         break;
 
       case "unpin":
-        const unpinResult = await supabase
-          .from("links")
-          .update({ is_pinned: false })
-          .eq("user_id", user.id)
-          .in("id", ids!)
-          .select();
-        result = { data: { count: unpinResult.data?.length || ids!.length }, error: unpinResult.error };
+        const unpinResult = await withRetry(
+          async () => {
+            const supabase = await createClient();
+            return supabase
+              .from("links")
+              .update({ is_pinned: false })
+              .eq("user_id", user.id)
+              .in("id", ids!)
+              .select();
+          },
+          { operationName: "batchUnpin", shouldRetry: supabaseRetryPredicate }
+        );
+        result = {
+          data: {
+            count: unpinResult.data?.length || 0,
+            requested: ids!.length,
+          },
+          error: unpinResult.error,
+        };
         break;
 
       default:
