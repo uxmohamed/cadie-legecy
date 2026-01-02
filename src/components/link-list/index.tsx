@@ -634,7 +634,7 @@ export function LinkList({
   const virtualizer = useWindowVirtualizer({
     count: virtualItems.length,
     estimateSize: getItemSize,
-    overscan: 5, // Render 5 extra items above/below viewport
+    overscan: 10, // Render 10 extra items above/below viewport for smoother scrolling
     observeElementOffset, // Custom offset observer to fix flushSync warning
   });
 
@@ -670,7 +670,7 @@ export function LinkList({
           onLoadMore();
         }
       },
-      { threshold: 0.1, rootMargin: "100px" }
+      { threshold: 0.1, rootMargin: "500px" }
     );
 
     if (loadMoreRef.current) {
