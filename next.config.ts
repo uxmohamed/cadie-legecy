@@ -2,17 +2,15 @@ import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from "next";
 import { withContentlayer } from "next-contentlayer2";
 import path from "path";
-import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
-
-initOpenNextCloudflareForDev();
-
 const nextConfig: NextConfig = {
-  // Optimize images for Cloudflare
+  // Optimize for Docker deployment
+  output: "standalone",
+
+  // Optimize images
   images: {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    unoptimized: true, // Disable Next.js image optimization for Cloudflare Pages
   },
 
   // Disable x-powered-by header for security
