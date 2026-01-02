@@ -10,7 +10,10 @@ async function fetcher<T>(url: string): Promise<T> {
     const response = await fetch(url);
 
     if (!response.ok) {
-        const errorData = await response.json();
+        interface ErrorResponse {
+            error?: { userMessage?: string };
+        }
+        const errorData = (await response.json()) as ErrorResponse;
         const error = new Error(errorData.error?.userMessage || "Failed to fetch");
         throw error;
     }

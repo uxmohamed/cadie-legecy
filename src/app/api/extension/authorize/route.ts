@@ -19,7 +19,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json().catch(() => ({}));
+    interface AuthorizeBody {
+      name?: string;
+    }
+
+    const body = (await request.json().catch(() => ({}))) as AuthorizeBody;
     const name = body.name || "Extension";
 
     // Generate a new token (plaintext)

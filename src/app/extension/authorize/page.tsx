@@ -51,7 +51,10 @@ export default function ExtensionAuthorizePage() {
         throw new Error("Failed to authorize");
       }
 
-      const data = await response.json();
+      interface AuthResponse {
+        token: string;
+      }
+      const data = (await response.json()) as AuthResponse;
 
       // Get the extension ID from URL params
       const params = new URLSearchParams(window.location.search);

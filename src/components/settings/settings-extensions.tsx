@@ -88,7 +88,10 @@ export function SettingsExtensions() {
     try {
       const response = await fetch("/api/auth/tokens");
       if (response.ok) {
-        const data = await response.json();
+        interface TokensResponse {
+          tokens: ApiToken[];
+        }
+        const data = (await response.json()) as TokensResponse;
         setTokens(data.tokens || []);
       }
     } catch (error) {

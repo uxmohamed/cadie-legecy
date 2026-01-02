@@ -108,7 +108,7 @@ export class CreateLinkHandler {
                 createLinkDTO = validatedData;
             } else {
                 // Old validation (for backward compatibility)
-                const body = await request.json();
+                const body = (await request.json()) as CreateLinkDTO; // Type cast the body
                 const {
                     url,
                     title,

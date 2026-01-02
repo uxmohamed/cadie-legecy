@@ -72,7 +72,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    interface CreateCategoryBody {
+      name: string;
+      color: string;
+      icon?: string;
+      description?: string;
+    }
+
+    const body = (await request.json()) as CreateCategoryBody;
     const { name, color, icon, description } = body;
 
     if (!name || !color) {

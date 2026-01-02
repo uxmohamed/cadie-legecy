@@ -48,8 +48,13 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const body = await request.json();
-        const { urls, options } = body;
+    interface BatchMetadataBody {
+      urls: string[];
+      options?: BatchMetadataOptions;
+    }
+
+    const body = (await request.json()) as BatchMetadataBody;
+    const { urls, options } = body;
 
         if (!urls || !Array.isArray(urls) || urls.length === 0) {
             return NextResponse.json(

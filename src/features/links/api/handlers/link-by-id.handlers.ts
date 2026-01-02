@@ -43,7 +43,7 @@ export class UpdateLinkHandler {
             }
 
             // Parse request body
-            const body = await request.json();
+            const body = (await request.json()) as UpdateLinkDTO;
             const updateDTO: UpdateLinkDTO = body;
 
             // Update link using service

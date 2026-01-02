@@ -18,7 +18,7 @@ async function fetcher<T>(url: string): Promise<T> {
         // Safely try to parse JSON error, fall back to status text if HTML is returned
         let errorMessage = "Failed to fetch";
         try {
-            const errorData = await response.json();
+            const errorData = (await response.json()) as any;
             errorMessage = errorData.error?.userMessage || errorData.error || "Failed to fetch";
         } catch {
             // Response was not JSON (likely HTML error page)
@@ -254,7 +254,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 const response = await fetch(`/api/links/${id}`, { method: "DELETE" });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
+                    const errorData = (await response.json()) as any;
                     const errorMessage = errorData.error?.userMessage || "Failed to delete link";
                     throw new Error(errorMessage);
                 }
@@ -292,7 +292,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
+                    const errorData = (await response.json()) as any;
                     const errorMessage = errorData.error?.userMessage || "Failed to restore link";
                     throw new Error(errorMessage);
                 }
@@ -326,7 +326,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 const response = await fetch(`/api/links/${id}/permanent`, { method: "DELETE" });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
+                    const errorData = (await response.json()) as any;
                     const errorMessage = errorData.error?.userMessage || "Failed to permanently delete link";
                     throw new Error(errorMessage);
                 }
@@ -366,7 +366,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
+                    const errorData = (await response.json()) as any;
                     throw new Error(errorData.error || 'Failed to restore links');
                 }
 
@@ -407,7 +407,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
+                    const errorData = (await response.json()) as any;
                     throw new Error(errorData.error || 'Failed to permanently delete links');
                 }
 
@@ -450,7 +450,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
+                    const errorData = (await response.json()) as any;
                     throw new Error(errorData.error || 'Failed to delete links');
                 }
 
@@ -492,7 +492,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
+                    const errorData = (await response.json()) as any;
                     throw new Error(errorData.error || 'Failed to pin links');
                 }
 
@@ -534,7 +534,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
+                    const errorData = (await response.json()) as any;
                     throw new Error(errorData.error || 'Failed to unpin links');
                 }
 
@@ -590,7 +590,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
+                    const errorData = (await response.json()) as any;
                     const errorMessage = errorData.error?.userMessage || "Failed to update link";
                     throw new Error(errorMessage);
                 }
@@ -629,7 +629,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
+                    const errorData = (await response.json()) as any;
                     const errorMessage = errorData.error?.userMessage || "Failed to pin link";
                     throw new Error(errorMessage);
                 }
@@ -668,7 +668,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
+                    const errorData = (await response.json()) as any;
                     const errorMessage = errorData.error?.userMessage || "Failed to unpin link";
                     throw new Error(errorMessage);
                 }
@@ -740,7 +740,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 // Safely try to parse JSON error, fall back to status text if HTML is returned
                 let errorMessage = 'Failed to add links';
                 try {
-                    const errorData = await response.json();
+                    const errorData = (await response.json()) as any;
                     errorMessage = errorData.error || 'Failed to add links';
                 } catch {
                     // Response was not JSON (likely HTML error page)
@@ -749,7 +749,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                 throw new Error(errorMessage);
             }
 
-            const responseData = await response.json();
+            const responseData = (await response.json()) as { links?: Link[], count?: number, restored?: number };
             const createdLinks = responseData.links || [];
             const count = responseData.count || createdLinks.length;
             const restored = responseData.restored || 0;
