@@ -143,7 +143,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                     .on(
                         "postgres_changes",
                         {
-                            event: "INSERT",
+                            event: "*", // Listen for all events (INSERT, UPDATE, DELETE)
                             schema: "public",
                             table: "links",
                             filter: `user_id=eq.${userId}`,
@@ -151,7 +151,28 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                         (payload) => {
                             if (!isMounted) return; // Don't process if unmounted
 
+                            const eventType = payload.eventType;
                             const newLink = payload.new as Link;
+                            const oldLink = payload.old as Link;
+
+                            const currentMutate = mutateRef.current;
+                            if (!currentMutate) return;
+
+                            // Handle DELETE
+                            if (eventType === "DELETE") {
+                                currentMutate(
+                                    (current) => {
+                                        if (!current) return current;
+                                        return current.map(page => ({
+                                            ...page,
+                                            links: page.links.filter(l => l.id !== oldLink.id),
+                                            total: page.total - 1 // Approximate total update
+                                        }));
+                                    },
+                                    { revalidate: false }
+                                );
+                                return;
+                            }
 
                             // Helper to check if the new link matches current filters
                             const matchesFilters = () => {
@@ -162,41 +183,69 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
                                 return true;
                             };
 
-                            // Only add if matches current filters
-                            if (!matchesFilters()) return;
-
-                            // Use a flag to prevent multiple updates for the same link
-                            const currentMutate = mutateRef.current;
-                            if (!currentMutate) return;
-
-                            currentMutate(
-                                (current) => {
-                                    if (!current || current.length === 0) {
-                                        return [{ links: [newLink], total: 1 }];
-                                    }
-
-                                    // Check if link already exists in ANY page (avoid duplicates)
-                                    const exists = current.some(page =>
-                                        page.links.some(l => l.id === newLink.id)
+                            // Only proceed if matches current filters
+                            if (!matchesFilters()) {
+                                // If it updated and no longer matches (e.g. moved to trash), remove it
+                                if (eventType === "UPDATE") {
+                                    currentMutate(
+                                        (current) => {
+                                            if (!current) return current;
+                                            return current.map(page => ({
+                                                ...page,
+                                                links: page.links.filter(l => l.id !== newLink.id),
+                                                total: page.total // Count logic is tricky here, but acceptable
+                                            }));
+                                        },
+                                        { revalidate: false }
                                     );
+                                }
+                                return;
+                            }
 
-                                    if (exists) {
-                                        // Link already exists, don't modify state
-                                        return current;
-                                    }
+                            if (eventType === "UPDATE") {
+                                currentMutate(
+                                    (current) => {
+                                        if (!current) return current;
+                                        return current.map(page => ({
+                                            ...page,
+                                            links: page.links.map(l => l.id === newLink.id ? newLink : l)
+                                        }));
+                                    },
+                                    { revalidate: false }
+                                );
+                                return;
+                            }
 
-                                    // Add new link to the first page
-                                    const firstPage = current[0];
-                                    const updatedFirstPage = {
-                                        ...firstPage,
-                                        links: [newLink, ...firstPage.links],
-                                        total: firstPage.total + 1
-                                    };
+                            // Handle INSERT
+                            if (eventType === "INSERT") {
+                                currentMutate(
+                                    (current) => {
+                                        if (!current || current.length === 0) {
+                                            return [{ links: [newLink], total: 1 }];
+                                        }
 
-                                    return [updatedFirstPage, ...current.slice(1)];
-                                },
-                                { revalidate: false } // Don't revalidate to prevent cascade
-                            );
+                                        // Check if link already exists in ANY page (avoid duplicates)
+                                        const exists = current.some(page =>
+                                            page.links.some(l => l.id === newLink.id)
+                                        );
+
+                                        if (exists) {
+                                            return current;
+                                        }
+
+                                        // Add new link to the first page
+                                        const firstPage = current[0];
+                                        const updatedFirstPage = {
+                                            ...firstPage,
+                                            links: [newLink, ...firstPage.links],
+                                            total: firstPage.total + 1
+                                        };
+
+                                        return [updatedFirstPage, ...current.slice(1)];
+                                    },
+                                    { revalidate: false } // Don't revalidate to prevent cascade
+                                );
+                            }
                         }
                     )
                     .subscribe((status) => {
