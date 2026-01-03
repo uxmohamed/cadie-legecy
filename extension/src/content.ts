@@ -1,8 +1,8 @@
 /**
  * Content script - runs on web pages
  * Features:
- * - Show save overlay with loading and success states
- * - Capture selected text
+ * - Show save overlay (toast notification)
+ * - Handle authorization flow for extension connection
  */
 
 // Track overlay element
@@ -11,38 +11,19 @@ let hideTimeout: number | null = null;
 
 // Listen for messages from background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "getSelectedText") {
-    const selectedText = window.getSelection()?.toString() || "";
-    sendResponse({ selectedText });
-  }
-
-  if (request.action === "getPageMetadata") {
-    const metadata = extractPageMetadata();
-    sendResponse(metadata);
-  }
-
   if (request.action === "showSaveOverlay") {
     const { state, message } = request;
     if (state === "loading") {
       showOverlay("Saving to Cadie...", "loading");
     } else if (state === "success") {
-      showOverlay("Saved to Cadie ✨", "success");
-      // Auto-hide after 2.5 seconds
-      hideTimeout = window.setTimeout(() => {
-        hideOverlay();
-      }, 2500);
+      showOverlay("Saved to Cadie", "success");
+      hideTimeout = window.setTimeout(() => hideOverlay(), 2500);
     } else if (state === "duplicate") {
       showOverlay("Already in Cadie!", "duplicate");
-      // Auto-hide after 2.5 seconds
-      hideTimeout = window.setTimeout(() => {
-        hideOverlay();
-      }, 2500);
+      hideTimeout = window.setTimeout(() => hideOverlay(), 2500);
     } else if (state === "error") {
       showOverlay(message || "Failed to save", "error");
-      // Auto-hide after 3 seconds
-      hideTimeout = window.setTimeout(() => {
-        hideOverlay();
-      }, 3000);
+      hideTimeout = window.setTimeout(() => hideOverlay(), 3000);
     }
     sendResponse({ success: true });
   }
@@ -50,69 +31,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true; // Keep message channel open for async response
 });
 
-/**
- * Extract page metadata (favicon, og:image, description)
- */
-function extractPageMetadata(): {
-  favicon_url?: string;
-  og_image_url?: string;
-  description?: string;
-} {
-  const metadata: {
-    favicon_url?: string;
-    og_image_url?: string;
-    description?: string;
-  } = {};
-
-  // Get favicon - try multiple sources
-  const iconLink = document.querySelector<HTMLLinkElement>(
-    'link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]'
-  );
-  if (iconLink?.href) {
-    metadata.favicon_url = iconLink.href;
-  } else {
-    // Fallback to /favicon.ico
-    try {
-      const url = new URL(window.location.href);
-      metadata.favicon_url = `${url.origin}/favicon.ico`;
-    } catch (e) {
-      // Ignore
-    }
-  }
-
-  // Get OG image
-  const ogImage = document.querySelector<HTMLMetaElement>(
-    'meta[property="og:image"], meta[name="og:image"]'
-  );
-  if (ogImage?.content) {
-    metadata.og_image_url = ogImage.content;
-  } else {
-    // Try Twitter image
-    const twitterImage = document.querySelector<HTMLMetaElement>(
-      'meta[name="twitter:image"], meta[property="twitter:image"]'
-    );
-    if (twitterImage?.content) {
-      metadata.og_image_url = twitterImage.content;
-    }
-  }
-
-  // Get description - try OG first, then meta description
-  const ogDescription = document.querySelector<HTMLMetaElement>(
-    'meta[property="og:description"], meta[name="og:description"]'
-  );
-  if (ogDescription?.content) {
-    metadata.description = ogDescription.content;
-  } else {
-    const metaDescription = document.querySelector<HTMLMetaElement>(
-      'meta[name="description"]'
-    );
-    if (metaDescription?.content) {
-      metadata.description = metaDescription.content;
-    }
-  }
-
-  return metadata;
-}
 
 /**
  * Show the save overlay

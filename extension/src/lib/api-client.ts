@@ -1,26 +1,19 @@
 /**
  * Cadie API client for Chrome extension
+ * Minimal - just saves URLs to Cadie
  */
 
 import { getApiToken, getCadieUrl, clearSettings } from "./storage";
 
+/** Request to save a link - only URL is required! */
 export interface SaveLinkRequest {
   url: string;
-  title: string;
-  content_type?: "url" | "text" | "color";
-  category_id?: string;
-  color_value?: string;
-  favicon_url?: string;
-  og_image_url?: string;
-  description?: string;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse {
   success: boolean;
-  data?: T;
   error?: string;
   duplicate?: boolean;
-  tokenRevoked?: boolean;
 }
 
 /**
@@ -30,10 +23,7 @@ export async function saveLink(request: SaveLinkRequest): Promise<ApiResponse> {
   try {
     const token = await getApiToken();
     if (!token) {
-      return {
-        success: false,
-        error: "No API token configured. Please set up your token in extension settings.",
-      };
+      return { success: false, error: "Not connected. Please open extension settings." };
     }
 
     const cadieUrl = await getCadieUrl();
@@ -47,85 +37,23 @@ export async function saveLink(request: SaveLinkRequest): Promise<ApiResponse> {
     });
 
     if (!response.ok) {
-      // Handle token revocation - clear stored token on 401
       if (response.status === 401) {
         await clearSettings();
-        return {
-          success: false,
-          error: "Extension disconnected. Please reconnect in settings.",
-          tokenRevoked: true,
-        };
+        return { success: false, error: "Disconnected. Please reconnect." };
       }
-      
-      const errorData = await response.json().catch(() => ({}));
-      return {
-        success: false,
-        error: errorData.error || `HTTP ${response.status}: ${response.statusText}`,
-      };
+      // Try to get the actual error message from the response
+      try {
+        const errorData = await response.json();
+        const errorMsg = errorData?.error?.message || errorData?.error || errorData?.details?.[0]?.message || `Error ${response.status}`;
+        return { success: false, error: String(errorMsg) };
+      } catch {
+        return { success: false, error: `Error ${response.status}` };
+      }
     }
 
     const data = await response.json();
-    
-    return {
-      success: true,
-      data,
-      duplicate: data.duplicate === true,
-    };
+    return { success: true, duplicate: data.duplicate === true };
   } catch (error) {
-    console.error("API Error:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Network error",
-    };
+    return { success: false, error: "Network error" };
   }
 }
-
-/**
- * Test API connection
- */
-export async function testConnection(): Promise<ApiResponse> {
-  try {
-    const token = await getApiToken();
-    if (!token) {
-      return {
-        success: false,
-        error: "No API token provided",
-      };
-    }
-
-    const cadieUrl = await getCadieUrl();
-    const response = await fetch(`${cadieUrl}/api/links`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        await clearSettings();
-        return {
-          success: false,
-          error: "Extension disconnected. Please reconnect.",
-          tokenRevoked: true,
-        };
-      }
-      return {
-        success: false,
-        error: `HTTP ${response.status}: ${response.statusText}`,
-      };
-    }
-
-    return {
-      success: true,
-      data: { message: "Connection successful" },
-    };
-  } catch (error) {
-    console.error("Connection test error:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Network error",
-    };
-  }
-}
-

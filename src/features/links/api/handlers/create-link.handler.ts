@@ -54,33 +54,19 @@ export class CreateLinkHandler {
             );
         }
 
-        // 3. Reachability check (Head request)
+        // Note: We no longer do reachability checks here.
+        // The metadata enrichment job will handle this asynchronously.
+        // This keeps saves fast and avoids false negatives from sites that block HEAD requests.
+    }
+
+    /**
+     * Extract domain from URL to use as placeholder title
+     */
+    private extractDomainFromUrl(url: string): string {
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
-
-            const response = await fetch(url, {
-                method: 'HEAD',
-                signal: controller.signal,
-                headers: { 'User-Agent': 'Cadie-Link-Validator/1.0' }
-            });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok && response.status !== 405 && response.status !== 403) {
-                // 405 Method Not Allowed and 403 Forbidden are common for HEAD requests on some sites,
-                // so we might want to allow them or try GET. For now, fail on 404/500.
-                if (response.status === 404) {
-                    throw new Error("Not found");
-                }
-            }
-        } catch (error) {
-            // Network error or timeout
-            throw new AppError(
-                ErrorCode.INVALID_INPUT,
-                "Link is not reachable",
-                400
-            );
+            return new URL(url).hostname.replace(/^www\./, "");
+        } catch {
+            return url;
         }
     }
 
@@ -105,7 +91,12 @@ export class CreateLinkHandler {
             let createLinkDTO: CreateLinkDTO;
             
             if (validatedData) {
-                createLinkDTO = validatedData;
+                // If title not provided, use domain as placeholder
+                const title = validatedData.title || this.extractDomainFromUrl(validatedData.url);
+                createLinkDTO = {
+                    ...validatedData,
+                    title,
+                };
             } else {
                 // Old validation (for backward compatibility)
                 const body = (await request.json()) as CreateLinkDTO; // Type cast the body
@@ -120,22 +111,25 @@ export class CreateLinkHandler {
                     description,
                 } = body;
 
-                if (!url || !title) {
+                if (!url) {
                     return NextResponse.json(
                         {
                             error: {
                                 code: ErrorCode.INVALID_INPUT,
-                                message: "URL and title are required",
-                                userMessage: "Please check your input and try again"
+                                message: "URL is required",
+                                userMessage: "Please provide a URL"
                             }
                         },
                         { status: 400 }
                     );
                 }
 
+                // Use provided title or extract domain as placeholder
+                const finalTitle = title || this.extractDomainFromUrl(url);
+
                 createLinkDTO = {
                     url,
-                    title,
+                    title: finalTitle,
                     content_type,
                     category_id: category_id || null,
                     color_value: color_value || null,
@@ -146,8 +140,9 @@ export class CreateLinkHandler {
             }
 
             // Validate Link (only if it's a URL type)
+            // Note: title is guaranteed to be set above (either from input or extracted from domain)
             if (createLinkDTO.content_type === 'url') {
-                await this.validateLink(createLinkDTO.url, createLinkDTO.title);
+                await this.validateLink(createLinkDTO.url, createLinkDTO.title!);
             }
 
             // Create link using service

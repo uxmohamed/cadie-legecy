@@ -5,7 +5,9 @@ import { z } from "zod";
  */
 export const createLinkSchema = z.object({
   url: z.string().url("Invalid URL format").max(2000, "URL too long"),
-  title: z.string().min(1, "Title is required").max(500, "Title too long"),
+  // Title is optional - if not provided, server uses domain as placeholder
+  // and metadata enrichment will set the real title
+  title: z.string().max(500, "Title too long").optional(),
   content_type: z.enum(["url", "color"]).optional().default("url"),
   category_id: z.string().uuid("Invalid category ID").optional().nullable(),
   color_value: z.string().regex(/^#[0-9A-F]{6}$/i, "Invalid color format").optional().nullable(),

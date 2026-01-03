@@ -56,15 +56,16 @@ export interface Link {
 
 /**
  * DTO for creating a new link
+ * Only URL is required - server extracts title from domain if not provided
  */
 export interface CreateLinkDTO {
     url: string;
-    title: string;
+    title?: string;  // Optional - server uses domain as placeholder if not provided
     content_type?: ContentType;
     category_id?: string | null;
     color_value?: string | null;
     favicon_url?: string | null;
-    og_image_url: string | null;
+    og_image_url?: string | null;
     description?: string | null;
 }
 

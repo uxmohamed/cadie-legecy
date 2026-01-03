@@ -112,8 +112,8 @@ async function saveCurrentTab(tabId: number): Promise<void> {
     // Mark this URL as being saved
     savesInProgress.add(saveKey);
 
-    if (!tab.url || !tab.title) {
-      showOverlayInTab(tabId, "error", "Could not get page information");
+    if (!tab.url) {
+      showOverlayInTab(tabId, "error", "Could not get page URL");
       savesInProgress.delete(saveKey);
       return;
     }
@@ -132,34 +132,10 @@ async function saveCurrentTab(tabId: number): Promise<void> {
     // Show loading overlay immediately (fast feedback)
     showOverlayInTab(tabId, "loading");
 
-    // Try to get page metadata from content script
-    let metadata: {
-      favicon_url?: string;
-      og_image_url?: string;
-      description?: string;
-    } = {};
-
-    try {
-      metadata = await chrome.tabs.sendMessage(tabId, { action: "getPageMetadata" });
-    } catch (e) {
-      // Content script not available, continue without metadata
-      // Use default favicon from URL origin
-      try {
-        const url = new URL(tab.url);
-        metadata.favicon_url = `${url.origin}/favicon.ico`;
-      } catch (e) {
-        // Ignore
-      }
-    }
-
-    // Save to Cadie with metadata
+    // Save to Cadie - only URL needed!
+    // Server extracts title from domain, then enriches with full metadata via background job
     const response = await saveLink({
       url: tab.url,
-      title: tab.title,
-      content_type: "url",
-      favicon_url: metadata.favicon_url,
-      og_image_url: metadata.og_image_url,
-      description: metadata.description,
     });
 
     if (response.success) {

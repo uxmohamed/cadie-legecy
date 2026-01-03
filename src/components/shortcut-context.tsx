@@ -127,7 +127,7 @@ export function ShortcutProvider({ children }: { children: React.ReactNode }) {
         action: () => router.push("/"),
       },
       {
-        key: "M",
+        key: "m",
         description: "Toggle dark/light mode",
         category: "Global",
         action: toggleTheme,
