@@ -129,7 +129,7 @@ export class MetadataService {
 
         for (let attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
             try {
-                const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+                const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
                 const response = await fetch(`${baseUrl}/api/links/${linkId}/metadata`, {
                     method: 'POST',

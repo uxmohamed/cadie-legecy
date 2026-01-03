@@ -24,16 +24,7 @@ export async function saveLink(request: SaveLinkRequest): Promise<ApiResponse> {
     const token = await getApiToken();
     const cadieUrl = await getCadieUrl();
     
-    console.log("[Cadie API] saveLink called:", {
-      tokenLength: token?.length || 0,
-      tokenType: typeof token,
-      tokenPreview: token ? `${token.substring(0, 8)}...${token.substring(token.length - 4)}` : "none",
-      cadieUrl,
-      url: request.url.substring(0, 50)
-    });
-    
     if (!token || token.length < 32) {
-      console.error("[Cadie API] Token invalid or missing");
       return { success: false, error: "Not connected. Please connect in settings." };
     }
 

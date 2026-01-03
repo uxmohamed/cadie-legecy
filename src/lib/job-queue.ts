@@ -24,9 +24,10 @@ export interface EnrichMetadataJob {
  * @returns Promise that resolves when job is enqueued (not when executed)
  */
 export async function enqueueMetadataEnrichment(job: EnrichMetadataJob): Promise<void> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}` 
-    : "http://localhost:3000";
+  // Determine the base URL for the callback
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL 
+    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+    || "http://localhost:3000";
   
   try {
     await qstash.publishJSON({
