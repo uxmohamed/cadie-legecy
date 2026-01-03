@@ -18,7 +18,8 @@ let isConnected = false;
 // Initialize
 async function init() {
   const settings = await getSettings();
-  isConnected = !!settings.apiToken;
+  // Token must exist and be at least 32 characters to be valid
+  isConnected = !!settings.apiToken && settings.apiToken.length >= 32;
   updateView();
 }
 

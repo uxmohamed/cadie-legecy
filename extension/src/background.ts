@@ -90,11 +90,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
  */
 async function saveCurrentTab(tabId: number): Promise<void> {
   try {
-    // Check if token is configured
+    // Check if token is configured and valid (should be 43+ characters)
     const token = await getApiToken();
-    if (!token) {
-      // Silently open options page - no OS notification
-      chrome.runtime.openOptionsPage();
+    console.log("[Cadie] Token check:", token ? `${token.length} chars` : "no token");
+    
+    if (!token || token.length < 32) {
+      // Not connected or invalid token - open authorize flow directly
+      const extensionId = chrome.runtime.id;
+      chrome.tabs.create({ url: `https://cadie.app/extension/authorize?extensionId=${extensionId}` });
       return;
     }
 
