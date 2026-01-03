@@ -62,7 +62,13 @@ export async function clearSettings(): Promise<void> {
  */
 export async function getApiToken(): Promise<string | undefined> {
   const settings = await getSettings();
-  return settings.apiToken;
+  const token = settings.apiToken;
+  console.log("[Cadie Storage] getApiToken:", { 
+    hasToken: !!token, 
+    length: token?.length || 0,
+    type: typeof token
+  });
+  return token || undefined;
 }
 
 /**

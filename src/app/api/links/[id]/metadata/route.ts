@@ -79,8 +79,9 @@ export async function POST(
     if (!link.description && metadata.description) {
       updates.description = metadata.description;
     }
-    // Update title if it was generic and we got a better one
-    if (link.title === link.url && metadata.title !== metadata.domain) {
+    // Update title if it was generic (equals URL or domain) and we got a better one
+    const hasGenericTitle = !link.title || link.title === link.url || link.title === link.domain;
+    if (hasGenericTitle && metadata.title && metadata.title !== metadata.domain) {
       updates.title = metadata.title;
     }
     

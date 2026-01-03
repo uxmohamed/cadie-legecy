@@ -150,17 +150,19 @@ window.addEventListener("message", (event: MessageEvent) => {
   const data = event.data;
   if (data?.type === "CADIE_AUTH_SUCCESS" && data?.token && !authProcessed) {
     authProcessed = true;
+    console.log("[Cadie] Content script received token, length:", data.token?.length || 0);
     // Send auth data to background script
     chrome.runtime.sendMessage({
       type: "CADIE_AUTH_SUCCESS",
       data: {
         token: data.token,
         email: data.email,
-        url: "https://cadie.app", // Always use production
+        url: "https://cadie.app",
         cadieUrl: "https://cadie.app",
         state: data.state,
       },
     }, (response) => {
+      console.log("[Cadie] Background response:", response);
       if (chrome.runtime.lastError) {
         console.error("Error sending auth message:", chrome.runtime.lastError);
         authProcessed = false; // Allow retry on error

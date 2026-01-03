@@ -56,9 +56,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Handle authorization success from content script
   if (request.type === "CADIE_AUTH_SUCCESS" && request.data) {
     const { token, email, url, cadieUrl } = request.data;
+    console.log("[Cadie] Received auth success, token length:", token?.length || 0);
 
     // Always use production URL for the extension
-    // The token is generated against cadie.app, so we must use that for API calls
     const cadieUrlToUse = "https://cadie.app";
 
     // Save settings directly to storage
@@ -67,6 +67,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       cadieUrl: cadieUrlToUse,
       userEmail: email || "",
     }, () => {
+      console.log("[Cadie] Token saved to storage");
       // Notify any open options pages that auth completed
       chrome.runtime.sendMessage({
         type: "CADIE_AUTH_COMPLETE",
