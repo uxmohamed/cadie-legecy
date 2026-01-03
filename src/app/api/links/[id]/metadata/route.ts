@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { extractMetadata } from "@/lib/metadata";
 
 
@@ -27,7 +27,8 @@ export async function POST(
       );
     }
 
-    const supabase = await createClient();
+    // Use admin client to bypass RLS since this is a background job
+    const supabase = createAdminClient();
 
     // Get the link from database
     const { data: link, error: fetchError } = await supabase
