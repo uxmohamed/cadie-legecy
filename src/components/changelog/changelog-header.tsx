@@ -30,11 +30,9 @@ export function ChangelogHeader() {
 
           {/* Desktop Navigation - Centered */}
           <div className="hidden md:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
-            <Link href="#">
-              <Button className="relative text-[var(--text-secondary)] hover:text-[var(--text-primary)] inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
-                Extension
-              </Button>
-            </Link>
+            <Button disabled className="relative text-[var(--text-secondary)] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-transparent">
+              Extension (Soon)
+            </Button>
             <Link href="/changelog">
               <Button className="relative text-[var(--text-secondary)] hover:text-[var(--text-primary)] inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
                 Changelog
@@ -53,29 +51,22 @@ export function ChangelogHeader() {
 
           {/* Right Side - Auth Buttons + Mobile Menu */}
           <div className="flex items-center gap-3">
-            {/* Desktop Auth Buttons */}
-            <div className="hidden sm:flex items-center gap-3">
+            {/* Get Started Button - Always visible on desktop */}
+            <div className="hidden sm:block">
               {!authChecked ? (
                 <div className="w-[100px]" />
               ) : user ? (
                 <Link href="/">
-                  <Button className="py-2 px-4 bg-[var(--cta-primary-default)] border-0 text-[var(--text-inverse)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--cta-primary-hover)] transition-colors duration-150">
+                  <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-9 px-3.5 py-2 text-sm rounded-lg bg-[var(--cta-primary-default)] text-[var(--text-always-white)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
                     Back to Dashboard
                   </Button>
                 </Link>
               ) : (
-                <>
-                  <Link href="/auth">
-                    <Button className="py-2 px-4 bg-transparent border-0 text-[var(--text-secondary)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--bg-field-hover)] transition-colors duration-150">
-                      Log In
-                    </Button>
-                  </Link>
-                  <Link href="/auth">
-                    <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-9 px-3.5 py-2 text-base rounded-lg bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
-                      Get Started
-                    </Button>
-                  </Link>
-                </>
+                <Link href="/auth">
+                  <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-9 px-3.5 py-2 text-sm rounded-lg bg-[var(--cta-primary-default)] text-[var(--text-always-white)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
+                    Get Started
+                  </Button>
+                </Link>
               )}
             </div>
 
@@ -103,13 +94,13 @@ export function ChangelogHeader() {
                         <div className="w-[100px]" />
                       ) : user ? (
                         <Link href="/" onClick={() => setIsMenuOpen(false)}>
-                          <Button className="py-2 px-4 bg-[var(--cta-primary-default)] border-0 text-[var(--text-inverse)] text-sm font-medium rounded-xl shadow-none hover:bg-[var(--cta-primary-hover)] transition-colors duration-150">
+                          <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-[var(--cta-primary-default)] text-[var(--text-always-white)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
                             Back to Dashboard
                           </Button>
                         </Link>
                       ) : (
                         <Link href="/auth" onClick={() => setIsMenuOpen(false)}>
-                          <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
+                          <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-[var(--cta-primary-default)] text-[var(--text-always-white)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
                             Get Started
                           </Button>
                         </Link>
@@ -126,13 +117,11 @@ export function ChangelogHeader() {
                   {/* Mobile Menu Items */}
                   <nav className="flex-1 overflow-y-auto p-6">
                     <div className="flex flex-col gap-6">
-                      <Link 
-                        href="#" 
-                        className="text-2xl font-medium text-[var(--text-primary)] hover:text-[var(--text-secondary)] transition-colors"
-                        onClick={() => setIsMenuOpen(false)}
+                      <span 
+                        className="text-2xl font-medium text-[var(--text-tertiary)] cursor-not-allowed"
                       >
-                        Extension
-                      </Link>
+                        Extension (Soon)
+                      </span>
                       <Link 
                         href="/changelog" 
                         className="text-2xl font-medium text-[var(--text-primary)] hover:text-[var(--text-secondary)] transition-colors"

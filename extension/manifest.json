@@ -11,17 +11,17 @@
   "permissions": [
     "activeTab",
     "contextMenus",
-    "storage",
-    "notifications",
-    "cookies"
+    "storage"
   ],
   "host_permissions": [
-    "https://cadie.app/*"
+    "https://cadie.app/*",
+    "http://localhost:3000/*"
   ],
   "content_scripts": [
     {
       "matches": [
-        "https://cadie.app/*"
+        "https://cadie.app/*",
+        "http://localhost:3000/*"
       ],
       "js": ["content.js"],
       "run_at": "document_end"

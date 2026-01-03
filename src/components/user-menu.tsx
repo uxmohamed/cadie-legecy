@@ -41,9 +41,13 @@ export function UserMenu({ user }: UserMenuProps) {
     avatar_url: string | null;
   } | null>(null);
   
-  React.useEffect(() => {
+  const refetchProfile = React.useCallback(() => {
     getUserProfile(user.id).then(setProfile);
   }, [user.id]);
+  
+  React.useEffect(() => {
+    refetchProfile();
+  }, [refetchProfile]);
 
   const handleSignOut = React.useCallback(async () => {
     try {
@@ -301,6 +305,7 @@ export function UserMenu({ user }: UserMenuProps) {
         user={user}
         open={isSettingsOpen}
         onOpenChange={setIsSettingsOpen}
+        onProfileUpdate={refetchProfile}
       />
     </>
   );

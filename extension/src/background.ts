@@ -1,6 +1,6 @@
 /**
  * Background service worker for Cadie extension
- * Handles context menus, keyboard shortcuts, and notifications
+ * Handles context menus, keyboard shortcuts, and saving links
  */
 
 import { saveLink } from "./lib/api-client";
@@ -53,33 +53,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Keep message channel open for async response
   }
 
-  if (request.action === "showNotification") {
-    showNotification(request.title, request.message, request.type);
-    sendResponse({ success: true });
-    return true;
-  }
-
   // Handle authorization success from content script
   if (request.type === "CADIE_AUTH_SUCCESS" && request.data) {
-    const { token, email, url, cadieUrl, state } = request.data;
+    const { token, email, url, cadieUrl } = request.data;
 
-    // Use the provided URL, or try to get it from the sender tab
-    let cadieUrlToUse = url || cadieUrl;
-
-    // If no URL provided, try to get it from the sender tab
-    if (!cadieUrlToUse && sender?.tab?.url) {
-      try {
-        const tabUrl = new URL(sender.tab.url);
-        cadieUrlToUse = `${tabUrl.protocol}//${tabUrl.host}`;
-      } catch (e) {
-        console.error("Error parsing sender URL:", e);
-      }
-    }
-
-    // Fallback to production URL if we really can't determine the URL
-    if (!cadieUrlToUse) {
-      cadieUrlToUse = "https://cadie.app";
-    }
+    // Always use production URL for the extension
+    // The token is generated against cadie.app, so we must use that for API calls
+    const cadieUrlToUse = "https://cadie.app";
 
     // Save settings directly to storage
     chrome.storage.sync.set({
@@ -113,11 +93,7 @@ async function saveCurrentTab(tabId: number): Promise<void> {
     // Check if token is configured
     const token = await getApiToken();
     if (!token) {
-      showNotification(
-        "Configuration Required",
-        "Please configure your API token in extension settings",
-        "error"
-      );
+      // Silently open options page - no OS notification
       chrome.runtime.openOptionsPage();
       return;
     }
@@ -138,6 +114,7 @@ async function saveCurrentTab(tabId: number): Promise<void> {
 
     if (!tab.url || !tab.title) {
       showOverlayInTab(tabId, "error", "Could not get page information");
+      savesInProgress.delete(saveKey);
       return;
     }
 
@@ -147,7 +124,8 @@ async function saveCurrentTab(tabId: number): Promise<void> {
       tab.url.startsWith("chrome-extension://") ||
       tab.url.startsWith("about:")
     ) {
-      showOverlayInTab(tabId, "error", "Cannot save internal browser pages");
+      showOverlayInTab(tabId, "error", "Cannot save browser pages");
+      savesInProgress.delete(saveKey);
       return;
     }
 
@@ -193,7 +171,7 @@ async function saveCurrentTab(tabId: number): Promise<void> {
       }
     } else {
       // Show error overlay
-      showOverlayInTab(tabId, "error", response.error || "Unknown error occurred");
+      showOverlayInTab(tabId, "error", response.error || "Failed to save");
     }
   } catch (error) {
     console.error("Error saving tab:", error);
@@ -208,17 +186,12 @@ async function saveCurrentTab(tabId: number): Promise<void> {
     if (tab?.url) {
       const saveKey = `${tab.url}`;
       savesInProgress.delete(saveKey);
-
-      // Auto-clear after 5 seconds as a safety measure
-      setTimeout(() => {
-        savesInProgress.delete(saveKey);
-      }, 5000);
     }
   }
 }
 
 /**
- * Show overlay in tab
+ * Show overlay in tab (in-page notification, not OS notification)
  */
 function showOverlayInTab(
   tabId: number,
@@ -231,35 +204,5 @@ function showOverlayInTab(
     message,
   }).catch(() => {
     // Content script not available on this page, silently ignore
-    // (no OS notifications)
   });
-}
-
-/**
- * Show a notification to the user
- */
-function showNotification(
-  title: string,
-  message: string,
-  type: "info" | "success" | "error" = "info"
-): string {
-  const iconUrl = chrome.runtime.getURL("icons/icon-48.png");
-  const notificationId = `cadie-${Date.now()}`;
-
-  chrome.notifications.create(notificationId, {
-    type: "basic",
-    iconUrl,
-    title,
-    message,
-    priority: 1,
-  });
-
-  // Auto-dismiss success/info notifications after 3 seconds
-  if (type !== "error") {
-    setTimeout(() => {
-      chrome.notifications.clear(notificationId);
-    }, 3000);
-  }
-
-  return notificationId;
 }

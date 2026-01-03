@@ -14,12 +14,11 @@ import {
 import { useState } from "react";
 import { Footer } from "@/components/footer";
 
-function FaqItem({ question, children }: { question: string; children: React.ReactNode }) {
-  const [isOpen, setIsOpen] = useState(false);
+function FaqItem({ question, children, isOpen, onToggle }: { question: string; children: React.ReactNode; isOpen: boolean; onToggle: () => void }) {
   return (
-    <div className="bg-[var(--bg-l0-solid)] hover:bg-[var(--bg-field-hover)] transition-colors duration-150">
+    <div className="bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] rounded-xl transition-colors duration-150">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={onToggle}
         className="w-full flex items-center justify-between text-left gap-4 px-5 py-4"
       >
         <span className="text-sm font-medium text-[var(--text-primary)]">{question}</span>
@@ -38,6 +37,7 @@ function FaqItem({ question, children }: { question: string; children: React.Rea
 
 export function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [openFaqId, setOpenFaqId] = useState<string | null>(null);
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--bg-main-container)] selection:bg-brand/10 selection:text-brand">
@@ -77,7 +77,7 @@ export function LandingPage() {
             <div className="flex items-center gap-3">
               {/* Get Started Button - Always visible */}
               <Link href="/auth" className="hidden sm:block">
-                <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-9 px-3.5 py-2 text-sm rounded-lg bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
+                <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-9 px-3.5 py-2 text-sm rounded-lg bg-[var(--cta-primary-default)] text-[var(--text-always-white)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
                   Get Started
                 </Button>
               </Link>
@@ -103,7 +103,7 @@ export function LandingPage() {
                       </Link>
                       <div className="flex items-center gap-2">
                         <Link href="/auth" onClick={() => setIsMenuOpen(false)}>
-                          <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
+                          <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-[var(--cta-primary-default)] text-[var(--text-always-white)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
                             Get Started
                           </Button>
                         </Link>
@@ -161,12 +161,12 @@ export function LandingPage() {
       <main className="flex-1 pt-12 sm:pt-16 md:pt-20 pb-16 sm:pb-20 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
           {/* Beta Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--grey-100)] mb-2 sm:mb-4">
-            <IconConfettiFilled className="size-5 text-[var(--text-tertiary)]" />
-            <span className="text-sm font-medium text-[var(--text-tertiary)]">Cadie beta is now live</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--bg-field-default)] mb-2 sm:mb-4">
+            <IconConfettiFilled className="size-5 text-[var(--text-secondary)]" />
+            <span className="text-sm font-medium text-[var(--text-secondary)]">Cadie beta is now live</span>
           </div>
 
-          <h1 className="text-6xl font-medium tracking-[-0.05em] text-[var(--gray-800)] mb-2 sm:mb-4 font-custom" style={{ lineHeight: 'calc(0.25rem * 17)' }}>
+          <h1 className="text-6xl font-medium tracking-[-0.05em] text-[var(--text-primary)] mb-2 sm:mb-4 font-custom" style={{ lineHeight: 'calc(0.25rem * 17)' }}>
             Your personal library <br className="hidden sm:block" />
             for the internet.
           </h1>
@@ -179,7 +179,7 @@ export function LandingPage() {
             <Link href="/auth">
               <Button
                 size="lg"
-                className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-8 py-3 text-base rounded-xl [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2"
+                className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-8 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--cta-primary-default)] text-[var(--text-always-white)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2"
               >
                 Get Started
               </Button>
@@ -202,11 +202,11 @@ export function LandingPage() {
         </div>
         
         {/* Product Screenshot */}
-        <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-24">
+        <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
           <div className="mx-auto max-w-4xl">
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+            <div className="relative overflow-hidden">
               <Image
-                src="/product-ss.png"
+                src="/product-ui.png"
                 alt="Cadie Interface"
                 width={1200}
                 height={800}
@@ -272,20 +272,40 @@ export function LandingPage() {
               Quick answers to common questions about Cadie.
             </p>
           </div>
-          <div className="max-w-[500px] mx-auto rounded-xl overflow-hidden border border-[var(--grey-200)] divide-y divide-[var(--grey-200)]">
-            <FaqItem question="Is Cadie free to use?">
+          <div className="max-w-[500px] mx-auto flex flex-col gap-1">
+            <FaqItem 
+              question="Is Cadie free to use?" 
+              isOpen={openFaqId === 'free'} 
+              onToggle={() => setOpenFaqId(openFaqId === 'free' ? null : 'free')}
+            >
               Yes! Cadie is completely free during the beta period. We&apos;re focused on building the best link-saving experience before introducing any paid features.
             </FaqItem>
-            <FaqItem question="How do I save links?">
+            <FaqItem 
+              question="How do I save links?" 
+              isOpen={openFaqId === 'save'} 
+              onToggle={() => setOpenFaqId(openFaqId === 'save' ? null : 'save')}
+            >
               Manually add links from the dashboard using the input field or keyboard shortcuts. A browser extension for one-click saving is coming soon!
             </FaqItem>
-            <FaqItem question="Is my data private?">
+            <FaqItem 
+              question="Is my data private?" 
+              isOpen={openFaqId === 'privacy'} 
+              onToggle={() => setOpenFaqId(openFaqId === 'privacy' ? null : 'privacy')}
+            >
               Absolutely. Your links are private by default and we never share or sell your data. You have full control over your content.
             </FaqItem>
-            <FaqItem question="How do I organize my links?">
+            <FaqItem 
+              question="How do I organize my links?" 
+              isOpen={openFaqId === 'organize'} 
+              onToggle={() => setOpenFaqId(openFaqId === 'organize' ? null : 'organize')}
+            >
               Use the archive feature to keep your main view clean. Quick search helps you find any link instantly, no folders needed.
             </FaqItem>
-            <FaqItem question="What browsers are supported?">
+            <FaqItem 
+              question="What browsers are supported?" 
+              isOpen={openFaqId === 'browsers'} 
+              onToggle={() => setOpenFaqId(openFaqId === 'browsers' ? null : 'browsers')}
+            >
               Cadie works on any modern web browser including Chrome, Firefox, Safari, Edge, and Brave. Access your links from any device with an internet connection.
             </FaqItem>
           </div>
@@ -295,16 +315,16 @@ export function LandingPage() {
       {/* CTA Section */}
       <section className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
-          <div className="bg-[var(--grey-100)] rounded-2xl p-8 sm:p-12 md:p-16 text-center">
-            <h2 className="text-3xl sm:text-4xl font-medium text-[var(--text-primary)] mb-4 font-custom">
+          <div className="bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] rounded-2xl p-8 sm:p-12 md:p-16 text-center">
+            <h2 className="text-3xl sm:text-4xl font-medium text-[var(--text-always-black)] dark:text-[var(--text-always-white)] mb-4 font-custom">
               Start saving links<br />the simple way
             </h2>
-            <p className="text-base font-medium text-[var(--text-tertiary)] mb-8 max-w-md mx-auto">
+            <p className="text-base font-medium text-[var(--grey-600)] dark:text-[var(--grey-400)] mb-8 max-w-md mx-auto">
               Join the beta today and never lose an important link again.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link href="/auth">
-                <Button className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-6 py-3 text-base rounded-xl [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
+                <Button className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-6 py-3 text-base rounded-xl [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--cta-primary-default)] text-[var(--text-always-white)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
                   Get Started Free
                 </Button>
               </Link>

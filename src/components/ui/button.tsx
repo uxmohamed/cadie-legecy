@@ -36,9 +36,9 @@ const buttonVariants = cva(
       },
       variant: {
         default:
-          "bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2",
+          "bg-[var(--cta-primary-default)] text-[var(--text-always-white)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2",
         neutral:
-          "bg-[var(--cta-neutral-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-neutral-hover)] focus-visible:ring-2 focus-visible:ring-[var(--border-active)] focus-visible:ring-offset-2",
+          "bg-[var(--cta-neutral-default)] text-[var(--text-always-white)] hover:bg-[var(--cta-neutral-hover)] focus-visible:ring-2 focus-visible:ring-[var(--border-active)] focus-visible:ring-offset-2",
         destructive:
           "bg-[var(--cta-destructive-default)] text-[var(--text-destructive)] hover:bg-[var(--cta-destructive-hover)] focus-visible:ring-2 focus-visible:ring-[var(--border-destructive)] focus-visible:ring-offset-2",
         "destructive-outline":

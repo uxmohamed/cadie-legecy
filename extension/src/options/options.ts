@@ -80,14 +80,7 @@ function checkAuthorizationParams() {
  */
 async function loadSettings() {
   const settings = await getSettings();
-  let cadieUrl = settings.cadieUrl || "https://cadie.app";
-  
-  // If cadieUrl is localhost, replace with production URL
-  if (cadieUrl === "http://localhost:3000" || cadieUrl.startsWith("http://localhost")) {
-    cadieUrl = "https://cadie.app";
-    // Save the corrected URL
-    await saveSettings({ cadieUrl });
-  }
+  const cadieUrl = settings.cadieUrl || "https://cadie.app";
   
   currentSettings = {
     apiToken: settings.apiToken || "",
@@ -135,27 +128,9 @@ async function handleConnect() {
     // Get the extension ID
     const extensionId = chrome.runtime.id;
 
-    // Determine Cadie URL - always default to production, never localhost
-    let cadieUrl = currentSettings.cadieUrl;
-    
-    // If no URL set, or if it's localhost, use production
-    if (!cadieUrl || cadieUrl === "http://localhost:3000" || cadieUrl.startsWith("http://localhost")) {
-      cadieUrl = "https://cadie.app";
-    }
-    
-    // Try to detect if user is on a Cadie page and use that URL (async)
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tabs[0]?.url) {
-      try {
-        const tabUrl = new URL(tabs[0].url);
-        // Check if this is a Cadie domain (production)
-        if (tabUrl.hostname.includes("cadie.app")) {
-          cadieUrl = `${tabUrl.protocol}//${tabUrl.host}`;
-        }
-      } catch (e) {
-        // Invalid URL, use default
-      }
-    }
+    // Always use production URL for one-click connect
+    // Developers can use the Advanced Configuration section for localhost testing
+    const cadieUrl = "https://cadie.app";
     
     const authUrl = `${cadieUrl}/extension/authorize?extensionId=${extensionId}`;
 

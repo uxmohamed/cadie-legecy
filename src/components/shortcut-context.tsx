@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useTheme } from "./theme-provider";
 
 interface Shortcut {
   key: string;
@@ -34,6 +35,11 @@ export function ShortcutProvider({ children }: { children: React.ReactNode }) {
   const [shortcuts, setShortcuts] = React.useState<Shortcut[]>([]);
   const [isHelpOpen, setIsHelpOpen] = React.useState(false);
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
+
+  const toggleTheme = React.useCallback(() => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  }, [theme, setTheme]);
 
   const registerShortcut = React.useCallback((shortcut: Shortcut) => {
     setShortcuts((prev) => {
@@ -120,6 +126,12 @@ export function ShortcutProvider({ children }: { children: React.ReactNode }) {
         category: "Navigation",
         action: () => router.push("/"),
       },
+      {
+        key: "M",
+        description: "Toggle dark/light mode",
+        category: "Global",
+        action: toggleTheme,
+      },
     ];
 
     globalShortcuts.forEach(registerShortcut);
@@ -127,7 +139,7 @@ export function ShortcutProvider({ children }: { children: React.ReactNode }) {
     return () => {
       globalShortcuts.forEach((s) => unregisterShortcut(s.key));
     };
-  }, [toggleHelp, router, registerShortcut, unregisterShortcut]);
+  }, [toggleHelp, toggleTheme, router, registerShortcut, unregisterShortcut]);
 
   return (
     <ShortcutContext.Provider

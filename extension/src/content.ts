@@ -217,30 +217,46 @@ function hideOverlay() {
   }
 }
 
-// Listen for authorization success events
-window.addEventListener("cadieAuthSuccess", (event: any) => {
-  const detail = event.detail;
-  if (detail && detail.token) {
+// Track if we've already processed auth to prevent duplicates
+let authProcessed = false;
+
+// Listen for authorization success via postMessage (works across isolated worlds)
+// Only process on cadie.app to prevent localhost from capturing auth
+window.addEventListener("message", (event: MessageEvent) => {
+  // Only accept messages from the same window
+  if (event.source !== window) return;
+  
+  // Only process auth messages on cadie.app domain
+  if (!window.location.hostname.includes("cadie.app")) return;
+  
+  const data = event.data;
+  if (data?.type === "CADIE_AUTH_SUCCESS" && data?.token && !authProcessed) {
+    authProcessed = true;
     // Send auth data to background script
     chrome.runtime.sendMessage({
       type: "CADIE_AUTH_SUCCESS",
       data: {
-        token: detail.token,
-        email: detail.email,
-        url: detail.url || detail.cadieUrl,
-        cadieUrl: detail.url || detail.cadieUrl,
-        state: detail.state,
+        token: data.token,
+        email: data.email,
+        url: "https://cadie.app", // Always use production
+        cadieUrl: "https://cadie.app",
+        state: data.state,
       },
     }, (response) => {
       if (chrome.runtime.lastError) {
         console.error("Error sending auth message:", chrome.runtime.lastError);
+        authProcessed = false; // Allow retry on error
+      } else {
+        // Send acknowledgment back to page via postMessage
+        window.postMessage({ type: "CADIE_AUTH_ACK", success: true }, "*");
       }
     });
   }
 });
 
 // Also check for auth data in DOM (fallback and polling)
-if (window.location.pathname.includes("/extension/authorize")) {
+// Only runs on cadie.app authorize page
+if (window.location.hostname.includes("cadie.app") && window.location.pathname.includes("/extension/authorize")) {
   // Check immediately
   checkForAuthData();
 
@@ -256,23 +272,30 @@ if (window.location.pathname.includes("/extension/authorize")) {
 }
 
 function checkForAuthData(): boolean {
+  if (authProcessed) return true; // Already processed
+  
   const authDataElement = document.getElementById("cadie-auth-data");
   if (authDataElement) {
     try {
       const authData = JSON.parse(authDataElement.getAttribute("data-auth") || "{}");
       if (authData.token) {
+        authProcessed = true;
         chrome.runtime.sendMessage({
           type: "CADIE_AUTH_SUCCESS",
           data: {
             token: authData.token,
             email: authData.email,
-            url: authData.url,
-            cadieUrl: authData.url,
+            url: "https://cadie.app", // Always use production
+            cadieUrl: "https://cadie.app",
             state: authData.state,
           },
         }, (response) => {
           if (chrome.runtime.lastError) {
             console.error("Error sending auth message:", chrome.runtime.lastError);
+            authProcessed = false; // Allow retry on error
+          } else {
+            // Send acknowledgment back to page via postMessage
+            window.postMessage({ type: "CADIE_AUTH_ACK", success: true }, "*");
           }
         });
         return true;

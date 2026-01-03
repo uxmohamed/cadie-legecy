@@ -31,9 +31,10 @@ import { toast } from "sonner";
 
 interface SettingsProfileProps {
   user: User;
+  onProfileUpdate?: () => void;
 }
 
-export function SettingsProfile({ user }: SettingsProfileProps) {
+export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps) {
   const [displayName, setDisplayName] = React.useState("");
   const [originalDisplayName, setOriginalDisplayName] = React.useState("");
   const [avatarUrl, setAvatarUrl] = React.useState("");
@@ -94,6 +95,7 @@ export function SettingsProfile({ user }: SettingsProfileProps) {
       if (uploadedUrl) {
         setAvatarUrl(uploadedUrl);
         await completeOnboarding(user.id, displayName, uploadedUrl);
+        onProfileUpdate?.();
         toast.success("Avatar updated");
       }
     } catch (err) {
@@ -117,6 +119,7 @@ export function SettingsProfile({ user }: SettingsProfileProps) {
       const result = await completeOnboarding(user.id, trimmedName, avatarUrl);
       if (result.success) {
         setOriginalDisplayName(trimmedName);
+        onProfileUpdate?.();
         toast.success("Profile updated");
       } else {
         toast.error(result.error || "Failed to update profile");

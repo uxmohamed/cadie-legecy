@@ -33,8 +33,7 @@ export default function ExtensionAuthorizePage() {
     } catch (error) {
       console.error("Error:", error);
       // Redirect to app even on error
-      const cadieUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-      window.location.href = cadieUrl;
+      window.location.href = "https://cadie.app";
     }
   }
 
@@ -61,8 +60,8 @@ export default function ExtensionAuthorizePage() {
       const extensionId = params.get("extensionId");
       const state = params.get("state");
 
-      // Use production URL
-      const cadieUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      // Always use production URL for extension - tokens are generated against production database
+      const cadieUrl = "https://cadie.app";
 
       // Construct authorization response
       const authData = {
@@ -84,32 +83,49 @@ export default function ExtensionAuthorizePage() {
       authDataElement.style.display = "none";
       document.body.appendChild(authDataElement);
 
-      // Dispatch custom event
-      const event = new CustomEvent("cadieAuthSuccess", {
-        detail: {
-          extensionId,
-          token: authData.token,
-          email: authData.email || "",
-          url: authData.cadieUrl,
-          cadieUrl: authData.cadieUrl,
-          state: authData.state || "",
-        },
-      });
-      window.dispatchEvent(event);
+      // Wait for extension to acknowledge before redirecting
+      let hasRedirected = false;
+      const redirect = () => {
+        if (!hasRedirected) {
+          hasRedirected = true;
+          window.location.href = cadieUrl;
+        }
+      };
 
-      // Retry event after delay
-      setTimeout(() => {
-        window.dispatchEvent(event);
-      }, 100);
+      // Listen for acknowledgment from extension via postMessage
+      const ackHandler = (e: MessageEvent) => {
+        if (e.data?.type === "CADIE_AUTH_ACK" && e.data?.success) {
+          window.removeEventListener("message", ackHandler);
+          redirect();
+        }
+      };
+      window.addEventListener("message", ackHandler);
 
-      // Redirect to app immediately
-      window.location.href = cadieUrl;
+      // Use postMessage to communicate with content script (works across isolated worlds)
+      const authMessage = {
+        type: "CADIE_AUTH_SUCCESS",
+        token: authData.token,
+        email: authData.email || "",
+        url: authData.cadieUrl,
+        cadieUrl: authData.cadieUrl,
+        state: authData.state || "",
+        extensionId,
+      };
+      
+      // Send immediately and retry
+      window.postMessage(authMessage, "*");
+      setTimeout(() => window.postMessage(authMessage, "*"), 100);
+      setTimeout(() => window.postMessage(authMessage, "*"), 300);
+      setTimeout(() => window.postMessage(authMessage, "*"), 600);
+      setTimeout(() => window.postMessage(authMessage, "*"), 1000);
+
+      // Fallback redirect after 2 seconds if no acknowledgment
+      setTimeout(redirect, 2000);
 
     } catch (error) {
       console.error("Error authorizing:", error);
       // Redirect to app even on error
-      const cadieUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-      window.location.href = cadieUrl;
+      window.location.href = "https://cadie.app";
     }
   }
 

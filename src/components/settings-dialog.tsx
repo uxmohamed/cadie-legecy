@@ -38,9 +38,10 @@ interface SettingsDialogProps {
   user: User;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onProfileUpdate?: () => void;
 }
 
-export function SettingsDialog({ user, open, onOpenChange }: SettingsDialogProps) {
+export function SettingsDialog({ user, open, onOpenChange, onProfileUpdate }: SettingsDialogProps) {
   const [activeSection, setActiveSection] = React.useState<SettingsSection>("profile");
 
   // Reset to profile when dialog opens
@@ -105,7 +106,7 @@ export function SettingsDialog({ user, open, onOpenChange }: SettingsDialogProps
               <h2 className="text-lg font-semibold text-[var(--text-primary)]">
                 {navItems.find((item) => item.id === activeSection)?.name}
               </h2>
-              {activeSection === "profile" && <SettingsProfile user={user} />}
+              {activeSection === "profile" && <SettingsProfile user={user} onProfileUpdate={onProfileUpdate} />}
               {activeSection === "appearance" && <SettingsAppearance />}
               {activeSection === "extensions" && <SettingsExtensions />}
               {activeSection === "about" && <SettingsAbout />}
