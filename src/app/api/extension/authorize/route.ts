@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     const token = generateToken(32); // 32 bytes = 43 characters in base64url
     
     // Hash the token for storage
-    const tokenHash = hashToken(token);
+    const tokenHash = await hashToken(token);
 
     // Check if user already has a token with this name, revoke it
     const { data: existingTokens } = await supabase
@@ -49,12 +49,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Store the hashed token in the database
+    // Set expiration to 1 year from now for extension tokens
+    const expiresAt = new Date();
+    expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+    
     const { data: tokenRecord, error } = await supabase
       .from("api_tokens")
       .insert({
         user_id: user.id,
         token_hash: tokenHash,
         name: name.trim(),
+        expires_at: expiresAt.toISOString(),
       })
       .select("id, name, created_at")
       .single();

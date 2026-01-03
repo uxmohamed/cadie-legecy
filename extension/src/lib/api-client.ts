@@ -38,8 +38,9 @@ export async function saveLink(request: SaveLinkRequest): Promise<ApiResponse> {
 
     if (!response.ok) {
       if (response.status === 401) {
-        await clearSettings();
-        return { success: false, error: "Disconnected. Please reconnect." };
+        // Don't auto-clear settings - let user manually disconnect
+        // This prevents cascading issues where one failed request clears everything
+        return { success: false, error: "Auth failed. Please reconnect in settings." };
       }
       // Try to get the actual error message from the response
       try {
