@@ -198,7 +198,7 @@ export class MetadataService {
                 const headers = await createInternalHeaders({ linkId: link.id, action: 'batch-enrich' });
                 
                 const response = await fetch(`${baseUrl}/api/links/${link.id}`, {
-                    method: 'PATCH',
+                    method: 'PUT',
                     headers,
                     body: JSON.stringify({
                         title: metadata.title,
