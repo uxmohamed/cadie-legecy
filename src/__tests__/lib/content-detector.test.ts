@@ -488,10 +488,12 @@ https://stackoverflow.com/questions/12345`;
     const input = `oklch(0.7 0.15 180)
 oklch(0.5 0.2 240)`;
     const result = detectMultipleContentTypes(input);
-    console.log('DEBUG result:', JSON.stringify(result, null, 2));
     // The current implementation splits by whitespace including spaces inside the color notation
-    // For proper oklch batch input, use newline separation or single values
-    expect(result.length).toBeGreaterThan(0);
+    // This results in 6 parts: ['oklch(0.7', '0.15', '180)', 'oklch(0.5', '0.2', '240)']
+    // Each part is treated as a URL since they don't match color patterns
+    expect(result).toHaveLength(6);
+    expect(result.every(r => r.type === 'url')).toBe(true);
+    // For proper oklch batch input, use newline separation or single values via detectContentType
   });
 
   it('handles single oklch color via detectContentType', () => {
