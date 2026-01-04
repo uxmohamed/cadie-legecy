@@ -82,8 +82,9 @@ export function useLinks(
             params.append("is_deleted", "false");
         }
         
-        // Default to non-archived links for the "all" view
-        if (filters?.is_archived === undefined && filters?.is_deleted !== true) {
+        // Default to non-archived links for non-trash views
+        // Only add is_archived=false if we're not looking at deleted items (trash view)
+        if (filters?.is_archived === undefined && (filters?.is_deleted === false || filters?.is_deleted === undefined)) {
             params.append("is_archived", "false");
         }
 

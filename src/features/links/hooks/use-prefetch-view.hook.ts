@@ -16,6 +16,9 @@ const PREFETCH_DELAY_MS = 3000;
 /**
  * Build the SWR cache key for a given view
  * Must match the pattern in use-links.hook.ts buildQueryString
+ * 
+ * @param view - The view to prefetch: "all" (active, non-archived links) or "trash" (deleted links)
+ * @param userId - User ID for cache isolation
  */
 function buildCacheKey(view: "all" | "trash", userId: string): string {
   const params = new URLSearchParams();
