@@ -50,23 +50,25 @@ export function usePrefetchView(
   userId: string | undefined,
   isAuthenticated: boolean
 ): void {
-  const hasPrefetched = React.useRef(false);
+  const prefetchedViews = React.useRef<Set<"all" | "trash">>(new Set());
 
   React.useEffect(() => {
-    // Skip if already prefetched, not authenticated, or no userId
-    if (hasPrefetched.current || !isAuthenticated || !userId) {
+    // Determine which view to prefetch (opposite of current)
+    const targetView: "all" | "trash" = currentView === "all" ? "trash" : "all";
+
+    // Skip if this target view has already been prefetched, not authenticated, or no userId
+    if (prefetchedViews.current.has(targetView) || !isAuthenticated || !userId) {
       return;
     }
 
-    // Determine which view to prefetch (opposite of current)
-    const prefetchDeleted = currentView === "all";
+    const prefetchDeleted = targetView === "trash";
     const cacheKey = buildCacheKey(prefetchDeleted, userId);
 
     // Schedule prefetch after delay
     const timeoutId = setTimeout(() => {
       // Use requestIdleCallback if available for lowest priority
       const runPrefetch = () => {
-        hasPrefetched.current = true;
+        prefetchedViews.current.add(targetView);
 
         // Use SWR's preload API to populate cache
         // This ensures the data is available when useSWRInfinite runs
