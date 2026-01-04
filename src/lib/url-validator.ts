@@ -133,8 +133,8 @@ function isValidIPv6(ip: string): boolean {
     }
     
     for (const segment of segments) {
-      // Each segment should be 1-4 hex digits
-      if (segment.length > 4 || !/^[0-9a-fA-F]{1,4}$/.test(segment)) {
+      // Each segment should be 1-4 hex digits and non-empty (full form has no compression)
+      if (segment === '' || segment.length > 4 || !/^[0-9a-fA-F]{1,4}$/.test(segment)) {
         return false;
       }
     }
@@ -161,7 +161,7 @@ function isPrivateIPv6(ip: string): boolean {
   }
   
   // Link-local fe80::/10
-  if (/^fe[89ab][0-9a-f]:/i.test(addr)) {
+  if (/^fe[89ab]/i.test(addr)) {
     return true;
   }
   
@@ -171,7 +171,7 @@ function isPrivateIPv6(ip: string): boolean {
   }
   
   // Site-local (deprecated but still blocked) fec0::/10
-  if (/^fec[0-9a-f]:/i.test(addr)) {
+  if (/^fec/i.test(addr)) {
     return true;
   }
   
@@ -196,23 +196,23 @@ function isPrivateIPv6(ip: string): boolean {
       //                 ::ffff:ac10::/108 is 172.16.0.0/12
       
       // Match common private IPv4 ranges in hex format
-      // 127.0.0.0/8 -> 7f00::/8 in the last 32 bits
-      if (/^7f[0-9a-f]{2}:/i.test(lastTwo.join(':'))) {
+      // 127.0.0.0/8 -> 7f00:0000 to 7fff:ffff in the last 32 bits
+      if (/^7f/i.test(lastTwo.join(':'))) {
         return true;
       }
-      // 10.0.0.0/8 -> a00::/8
-      if (/^(0)?a[0-9a-f]{2}:/i.test(lastTwo.join(':'))) {
+      // 10.0.0.0/8 -> 0a00:0000 to 0aff:ffff
+      if (/^0?a00:/i.test(lastTwo.join(':'))) {
         return true;
       }
-      // 192.168.0.0/16 -> c0a8::/16
+      // 192.168.0.0/16 -> c0a8:0000 to c0a8:ffff
       if (/^c0a8:/i.test(lastTwo.join(':'))) {
         return true;
       }
-      // 172.16.0.0/12 -> ac10::/12 to ac1f::/12
+      // 172.16.0.0/12 -> ac10:0000 to ac1f:ffff
       if (/^ac1[0-9a-f]:/i.test(lastTwo.join(':'))) {
         return true;
       }
-      // 169.254.0.0/16 -> a9fe::/16
+      // 169.254.0.0/16 -> a9fe:0000 to a9fe:ffff
       if (/^a9fe:/i.test(lastTwo.join(':'))) {
         return true;
       }
