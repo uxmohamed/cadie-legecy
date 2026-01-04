@@ -488,6 +488,7 @@ https://stackoverflow.com/questions/12345`;
     const input = `oklch(0.7 0.15 180)
 oklch(0.5 0.2 240)`;
     const result = detectMultipleContentTypes(input);
+    console.log('DEBUG result:', JSON.stringify(result, null, 2));
     // The current implementation splits by whitespace including spaces inside the color notation
     // For proper oklch batch input, use newline separation or single values
     expect(result.length).toBeGreaterThan(0);
