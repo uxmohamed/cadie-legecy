@@ -10,9 +10,12 @@ import { log } from "@/lib/logger";
 
 /**
  * Fetcher function for SWR
+ * Strips hash fragment from URL (used for cache isolation, not sent to API)
  */
 async function fetcher<T>(url: string): Promise<T> {
-    const response = await fetch(url);
+    // Remove hash fragment (used for cache key isolation only)
+    const fetchUrl = url.split('#')[0];
+    const response = await fetch(fetchUrl);
 
     if (!response.ok) {
         // Safely try to parse JSON error, fall back to status text if HTML is returned
@@ -48,8 +51,9 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
     const [isLoading, setIsLoading] = React.useState(false);
 
     // Build query string from filters
+    // Include userId in cache key to prevent cross-user cache pollution
     const buildQueryString = React.useCallback((index: number, previousPageData: { links: Link[], total: number } | null) => {
-        if (!isAuthenticated) return null;
+        if (!isAuthenticated || !userId) return null;
         // Reached the end
         if (previousPageData && !previousPageData.links.length) return null;
 
@@ -71,8 +75,9 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         params.append("limit", String(PAGE_SIZE));
         params.append("offset", String(index * PAGE_SIZE));
 
-        return `/api/links?${params.toString()}`;
-    }, [isAuthenticated, filters, searchQuery]);
+        // Include userId in cache key (not sent to API, just for SWR cache isolation)
+        return `/api/links?${params.toString()}#user=${userId}`;
+    }, [isAuthenticated, filters, searchQuery, userId]);
 
     // Use SWRInfinite for pagination
     const { data, error, size, setSize, isValidating, mutate } = useSWRInfinite<{ links: Link[], total: number }>(
@@ -83,7 +88,7 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
             revalidateOnReconnect: false,
             revalidateOnMount: true, // Always fetch fresh data on mount
             dedupingInterval: 1000,  // Reduced from 5000ms - allow faster revalidation
-            keepPreviousData: true,  // Keep showing data while fetching (smooth UX)
+            // Note: keepPreviousData removed to prevent stale data showing during view transitions
             onError: (err) => {
                 const errorMessage = err instanceof Error ? err.message : "Failed to load links";
                 toast.error(errorMessage);
