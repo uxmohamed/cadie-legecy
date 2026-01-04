@@ -3,15 +3,12 @@
  * Covers all link operations with optimistic updates and error handling
  */
 
-import { renderHook, act, waitFor } from '@testing-library/react';
 import { toast } from 'sonner';
 import {
   createMockLink,
   createMockLinks,
-  createMockDeletedLink,
   createMockPinnedLink,
   createMockColorLink,
-  createLinksApiResponse,
   createBatchApiResponse,
   resetLinkIdCounter,
 } from '../fixtures/link.fixtures';
@@ -130,13 +127,13 @@ describe('useLinks - handleSubmit', () => {
   describe('duplicate handling', () => {
     it('shows "already in list" for existing URLs', async () => {
       // Simulating what the hook does when it detects a duplicate
-      const existingLinks = [createMockLink({ url: 'https://duplicate.com' })];
+      // Note: existingLinks would be checked client-side first
       
       // Client-side detection would prevent the API call
       // This tests the API response for server-side duplicate check
       mockFetchSuccess(createBatchApiResponse([], 0, 0));
 
-      const response = await fetch('/api/links/batch', {
+      await fetch('/api/links/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -74,14 +74,14 @@ describe('GET /api/links', () => {
     const data = await response.json();
 
     expect(data.links).toHaveLength(2);
-    expect(data.links.every((l: any) => l.is_deleted)).toBe(true);
+    expect(data.links.every((l: { is_deleted: boolean }) => l.is_deleted)).toBe(true);
   });
 
   it('supports server-side search with q parameter', async () => {
     const links = [createMockLink({ title: 'Google Search' })];
     mockFetchSuccess(createLinksApiResponse(links, 1));
 
-    const response = await fetch('/api/links?q=google');
+    await fetch('/api/links?q=google');
     
     expect(global.fetch).toHaveBeenCalledWith(
       expect.stringContaining('q=google')

@@ -5,13 +5,9 @@
 
 import {
   createMockLink,
-  createMockLinks,
-  createMockDeletedLink,
-  createLinksApiResponse,
   createBatchApiResponse,
   resetLinkIdCounter,
 } from '../fixtures/link.fixtures';
-import { toast } from 'sonner';
 
 // =============================================================================
 // Test Utilities
