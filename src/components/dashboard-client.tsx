@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { DashboardContent } from "@/components/dashboard-content";
@@ -13,14 +13,22 @@ import type { Link } from "@/features/links/types";
 
 interface DashboardClientProps {
   user: User;
+  initialView?: "trash" | null;
 }
 
-export function DashboardClient({ user }: DashboardClientProps) {
+export function DashboardClient({ user, initialView = null }: DashboardClientProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [profileChecked, setProfileChecked] = React.useState(false);
   const [needsOnboarding, setNeedsOnboarding] = React.useState(false);
-  const [selectedCategoryId, setSelectedCategoryId] = React.useState<string | null>(null);
+  
+  // Determine view from URL path or initialView prop
+  const isTrashRoute = pathname === "/trash" || initialView === "trash";
+  const [selectedCategoryId, setSelectedCategoryId] = React.useState<string | null>(
+    isTrashRoute ? "trash" : null
+  );
+  
   const [sortBy, setSortBy] = React.useState<"date" | "title">("date");
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("desc");
   const [isAddingItem, setIsAddingItem] = React.useState(false);
@@ -36,6 +44,15 @@ export function DashboardClient({ user }: DashboardClientProps) {
     onBatchPin: (ids: string[]) => void;
     onBatchUnpin: (ids: string[]) => void;
   } | null>(null);
+  
+  // Sync selectedCategoryId with URL path changes
+  React.useEffect(() => {
+    if (pathname === "/trash") {
+      setSelectedCategoryId("trash");
+    } else if (pathname === "/") {
+      setSelectedCategoryId(null);
+    }
+  }, [pathname]);
 
   const handleSortChange = React.useCallback(
     (newSortBy: "date" | "title") => {
@@ -93,6 +110,16 @@ export function DashboardClient({ user }: DashboardClientProps) {
     []
   );
 
+  // Handle view change with URL navigation
+  const handleViewChange = React.useCallback((categoryId: string | null) => {
+    if (categoryId === "trash") {
+      router.push("/trash");
+    } else {
+      router.push("/");
+    }
+    setSelectedCategoryId(categoryId);
+  }, [router]);
+
   // Check onboarding status on mount
   React.useEffect(() => {
     const checkProfile = async () => {
@@ -129,7 +156,7 @@ export function DashboardClient({ user }: DashboardClientProps) {
     <DashboardShell
       user={user}
       selectedCategoryId={selectedCategoryId}
-      onViewChange={setSelectedCategoryId}
+      onViewChange={handleViewChange}
       sortBy={sortBy}
       sortOrder={sortOrder}
       onSortChange={handleSortChange}

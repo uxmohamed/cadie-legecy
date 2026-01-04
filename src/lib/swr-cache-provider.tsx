@@ -4,9 +4,25 @@ import * as React from "react";
 import { SWRConfig, Cache } from "swr";
 
 /**
+ * Clear the SWR localStorage cache.
+ * Call this when user logs out or switches accounts.
+ */
+export function clearSWRCache(): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem("swr-cache");
+    localStorage.removeItem("swr-cache-user");
+  } catch {
+    // Ignore errors
+  }
+}
+
+/**
  * Creates a localStorage-based cache provider for SWR.
  * This persists the SWR cache across page refreshes, making the app feel instant
  * on subsequent visits.
+ * 
+ * Cache is isolated per user - if userId in cache key changes, old cache is cleared.
  */
 function localStorageProvider(cache: Readonly<Cache>): Cache {
   // Only run on client
@@ -16,6 +32,10 @@ function localStorageProvider(cache: Readonly<Cache>): Cache {
 
   // Load from localStorage on init
   const map = new Map<string, { data: unknown; isLoading: boolean; isValidating: boolean; error?: unknown }>();
+  
+  // Get previously stored user ID to detect user changes
+  const storedUserId = localStorage.getItem("swr-cache-user");
+  
   try {
     const stored = localStorage.getItem("swr-cache");
     if (stored) {
@@ -32,10 +52,19 @@ function localStorageProvider(cache: Readonly<Cache>): Cache {
   const saveCache = () => {
     try {
       // Only cache /api/links responses and limit size
-      const entries = Array.from(map.entries())
+      const entries: Array<[string, { data: unknown }]> = Array.from(map.entries())
         .filter(([key]) => key.startsWith("/api/links"))
         .map(([key, value]) => [key, { data: value.data }]);
       localStorage.setItem("swr-cache", JSON.stringify(entries));
+      
+      // Also save the current user ID from any cached entry
+      const userEntry = entries.find(([key]) => key.includes("#user="));
+      if (userEntry) {
+        const match = userEntry[0].match(/#user=([^&]+)/);
+        if (match) {
+          localStorage.setItem("swr-cache-user", match[1]);
+        }
+      }
     } catch {
       // Ignore errors (quota exceeded, private browsing, etc)
     }
@@ -44,10 +73,24 @@ function localStorageProvider(cache: Readonly<Cache>): Cache {
   window.addEventListener("beforeunload", saveCache);
   
   // Also save periodically to handle tab crashes
-  setInterval(saveCache, 30000);
+  const intervalId = setInterval(saveCache, 30000);
 
   return {
-    get: (key: string) => map.get(key),
+    get: (key: string) => {
+      // If key has a user hash, verify it matches stored user
+      // If different user, don't return cached data (will trigger fresh fetch)
+      if (key.includes("#user=") && storedUserId) {
+        const match = key.match(/#user=([^&]+)/);
+        if (match && match[1] !== storedUserId) {
+          // Different user - clear cache and return undefined
+          map.clear();
+          localStorage.removeItem("swr-cache");
+          localStorage.removeItem("swr-cache-user");
+          return undefined;
+        }
+      }
+      return map.get(key);
+    },
     set: (key: string, value: { data: unknown; isLoading: boolean; isValidating: boolean; error?: unknown }) => {
       map.set(key, value);
     },
