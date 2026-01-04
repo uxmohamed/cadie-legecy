@@ -57,9 +57,9 @@ export async function POST(request: NextRequest) {
 
         // Apply rate limiting to prevent abuse
         const identifier = getIdentifier(request, user.id);
-        const { success, limit, reset, remaining } = await rateLimitMetadata.limit(identifier);
+        const { success: rateLimitSuccess, limit, reset, remaining } = await rateLimitMetadata.limit(identifier);
         
-        if (!success) {
+        if (!rateLimitSuccess) {
             return NextResponse.json(
                 { error: "Too many requests. Please try again later." },
                 { 
