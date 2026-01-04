@@ -2,6 +2,49 @@ import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from "next";
 import { withContentlayer } from "next-contentlayer2";
 import path from "path";
+
+/**
+ * Security headers for all routes
+ * Following OWASP best practices
+ */
+const securityHeaders = [
+  {
+    // Prevent clickjacking attacks
+    key: 'X-Frame-Options',
+    value: 'DENY',
+  },
+  {
+    // Prevent MIME type sniffing
+    key: 'X-Content-Type-Options',
+    value: 'nosniff',
+  },
+  {
+    // Control referrer information
+    key: 'Referrer-Policy',
+    value: 'strict-origin-when-cross-origin',
+  },
+  {
+    // Restrict browser features
+    key: 'Permissions-Policy',
+    value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+  },
+  {
+    // Enable XSS protection (legacy browsers)
+    key: 'X-XSS-Protection',
+    value: '1; mode=block',
+  },
+  {
+    // DNS prefetch control
+    key: 'X-DNS-Prefetch-Control',
+    value: 'on',
+  },
+  {
+    // Strict transport security (HTTPS only)
+    key: 'Strict-Transport-Security',
+    value: 'max-age=31536000; includeSubDomains',
+  },
+];
+
 const nextConfig: NextConfig = {
   // Optimize for Docker deployment
   output: "standalone",
@@ -25,6 +68,16 @@ const nextConfig: NextConfig = {
   // Fix workspace root detection
   outputFileTracingRoot: process.cwd(),
 
+  // Security headers
+  async headers() {
+    return [
+      {
+        // Apply security headers to all routes
+        source: '/(.*)',
+        headers: securityHeaders,
+      },
+    ];
+  },
 
   // Webpack configuration for Contentlayer
   webpack: (config, { isServer }) => {

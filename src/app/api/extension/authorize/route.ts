@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateToken, hashToken } from "@/lib/auth-middleware";
+import { rateLimitExtensionAuth, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 
 
 /**
@@ -17,6 +18,17 @@ export async function POST(request: NextRequest) {
     
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate limiting for extension authorization
+    const identifier = getIdentifier(request, user.id);
+    const { success, limit, reset, remaining } = await rateLimitExtensionAuth.limit(identifier);
+    
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many authorization attempts. Please try again later." },
+        { status: 429, headers: getRateLimitHeaders(limit, remaining, reset) }
+      );
     }
 
     interface AuthorizeBody {

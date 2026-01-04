@@ -17,6 +17,7 @@ import {
     extractSiteName,
     isLoginPage
 } from "./content-analyzer";
+import { validateUrlSafety } from "./url-validator";
 
 // =============================================================================
 // Legacy Interface (kept for backward compatibility)
@@ -323,12 +324,25 @@ function getFetchStatusFromError(error: unknown): FetchStatus {
  * This is the production-grade extraction function with all fields
  */
 export async function extractMetadata(url: string, timeoutMs: number = DEFAULT_TIMEOUT_MS): Promise<ExtractedMetadata> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-    
     const domain = extractDomain(url);
     const protocol = extractProtocol(url);
     const fetchedAt = new Date().toISOString();
+    
+    // SECURITY: Validate URL to prevent SSRF attacks
+    const urlValidation = validateUrlSafety(url);
+    if (!urlValidation.isValid) {
+        return {
+            domain,
+            protocol,
+            title: domain,
+            favicon_url: getClearbitFallback(domain),
+            fetch_status: "blocked" as FetchStatus,
+            fetched_at: fetchedAt,
+        };
+    }
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     
     try {
         const response = await fetch(url, {

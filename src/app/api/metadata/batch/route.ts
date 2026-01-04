@@ -5,6 +5,12 @@ import type { ExtractedMetadata, BatchMetadataOptions, FetchStatus } from "@/fea
 
 
 /**
+ * Maximum number of URLs per batch request
+ * Prevents resource exhaustion and ensures reasonable response times
+ */
+const MAX_BATCH_SIZE = 50;
+
+/**
  * Default options for batch metadata fetching
  */
 const DEFAULT_OPTIONS: Required<BatchMetadataOptions> = {
@@ -63,7 +69,17 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // No hard limit - we process all URLs in chunks with concurrency control
+        // SECURITY: Enforce batch size limit to prevent resource exhaustion
+        if (urls.length > MAX_BATCH_SIZE) {
+            return NextResponse.json(
+                { 
+                    error: `Batch size exceeds maximum of ${MAX_BATCH_SIZE} URLs`,
+                    maxBatchSize: MAX_BATCH_SIZE,
+                    requestedSize: urls.length
+                },
+                { status: 400 }
+            );
+        }
 
         const opts = { ...DEFAULT_OPTIONS, ...options };
         

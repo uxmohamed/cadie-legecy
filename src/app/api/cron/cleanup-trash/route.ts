@@ -4,6 +4,29 @@ import { log } from "@/lib/logger";
 
 
 /**
+ * Timing-safe string comparison to prevent timing attacks
+ * Uses constant-time comparison to avoid leaking information about the secret
+ */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    // Still do a comparison to maintain constant time
+    // but we know it's going to fail
+    const dummy = "x".repeat(a.length);
+    let result = 0;
+    for (let i = 0; i < a.length; i++) {
+      result |= a.charCodeAt(i) ^ dummy.charCodeAt(i);
+    }
+    return false;
+  }
+  
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+/**
  * GET /api/cron/cleanup-trash
  * Scheduled job to clean up expired trash items (deleted > 60 days ago)
  * 
@@ -13,13 +36,12 @@ import { log } from "@/lib/logger";
 export async function GET(request: NextRequest) {
   try {
     // Verify cron secret to prevent unauthorized access
-    const authHeader = request.headers.get("authorization");
-    const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
+    const authHeader = request.headers.get("authorization") || "";
+    const expectedAuth = `Bearer ${process.env.CRON_SECRET || ""}`;
     
-    if (authHeader !== expectedAuth) {
-      log.warn("Unauthorized cron access attempt", { 
-        ip: request.headers.get("x-forwarded-for") 
-      });
+    // SECURITY: Use timing-safe comparison to prevent timing attacks
+    if (!process.env.CRON_SECRET || !timingSafeEqual(authHeader, expectedAuth)) {
+      log.warn("Unauthorized cron access attempt");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

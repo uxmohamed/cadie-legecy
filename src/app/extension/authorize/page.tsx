@@ -112,12 +112,16 @@ export default function ExtensionAuthorizePage() {
         extensionId,
       };
       
-      // Send immediately and retry
-      window.postMessage(authMessage, "*");
-      setTimeout(() => window.postMessage(authMessage, "*"), 100);
-      setTimeout(() => window.postMessage(authMessage, "*"), 300);
-      setTimeout(() => window.postMessage(authMessage, "*"), 600);
-      setTimeout(() => window.postMessage(authMessage, "*"), 1000);
+      // SECURITY: Only send to same origin to prevent token theft via malicious iframes/openers
+      // The content script running on this page will receive the message
+      const targetOrigin = window.location.origin;
+      
+      // Send immediately and retry (restricted to same origin)
+      window.postMessage(authMessage, targetOrigin);
+      setTimeout(() => window.postMessage(authMessage, targetOrigin), 100);
+      setTimeout(() => window.postMessage(authMessage, targetOrigin), 300);
+      setTimeout(() => window.postMessage(authMessage, targetOrigin), 600);
+      setTimeout(() => window.postMessage(authMessage, targetOrigin), 1000);
 
       // Fallback redirect after 2 seconds if no acknowledgment
       setTimeout(redirect, 2000);

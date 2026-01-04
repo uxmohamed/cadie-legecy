@@ -2,6 +2,46 @@ import { NextResponse } from "next/server";
 import { ZodSchema, ZodError } from "zod";
 
 /**
+ * UUID v4 validation regex
+ */
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Check if a string is a valid UUID v4
+ * 
+ * @param id - The string to validate
+ * @returns true if the string is a valid UUID
+ */
+export function isValidUUID(id: string): boolean {
+  return UUID_REGEX.test(id);
+}
+
+/**
+ * Validate a UUID and return an error response if invalid
+ * 
+ * @param id - The ID to validate
+ * @param paramName - Name of the parameter for error message (default: "ID")
+ * @returns null if valid, NextResponse error if invalid
+ */
+export function validateUUID(id: string | null | undefined, paramName: string = "ID"): NextResponse | null {
+  if (!id) {
+    return NextResponse.json(
+      { error: `${paramName} is required` },
+      { status: 400 }
+    );
+  }
+  
+  if (!isValidUUID(id)) {
+    return NextResponse.json(
+      { error: `Invalid ${paramName} format` },
+      { status: 400 }
+    );
+  }
+  
+  return null;
+}
+
+/**
  * Validates request body against a Zod schema
  * Returns validated data or error response
  */

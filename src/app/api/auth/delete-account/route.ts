@@ -1,19 +1,31 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { rateLimitAccountDeletion, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 
 
 /**
  * DELETE /api/auth/delete-account
  * Permanently delete the authenticated user's account and all associated data
  */
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Strict rate limiting for account deletion
+    const identifier = getIdentifier(request, user.id);
+    const { success, limit, reset, remaining } = await rateLimitAccountDeletion.limit(identifier);
+    
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many deletion attempts. Please try again later." },
+        { status: 429, headers: getRateLimitHeaders(limit, remaining, reset) }
+      );
     }
 
     // Delete user's data first (links, categories, etc.)

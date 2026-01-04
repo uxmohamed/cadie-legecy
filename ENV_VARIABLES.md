@@ -2,25 +2,78 @@
 
 ## Required Environment Variables
 
-### Production (Add to Cloudflare Pages)
+### Production (Railway / Vercel / etc.)
 
 ```env
-# Cron Job Authentication
-CRON_SECRET=your_random_secret_here_min_32_characters
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=<your-supabase-url>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-supabase-anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<your-supabase-service-role-key>
 
-# Example generation:
-# openssl rand -base64 32
+# Upstash Redis (Rate Limiting)
+UPSTASH_REDIS_REST_URL=<your-upstash-redis-url>
+UPSTASH_REDIS_REST_TOKEN=<your-upstash-redis-token>
+
+# Upstash QStash (Background Jobs)
+QSTASH_TOKEN=<your-qstash-token>
+QSTASH_CURRENT_SIGNING_KEY=<your-qstash-current-signing-key>
+QSTASH_NEXT_SIGNING_KEY=<your-qstash-next-signing-key>
+
+# Cron Job Authentication (generate with: openssl rand -base64 32)
+CRON_SECRET=<your-random-secret-min-32-chars>
+
+# Internal API Authentication (generate with: openssl rand -base64 32)
+# Used for secure service-to-service communication
+INTERNAL_API_SECRET=<your-random-secret-min-32-chars>
+
+# Site URL (your deployed domain)
+NEXT_PUBLIC_SITE_URL=https://your-domain.com
+NEXT_PUBLIC_BASE_URL=https://your-domain.com
+
+# Analytics (optional)
+NEXT_PUBLIC_POSTHOG_KEY=<your-posthog-key>
+NEXT_PUBLIC_POSTHOG_HOST=<your-posthog-host>
+
+# Sentry (optional)
+SENTRY_AUTH_TOKEN=<your-sentry-auth-token>
 ```
 
 ### Local Development (.env.local)
 
 ```env
-# Already configured:
-UPSTASH_REDIS_REST_URL=https://sure-aardvark-13335.upstash.io
-UPSTASH_REDIS_REST_TOKEN=ATQXAAIncDIzNmFlZjYyYTM2ZGI0ZmJjODI0OWJhOTUwZTBiM2EwNHAyMTMzMzU
+# Get these from your Supabase project settings
+NEXT_PUBLIC_SUPABASE_URL=<your-supabase-url>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-supabase-anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<your-supabase-service-role-key>
 
-# Add for cron testing:
-CRON_SECRET=test_secret_for_local_development_only
+# Get these from your Upstash dashboard
+UPSTASH_REDIS_REST_URL=<your-upstash-redis-url>
+UPSTASH_REDIS_REST_TOKEN=<your-upstash-redis-token>
+
+# QStash (get from Upstash dashboard)
+QSTASH_TOKEN=<your-qstash-token>
+QSTASH_CURRENT_SIGNING_KEY=<your-qstash-signing-key>
+QSTASH_NEXT_SIGNING_KEY=<your-qstash-next-signing-key>
+
+# Generate with: openssl rand -base64 32
+CRON_SECRET=<generate-for-local-testing>
+INTERNAL_API_SECRET=<generate-for-local-testing>
+
+# Local development URLs
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+```
+
+## Generating Secrets
+
+For `CRON_SECRET` and `INTERNAL_API_SECRET`, generate cryptographically secure values:
+
+```bash
+# Using OpenSSL
+openssl rand -base64 32
+
+# Using Node.js
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
 
 ## Cloudflare Scheduled Cleanup Options
