@@ -5,12 +5,10 @@
 
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import type { Link } from '@/features/links/types';
-import { createMockLink, createMockLinks, resetLinkIdCounter } from '../fixtures/link.fixtures';
+import { resetLinkIdCounter } from '../fixtures/link.fixtures';
 
 // Simplified test version of Dock
 const TestDock = ({
-  selectedCategoryId = null,
   onViewChange,
   allItemsCount = 0,
   selectedCount = 0,
@@ -20,10 +18,8 @@ const TestDock = ({
   onBatchPermanentDelete,
   onBatchPin,
   onBatchUnpin,
-  selectedLinks = [],
   isTrashView = false,
 }: {
-  selectedCategoryId?: string | null;
   onViewChange?: (view: string | null) => void;
   allItemsCount?: number;
   selectedCount?: number;
@@ -33,7 +29,6 @@ const TestDock = ({
   onBatchPermanentDelete?: () => void;
   onBatchPin?: () => void;
   onBatchUnpin?: () => void;
-  selectedLinks?: Link[];
   isTrashView?: boolean;
 }) => {
   const [currentView, setCurrentView] = React.useState<string | null>(null);

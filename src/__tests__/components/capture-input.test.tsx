@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // Mock the shortcut context
@@ -24,7 +24,7 @@ const MockCaptureInput = ({
   autoFocus = false,
   searchOnly = false,
 }: {
-  onSubmit?: (items: any[]) => void;
+  onSubmit?: (items: { value: string; type: string }[]) => void;
   onSearch?: (query: string) => void;
   isLoading?: boolean;
   autoFocus?: boolean;
@@ -159,7 +159,6 @@ describe('CaptureInput', () => {
       const onSubmit = jest.fn();
       render(<MockCaptureInput onSubmit={onSubmit} />);
       
-      const input = screen.getByTestId('capture-input');
       fireEvent.submit(screen.getByTestId('capture-form'));
 
       expect(onSubmit).not.toHaveBeenCalled();

@@ -81,8 +81,6 @@ describe('Scenario 2: Delete and restore', () => {
   });
 
   it('user deletes link → moves to trash → restores → back in list', async () => {
-    const link = createMockLink({ id: 'link-1', url: 'https://example.com' });
-
     // Step 1: User right-clicks and deletes
     mockFetchSuccess({ success: true });
 
@@ -191,8 +189,6 @@ describe('Scenario 4: Permanent delete', () => {
   });
 
   it('user deletes → permanent delete → link is gone forever', async () => {
-    const link = createMockLink({ id: 'link-1' });
-
     // Step 1: Soft delete
     mockFetchSuccess({ success: true });
     await fetch('/api/links/link-1', { method: 'DELETE' });
