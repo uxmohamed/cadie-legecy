@@ -54,7 +54,7 @@ interface InitialLinksData {
  * Hook for managing links with SWR caching and infinite scroll
  * Optimized for fast initial render with server-side prefetched data
  */
-const PAGE_SIZE = 50; // Reduced from 200 for faster initial load
+const PAGE_SIZE = 100; // Balanced for performance and scrolling experience
 
 export function useLinks(
     isAuthenticated: boolean,

@@ -2,10 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import type { Link, LinkFilters } from "@/features/links/types";
 
 /**
- * Initial page size for prefetching - smaller for faster initial load
+ * Initial page size for prefetching - balanced for performance and scrolling experience
  * Client can load more as user scrolls
  */
-const INITIAL_PAGE_SIZE = 50;
+const INITIAL_PAGE_SIZE = 100;
 
 /**
  * Server-side function to prefetch links for a user
