@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { extractMetadata } from "@/lib/metadata";
+import { rateLimitMetadata, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 
 
 export async function POST(request: NextRequest) {
@@ -10,6 +11,20 @@ export async function POST(request: NextRequest) {
     
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Apply rate limiting to prevent abuse
+    const identifier = getIdentifier(request, user.id);
+    const { success: rateLimitSuccess, limit, reset, remaining } = await rateLimitMetadata.limit(identifier);
+    
+    if (!rateLimitSuccess) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { 
+          status: 429,
+          headers: getRateLimitHeaders(limit, remaining, reset)
+        }
+      );
     }
 
     interface MetadataBody {
