@@ -68,7 +68,6 @@ export function DashboardContent({
     filteredLinks,
     isLoading,
     fetchingLinks,
-    hasInitiallyLoaded,
     handleSubmit,
     handleDeleteLink,
     handleRestoreLink,
@@ -156,8 +155,9 @@ export function DashboardContent({
     onBatchUnpin: handleBatchUnpinLinks,
   }), [handleBatchDeleteLinks, handleBatchRestoreLinks, handleBatchPermanentDeleteLinks, handleBatchPinLinks, handleBatchUnpinLinks]);
 
-  // Show skeleton only on true initial load
-  if (!hasInitiallyLoaded && filteredLinks.length === 0) {
+  // Show skeleton when fetching and no links to display
+  // This handles initial load and view transitions (e.g., switching to trash)
+  if (fetchingLinks) {
     return <LinkListSkeleton />;
   }
 
