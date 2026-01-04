@@ -123,18 +123,12 @@ export async function verifyInternalToken(
     const expectedSignature = expectedSignatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
     
     // Timing-safe comparison
-    if (signature.length !== expectedSignature.length) {
-      return { isValid: false, reason: 'Invalid signature' };
+    let result = signature.length ^ expectedSignature.length;
+    for (let i = 0; i < expectedSignature.length; i++) {
+      result |= (signature.charCodeAt(i) || 0) ^ expectedSignature.charCodeAt(i);
     }
     
-    let isEqual = true;
-    for (let i = 0; i < signature.length; i++) {
-      if (signature[i] !== expectedSignature[i]) {
-        isEqual = false;
-      }
-    }
-    
-    if (!isEqual) {
+    if (result !== 0) {
       return { isValid: false, reason: 'Invalid signature' };
     }
     
