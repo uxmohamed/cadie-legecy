@@ -22,7 +22,7 @@ const ALLOWED_PATH_PREFIXES = [
 ];
 
 /**
- * Blocked path prefixes that should never be accessible after auth
+ * Blocked redirect path prefixes that should never be used as redirect targets
  */
 const BLOCKED_PATH_PREFIXES = [
   '/api',
