@@ -4,13 +4,22 @@ import { NextResponse } from "next/server";
 
 /**
  * Allowed redirect paths after authentication
- * Only paths starting with these prefixes are allowed
+ * Only specific routes are allowed to prevent open redirects
  */
-const ALLOWED_REDIRECT_PREFIXES = [
+const ALLOWED_REDIRECT_PATHS = new Set([
   '/',
   '/extension',
   '/settings',
   '/homepage',
+]);
+
+/**
+ * Blocked path prefixes that should never be accessible after auth
+ */
+const BLOCKED_PATH_PREFIXES = [
+  '/api/',
+  '/admin/',
+  '/auth/',
 ];
 
 /**
@@ -29,12 +38,22 @@ function sanitizeRedirectPath(path: string | null): string {
   // SECURITY: Remove any query params for validation, but preserve them after validation
   const pathOnly = path.split('?')[0].split('#')[0];
   
-  // SECURITY: Check if path starts with an allowed prefix
-  const isAllowed = ALLOWED_REDIRECT_PREFIXES.some(prefix => 
-    pathOnly === prefix || pathOnly.startsWith(prefix + '/')
-  );
+  // SECURITY: Block sensitive paths
+  for (const blockedPrefix of BLOCKED_PATH_PREFIXES) {
+    if (pathOnly.startsWith(blockedPrefix)) {
+      return '/';
+    }
+  }
   
-  if (!isAllowed) {
+  // SECURITY: Check if path is exactly one of the allowed paths or under allowed prefixes
+  // Allow exact matches or paths under /extension, /settings, /homepage
+  const isExactMatch = ALLOWED_REDIRECT_PATHS.has(pathOnly);
+  const isUnderAllowedPrefix = 
+    pathOnly.startsWith('/extension/') ||
+    pathOnly.startsWith('/settings/') ||
+    pathOnly.startsWith('/homepage/');
+  
+  if (!isExactMatch && !isUnderAllowedPrefix) {
     return '/';
   }
   
