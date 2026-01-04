@@ -102,7 +102,6 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
 
     // Show skeleton when validating and no links to display
     // This handles: initial load, view transitions with empty cache, and stale empty data
-    const hasInitiallyLoaded = data !== undefined;
     const fetchingLinks = isValidating && links.length === 0;
 
     const loadMore = React.useCallback(() => {
@@ -857,7 +856,6 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         filteredLinks,
         isLoading,
         fetchingLinks,
-        hasInitiallyLoaded,
         handleSubmit,
         handleDeleteLink,
         handleRestoreLink,
