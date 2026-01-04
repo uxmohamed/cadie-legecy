@@ -47,8 +47,7 @@ async function fetcher<T>(url: string): Promise<T> {
  */
 export function usePrefetchView(
   currentView: "all" | "trash",
-  userId: string | undefined,
-  isAuthenticated: boolean
+  userId: string | undefined
 ): void {
   const prefetchedViews = React.useRef<Set<"all" | "trash">>(new Set());
 
@@ -56,8 +55,8 @@ export function usePrefetchView(
     // Determine which view to prefetch (opposite of current)
     const targetView: "all" | "trash" = currentView === "all" ? "trash" : "all";
 
-    // Skip if this target view has already been prefetched, not authenticated, or no userId
-    if (prefetchedViews.current.has(targetView) || !isAuthenticated || !userId) {
+    // Skip if this target view has already been prefetched or no userId
+    if (prefetchedViews.current.has(targetView) || !userId) {
       return;
     }
 
@@ -88,5 +87,5 @@ export function usePrefetchView(
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [currentView, userId, isAuthenticated]);
+  }, [currentView, userId]);
 }
