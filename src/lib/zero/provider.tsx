@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { Zero } from "@rocicorp/zero";
 import { getZero, closeZero, type ZeroClient } from "./client";
 import type { Schema } from "./schema";
 
