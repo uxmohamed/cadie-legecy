@@ -64,8 +64,12 @@ export function usePrefetchView(
     const prefetchDeleted = targetView === "trash";
     const cacheKey = buildCacheKey(prefetchDeleted, userId);
 
+    // Track IDs for cleanup
+    let timeoutId: NodeJS.Timeout | undefined;
+    let idleCallbackId: number | undefined;
+
     // Schedule prefetch after delay
-    const timeoutId = setTimeout(() => {
+    timeoutId = setTimeout(() => {
       // Use requestIdleCallback if available for lowest priority
       const runPrefetch = () => {
         prefetchedViews.current.add(targetView);
@@ -79,14 +83,19 @@ export function usePrefetchView(
       };
 
       if (typeof requestIdleCallback !== "undefined") {
-        requestIdleCallback(runPrefetch, { timeout: 5000 });
+        idleCallbackId = requestIdleCallback(runPrefetch, { timeout: 5000 });
       } else {
         runPrefetch();
       }
     }, PREFETCH_DELAY_MS);
 
     return () => {
-      clearTimeout(timeoutId);
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
+      if (idleCallbackId !== undefined && typeof cancelIdleCallback !== "undefined") {
+        cancelIdleCallback(idleCallbackId);
+      }
     };
   }, [currentView, userId, isAuthenticated]);
 }
