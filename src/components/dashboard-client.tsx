@@ -11,12 +11,22 @@ import { OnboardingFlow } from "@/components/onboarding";
 import type { User } from "@supabase/supabase-js";
 import type { Link } from "@/features/links/types";
 
+/**
+ * Initial data structure for server-side prefetched links
+ */
+interface InitialLinksData {
+  links: Link[];
+  total: number;
+}
+
 interface DashboardClientProps {
   user: User;
   initialView?: "trash" | null;
+  /** Server-side prefetched links for instant render */
+  initialLinks?: InitialLinksData;
 }
 
-export function DashboardClient({ user, initialView = null }: DashboardClientProps) {
+export function DashboardClient({ user, initialView = null, initialLinks }: DashboardClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -233,6 +243,7 @@ export function DashboardClient({ user, initialView = null }: DashboardClientPro
           onAddCancel={handleAddCancel}
           onSelectionChange={handleSelectionChange}
           searchQuery={searchQuery}
+          initialLinks={initialLinks}
         />
       </Suspense>
     </DashboardShell>

@@ -14,6 +14,7 @@ const createLinkHandler = new CreateLinkHandler();
 /**
  * GET /api/links
  * Retrieve links for the authenticated user
+ * Optimized with caching headers for faster subsequent loads
  */
 export async function GET(request: NextRequest) {
   // Authenticate to get userId for rate limiting
@@ -41,6 +42,15 @@ export async function GET(request: NextRequest) {
   Object.entries(headers).forEach(([key, value]) => {
     response.headers.set(key, value);
   });
+  
+  // Add caching headers for better performance
+  // private: only cache for this user (authenticated endpoint)
+  // max-age=0: always revalidate with server
+  // stale-while-revalidate=60: serve stale while revalidating in background for up to 60s
+  response.headers.set(
+    "Cache-Control",
+    "private, max-age=0, stale-while-revalidate=60"
+  );
   
   return response;
 }

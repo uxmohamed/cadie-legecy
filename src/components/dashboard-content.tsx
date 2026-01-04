@@ -20,6 +20,14 @@ export interface BatchHandlers {
   onBatchUnpin: (ids: string[]) => void;
 }
 
+/**
+ * Initial data structure for server-side prefetched links
+ */
+interface InitialLinksData {
+  links: Link[];
+  total: number;
+}
+
 interface DashboardContentProps {
   user: User;
   selectedCategoryId: string | null;
@@ -32,6 +40,8 @@ interface DashboardContentProps {
   onAddCancel: () => void;
   onSelectionChange: (count: number, links: Link[], clearSelection: () => void, batchHandlers: BatchHandlers) => void;
   searchQuery: string;
+  /** Server-side prefetched links for instant render */
+  initialLinks?: InitialLinksData;
 }
 
 export function DashboardContent({
@@ -46,6 +56,7 @@ export function DashboardContent({
   onAddCancel,
   onSelectionChange,
   searchQuery,
+  initialLinks,
 }: DashboardContentProps) {
 
   const filters = React.useMemo(() => {
@@ -85,7 +96,7 @@ export function DashboardContent({
     isLoadingMore,
     hasMore,
     loadMore,
-  } = useLinks(!!user, filters, user.id, debouncedSearchQuery);
+  } = useLinks(!!user, filters, user.id, debouncedSearchQuery, initialLinks);
 
   // Sort links based on current sort settings
   const sortedLinks = React.useMemo(() => {

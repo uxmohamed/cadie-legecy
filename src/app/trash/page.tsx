@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { DashboardClient } from "@/components/dashboard-client";
+import { prefetchTrashLinks } from "@/lib/server/prefetch-links";
 
 export default async function TrashPage() {
   const supabase = await createClient();
@@ -14,6 +15,15 @@ export default async function TrashPage() {
     redirect("/auth");
   }
 
-  // Render dashboard with trash view
-  return <DashboardClient user={JSON.parse(JSON.stringify(user))} initialView="trash" />;
+  // Prefetch trash links on server for instant render
+  const initialData = await prefetchTrashLinks(user.id);
+
+  // Render dashboard with trash view and prefetched data
+  return (
+    <DashboardClient
+      user={JSON.parse(JSON.stringify(user))}
+      initialView="trash"
+      initialLinks={initialData}
+    />
+  );
 }
