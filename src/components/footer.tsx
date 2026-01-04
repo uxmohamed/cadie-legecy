@@ -8,7 +8,7 @@ export function Footer() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
           {/* Copyright */}
           <div className="text-sm text-[var(--text-secondary)]">
-            © 2025 Cadie. All rights reserved.
+            © {new Date().getFullYear()} Cadie. All rights reserved.
           </div>
 
           {/* Navigation Links */}

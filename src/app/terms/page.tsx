@@ -20,7 +20,7 @@ export default function TermsPage() {
           </div>
           <div className="prose prose-lg max-w-none text-[var(--text-primary)]">
             <p className="text-[var(--text-secondary)] mb-8">
-              <strong>Last updated:</strong> December 27, 2025
+              <strong>Last updated:</strong> December 27, {new Date().getFullYear()}
             </p>
             <p className="text-[var(--text-secondary)] mb-6">
               Welcome to <strong>Cadie</strong> ("Cadie", "we", "us", or "our"). These Terms of Service ("Terms") govern your access to and use of Cadie, including <a href="http://cadie.app" className="text-[var(--text-primary)] underline hover:text-[var(--text-secondary)]">cadie.app</a> and any related apps, extensions, or services (collectively, the "Service").
@@ -283,7 +283,7 @@ export default function TermsPage() {
             <hr className="border-[var(--border-primary)] my-8" />
 
             <p className="text-[var(--text-secondary)]">
-              © 2025 Cadie. All rights reserved.
+              © {new Date().getFullYear()} Cadie. All rights reserved.
             </p>
           </div>
         </div>

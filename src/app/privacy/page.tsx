@@ -180,10 +180,10 @@ export default function PrivacyPage() {
             <hr className="border-[var(--border-primary)] my-8" />
 
             <p className="text-[var(--text-secondary)] mb-2">
-              <strong>Effective date:</strong> December 27, 2025
+              <strong>Effective date:</strong> December 27, {new Date().getFullYear()}
             </p>
             <p className="text-[var(--text-secondary)]">
-              © 2025 Cadie
+              © {new Date().getFullYear()} Cadie
             </p>
           </div>
         </div>
