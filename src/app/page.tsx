@@ -1,8 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { DashboardClient } from "@/components/dashboard-client";
 import { LandingPage } from "@/components/landing-page";
-
-
+import { prefetchDashboardLinks } from "@/lib/server/prefetch-links";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -17,7 +16,15 @@ export default async function Home() {
     return <LandingPage />;
   }
 
-  // Render dashboard immediately - let client handle onboarding check
-  // This allows the static shell to render while profile loads
-  return <DashboardClient user={JSON.parse(JSON.stringify(user))} />;
+  // Prefetch initial links on server for instant render
+  // This eliminates the network waterfall (page load → client fetch)
+  const initialData = await prefetchDashboardLinks(user.id);
+
+  // Render dashboard with prefetched data
+  return (
+    <DashboardClient
+      user={JSON.parse(JSON.stringify(user))}
+      initialLinks={initialData}
+    />
+  );
 }

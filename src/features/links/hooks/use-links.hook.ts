@@ -43,11 +43,26 @@ import useSWRInfinite from "swr/infinite";
 // ... (imports remain same)
 
 /**
- * Hook for managing links with SWR caching and infinite scroll
+ * Initial data structure for server-side prefetched links
  */
-const PAGE_SIZE = 200;
+interface InitialLinksData {
+    links: Link[];
+    total: number;
+}
 
-export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId?: string, searchQuery: string = "") {
+/**
+ * Hook for managing links with SWR caching and infinite scroll
+ * Optimized for fast initial render with server-side prefetched data
+ */
+const PAGE_SIZE = 100; // Balanced for performance and scrolling experience
+
+export function useLinks(
+    isAuthenticated: boolean,
+    filters?: LinkFilters,
+    userId?: string,
+    searchQuery: string = "",
+    initialData?: InitialLinksData
+) {
     const [isLoading, setIsLoading] = React.useState(false);
 
     // Build query string from filters
@@ -79,6 +94,16 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         return `/api/links?${params.toString()}#user=${userId}`;
     }, [isAuthenticated, filters, searchQuery, userId]);
 
+    // Prepare fallback data from server-side prefetch
+    // This allows instant render without loading state
+    const fallbackData = React.useMemo(() => {
+        if (!initialData || !initialData.links.length) return undefined;
+        // Only use initial data for the first page, when no search query is active
+        // and filters match the initial data (non-deleted links for dashboard)
+        if (searchQuery.trim()) return undefined;
+        return [initialData];
+    }, [initialData, searchQuery]);
+
     // Use SWRInfinite for pagination
     const { data, error, size, setSize, isValidating, mutate } = useSWRInfinite<{ links: Link[], total: number }>(
         buildQueryString,
@@ -86,9 +111,14 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
         {
             revalidateOnFocus: false,
             revalidateOnReconnect: false,
-            revalidateOnMount: true, // Always fetch fresh data on mount
-            dedupingInterval: 1000,  // Reduced from 5000ms - allow faster revalidation
-            // Note: keepPreviousData removed to prevent stale data showing during view transitions
+            // Only revalidate on mount if we don't have initial data
+            // This prevents unnecessary network requests on initial render
+            revalidateOnMount: !fallbackData,
+            // Revalidate in background after initial render
+            revalidateIfStale: true,
+            dedupingInterval: 2000,  // Increased for better caching
+            // Use server-side prefetched data for instant render
+            fallbackData,
             onError: (err) => {
                 const errorMessage = err instanceof Error ? err.message : "Failed to load links";
                 toast.error(errorMessage);
@@ -107,7 +137,8 @@ export function useLinks(isAuthenticated: boolean, filters?: LinkFilters, userId
 
     // Show skeleton when validating and no links to display
     // This handles: initial load, view transitions with empty cache, and stale empty data
-    const fetchingLinks = isValidating && links.length === 0;
+    // Don't show skeleton if we have initial data (instant render from server)
+    const fetchingLinks = isValidating && links.length === 0 && !fallbackData;
 
     const loadMore = React.useCallback(() => {
         if (!isValidating && hasMore) {
