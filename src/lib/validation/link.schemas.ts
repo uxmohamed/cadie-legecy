@@ -1,20 +1,85 @@
 import { z } from "zod";
 
+// Color validation patterns matching content-detector.ts
+const HEX_COLOR_PATTERN = /^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+const RGB_VALUE = "(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])";
+const RGB_COLOR_PATTERN = new RegExp(
+  `^rgb\\(${RGB_VALUE},\\s*${RGB_VALUE},\\s*${RGB_VALUE}\\)$`,
+  "i"
+);
+const RGBA_COLOR_PATTERN = new RegExp(
+  `^rgba\\(${RGB_VALUE},\\s*${RGB_VALUE},\\s*${RGB_VALUE},\\s*([\\d.]+)\\)$`,
+  "i"
+);
+const HSL_COLOR_PATTERN = /^hsl\((\d{1,3}),\s*(\d{1,3})%,\s*(\d{1,3})%\)$/i;
+const HSLA_COLOR_PATTERN = /^hsla\((\d{1,3}),\s*(\d{1,3})%,\s*(\d{1,3})%,\s*([\d.]+)\)$/i;
+const OKLCH_COLOR_PATTERN = /^oklch\(([\d.]+%?)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+%?))?\)$/i;
+const OKLAB_COLOR_PATTERN = /^oklab\(([\d.]+%?)\s+([\d.-]+)\s+([\d.-]+)(?:\s*\/\s*([\d.]+%?))?\)$/i;
+const LAB_COLOR_PATTERN = /^lab\(([\d.]+%?)\s+([\d.-]+)\s+([\d.-]+)(?:\s*\/\s*([\d.]+%?))?\)$/i;
+const LCH_COLOR_PATTERN = /^lch\(([\d.]+%?)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+%?))?\)$/i;
+const COLOR_FUNCTION_PATTERN = /^color\((srgb|srgb-linear|display-p3|a98-rgb|prophoto-rgb|rec2020|xyz|xyz-d50|xyz-d65)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?\)$/i;
+
+const NAMED_COLORS = new Set([
+  "red", "blue", "green", "yellow", "orange", "purple", "pink", "black",
+  "white", "gray", "grey", "brown", "cyan", "magenta", "lime", "navy",
+  "maroon", "olive", "teal", "aqua", "silver", "gold",
+]);
+
+/**
+ * Validates if a string is a valid color in any supported format
+ */
+function isValidColorValue(value: string): boolean {
+  const trimmed = value.trim();
+  
+  if (HEX_COLOR_PATTERN.test(trimmed)) return true;
+  if (RGB_COLOR_PATTERN.test(trimmed)) return true;
+  if (RGBA_COLOR_PATTERN.test(trimmed)) return true;
+  if (HSL_COLOR_PATTERN.test(trimmed)) return true;
+  if (HSLA_COLOR_PATTERN.test(trimmed)) return true;
+  if (OKLCH_COLOR_PATTERN.test(trimmed)) return true;
+  if (OKLAB_COLOR_PATTERN.test(trimmed)) return true;
+  if (LAB_COLOR_PATTERN.test(trimmed)) return true;
+  if (LCH_COLOR_PATTERN.test(trimmed)) return true;
+  if (COLOR_FUNCTION_PATTERN.test(trimmed)) return true;
+  if (NAMED_COLORS.has(trimmed.toLowerCase())) return true;
+  
+  return false;
+}
+
 /**
  * Schema for creating a new link
+ * Supports both URLs and colors as content types
  */
 export const createLinkSchema = z.object({
-  url: z.string().url("Invalid URL format").max(2000, "URL too long"),
+  url: z.string().max(2000, "Value too long"),
   // Title is optional - if not provided, server uses domain as placeholder
   // and metadata enrichment will set the real title
   title: z.string().max(500, "Title too long").optional(),
   content_type: z.enum(["url", "color"]).optional().default("url"),
   category_id: z.string().uuid("Invalid category ID").optional().nullable(),
-  color_value: z.string().regex(/^#[0-9A-F]{6}$/i, "Invalid color format").optional().nullable(),
+  color_value: z.string().max(100, "Color value too long").optional().nullable(),
   favicon_url: z.string().url("Invalid favicon URL").max(2000).optional().nullable(),
   og_image_url: z.string().url("Invalid image URL").max(2000).optional().nullable(),
   description: z.string().max(1000, "Description too long").optional().nullable(),
-});
+}).refine(
+  (data) => {
+    // For color content type, validate that url/color_value is a valid color
+    if (data.content_type === "color") {
+      return isValidColorValue(data.url) || (data.color_value && isValidColorValue(data.color_value));
+    }
+    // For URL content type, validate URL format
+    try {
+      new URL(data.url);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  {
+    message: "Invalid URL format or color value",
+    path: ["url"],
+  }
+);
 
 /**
  * Schema for updating a link
