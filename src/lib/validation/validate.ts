@@ -2,15 +2,15 @@ import { NextResponse } from "next/server";
 import { ZodSchema, ZodError } from "zod";
 
 /**
- * UUID v4 validation regex
+ * UUID validation regex
  */
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * Check if a string is a valid UUID v4
+ * Check if a string is a valid UUID
  * 
  * @param id - The string to validate
- * @returns true if the string is a valid UUID
+ * @returns true if the string is a syntactically valid UUID
  */
 export function isValidUUID(id: string): boolean {
   return UUID_REGEX.test(id);
