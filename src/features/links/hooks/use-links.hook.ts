@@ -81,6 +81,11 @@ export function useLinks(
         if (filters?.is_deleted === undefined) {
             params.append("is_deleted", "false");
         }
+        
+        // Default to non-archived links for the "all" view
+        if (filters?.is_archived === undefined && filters?.is_deleted !== true) {
+            params.append("is_archived", "false");
+        }
 
         // Search query for server-side filtering
         if (searchQuery.trim()) {
