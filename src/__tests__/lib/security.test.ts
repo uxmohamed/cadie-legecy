@@ -35,7 +35,7 @@ describe('XSS Prevention', () => {
       // Important: Consider adding protocol whitelist validation in a future update
     });
 
-    it('rejects URLs with javascript in path', () => {
+    it('accepts URLs with javascript in path as valid URLs', () => {
       // This is a valid URL, should be accepted but sanitized when displayed
       const result = detectContentType('https://example.com/javascript:alert(1)');
       expect(result.type).toBe('url');
