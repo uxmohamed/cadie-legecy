@@ -1,6 +1,7 @@
 import type { LinkMetadata, ExtractedMetadata, BatchMetadataOptions, FetchStatus } from "../types/link.types";
 import { extractMetadata } from "@/lib/metadata";
 import { log } from "@/lib/logger";
+import { createInternalHeaders } from "@/lib/internal-auth";
 
 /**
  * Default options for batch metadata fetching
@@ -131,12 +132,12 @@ export class MetadataService {
             try {
                 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
+                // SECURITY: Use cryptographically signed internal token instead of spoofable header
+                const headers = await createInternalHeaders({ linkId, action: 'enrich-metadata' });
+
                 const response = await fetch(`${baseUrl}/api/links/${linkId}/metadata`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Internal-Request': 'true'
-                    },
+                    headers,
                 });
 
                 if (response.ok) {
@@ -193,12 +194,12 @@ export class MetadataService {
 
             try {
                 // Update the link in the database via API
+                // SECURITY: Use cryptographically signed internal token
+                const headers = await createInternalHeaders({ linkId: link.id, action: 'batch-enrich' });
+                
                 const response = await fetch(`${baseUrl}/api/links/${link.id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Internal-Request': 'true'
-                    },
+                    method: 'PUT',
+                    headers,
                     body: JSON.stringify({
                         title: metadata.title,
                         favicon_url: metadata.favicon_url,

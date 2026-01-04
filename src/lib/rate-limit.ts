@@ -44,6 +44,54 @@ export const rateLimitMetadata = new Ratelimit({
 });
 
 /**
+ * Rate limiter for category operations
+ * Limit: 30 requests per minute
+ * Used for: /api/categories
+ */
+export const rateLimitCategories = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(30, "1 m"),
+  analytics: true,
+  prefix: "ratelimit:categories",
+});
+
+/**
+ * Rate limiter for account deletion (very strict)
+ * Limit: 3 requests per hour
+ * Used for: /api/auth/delete-account
+ */
+export const rateLimitAccountDeletion = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(3, "1 h"),
+  analytics: true,
+  prefix: "ratelimit:account-delete",
+});
+
+/**
+ * Rate limiter for extension authorization
+ * Limit: 10 requests per minute
+ * Used for: /api/extension/authorize
+ */
+export const rateLimitExtensionAuth = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(10, "1 m"),
+  analytics: true,
+  prefix: "ratelimit:extension-auth",
+});
+
+/**
+ * Rate limiter for permanent deletion operations (strict)
+ * Limit: 50 requests per minute
+ * Used for: /api/links/[id]/permanent
+ */
+export const rateLimitPermanentDelete = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(50, "1 m"),
+  analytics: true,
+  prefix: "ratelimit:permanent-delete",
+});
+
+/**
  * Helper to get identifier for rate limiting
  * Uses user ID if authenticated, otherwise IP address
  */

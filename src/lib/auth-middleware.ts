@@ -45,18 +45,16 @@ export async function authenticateRequest(
  */
 async function authenticateWithToken(token: string): Promise<string | null> {
   if (!token || token.length < 32) {
-    if (process.env.NODE_ENV === 'development') {
-      log.debug("[AUTH] Token validation failed", { reason: 'too_short_or_missing', length: token?.length || 0 });
-    }
+    // SECURITY: Don't log token details - could aid attackers
+    log.warn("[AUTH] Invalid token format");
     return null;
   }
 
   try {
     // Hash the token using SHA-256 (matching the hash we store)
     const tokenHash = await hashToken(token);
-    if (process.env.NODE_ENV === 'development') {
-      log.debug("[AUTH] Looking up token", { hashPrefix: tokenHash.substring(0, 16) });
-    }
+    
+    // SECURITY: Don't log hash prefix - could aid brute force attacks
     
     // Use service role to query api_tokens table
     // We need to use service role because RLS won't let us query without auth
@@ -74,26 +72,26 @@ async function authenticateWithToken(token: string): Promise<string | null> {
       .single();
 
     if (error || !tokenRecord) {
-      const reason = error?.code === 'PGRST116' ? 'token_not_found_or_expired' : 'query_error';
-      log.error("Token authentication failed", error, { found: false, reason });
-      if (process.env.NODE_ENV === 'development') {
-        log.debug("[AUTH] Token not found or expired", { reason });
-      }
+      // SECURITY: Log generic message only - don't reveal whether token exists
+      log.warn("[AUTH] Token authentication failed");
       return null;
     }
 
+    // SECURITY: Don't log userId in production - use structured audit logging instead
     if (process.env.NODE_ENV === 'development') {
-      log.debug("[AUTH] Token authenticated successfully", { userId: tokenRecord.user_id });
+      log.debug("[AUTH] Token authenticated successfully");
     }
 
     // Update last_used_at timestamp asynchronously (don't await)
-    updateTokenLastUsed(tokenRecord.id).catch((err) => {
-      log.error("Failed to update token last_used_at", err, { tokenId: tokenRecord.id });
+    updateTokenLastUsed(tokenRecord.id).catch(() => {
+      // SECURITY: Don't log token ID - use generic message
+      log.warn("[AUTH] Failed to update token last used timestamp");
     });
 
     return tokenRecord.user_id;
   } catch (error) {
-    log.error("Error during token authentication", error);
+    // SECURITY: Don't log error details that could reveal system internals
+    log.error("[AUTH] Token authentication error");
     return null;
   }
 }

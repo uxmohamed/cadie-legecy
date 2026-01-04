@@ -1,14 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimitCategories, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate limiting
+    const identifier = getIdentifier(request, user.id);
+    const { success, limit, reset, remaining } = await rateLimitCategories.limit(identifier);
+    
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429, headers: getRateLimitHeaders(limit, remaining, reset) }
+      );
     }
 
     // Get categories with link counts
@@ -70,6 +82,17 @@ export async function POST(request: NextRequest) {
     
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate limiting
+    const identifier = getIdentifier(request, user.id);
+    const { success, limit, reset, remaining } = await rateLimitCategories.limit(identifier);
+    
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429, headers: getRateLimitHeaders(limit, remaining, reset) }
+      );
     }
 
     interface CreateCategoryBody {

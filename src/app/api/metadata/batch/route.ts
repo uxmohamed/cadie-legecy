@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { extractMetadata } from "@/lib/metadata";
 import type { ExtractedMetadata, BatchMetadataOptions, FetchStatus } from "@/features/links/types/link.types";
+import { rateLimitMetadata, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 
+
+/**
+ * Maximum number of URLs per batch request
+ * Prevents resource exhaustion and ensures reasonable response times
+ */
+const MAX_BATCH_SIZE = 50;
 
 /**
  * Default options for batch metadata fetching
@@ -48,6 +55,20 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+        // Apply rate limiting to prevent abuse
+        const identifier = getIdentifier(request, user.id);
+        const { success: rateLimitSuccess, limit, reset, remaining } = await rateLimitMetadata.limit(identifier);
+        
+        if (!rateLimitSuccess) {
+            return NextResponse.json(
+                { error: "Too many requests. Please try again later." },
+                { 
+                    status: 429,
+                    headers: getRateLimitHeaders(limit, remaining, reset)
+                }
+            );
+        }
+
     interface BatchMetadataBody {
       urls: string[];
       options?: BatchMetadataOptions;
@@ -63,7 +84,17 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // No hard limit - we process all URLs in chunks with concurrency control
+        // SECURITY: Enforce batch size limit to prevent resource exhaustion
+        if (urls.length > MAX_BATCH_SIZE) {
+            return NextResponse.json(
+                { 
+                    error: `Batch size exceeds maximum of ${MAX_BATCH_SIZE} URLs`,
+                    maxBatchSize: MAX_BATCH_SIZE,
+                    requestedSize: urls.length
+                },
+                { status: 400 }
+            );
+        }
 
         const opts = { ...DEFAULT_OPTIONS, ...options };
         

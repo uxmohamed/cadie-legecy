@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { extractMetadata } from "@/lib/metadata";
+import { verifyInternalRequest } from "@/lib/internal-auth";
 
 
 interface RouteParams {
@@ -16,11 +17,10 @@ export async function POST(
   try {
     const { id } = await params;
     
-    // This is an internal endpoint for background processing
-    // Check if this is an internal request
-    const isInternal = request.headers.get('X-Internal-Request') === 'true';
+    // SECURITY: Verify this is a legitimate internal request using cryptographic token
+    const verification = await verifyInternalRequest(request);
     
-    if (!isInternal) {
+    if (!verification.isValid) {
       return NextResponse.json(
         { error: "This endpoint is for internal use only" },
         { status: 403 }

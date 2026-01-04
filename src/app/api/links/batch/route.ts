@@ -8,6 +8,12 @@ import { batchActionSchema } from "@/lib/validation/link.schemas";
 import { withRetry, supabaseRetryPredicate } from "@/lib/retry";
 
 /**
+ * Maximum number of items per batch operation
+ * Prevents resource exhaustion and ensures reasonable response times
+ */
+const MAX_BATCH_SIZE = 100;
+
+/**
  * Extract domain from URL
  */
 function extractDomain(url: string): string {
@@ -82,6 +88,29 @@ export async function POST(request: NextRequest) {
     }
 
     const { action, ids, links } = validatedData;
+
+    // SECURITY: Enforce batch size limits to prevent resource exhaustion
+    if (ids && ids.length > MAX_BATCH_SIZE) {
+      return NextResponse.json(
+        { 
+          error: `Batch size exceeds maximum of ${MAX_BATCH_SIZE} items`,
+          maxBatchSize: MAX_BATCH_SIZE,
+          requestedSize: ids.length
+        },
+        { status: 400 }
+      );
+    }
+    
+    if (links && links.length > MAX_BATCH_SIZE) {
+      return NextResponse.json(
+        { 
+          error: `Batch size exceeds maximum of ${MAX_BATCH_SIZE} items`,
+          maxBatchSize: MAX_BATCH_SIZE,
+          requestedSize: links.length
+        },
+        { status: 400 }
+      );
+    }
 
     let result;
 

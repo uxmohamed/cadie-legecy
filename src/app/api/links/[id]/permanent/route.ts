@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimitPermanentDelete, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
+import { validateUUID } from "@/lib/validation/validate";
 
 
 /**
@@ -19,11 +21,19 @@ export async function DELETE(
     }
 
     const { id } = await params;
+    
+    // UUID validation
+    const uuidError = validateUUID(id, "Link ID");
+    if (uuidError) return uuidError;
 
-    if (!id) {
+    // Rate limiting for permanent deletion
+    const identifier = getIdentifier(request, user.id);
+    const { success, limit, reset, remaining } = await rateLimitPermanentDelete.limit(identifier);
+    
+    if (!success) {
       return NextResponse.json(
-        { error: "Link ID is required" },
-        { status: 400 }
+        { error: "Too many deletion attempts. Please try again later." },
+        { status: 429, headers: getRateLimitHeaders(limit, remaining, reset) }
       );
     }
 

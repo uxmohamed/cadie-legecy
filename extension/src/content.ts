@@ -138,11 +138,20 @@ function hideOverlay() {
 // Track if we've already processed auth to prevent duplicates
 let authProcessed = false;
 
+// Allowed origins for receiving auth messages
+const ALLOWED_AUTH_ORIGINS = [
+  "https://cadie.app",
+  "https://www.cadie.app",
+];
+
 // Listen for authorization success via postMessage (works across isolated worlds)
-// Only process on cadie.app to prevent localhost from capturing auth
+// SECURITY: Strict origin validation to prevent token theft
 window.addEventListener("message", (event: MessageEvent) => {
   // Only accept messages from the same window
   if (event.source !== window) return;
+  
+  // SECURITY: Validate origin strictly - only accept from cadie.app
+  if (!ALLOWED_AUTH_ORIGINS.includes(event.origin)) return;
   
   // Only process auth messages on cadie.app domain
   if (!window.location.hostname.includes("cadie.app")) return;

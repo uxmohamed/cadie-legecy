@@ -4,6 +4,22 @@ import { log } from "@/lib/logger";
 
 
 /**
+ * Timing-safe string comparison to prevent timing attacks
+ * Uses constant-time comparison to avoid leaking information about the secret
+ */
+function timingSafeEqual(a: string, b: string): boolean {
+  const len = Math.max(a.length, b.length);
+  // Start result with the XOR of lengths so differing lengths will never be equal
+  let result = a.length ^ b.length;
+  for (let i = 0; i < len; i++) {
+    const ca = i < a.length ? a.charCodeAt(i) : 0;
+    const cb = i < b.length ? b.charCodeAt(i) : 0;
+    result |= ca ^ cb;
+  }
+  return result === 0;
+}
+
+/**
  * GET /api/cron/cleanup-trash
  * Scheduled job to clean up expired trash items (deleted > 60 days ago)
  * 
@@ -13,13 +29,12 @@ import { log } from "@/lib/logger";
 export async function GET(request: NextRequest) {
   try {
     // Verify cron secret to prevent unauthorized access
-    const authHeader = request.headers.get("authorization");
-    const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
+    const authHeader = request.headers.get("authorization") || "";
+    const expectedAuth = `Bearer ${process.env.CRON_SECRET || ""}`;
     
-    if (authHeader !== expectedAuth) {
-      log.warn("Unauthorized cron access attempt", { 
-        ip: request.headers.get("x-forwarded-for") 
-      });
+    // SECURITY: Use timing-safe comparison to prevent timing attacks
+    if (!process.env.CRON_SECRET || !timingSafeEqual(authHeader, expectedAuth)) {
+      log.warn("Unauthorized cron access attempt");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
