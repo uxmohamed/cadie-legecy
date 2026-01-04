@@ -216,13 +216,13 @@ describe('Input Sanitization', () => {
 });
 
 // =============================================================================
-// Rate Limiting Protection Tests
+// Batch Size Validation Tests
 // =============================================================================
 
-describe('Rate Limiting Protection', () => {
-  describe('batch size limits', () => {
-    it('handles large batch requests', () => {
-      // Create 100 valid UUIDs
+describe('Batch Size Validation', () => {
+  describe('schema acceptance of large batches', () => {
+    it('accepts batch requests with 100 valid UUIDs', () => {
+      // Create 100 valid UUIDs to test schema can handle large batches
       const ids = Array.from({ length: 100 }, (_, i) => 
         `550e8400-e29b-41d4-a716-4466554400${i.toString().padStart(2, '0')}`
       );
