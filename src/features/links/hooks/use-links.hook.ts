@@ -75,6 +75,7 @@ export function useLinks(
         const params = new URLSearchParams();
         if (filters?.category_id) params.append("category_id", filters.category_id);
         if (filters?.is_deleted !== undefined) params.append("is_deleted", String(filters.is_deleted));
+        if (filters?.is_archived !== undefined) params.append("is_archived", String(filters.is_archived));
 
         // Default to active links if no specific view is requested
         if (filters?.is_deleted === undefined) {

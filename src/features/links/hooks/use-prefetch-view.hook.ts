@@ -17,9 +17,17 @@ const PREFETCH_DELAY_MS = 3000;
  * Build the SWR cache key for a given view
  * Must match the pattern in use-links.hook.ts buildQueryString
  */
-function buildCacheKey(isDeleted: boolean, userId: string): string {
+function buildCacheKey(view: "all" | "trash", userId: string): string {
   const params = new URLSearchParams();
-  params.append("is_deleted", String(isDeleted));
+  
+  if (view === "trash") {
+    params.append("is_deleted", "true");
+  } else {
+    // "all" view: is_deleted=false and is_archived=false
+    params.append("is_deleted", "false");
+    params.append("is_archived", "false");
+  }
+  
   params.append("limit", String(PAGE_SIZE));
   params.append("offset", "0");
   return `/api/links?${params.toString()}#user=${userId}`;
@@ -61,8 +69,7 @@ export function usePrefetchView(
       return;
     }
 
-    const prefetchDeleted = targetView === "trash";
-    const cacheKey = buildCacheKey(prefetchDeleted, userId);
+    const cacheKey = buildCacheKey(targetView, userId);
 
     // Schedule prefetch after delay
     const timeoutId = setTimeout(() => {
