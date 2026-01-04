@@ -8,20 +8,13 @@ import { log } from "@/lib/logger";
  * Uses constant-time comparison to avoid leaking information about the secret
  */
 function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    // Still do a comparison to maintain constant time
-    // but we know it's going to fail
-    const dummy = "x".repeat(a.length);
-    let result = 0;
-    for (let i = 0; i < a.length; i++) {
-      result |= a.charCodeAt(i) ^ dummy.charCodeAt(i);
-    }
-    return false;
-  }
-  
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  const len = Math.max(a.length, b.length);
+  // Start result with the XOR of lengths so differing lengths will never be equal
+  let result = a.length ^ b.length;
+  for (let i = 0; i < len; i++) {
+    const ca = i < a.length ? a.charCodeAt(i) : 0;
+    const cb = i < b.length ? b.charCodeAt(i) : 0;
+    result |= ca ^ cb;
   }
   return result === 0;
 }
