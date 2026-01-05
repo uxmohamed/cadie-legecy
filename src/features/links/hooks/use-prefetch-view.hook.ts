@@ -1,108 +1,69 @@
 "use client";
 
 import * as React from "react";
-import { preload } from "swr";
+import { mutate } from "swr";
+import { buildLinksCacheKey } from "./use-links.hook";
+import type { LinkFilters } from "@/features/links/types";
 
-/**
- * Page size must match use-links.hook.ts
- */
-const PAGE_SIZE = 100;
+const PREFETCH_PAGE_SIZE = 50;
+const PREFETCH_DELAY_MS = 2000;
 
-/**
- * Delay before prefetching to avoid competing with initial render
- */
-const PREFETCH_DELAY_MS = 3000;
-
-/**
- * Timeout for requestIdleCallback to ensure prefetch runs even during heavy load
- * Set to 5 seconds (2 seconds after PREFETCH_DELAY_MS) to guarantee execution
- * while still allowing the browser to find an idle period during light load
- */
-const IDLE_CALLBACK_TIMEOUT_MS = 5000;
-
-/**
- * Build the SWR cache key for a given view
- * Must match the pattern in use-links.hook.ts buildQueryString
- * 
- * @param view - The view to prefetch: "all" (active, non-archived links) or "trash" (deleted links)
- * @param userId - User ID for cache isolation
- */
-function buildCacheKey(view: "all" | "trash", userId: string): string {
-  const params = new URLSearchParams();
-  
-  if (view === "trash") {
-    params.append("is_deleted", "true");
-  } else {
-    // "all" view: is_deleted=false and is_archived=false
-    params.append("is_deleted", "false");
-    params.append("is_archived", "false");
-  }
-  
-  params.append("limit", String(PAGE_SIZE));
-  params.append("offset", "0");
-  return `/api/links?${params.toString()}#user=${userId}`;
-}
-
-/**
- * Fetcher function (same as use-links.hook.ts)
- */
-async function fetcher<T>(url: string): Promise<T> {
-  const fetchUrl = url.split('#')[0];
-  const response = await fetch(fetchUrl);
-  if (!response.ok) {
-    throw new Error("Failed to prefetch");
-  }
-  return response.json();
-}
-
-/**
- * Hook to prefetch the opposite view's data after initial render
- * 
- * - Waits 3 seconds after mount to avoid blocking initial load
- * - Uses requestIdleCallback for lowest priority
- * - Only prefetches once per mount
- * - Populates SWR cache so view switches are instant
- */
 export function usePrefetchView(
-  currentView: "all" | "trash",
-  userId: string | undefined
-): void {
-  const prefetchedViews = React.useRef<Set<"all" | "trash">>(new Set());
+    currentView: "all" | "trash",
+    userId: string | undefined
+) {
+    const hasPrefetchedRef = React.useRef(false);
 
-  React.useEffect(() => {
-    // Determine which view to prefetch (opposite of current)
-    const targetView: "all" | "trash" = currentView === "all" ? "trash" : "all";
+    React.useEffect(() => {
+        if (!userId || hasPrefetchedRef.current) return;
+        if (typeof window === "undefined") return;
 
-    // Skip if this target view has already been prefetched or no userId
-    if (prefetchedViews.current.has(targetView) || !userId) {
-      return;
-    }
+        const prefetch = async () => {
+            const oppositeFilters: LinkFilters =
+                currentView === "trash"
+                    ? { is_deleted: false, is_archived: false }
+                    : { is_deleted: true };
 
-    const cacheKey = buildCacheKey(targetView, userId);
+            const cacheKey = buildLinksCacheKey(
+                userId,
+                oppositeFilters,
+                "",
+                0,
+                PREFETCH_PAGE_SIZE
+            );
+            if (!cacheKey) return;
 
-    // Schedule prefetch after delay
-    const timeoutId = setTimeout(() => {
-      // Use requestIdleCallback if available for lowest priority
-      const runPrefetch = () => {
-        prefetchedViews.current.add(targetView);
+            try {
+                const fetchUrl = cacheKey.split("#")[0];
+                const response = await fetch(fetchUrl);
+                if (!response.ok) return;
 
-        // Use SWR's preload API to populate cache
-        // This ensures the data is available when useSWRInfinite runs
-        preload(cacheKey, fetcher).catch(() => {
-          // Silently fail - prefetch is best-effort
-          // User will just see loading state if they switch views
-        });
-      };
+                const data = await response.json();
+                mutate(cacheKey, [data], { revalidate: false });
+            } catch {
+                // Prefetch is best-effort only
+            } finally {
+                hasPrefetchedRef.current = true;
+            }
+        };
 
-      if (typeof requestIdleCallback !== "undefined") {
-        requestIdleCallback(runPrefetch, { timeout: IDLE_CALLBACK_TIMEOUT_MS });
-      } else {
-        runPrefetch();
-      }
-    }, PREFETCH_DELAY_MS);
+        const scheduleId = window.setTimeout(() => {
+            const maybeIdleCallback = (window as typeof window & {
+                requestIdleCallback?: (cb: () => void, opts?: { timeout?: number }) => number;
+            }).requestIdleCallback;
 
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, [currentView, userId]);
+            if (maybeIdleCallback) {
+                maybeIdleCallback(() => {
+                    void prefetch();
+                }, { timeout: 5000 });
+            } else {
+                void prefetch();
+            }
+        }, PREFETCH_DELAY_MS);
+
+        return () => {
+            window.clearTimeout(scheduleId);
+        };
+    }, [currentView, userId]);
 }
+

@@ -59,15 +59,15 @@ export function DashboardContent({
   initialLinks,
 }: DashboardContentProps) {
 
+  const currentView: "all" | "trash" =
+    selectedCategoryId === "trash" ? "trash" : "all";
+
+  usePrefetchView(currentView, user.id);
+
   const filters = React.useMemo(() => {
     if (selectedCategoryId === "trash") return { is_deleted: true };
     return { is_archived: false };
   }, [selectedCategoryId]);
-
-  // Prefetch the opposite view's data in background after initial load
-  // This makes view switching instant (shortcut or dock)
-  const currentView = selectedCategoryId === "trash" ? "trash" : "all";
-  usePrefetchView(currentView, user.id);
 
   // Debounce the search query to avoid too many API requests
   const [debouncedSearchQuery, setDebouncedSearchQuery] = React.useState(searchQuery);
