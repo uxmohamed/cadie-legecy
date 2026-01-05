@@ -75,6 +75,7 @@ export function DashboardShell({
   const { registerShortcut, unregisterShortcut } = useShortcuts();
 
   const isTrashView = selectedCategoryId === "trash";
+  const selectedSpace = spaces?.find(s => s.id === selectedCategoryId);
 
   // Update URL immediately using history API (no navigation, instant URL update)
   const updateUrl = React.useCallback((value: string) => {
@@ -252,9 +253,9 @@ export function DashboardShell({
               <div className="flex items-center gap-2">
                 <button
                   className="not-italic text-lg sm:text-[22px] font-[570] leading-tight sm:leading-[32px] tracking-[-0.16px] text-[var(--text-primary)] hover:text-[var(--text-primary)] truncate"
-                  aria-label={isTrashView ? "Trash" : "All Items"}
+                  aria-label={isTrashView ? "Trash" : selectedSpace?.name || "All Items"}
                 >
-                  {isTrashView ? "Trash" : "All Items"}
+                  {isTrashView ? "Trash" : selectedSpace?.name || "All Items"}
                 </button>
                 {isTrashView && (
                   <Badge variant="secondary" className="bg-[var(--bg-field-light)] px-2 py-0.75 text-[var(--text-tertiary)] rounded-full">

@@ -40,8 +40,10 @@ export function DashboardClient({ user, initialView = null, initialLinks }: Dash
   
   // Determine view from URL path or initialView prop
   const isTrashRoute = pathname === "/trash" || initialView === "trash";
+  const isSpaceRoute = pathname.startsWith("/spaces/");
+  const spaceIdFromPath = isSpaceRoute ? pathname.split("/spaces/")[1] : null;
   const [selectedCategoryId, setSelectedCategoryId] = React.useState<string | null>(
-    isTrashRoute ? "trash" : null
+    isTrashRoute ? "trash" : (initialView || spaceIdFromPath || null)
   );
   
   const [sortBy, setSortBy] = React.useState<"date" | "title">("date");
@@ -71,6 +73,13 @@ export function DashboardClient({ user, initialView = null, initialLinks }: Dash
       setSelectedCategoryId("trash");
     } else if (pathname === "/") {
       setSelectedCategoryId(null);
+    } else if (pathname.startsWith("/spaces/")) {
+      const spaceId = pathname.split("/spaces/")[1];
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(spaceId)) {
+        setSelectedCategoryId(spaceId);
+      }
     }
   }, [pathname]);
 
@@ -143,28 +152,28 @@ export function DashboardClient({ user, initialView = null, initialLinks }: Dash
 
   // Handle view change with non-blocking navigation
   const handleViewChange = React.useCallback((categoryId: string | null) => {
-    // Space IDs are UUIDs, not routes
-    if (categoryId && categoryId !== "trash" && !categoryId.startsWith("/")) {
-      setSelectedCategoryId(categoryId);
-      return;
-    }
+    let targetPath: string;
     
-    const targetPath = categoryId === "trash" ? "/trash" : "/";
-    
-    // Update URL without blocking (client-side only)
-    if (typeof window !== "undefined") {
-      window.history.pushState({}, "", targetPath);
+    if (categoryId === "trash") {
+      targetPath = "/trash";
+    } else if (categoryId && categoryId !== "trash") {
+      // Space ID - navigate to /spaces/[id]
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(categoryId)) {
+        targetPath = `/spaces/${categoryId}`;
+      } else {
+        // Fallback to home if invalid
+        targetPath = "/";
+      }
+    } else {
+      targetPath = "/";
     }
     
     // Update state immediately for instant UI switch
     setSelectedCategoryId(categoryId);
     
-    // Sync with Next.js router in background (for proper route handling)
-    if (targetPath === "/trash") {
-      router.push("/trash");
-    } else {
-      router.push("/");
-    }
+    // Navigate to the target path
+    router.push(targetPath);
   }, [router]);
   
   const handleCreateSpace = React.useCallback(() => {
