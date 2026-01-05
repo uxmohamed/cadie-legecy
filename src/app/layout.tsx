@@ -61,9 +61,6 @@ export const metadata: Metadata = {
 
 import { ShortcutProvider } from "@/components/shortcut-context";
 import { ShortcutsHelpModal } from "@/components/shortcuts-help-modal";
-import { SWRCacheProvider } from "@/lib/swr-cache-provider";
-
-// ... imports
 
 export default function RootLayout({
   children,
@@ -78,12 +75,10 @@ export default function RootLayout({
             <PostHogPageView />
           </Suspense>
           <ErrorBoundary>
-            <SWRCacheProvider>
-              <ShortcutProvider>
-                {children}
-                <ShortcutsHelpModal />
-              </ShortcutProvider>
-            </SWRCacheProvider>
+            <ShortcutProvider>
+              {children}
+              <ShortcutsHelpModal />
+            </ShortcutProvider>
           </ErrorBoundary>
           <ToasterProvider />
         </ThemeProvider>

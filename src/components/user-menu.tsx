@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { createClient } from "@/lib/supabase/client";
-import { clearSWRCache } from "@/lib/swr-cache-provider";
+import { clearLinksStore } from "@/features/links/store/links-store";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import { useShortcuts } from "@/components/shortcut-context";
@@ -54,8 +54,8 @@ export function UserMenu({ user }: UserMenuProps) {
     try {
       setIsSigningOut(true);
       
-      // Clear SWR cache before signing out to prevent data leakage between accounts
-      clearSWRCache();
+      // Clear links store before signing out to prevent data leakage between accounts
+      clearLinksStore();
       
       const supabase = createClient();
       const { error } = await supabase.auth.signOut();
