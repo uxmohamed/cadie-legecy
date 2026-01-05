@@ -26,7 +26,7 @@ interface InitialLinksData {
 
 interface DashboardClientProps {
   user: User;
-  initialView?: "trash" | null;
+  initialView?: "trash" | string | null; // "trash" for trash view, string for space ID, null for all items
   /** Server-side prefetched links for instant render */
   initialLinks?: InitialLinksData;
 }
