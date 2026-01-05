@@ -31,10 +31,6 @@ async function fetcher<T>(url: string): Promise<T> {
 function buildQueryString(filters?: LinkFilters): string {
     const params = new URLSearchParams();
 
-    if (filters?.category_id) {
-        params.append("category_id", filters.category_id);
-    }
-
     if (filters?.is_deleted !== undefined) {
         params.append("is_deleted", String(filters.is_deleted));
     } else {

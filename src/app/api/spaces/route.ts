@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     // Add counts to spaces
     const spacesWithCounts = spaces?.map((space) => ({
       ...space,
-      count: counts[space.id] || 0,
+      link_count: counts[space.id] || 0,
     }));
 
     return NextResponse.json({ spaces: spacesWithCounts });
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ space: { ...data, count: 0 } }, { status: 201 });
+    return NextResponse.json({ space: { ...data, link_count: 0 } }, { status: 201 });
   } catch (error) {
     console.error("Error creating space:", error);
     return NextResponse.json(

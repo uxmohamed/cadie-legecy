@@ -1,12 +1,12 @@
 "use client";
 
 import * as React from "react";
-import type { Category } from "@/types";
+import type { Space } from "@/types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 interface SidebarProps {
-  categories: Category[];
+  categories: Space[]; // Using Space type instead of Category
   selectedCategoryId: string | null;
   onCategorySelect: (categoryId: string | null) => void;
 }
@@ -152,7 +152,7 @@ export function Sidebar({
                   </svg>
                 )}
                 <span className="text-xs text-[var(--text-tertiary)]">
-                  {category.count}
+                  {category.link_count || 0}
                 </span>
               </div>
             </Button>
