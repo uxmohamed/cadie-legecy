@@ -4,9 +4,14 @@ import type { Link } from "@/features/links/types";
 import {
   MenuItem,
   MenuSeparator,
+  MenuSub,
+  MenuSubTrigger,
+  MenuSubPopup,
+  MenuCheckboxItem,
 } from "@/components/ui/menu";
 import { Kbd } from "@/components/ui/kbd";
-import { IconCopy, IconEdit, IconPin, IconPinnedOff, IconTrash, IconRestore, IconExternalLink, IconPencil } from "@tabler/icons-react";
+import { IconCopy, IconEdit, IconPin, IconPinnedOff, IconTrash, IconRestore, IconExternalLink, IconPencil, IconCapsuleHorizontalFilled } from "@tabler/icons-react";
+import type { Space } from "@/types";
 
 interface LinkContextMenuProps {
   link: Link;
@@ -27,6 +32,10 @@ interface LinkContextMenuProps {
   onBatchDelete?: () => void;
   onBatchRestore?: () => void;
   onBatchPermanentDelete?: () => void;
+  spaces?: Space[];
+  linkSpaces?: string[]; // Array of space IDs this link belongs to
+  onAddToSpace?: (linkId: string, spaceId: string) => Promise<void>;
+  onRemoveFromSpace?: (linkId: string, spaceId: string) => Promise<void>;
 }
 
 export function LinkContextMenu({
@@ -48,6 +57,10 @@ export function LinkContextMenu({
   onBatchDelete,
   onBatchRestore,
   onBatchPermanentDelete,
+  spaces = [],
+  linkSpaces = [],
+  onAddToSpace,
+  onRemoveFromSpace,
 }: LinkContextMenuProps) {
   const isMultiSelect = selectedCount > 1;
   const isLinkSelected = selectedIds?.has(link.id);
@@ -180,6 +193,44 @@ export function LinkContextMenu({
             Pin
           </MenuItem>
         )
+      )}
+
+      {spaces.length > 0 && (onAddToSpace || onRemoveFromSpace) && (
+        <>
+          <MenuSeparator />
+          <MenuSub>
+            <MenuSubTrigger>
+              <IconCapsuleHorizontalFilled className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+              Move to Space
+            </MenuSubTrigger>
+            <MenuSubPopup>
+              {spaces.map((space) => {
+                const isInSpace = linkSpaces.includes(space.id);
+                return (
+                  <MenuCheckboxItem
+                    key={space.id}
+                    checked={isInSpace}
+                    onCheckedChange={async (checked) => {
+                      if (checked && onAddToSpace) {
+                        await onAddToSpace(link.id, space.id);
+                      } else if (!checked && onRemoveFromSpace) {
+                        await onRemoveFromSpace(link.id, space.id);
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <IconCapsuleHorizontalFilled 
+                        className="h-3 w-3" 
+                        style={{ color: space.color }}
+                      />
+                      <span>{space.name}</span>
+                    </div>
+                  </MenuCheckboxItem>
+                );
+              })}
+            </MenuSubPopup>
+          </MenuSub>
+        </>
       )}
 
       <MenuSeparator />

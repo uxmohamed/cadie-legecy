@@ -16,7 +16,6 @@ export interface Link {
     title: string;
     domain: string;
     content_type: ContentType;
-    category_id: string | null;
     color_value: string | null;
     favicon_url: string | null;
     og_image_url: string | null;
@@ -62,7 +61,6 @@ export interface CreateLinkDTO {
     url: string;
     title?: string;  // Optional - server uses domain as placeholder if not provided
     content_type?: ContentType;
-    category_id?: string | null;
     color_value?: string | null;
     favicon_url?: string | null;
     og_image_url?: string | null;
@@ -76,7 +74,6 @@ export interface UpdateLinkDTO {
     url?: string;
     title?: string;
     content_type?: ContentType;
-    category_id?: string | null;
     color_value?: string | null;
     favicon_url?: string | null;
     og_image_url?: string | null;
@@ -91,7 +88,7 @@ export interface UpdateLinkDTO {
  * Filters for querying links
  */
 export interface LinkFilters {
-    category_id?: string;
+    space_id?: string;
     is_archived?: boolean;
     is_deleted?: boolean;
     is_pinned?: boolean;

@@ -10,8 +10,11 @@ import { LinkListSkeleton } from "@/components/skeletons";
 import { OnboardingFlow } from "@/components/onboarding";
 import { useLinksStore } from "@/features/links/store/links-store";
 import { useRealtimeSync } from "@/features/links/hooks/use-realtime-sync.hook";
+import { useSpaces } from "@/hooks/use-spaces";
+import { SpaceModal } from "@/components/spaces/space-modal";
 import type { User } from "@supabase/supabase-js";
 import type { Link } from "@/features/links/types";
+import type { Space } from "@/types";
 
 /**
  * Initial data structure for server-side prefetched links
@@ -56,6 +59,11 @@ export function DashboardClient({ user, initialView = null, initialLinks }: Dash
     onBatchPin: (ids: string[]) => void;
     onBatchUnpin: (ids: string[]) => void;
   } | null>(null);
+  
+  // Spaces management
+  const { spaces, createSpace, updateSpace, deleteSpace } = useSpaces(!!user);
+  const [spaceModalOpen, setSpaceModalOpen] = React.useState(false);
+  const [editingSpace, setEditingSpace] = React.useState<Space | null>(null);
   
   // Sync selectedCategoryId with URL path changes
   React.useEffect(() => {
@@ -135,6 +143,12 @@ export function DashboardClient({ user, initialView = null, initialLinks }: Dash
 
   // Handle view change with non-blocking navigation
   const handleViewChange = React.useCallback((categoryId: string | null) => {
+    // Space IDs are UUIDs, not routes
+    if (categoryId && categoryId !== "trash" && !categoryId.startsWith("/")) {
+      setSelectedCategoryId(categoryId);
+      return;
+    }
+    
     const targetPath = categoryId === "trash" ? "/trash" : "/";
     
     // Update URL without blocking (client-side only)
@@ -152,6 +166,27 @@ export function DashboardClient({ user, initialView = null, initialLinks }: Dash
       router.push("/");
     }
   }, [router]);
+  
+  const handleCreateSpace = React.useCallback(() => {
+    setEditingSpace(null);
+    setSpaceModalOpen(true);
+  }, []);
+  
+  const handleSaveSpace = React.useCallback(async (name: string, color: string) => {
+    if (editingSpace) {
+      await updateSpace(editingSpace.id, { name, color });
+    } else {
+      await createSpace(name, color);
+    }
+  }, [editingSpace, createSpace, updateSpace]);
+  
+  const handleDeleteSpace = React.useCallback(async (id: string) => {
+    await deleteSpace(id);
+    // If deleted space was selected, switch to all items
+    if (selectedCategoryId === id) {
+      handleViewChange(null);
+    }
+  }, [deleteSpace, selectedCategoryId, handleViewChange]);
 
   // Check onboarding status on mount
   React.useEffect(() => {
@@ -186,10 +221,13 @@ export function DashboardClient({ user, initialView = null, initialLinks }: Dash
   }
 
   return (
-    <DashboardShell
-      user={user}
-      selectedCategoryId={selectedCategoryId}
-      onViewChange={handleViewChange}
+    <>
+      <DashboardShell
+        user={user}
+        selectedCategoryId={selectedCategoryId}
+        onViewChange={handleViewChange}
+        spaces={spaces}
+        onCreateSpace={handleCreateSpace}
       sortBy={sortBy}
       sortOrder={sortOrder}
       onSortChange={handleSortChange}
@@ -270,5 +308,14 @@ export function DashboardClient({ user, initialView = null, initialLinks }: Dash
         />
       </Suspense>
     </DashboardShell>
+    
+    <SpaceModal
+      open={spaceModalOpen}
+      onOpenChange={setSpaceModalOpen}
+      space={editingSpace}
+      onSave={handleSaveSpace}
+      onDelete={editingSpace ? handleDeleteSpace : undefined}
+    />
+    </>
   );
 }

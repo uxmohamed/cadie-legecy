@@ -56,7 +56,6 @@ export const createLinkSchema = z.object({
   // and metadata enrichment will set the real title
   title: z.string().max(500, "Title too long").optional(),
   content_type: z.enum(["url", "color"]).optional().default("url"),
-  category_id: z.string().uuid("Invalid category ID").optional().nullable(),
   color_value: z.string().max(100, "Color value too long").optional().nullable(),
   favicon_url: z.string().url("Invalid favicon URL").max(2000).optional().nullable(),
   og_image_url: z.string().url("Invalid image URL").max(2000).optional().nullable(),
@@ -86,7 +85,6 @@ export const createLinkSchema = z.object({
  */
 export const updateLinkSchema = z.object({
   title: z.string().min(1, "Title cannot be empty").max(500, "Title too long").optional(),
-  category_id: z.string().uuid("Invalid category ID").optional().nullable(),
   is_pinned: z.boolean().optional(),
   is_archived: z.boolean().optional(),
   description: z.string().max(1000, "Description too long").optional().nullable(),

@@ -18,6 +18,8 @@ import {
 import { ChevronUpDown } from "@/components/icons/chevron-up-down";
 import { SelectionToolbar } from "@/components/link-list/selection-toolbar";
 import type { Link } from "@/features/links/types";
+import type { Space } from "@/types";
+import { IconPlus } from "@tabler/icons-react";
 
 interface DockProps {
   selectedCategoryId?: string | null;
@@ -32,6 +34,8 @@ interface DockProps {
   onBatchUnpin?: () => void;
   selectedLinks?: Link[];
   isTrashView?: boolean;
+  spaces?: Space[];
+  onCreateSpace?: () => void;
 }
 
 export function Dock({
@@ -47,6 +51,8 @@ export function Dock({
   onBatchUnpin,
   selectedLinks = [],
   isTrashView = false,
+  spaces = [],
+  onCreateSpace,
 }: DockProps) {
   const [viewPopoverOpen, setViewPopoverOpen] = React.useState(false);
   const [navWidth, setNavWidth] = React.useState<number | null>(null);
@@ -64,6 +70,7 @@ export function Dock({
 
   const isAllItemsSelected = selectedCategoryId === null;
   const isTrashSelected = selectedCategoryId === "trash";
+  const selectedSpace = spaces.find(s => s.id === selectedCategoryId);
   const hasSelection = selectedCount >= 2;
 
   // Track animation direction
@@ -182,10 +189,13 @@ export function Dock({
                         {isTrashSelected ? (
                           <IconTrashFilled className="h-[18px] w-[18px] text-[var(--accent-red-primary)]" />
                         ) : (
-                          <IconCapsuleHorizontalFilled className="h-[18px] w-[18px] text-[var(--overlay-text-secondary)]" />
+                          <IconCapsuleHorizontalFilled 
+                            className="h-[18px] w-[18px]" 
+                            style={{ color: selectedSpace?.color || "var(--overlay-text-secondary)" }}
+                          />
                         )}
                         <span className="text-sm font-[470]">
-                          {isTrashSelected ? "Trash" : "All items"}
+                          {isTrashSelected ? "Trash" : selectedSpace?.name || "All items"}
                         </span>
                         <ChevronUpDown className="w-[15px] h-[15px]" />
                       </Button>
@@ -220,6 +230,39 @@ export function Dock({
                         </Kbd>
                       )}
                     </button>
+                    
+                    {/* Spaces list */}
+                    {spaces.length > 0 && (
+                      <>
+                        <div className="h-px bg-[var(--overlay-border)] my-1" />
+                        {spaces.map((space) => {
+                          const isSelected = selectedCategoryId === space.id;
+                          return (
+                            <button
+                              key={space.id}
+                              onClick={() => handleViewChange(space.id)}
+                              className={`relative flex w-full cursor-pointer select-none items-center justify-between rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] ${
+                                isSelected ? "bg-[var(--bg-selected)]" : ""
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5">
+                                <IconCapsuleHorizontalFilled 
+                                  className="h-4 w-4" 
+                                  style={{ color: space.color }}
+                                />
+                                <span>{space.name}</span>
+                              </div>
+                              {isSelected ? (
+                                <IconCircleCheckFilled className="h-5 w-5 text-white" />
+                              ) : null}
+                            </button>
+                          );
+                        })}
+                      </>
+                    )}
+                    
+                    <div className="h-px bg-[var(--overlay-border)] my-1" />
+                    
                     <button
                       onClick={() => handleViewChange("trash")}
                       className={`relative flex w-full cursor-pointer select-none items-center justify-between rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] ${
@@ -238,6 +281,25 @@ export function Dock({
                         </Kbd>
                       )}
                     </button>
+                    
+                    {/* New Space button */}
+                    {onCreateSpace && (
+                      <>
+                        <div className="h-px bg-[var(--overlay-border)] my-1" />
+                        <button
+                          onClick={() => {
+                            onCreateSpace();
+                            setViewPopoverOpen(false);
+                          }}
+                          className="relative flex w-full cursor-pointer select-none items-center justify-center rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)]"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <IconPlus className="h-4 w-4" />
+                            <span>New Space</span>
+                          </div>
+                        </button>
+                      </>
+                    )}
                   </div>
                 </PopoverPopup>
               </Popover>

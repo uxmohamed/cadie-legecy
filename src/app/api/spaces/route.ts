@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { rateLimitCategories, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
-
+import { rateLimitSpaces, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     // Rate limiting
     const identifier = getIdentifier(request, user.id);
-    const { success, limit, reset, remaining } = await rateLimitCategories.limit(identifier);
+    const { success, limit, reset, remaining } = await rateLimitSpaces.limit(identifier);
     
     if (!success) {
       return NextResponse.json(
@@ -23,51 +22,48 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get categories with link counts
-    const { data: categories, error: categoriesError } = await supabase
-      .from("categories")
+    // Get spaces with link counts
+    const { data: spaces, error: spacesError } = await supabase
+      .from("spaces")
       .select("*")
       .eq("user_id", user.id)
       .order("sort_order", { ascending: true });
 
-    if (categoriesError) {
+    if (spacesError) {
       return NextResponse.json(
-        { error: categoriesError.message },
+        { error: spacesError.message },
         { status: 500 }
       );
     }
 
-    // Get link counts for each category
-    const { data: linkCounts, error: countsError } = await supabase
-      .from("links")
-      .select("category_id")
-      .eq("user_id", user.id)
-      .eq("is_archived", false);
+    // Get link counts for each space
+    const { data: linkSpaces, error: linkSpacesError } = await supabase
+      .from("link_spaces")
+      .select("space_id")
+      .in("space_id", spaces?.map(s => s.id) || []);
 
-    if (countsError) {
+    if (linkSpacesError) {
       return NextResponse.json(
-        { error: countsError.message },
+        { error: linkSpacesError.message },
         { status: 500 }
       );
     }
 
-    // Count links per category
+    // Count links per space
     const counts: Record<string, number> = {};
-    linkCounts?.forEach((link) => {
-      if (link.category_id) {
-        counts[link.category_id] = (counts[link.category_id] || 0) + 1;
-      }
+    linkSpaces?.forEach((ls) => {
+      counts[ls.space_id] = (counts[ls.space_id] || 0) + 1;
     });
 
-    // Add counts to categories
-    const categoriesWithCounts = categories?.map((cat) => ({
-      ...cat,
-      count: counts[cat.id] || 0,
+    // Add counts to spaces
+    const spacesWithCounts = spaces?.map((space) => ({
+      ...space,
+      count: counts[space.id] || 0,
     }));
 
-    return NextResponse.json({ categories: categoriesWithCounts });
+    return NextResponse.json({ spaces: spacesWithCounts });
   } catch (error) {
-    console.error("Error fetching categories:", error);
+    console.error("Error fetching spaces:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -86,7 +82,7 @@ export async function POST(request: NextRequest) {
 
     // Rate limiting
     const identifier = getIdentifier(request, user.id);
-    const { success, limit, reset, remaining } = await rateLimitCategories.limit(identifier);
+    const { success, limit, reset, remaining } = await rateLimitSpaces.limit(identifier);
     
     if (!success) {
       return NextResponse.json(
@@ -95,15 +91,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    interface CreateCategoryBody {
+    interface CreateSpaceBody {
       name: string;
       color: string;
-      icon?: string;
-      description?: string;
+      sort_order?: number;
     }
 
-    const body = (await request.json()) as CreateCategoryBody;
-    const { name, color, icon, description } = body;
+    const body = (await request.json()) as CreateSpaceBody;
+    const { name, color, sort_order } = body;
 
     if (!name || !color) {
       return NextResponse.json(
@@ -112,14 +107,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get max sort_order to append new space at the end
+    const { data: existingSpaces } = await supabase
+      .from("spaces")
+      .select("sort_order")
+      .eq("user_id", user.id)
+      .order("sort_order", { ascending: false })
+      .limit(1);
+
+    const maxSortOrder = existingSpaces?.[0]?.sort_order ?? -1;
+    const newSortOrder = sort_order ?? maxSortOrder + 1;
+
     const { data, error } = await supabase
-      .from("categories")
+      .from("spaces")
       .insert({
         user_id: user.id,
         name,
         color,
-        icon: icon || null,
-        description: description || null,
+        sort_order: newSortOrder,
       })
       .select()
       .single();
@@ -128,13 +133,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ category: data }, { status: 201 });
+    return NextResponse.json({ space: { ...data, count: 0 } }, { status: 201 });
   } catch (error) {
-    console.error("Error creating category:", error);
+    console.error("Error creating space:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     );
   }
 }
-

@@ -7,6 +7,7 @@ import { LogoIcon } from "@/components/logo-icon";
 import { Dock } from "@/components/dock";
 import type { User } from "@supabase/supabase-js";
 import type { Link } from "@/features/links/types";
+import type { Space } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCircleCheckFilled } from "@tabler/icons-react";
@@ -40,6 +41,8 @@ interface DashboardShellProps {
   onBatchPermanentDelete?: () => void;
   onBatchPin?: () => void;
   onBatchUnpin?: () => void;
+  spaces?: Space[];
+  onCreateSpace?: () => void;
 }
 
 export function DashboardShell({
@@ -63,6 +66,8 @@ export function DashboardShell({
   onBatchPermanentDelete,
   onBatchPin,
   onBatchUnpin,
+  spaces,
+  onCreateSpace,
 }: DashboardShellProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -384,6 +389,8 @@ export function DashboardShell({
         onBatchUnpin={onBatchUnpin}
         selectedLinks={selectedLinks}
         isTrashView={isTrashView}
+        spaces={spaces}
+        onCreateSpace={onCreateSpace}
       />
     </div>
   );

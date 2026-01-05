@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import type { Link } from "@/features/links/types";
+import type { Space } from "@/types";
 import { toast } from "sonner";
 import { detectContentType } from "@/lib/content-detector";
 import { canonicalizeColor } from "@/lib/canonicalize";
@@ -72,6 +73,10 @@ interface LinkListProps {
       onBatchUnpin: (ids: string[]) => void;
     }
   ) => void;
+  spaces?: Space[];
+  linkSpacesMap?: Map<string, string[]>; // Map of link ID to space IDs
+  onAddToSpace?: (linkId: string, spaceId: string) => Promise<void>;
+  onRemoveFromSpace?: (linkId: string, spaceId: string) => Promise<void>;
 }
 
 export function LinkList({
@@ -106,6 +111,10 @@ export function LinkList({
   hasMore = false,
   onLoadMore,
   onSelectionChange,
+  spaces = [],
+  linkSpacesMap = new Map(),
+  onAddToSpace,
+  onRemoveFromSpace,
 }: LinkListProps) {
   const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null);
   const [contextMenu, setContextMenu] = React.useState<ContextMenuState | null>(
@@ -868,6 +877,10 @@ export function LinkList({
               onRename={!isTrashView ? handleRename : undefined}
               onPin={!isTrashView ? onPin : undefined}
               onUnpin={!isTrashView ? onUnpin : undefined}
+              spaces={spaces}
+              linkSpaces={linkSpacesMap.get(contextMenu.link.id) || []}
+              onAddToSpace={onAddToSpace}
+              onRemoveFromSpace={onRemoveFromSpace}
               onDelete={!isTrashView ? onDelete : undefined}
               onRestore={isTrashView ? onRestore : undefined}
               onPermanentDelete={

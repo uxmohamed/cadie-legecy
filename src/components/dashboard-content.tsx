@@ -4,8 +4,10 @@ import * as React from "react";
 import { LinkList } from "@/components/link-list";
 import { LinkListSkeleton } from "@/components/skeletons";
 import { useLinks, usePrefetchView } from "@/features/links/hooks";
+import { useSpaces } from "@/hooks/use-spaces";
 import type { User } from "@supabase/supabase-js";
 import type { Link } from "@/features/links/types";
+import type { Space } from "@/types";
 import {
   detectMultipleContentTypes,
   type DetectedContent,
@@ -58,9 +60,65 @@ export function DashboardContent({
   searchQuery,
   initialLinks,
 }: DashboardContentProps) {
+  const { spaces, addLinksToSpace, removeLinksFromSpace } = useSpaces(!!user);
+  const [linkSpacesMap, setLinkSpacesMap] = React.useState<Map<string, string[]>>(new Map());
+
+  // Fetch link spaces for all links
+  React.useEffect(() => {
+    if (!user || links.length === 0) return;
+
+    const fetchLinkSpaces = async () => {
+      const supabase = (await import("@/lib/supabase/client")).createClient();
+      const linkIds = links.map(l => l.id);
+      
+      const { data } = await supabase
+        .from("link_spaces")
+        .select("link_id, space_id")
+        .in("link_id", linkIds);
+
+      if (data) {
+        const map = new Map<string, string[]>();
+        data.forEach((ls) => {
+          const existing = map.get(ls.link_id) || [];
+          map.set(ls.link_id, [...existing, ls.space_id]);
+        });
+        setLinkSpacesMap(map);
+      }
+    };
+
+    fetchLinkSpaces();
+  }, [user, links]);
+
+  const handleAddToSpace = React.useCallback(async (linkId: string, spaceId: string) => {
+    await addLinksToSpace(spaceId, [linkId]);
+    // Update local map
+    setLinkSpacesMap(prev => {
+      const updated = new Map(prev);
+      const existing = updated.get(linkId) || [];
+      if (!existing.includes(spaceId)) {
+        updated.set(linkId, [...existing, spaceId]);
+      }
+      return updated;
+    });
+  }, [addLinksToSpace]);
+
+  const handleRemoveFromSpace = React.useCallback(async (linkId: string, spaceId: string) => {
+    await removeLinksFromSpace(spaceId, [linkId]);
+    // Update local map
+    setLinkSpacesMap(prev => {
+      const updated = new Map(prev);
+      const existing = updated.get(linkId) || [];
+      updated.set(linkId, existing.filter(id => id !== spaceId));
+      return updated;
+    });
+  }, [removeLinksFromSpace]);
 
   const filters = React.useMemo(() => {
     if (selectedCategoryId === "trash") return { is_deleted: true };
+    // If selectedCategoryId is a UUID (space ID), filter by space
+    if (selectedCategoryId && selectedCategoryId !== "trash" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(selectedCategoryId)) {
+      return { space_id: selectedCategoryId, is_archived: false };
+    }
     return { is_archived: false };
   }, [selectedCategoryId]);
 
@@ -203,6 +261,10 @@ export function DashboardContent({
       hasMore={hasMore}
       onLoadMore={loadMore}
       onSelectionChange={onSelectionChange}
+      spaces={spaces}
+      linkSpacesMap={linkSpacesMap}
+      onAddToSpace={handleAddToSpace}
+      onRemoveFromSpace={handleRemoveFromSpace}
     />
   );
 }

@@ -77,7 +77,7 @@ export function useLinks(
       if (previousPageData && previousPageData.links.length === 0) return null;
 
       const params = new URLSearchParams();
-      if (filters?.category_id) params.append("category_id", filters.category_id);
+      if (filters?.space_id) params.append("space_id", filters.space_id);
       if (filters?.is_deleted !== undefined) {
         params.append("is_deleted", String(filters.is_deleted));
       }

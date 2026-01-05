@@ -27,14 +27,12 @@ export interface Database {
           updated_at?: string;
         };
       };
-      categories: {
+      spaces: {
         Row: {
           id: string;
           user_id: string;
           name: string;
           color: string;
-          icon: string | null;
-          description: string | null;
           sort_order: number;
           created_at: string;
           updated_at: string;
@@ -44,8 +42,6 @@ export interface Database {
           user_id: string;
           name: string;
           color: string;
-          icon?: string | null;
-          description?: string | null;
           sort_order?: number;
           created_at?: string;
           updated_at?: string;
@@ -55,11 +51,29 @@ export interface Database {
           user_id?: string;
           name?: string;
           color?: string;
-          icon?: string | null;
-          description?: string | null;
           sort_order?: number;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      link_spaces: {
+        Row: {
+          id: string;
+          link_id: string;
+          space_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          link_id: string;
+          space_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          link_id?: string;
+          space_id?: string;
+          created_at?: string;
         };
       };
       links: {
@@ -70,7 +84,6 @@ export interface Database {
           url: string;
           clean_url: string;
           domain: string;
-          category_id: string | null;
           favicon_url: string | null;
           og_image_url: string | null;
           description: string | null;
@@ -115,7 +128,6 @@ export interface Database {
           url: string;
           clean_url: string;
           domain: string;
-          category_id?: string | null;
           favicon_url?: string | null;
           og_image_url?: string | null;
           description?: string | null;
@@ -160,7 +172,6 @@ export interface Database {
           url?: string;
           clean_url?: string;
           domain?: string;
-          category_id?: string | null;
           favicon_url?: string | null;
           og_image_url?: string | null;
           description?: string | null;

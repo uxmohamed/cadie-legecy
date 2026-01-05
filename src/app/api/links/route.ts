@@ -94,7 +94,6 @@ export async function POST(request: NextRequest) {
     og_image_url: validatedData.og_image_url ?? null,
     favicon_url: validatedData.favicon_url ?? null,
     description: validatedData.description ?? null,
-    category_id: validatedData.category_id ?? null,
     color_value: validatedData.color_value ?? null,
   };
   
