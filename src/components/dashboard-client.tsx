@@ -8,7 +8,6 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { DashboardContent } from "@/components/dashboard-content";
 import { LinkListSkeleton } from "@/components/skeletons";
 import { OnboardingFlow } from "@/components/onboarding";
-import { useLinksStore } from "@/features/links/store/links-store";
 import { useRealtimeSync } from "@/features/links/hooks/use-realtime-sync.hook";
 import type { User } from "@supabase/supabase-js";
 import type { Link } from "@/features/links/types";
@@ -122,15 +121,7 @@ export function DashboardClient({ user, initialView = null, initialLinks }: Dash
     []
   );
 
-  // Hydrate store from server prefetch
-  React.useEffect(() => {
-    if (initialLinks && user.id) {
-      const view = initialView === "trash" ? "trash" : "all";
-      useLinksStore.getState().hydrate(view, initialLinks);
-    }
-  }, [initialLinks, initialView, user.id]);
-
-  // Initialize realtime sync
+  // Initialize realtime sync - keeps store updated with database changes
   useRealtimeSync(!!user, user.id);
 
   // Handle view change with non-blocking navigation

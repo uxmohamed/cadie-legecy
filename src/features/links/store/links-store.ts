@@ -14,7 +14,7 @@ interface LinksStoreState {
   isHydrated: boolean;
 
   hydrate: (view: LinksView, payload: LinksStateByView) => void;
-  setFromSWR: (view: LinksView, payload: LinksStateByView) => void;
+  reset: () => void;
 
   addLink: (link: Link) => void;
   updateLink: (id: string, updates: Partial<Link>) => void;
@@ -91,24 +91,11 @@ export const useLinksStore = create<LinksStoreState>((set, get) => ({
     });
   },
 
-  setFromSWR(view, payload) {
-    set((state) => {
-      const nextViewState: LinksStateByView = {
-        links: sortLinks(payload.links),
-        total: payload.total,
-      };
-
-      if (view === "all") {
-        return {
-          ...state,
-          all: nextViewState,
-        };
-      }
-
-      return {
-        ...state,
-        trash: nextViewState,
-      };
+  reset() {
+    set({
+      all: { links: [], total: 0 },
+      trash: { links: [], total: 0 },
+      isHydrated: false,
     });
   },
 
@@ -340,5 +327,13 @@ export const useLinksStore = create<LinksStoreState>((set, get) => ({
 
 export function selectLinksForView(state: LinksStoreState, view: LinksView): LinksStateByView {
   return view === "trash" ? state.trash : state.all;
+}
+
+/**
+ * Clear the links store.
+ * Call this when user logs out to prevent data leakage between accounts.
+ */
+export function clearLinksStore(): void {
+  useLinksStore.getState().reset();
 }
 

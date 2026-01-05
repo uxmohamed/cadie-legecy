@@ -3,7 +3,7 @@
 import * as React from "react";
 import { LinkList } from "@/components/link-list";
 import { LinkListSkeleton } from "@/components/skeletons";
-import { useLinks, usePrefetchView } from "@/features/links/hooks";
+import { useLinks } from "@/features/links/hooks";
 import type { User } from "@supabase/supabase-js";
 import type { Link } from "@/features/links/types";
 import {
@@ -63,11 +63,6 @@ export function DashboardContent({
     if (selectedCategoryId === "trash") return { is_deleted: true };
     return { is_archived: false };
   }, [selectedCategoryId]);
-
-  // Prefetch the opposite view's data in background after initial load
-  // This makes view switching instant (shortcut or dock)
-  const currentView = selectedCategoryId === "trash" ? "trash" : "all";
-  usePrefetchView(currentView, user.id);
 
   // Debounce the search query to avoid too many API requests
   const [debouncedSearchQuery, setDebouncedSearchQuery] = React.useState(searchQuery);
