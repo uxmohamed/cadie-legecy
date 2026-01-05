@@ -14,6 +14,13 @@ const PAGE_SIZE = 100;
 const PREFETCH_DELAY_MS = 3000;
 
 /**
+ * Timeout for requestIdleCallback to ensure prefetch runs even during heavy load
+ * Set to 5 seconds (2 seconds after PREFETCH_DELAY_MS) to guarantee execution
+ * while still allowing the browser to find an idle period during light load
+ */
+const IDLE_CALLBACK_TIMEOUT_MS = 5000;
+
+/**
  * Build the SWR cache key for a given view
  * Must match the pattern in use-links.hook.ts buildQueryString
  */
@@ -78,7 +85,7 @@ export function usePrefetchView(
       };
 
       if (typeof requestIdleCallback !== "undefined") {
-        requestIdleCallback(runPrefetch, { timeout: 5000 });
+        requestIdleCallback(runPrefetch, { timeout: IDLE_CALLBACK_TIMEOUT_MS });
       } else {
         runPrefetch();
       }
