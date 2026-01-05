@@ -67,7 +67,7 @@ export function DashboardContent({
   // Prefetch the opposite view's data in background after initial load
   // This makes view switching instant (shortcut or dock)
   const currentView = selectedCategoryId === "trash" ? "trash" : "all";
-  usePrefetchView(currentView, user.id, !!user);
+  usePrefetchView(currentView, user.id);
 
   // Debounce the search query to avoid too many API requests
   const [debouncedSearchQuery, setDebouncedSearchQuery] = React.useState(searchQuery);
