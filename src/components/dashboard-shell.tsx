@@ -73,6 +73,8 @@ export function DashboardShell({
   const router = useRouter();
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const { registerShortcut, unregisterShortcut } = useShortcuts();
+  const [pendingShortcut, setPendingShortcut] = React.useState<string | null>(null);
+  const pendingShortcutTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const isTrashView = selectedCategoryId === "trash";
   const selectedSpace = spaces?.find(s => s.id === selectedCategoryId);
@@ -156,6 +158,28 @@ export function DashboardShell({
       },
     });
 
+    // Register shortcuts for spaces dynamically
+    if (spaces && spaces.length > 0) {
+      spaces.forEach((space, index) => {
+        const shortcutNumber = index + 2; // Start from 2 (1 is for "All items")
+        const shortcutKey = shortcutNumber <= 9 
+          ? String(shortcutNumber)
+          : `${shortcutNumber - 9}A`;
+        
+        if (shortcutNumber <= 9) {
+          // Single key shortcuts (2-9)
+          registerShortcut({
+            key: shortcutKey,
+            description: `Switch to ${space.name} space`,
+            category: "Navigation",
+            action: () => {
+              onViewChange(space.id);
+            },
+          });
+        }
+      });
+    }
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.shiftKey && e.key === "T") {
         const target = e.target as HTMLElement;
@@ -170,16 +194,74 @@ export function DashboardShell({
         }
       }
 
-      if (e.key === "1") {
-        const target = e.target as HTMLElement;
-        const isInputFocused =
-          target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable;
+      const target = e.target as HTMLElement;
+      const isInputFocused =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable;
 
-        if (!isInputFocused) {
+      if (isInputFocused) {
+        return; // Don't handle shortcuts when typing in inputs
+      }
+
+      // Handle "A" key for multi-key shortcuts (1A, 2A, etc.)
+      if (pendingShortcut && e.key.toLowerCase() === "a" && spaces && spaces.length > 8) {
+        const numKey = parseInt(pendingShortcut);
+        const spaceIndex = numKey + 7; // 1A -> index 8 (9th space), 2A -> index 9 (10th space), etc.
+        if (spaces[spaceIndex]) {
+          e.preventDefault();
+          onViewChange(spaces[spaceIndex].id);
+          setPendingShortcut(null);
+          if (pendingShortcutTimeoutRef.current) {
+            clearTimeout(pendingShortcutTimeoutRef.current);
+          }
+        }
+        return;
+      }
+
+      // Handle number keys
+      const numKey = parseInt(e.key);
+      if (numKey >= 1 && numKey <= 9) {
+        // If we have more than 8 spaces, numbers can trigger multi-key shortcuts
+        if (spaces && spaces.length > 8) {
+          // Check if this number can be used for a multi-key shortcut
+          const spaceIndexForMultiKey = numKey + 7; // 1A -> index 8, 2A -> index 9, etc.
+          const hasMultiKeySpace = spaces[spaceIndexForMultiKey] !== undefined;
+          
+          // Check if this number can be used for a single-key shortcut
+          const spaceIndexForSingleKey = numKey - 2; // 2 -> index 0, 3 -> index 1, etc.
+          const hasSingleKeySpace = numKey >= 2 && numKey <= 8 && spaces[spaceIndexForSingleKey] !== undefined;
+
+          if (hasMultiKeySpace || (numKey === 1 && spaces.length > 8)) {
+            // Start waiting for "A" key
+            e.preventDefault();
+            setPendingShortcut(e.key);
+            if (pendingShortcutTimeoutRef.current) {
+              clearTimeout(pendingShortcutTimeoutRef.current);
+            }
+            pendingShortcutTimeoutRef.current = setTimeout(() => {
+              // Timeout: execute single key action
+              setPendingShortcut(null);
+              if (numKey === 1) {
+                onViewChange(null);
+              } else if (hasSingleKeySpace) {
+                onViewChange(spaces[spaceIndexForSingleKey].id);
+              }
+            }, 500); // Wait 500ms for "A" key
+            return;
+          }
+        }
+
+        // Single key shortcuts
+        if (numKey === 1) {
           e.preventDefault();
           onViewChange(null);
+        } else if (numKey >= 2 && numKey <= 9 && spaces && spaces.length > 0) {
+          const spaceIndex = numKey - 2; // 2 -> index 0, 3 -> index 1, etc.
+          if (spaces[spaceIndex]) {
+            e.preventDefault();
+            onViewChange(spaces[spaceIndex].id);
+          }
         }
       }
 
@@ -203,8 +285,20 @@ export function DashboardShell({
       window.removeEventListener("keydown", handleKeyDown, true);
       unregisterShortcut("c");
       unregisterShortcut("/");
+      // Unregister space shortcuts
+      if (spaces && spaces.length > 0) {
+        spaces.forEach((space, index) => {
+          const shortcutNumber = index + 2;
+          if (shortcutNumber <= 9) {
+            unregisterShortcut(String(shortcutNumber));
+          }
+        });
+      }
+      if (pendingShortcutTimeoutRef.current) {
+        clearTimeout(pendingShortcutTimeoutRef.current);
+      }
     };
-  }, [registerShortcut, unregisterShortcut, selectedCategoryId, onOpenAddMode, onViewChange]);
+  }, [registerShortcut, unregisterShortcut, selectedCategoryId, onOpenAddMode, onViewChange, spaces, pendingShortcut]);
 
   return (
     <div className="min-h-screen bg-[var(--bg-main-container)] relative">

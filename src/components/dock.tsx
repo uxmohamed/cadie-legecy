@@ -234,9 +234,14 @@ export function Dock({
                     {/* Spaces list */}
                     {spaces.length > 0 && (
                       <>
-                        <div className="h-px bg-[var(--overlay-border)] my-1" />
-                        {spaces.map((space) => {
+                        {spaces.map((space, index) => {
                           const isSelected = selectedCategoryId === space.id;
+                          // Generate shortcut: 2-9 for first 8 spaces, then 1A, 2A, etc.
+                          const shortcutNumber = index + 2; // Start from 2 (1 is for "All items")
+                          const shortcutKey = shortcutNumber <= 9 
+                            ? String(shortcutNumber)
+                            : `${shortcutNumber - 9}A`;
+                          
                           return (
                             <button
                               key={space.id}
@@ -254,7 +259,11 @@ export function Dock({
                               </div>
                               {isSelected ? (
                                 <IconCircleCheckFilled className="h-5 w-5 text-white" />
-                              ) : null}
+                              ) : (
+                                <Kbd className="h-5 px-1.5 text-[10px] bg-[rgba(255,255,255,0.1)] text-[var(--overlay-text-secondary)]">
+                                  {shortcutKey}
+                                </Kbd>
+                              )}
                             </button>
                           );
                         })}

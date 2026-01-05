@@ -2,6 +2,12 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { DashboardClient } from "@/components/dashboard-client";
 import { prefetchTrashLinks } from "@/lib/server/prefetch-links";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Trash | Cadie",
+  description: "View deleted links",
+};
 
 export default async function TrashPage() {
   const supabase = await createClient();
