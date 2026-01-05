@@ -61,8 +61,10 @@ export function useLinks(
   const batchUpdateLink = useLinksStore((state) => state.batchUpdateLink);
 
   // Hydrate store from server prefetch (runs once on mount)
+  // Using useLayoutEffect to ensure hydration happens before browser paint
+  // This prevents the brief "no links" flash
   const hasHydratedRef = React.useRef(false);
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     if (initialData && !hasHydratedRef.current) {
       hasHydratedRef.current = true;
       hydrate(view, initialData);
@@ -160,8 +162,12 @@ export function useLinks(
   const hasMore = links.length < totalCount;
 
   // Determine if we're in a loading state
-  // Only show loading when we have no data AND we're not hydrated
-  const fetchingLinks = !isHydrated && links.length === 0 && !initialData;
+  // Show skeleton when:
+  // 1. Store not hydrated yet AND we have initial data with links (waiting for hydration)
+  // 2. Store not hydrated AND no initial data AND no links (initial fetch needed)
+  // This prevents the brief "no links" flash before hydration completes
+  const isAwaitingHydration = !isHydrated && (initialData?.links.length ?? 0) > 0 && links.length === 0;
+  const fetchingLinks = isAwaitingHydration || isSearching;
 
   // Load more handler for infinite scroll
   const loadMore = React.useCallback(async () => {
