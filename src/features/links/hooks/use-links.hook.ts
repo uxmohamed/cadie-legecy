@@ -75,10 +75,17 @@ export function useLinks(
         const params = new URLSearchParams();
         if (filters?.category_id) params.append("category_id", filters.category_id);
         if (filters?.is_deleted !== undefined) params.append("is_deleted", String(filters.is_deleted));
+        if (filters?.is_archived !== undefined) params.append("is_archived", String(filters.is_archived));
 
         // Default to active links if no specific view is requested
         if (filters?.is_deleted === undefined) {
             params.append("is_deleted", "false");
+        }
+        
+        // Default to non-archived links for non-trash views
+        // Only add is_archived=false if we're not looking at deleted items (trash view)
+        if (filters?.is_archived === undefined && (filters?.is_deleted === false || filters?.is_deleted === undefined)) {
+            params.append("is_archived", "false");
         }
 
         // Search query for server-side filtering
