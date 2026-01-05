@@ -3,3 +3,4 @@
  */
 export { useLinks } from "./use-links.hook";
 export { usePrefetchView } from "./use-prefetch-view.hook";
+export { useRealtimeSync } from "./use-realtime-sync.hook";

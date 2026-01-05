@@ -8,6 +8,8 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { DashboardContent } from "@/components/dashboard-content";
 import { LinkListSkeleton } from "@/components/skeletons";
 import { OnboardingFlow } from "@/components/onboarding";
+import { useLinksStore } from "@/features/links/store/links-store";
+import { useRealtimeSync } from "@/features/links/hooks/use-realtime-sync.hook";
 import type { User } from "@supabase/supabase-js";
 import type { Link } from "@/features/links/types";
 
@@ -120,14 +122,35 @@ export function DashboardClient({ user, initialView = null, initialLinks }: Dash
     []
   );
 
-  // Handle view change with URL navigation
+  // Hydrate store from server prefetch
+  React.useEffect(() => {
+    if (initialLinks && user.id) {
+      const view = initialView === "trash" ? "trash" : "all";
+      useLinksStore.getState().hydrate(view, initialLinks);
+    }
+  }, [initialLinks, initialView, user.id]);
+
+  // Initialize realtime sync
+  useRealtimeSync(!!user, user.id);
+
+  // Handle view change with non-blocking navigation
   const handleViewChange = React.useCallback((categoryId: string | null) => {
-    if (categoryId === "trash") {
+    const targetPath = categoryId === "trash" ? "/trash" : "/";
+    
+    // Update URL without blocking (client-side only)
+    if (typeof window !== "undefined") {
+      window.history.pushState({}, "", targetPath);
+    }
+    
+    // Update state immediately for instant UI switch
+    setSelectedCategoryId(categoryId);
+    
+    // Sync with Next.js router in background (for proper route handling)
+    if (targetPath === "/trash") {
       router.push("/trash");
     } else {
       router.push("/");
     }
-    setSelectedCategoryId(categoryId);
   }, [router]);
 
   // Check onboarding status on mount
