@@ -40,8 +40,8 @@ export function DashboardClient({ user, initialView = null, initialLinks }: Dash
   
   // Determine view from URL path or initialView prop
   const isTrashRoute = pathname === "/trash" || initialView === "trash";
-  const isSpaceRoute = pathname.startsWith("/spaces/");
-  const spaceIdFromPath = isSpaceRoute ? pathname.split("/spaces/")[1] : null;
+  const isSpaceRoute = pathname.startsWith("/space/");
+  const spaceIdFromPath = isSpaceRoute ? pathname.split("/space/")[1] : null;
   const [selectedCategoryId, setSelectedCategoryId] = React.useState<string | null>(
     isTrashRoute ? "trash" : (initialView || spaceIdFromPath || null)
   );
@@ -73,8 +73,8 @@ export function DashboardClient({ user, initialView = null, initialLinks }: Dash
       setSelectedCategoryId("trash");
     } else if (pathname === "/") {
       setSelectedCategoryId(null);
-    } else if (pathname.startsWith("/spaces/")) {
-      const spaceId = pathname.split("/spaces/")[1];
+    } else if (pathname.startsWith("/space/")) {
+      const spaceId = pathname.split("/space/")[1];
       // Validate UUID format
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (uuidRegex.test(spaceId)) {
@@ -157,10 +157,10 @@ export function DashboardClient({ user, initialView = null, initialLinks }: Dash
     if (categoryId === "trash") {
       targetPath = "/trash";
     } else if (categoryId && categoryId !== "trash") {
-      // Space ID - navigate to /spaces/[id]
+      // Space ID - navigate to /space/[id]
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (uuidRegex.test(categoryId)) {
-        targetPath = `/spaces/${categoryId}`;
+        targetPath = `/space/${categoryId}`;
       } else {
         // Fallback to home if invalid
         targetPath = "/";

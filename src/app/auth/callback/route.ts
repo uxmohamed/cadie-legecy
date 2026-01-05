@@ -19,6 +19,8 @@ const ALLOWED_PATH_PREFIXES = [
   '/extension/',
   '/settings/',
   '/homepage/',
+  '/space/',
+  '/trash',
 ];
 
 /**
@@ -80,19 +82,24 @@ export async function GET(request: Request) {
     
     if (!error) {
       // Determine the correct redirect URL
+      // Multi-environment support: Always use the request's origin/host to ensure we redirect 
+      // to the same domain that received the callback (staging vs production)
+      // This ensures that:
+      // - Staging auth callbacks redirect back to staging
+      // - Production auth callbacks redirect back to production
+      // - Works regardless of Supabase Site URL configuration
       const forwardedHost = request.headers.get("x-forwarded-host");
       const forwardedProto = request.headers.get("x-forwarded-proto") ?? "https";
+      const requestUrl = new URL(request.url);
       
       let redirectUrl: string;
       
-      // Priority: 1. Environment variable (if not localhost), 2. Forwarded host, 3. Origin
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-      if (siteUrl && !siteUrl.includes('localhost')) {
-        redirectUrl = `${siteUrl}${next}`;
-      } else if (forwardedHost) {
+      // Priority: Use forwarded headers (from proxy/load balancer) if available, otherwise use request origin
+      if (forwardedHost) {
         redirectUrl = `${forwardedProto}://${forwardedHost}${next}`;
       } else {
-        redirectUrl = `${origin}${next}`;
+        // Use the origin from the request URL (this will be staging URL if called from staging)
+        redirectUrl = `${requestUrl.origin}${next}`;
       }
       
       return NextResponse.redirect(redirectUrl);
@@ -100,18 +107,17 @@ export async function GET(request: Request) {
   }
 
   // If there's an error or no code, redirect to auth page
-  // Use the same logic for error redirects
+  // Use the same logic for error redirects - always use request origin
   const forwardedHost = request.headers.get("x-forwarded-host");
   const forwardedProto = request.headers.get("x-forwarded-proto") ?? "https";
+  const requestUrl = new URL(request.url);
   
   let authUrl: string;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  if (siteUrl && !siteUrl.includes('localhost')) {
-    authUrl = `${siteUrl}/auth`;
-  } else if (forwardedHost) {
+  if (forwardedHost) {
     authUrl = `${forwardedProto}://${forwardedHost}/auth`;
   } else {
-    authUrl = `${origin}/auth`;
+    // Use the origin from the request URL (this will be staging URL if called from staging)
+    authUrl = `${requestUrl.origin}/auth`;
   }
   
   return NextResponse.redirect(authUrl);
