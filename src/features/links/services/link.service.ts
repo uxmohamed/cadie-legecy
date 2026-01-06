@@ -3,6 +3,7 @@ import type { Link, CreateLinkDTO, UpdateLinkDTO, LinkFilters } from "../types/l
 import { MetadataService } from "./metadata.service";
 import { DuplicateDetectionService } from "./duplicate-detection.service";
 import { enqueueMetadataEnrichment } from "@/lib/job-queue";
+import { log } from "@/lib/logger";
 
 /**
  * Service for managing link operations
@@ -34,6 +35,7 @@ export class LinkService {
      * Create a new link
      * Returns existing link if duplicate is detected
      * Auto-restores from trash if the URL was previously trashed
+     * Fetches metadata synchronously for immediate display
      */
     async createLink(userId: string, data: CreateLinkDTO): Promise<{ link: Link; isDuplicate: boolean; isRestored: boolean }> {
         // Check for existing link including trashed ones
@@ -50,13 +52,10 @@ export class LinkService {
                     deleted_at: null,
                 });
 
-                // Enqueue background metadata refresh for restored links
+                // Fetch and update metadata synchronously for restored links
                 if (data.content_type === "url" || !data.content_type) {
-                    await enqueueMetadataEnrichment({
-                        linkId: restoredLink.id,
-                        url: data.url,
-                        userId,
-                    });
+                    const enrichedLink = await this.enrichLinkWithMetadata(restoredLink, userId);
+                    return { link: enrichedLink, isDuplicate: false, isRestored: true };
                 }
 
                 return { link: restoredLink, isDuplicate: false, isRestored: true };
@@ -69,17 +68,126 @@ export class LinkService {
         // Create new link
         const link = await this.linkRepository.create(userId, data);
 
-        // Enqueue background metadata enrichment for URLs
-        // QStash handles the delay (2s) and retries automatically
+        // Fetch and update metadata synchronously for URLs
+        // This ensures the link has complete metadata before being returned
         if (data.content_type === "url" || !data.content_type) {
-            await enqueueMetadataEnrichment({
-                linkId: link.id,
-                url: data.url,
-                userId,
-            });
+            const enrichedLink = await this.enrichLinkWithMetadata(link, userId);
+            return { link: enrichedLink, isDuplicate: false, isRestored: false };
         }
 
         return { link, isDuplicate: false, isRestored: false };
+    }
+
+    /**
+     * Fetch and update metadata for a link synchronously
+     * If synchronous fetch fails, enqueues a background job for retry
+     * Returns the updated link with metadata (or original link if fetch failed)
+     */
+    private async enrichLinkWithMetadata(link: Link, userId: string): Promise<Link> {
+        try {
+            // Fetch metadata with a reasonable timeout
+            const metadata = await this.metadataService.fetchMetadata(link.url, 5000);
+
+            // Check if fetch was successful
+            if (metadata.fetch_status !== "success") {
+                // Synchronous fetch failed - enqueue background retry
+                log.info("Synchronous metadata fetch incomplete, enqueuing background retry", { 
+                    linkId: link.id, 
+                    url: link.url, 
+                    fetch_status: metadata.fetch_status 
+                });
+                await this.enqueueBackgroundRetry(link.id, link.url, userId);
+                
+                // Still update with whatever we got
+                if (metadata.fetch_status) {
+                    await this.linkRepository.update(link.id, userId, {
+                        fetch_status: metadata.fetch_status,
+                        fetched_at: metadata.fetched_at,
+                    } as UpdateLinkDTO);
+                }
+                return link;
+            }
+
+            // Build update object with metadata fields
+            const updates: Partial<Link> = {
+                fetch_status: metadata.fetch_status,
+                fetched_at: metadata.fetched_at,
+            };
+
+            // Core fields - update if we got better data
+            if (metadata.title && metadata.title !== metadata.domain) {
+                updates.title = metadata.title;
+            }
+            if (metadata.favicon_url) {
+                updates.favicon_url = metadata.favicon_url;
+            }
+            if (metadata.preview_image_url) {
+                updates.og_image_url = metadata.preview_image_url;
+            }
+            if (metadata.description) {
+                updates.description = metadata.description;
+            }
+
+            // Extended metadata fields
+            if (metadata.site_name) {
+                updates.site_name = metadata.site_name;
+            }
+            if (metadata.final_url) {
+                updates.final_url = metadata.final_url;
+            }
+            if (metadata.canonical_url) {
+                updates.canonical_url = metadata.canonical_url;
+            }
+            if (metadata.theme_color) {
+                updates.theme_color = metadata.theme_color;
+            }
+            if (metadata.language) {
+                updates.language = metadata.language;
+            }
+            if (metadata.word_count) {
+                updates.word_count = metadata.word_count;
+            }
+            if (metadata.reading_time_minutes) {
+                updates.reading_time_minutes = metadata.reading_time_minutes;
+            }
+            if (metadata.status_code) {
+                updates.status_code = metadata.status_code;
+            }
+
+            // Update the link with metadata
+            const enrichedLink = await this.linkRepository.update(link.id, userId, updates as UpdateLinkDTO);
+            return enrichedLink;
+        } catch (error) {
+            log.warn("Failed to enrich link with metadata, enqueuing background retry", { 
+                linkId: link.id, 
+                url: link.url, 
+                error 
+            });
+            
+            // Enqueue background job for retry (3 retries via QStash)
+            await this.enqueueBackgroundRetry(link.id, link.url, userId);
+            
+            // Return the original link - background job will update it later
+            return link;
+        }
+    }
+
+    /**
+     * Enqueue a background job to retry metadata enrichment
+     * QStash handles automatic retries (3x)
+     */
+    private async enqueueBackgroundRetry(linkId: string, url: string, userId: string): Promise<void> {
+        try {
+            await enqueueMetadataEnrichment({
+                linkId,
+                url,
+                userId,
+            });
+            log.info("Background metadata retry enqueued", { linkId, url });
+        } catch (error) {
+            // Log but don't throw - this is best-effort
+            log.error("Failed to enqueue background metadata retry", { linkId, url, error });
+        }
     }
 
     /**
