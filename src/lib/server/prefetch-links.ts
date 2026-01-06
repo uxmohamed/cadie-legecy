@@ -23,14 +23,6 @@ export async function prefetchLinks(
   query = query.eq("user_id", userId);
 
   // Apply filters
-  if (filters?.category_id) {
-    if (filters.category_id === "uncategorized") {
-      query = query.is("category_id", null);
-    } else if (filters.category_id !== "all") {
-      query = query.eq("category_id", filters.category_id);
-    }
-  }
-
   if (filters?.is_archived !== undefined) {
     query = query.eq("is_archived", filters.is_archived);
   }

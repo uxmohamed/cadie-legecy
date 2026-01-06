@@ -1,27 +1,27 @@
 "use client";
 
 import * as React from "react";
-import type { Category } from "@/types";
+import type { Space } from "@/types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 interface SidebarProps {
-  categories: Category[];
-  selectedCategoryId: string | null;
-  onCategorySelect: (categoryId: string | null) => void;
+  spaces: Space[];
+  selectedSpaceId: string | null;
+  onSpaceSelect: (spaceId: string | null) => void;
 }
 
 export function Sidebar({
-  categories,
-  selectedCategoryId,
-  onCategorySelect,
+  spaces,
+  selectedSpaceId,
+  onSpaceSelect,
 }: SidebarProps) {
   const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null);
-  const categoryRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
+  const spaceRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
 
   React.useEffect(() => {
-    categoryRefs.current = categoryRefs.current.slice(0, categories.length + 3);
-  }, [categories.length]);
+    spaceRefs.current = spaceRefs.current.slice(0, spaces.length + 3);
+  }, [spaces.length]);
 
   const handleKeyDown = (
     e: React.KeyboardEvent<HTMLButtonElement>,
@@ -29,32 +29,32 @@ export function Sidebar({
   ) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      const nextIndex = index < categories.length + 2 ? index + 1 : 0;
+      const nextIndex = index < spaces.length + 2 ? index + 1 : 0;
       setFocusedIndex(nextIndex);
-      categoryRefs.current[nextIndex]?.focus();
+      spaceRefs.current[nextIndex]?.focus();
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      const prevIndex = index > 0 ? index - 1 : categories.length + 2;
+      const prevIndex = index > 0 ? index - 1 : spaces.length + 2;
       setFocusedIndex(prevIndex);
-      categoryRefs.current[prevIndex]?.focus();
+      spaceRefs.current[prevIndex]?.focus();
     } else if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       if (index === 0) {
-        onCategorySelect(null);
+        onSpaceSelect(null);
       } else if (index === 2) {
-        onCategorySelect("trash");
-      } else if (index >= 3 && index < categories.length + 3) {
-        onCategorySelect(categories[index - 3].id);
+        onSpaceSelect("trash");
+      } else if (index >= 3 && index < spaces.length + 3) {
+        onSpaceSelect(spaces[index - 3].id);
       }
     } else if (e.key === "Home") {
       e.preventDefault();
       setFocusedIndex(0);
-      categoryRefs.current[0]?.focus();
+      spaceRefs.current[0]?.focus();
     } else if (e.key === "End") {
       e.preventDefault();
-      const lastIndex = categories.length + 2;
+      const lastIndex = spaces.length + 2;
       setFocusedIndex(lastIndex);
-      categoryRefs.current[lastIndex]?.focus();
+      spaceRefs.current[lastIndex]?.focus();
     }
   };
 
@@ -69,17 +69,17 @@ export function Sidebar({
         </span>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-2 py-3" aria-label="Categories">
+      <nav className="flex-1 overflow-y-auto px-2 py-3" aria-label="Spaces">
         <Button
           ref={(el) => {
-            categoryRefs.current[0] = el;
+            spaceRefs.current[0] = el;
           }}
-          onClick={() => onCategorySelect(null)}
+          onClick={() => onSpaceSelect(null)}
           onKeyDown={(e) => handleKeyDown(e, 0)}
           variant="ghost"
           className={cn(
             "w-full justify-start gap-2 h-auto px-2 py-1.5 text-sm font-normal",
-            selectedCategoryId === null
+            selectedSpaceId === null
               ? "bg-[var(--bg-field-hover)] text-[var(--text-primary)]"
               : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)] hover:text-[var(--text-primary)]",
           )}
@@ -89,14 +89,14 @@ export function Sidebar({
 
         <Button
           ref={(el) => {
-            categoryRefs.current[2] = el;
+            spaceRefs.current[2] = el;
           }}
-          onClick={() => onCategorySelect("trash")}
+          onClick={() => onSpaceSelect("trash")}
           onKeyDown={(e) => handleKeyDown(e, 2)}
           variant="ghost"
           className={cn(
             "w-full justify-start gap-2 h-auto px-2 py-1.5 text-sm font-normal",
-            selectedCategoryId === "trash"
+            selectedSpaceId === "trash"
               ? "bg-[var(--bg-field-hover)] text-[var(--text-primary)]"
               : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)] hover:text-[var(--text-primary)]",
           )}
@@ -106,17 +106,17 @@ export function Sidebar({
 
         <div className="my-2 h-px bg-[var(--border-primary)]" />
 
-        {categories.map((category, index) => {
-          const isSelected = selectedCategoryId === category.id;
+        {spaces.map((space, index) => {
+          const isSelected = selectedSpaceId === space.id;
           const buttonIndex = index + 3;
 
           return (
             <Button
-              key={category.id}
+              key={space.id}
               ref={(el) => {
-                categoryRefs.current[buttonIndex] = el;
+                spaceRefs.current[buttonIndex] = el;
               }}
-              onClick={() => onCategorySelect(category.id)}
+              onClick={() => onSpaceSelect(space.id)}
               onKeyDown={(e) => handleKeyDown(e, buttonIndex)}
               variant="ghost"
               className={cn(
@@ -129,10 +129,10 @@ export function Sidebar({
               <div className="flex items-center gap-2">
                 <div
                   className="h-1.5 w-1.5 rounded-full"
-                  style={{ backgroundColor: category.color }}
+                  style={{ backgroundColor: space.color }}
                   aria-hidden="true"
                 />
-                <span>{category.name}</span>
+                <span>{space.name}</span>
               </div>
               <div className="flex items-center gap-2">
                 {isSelected && (
@@ -152,7 +152,7 @@ export function Sidebar({
                   </svg>
                 )}
                 <span className="text-xs text-[var(--text-tertiary)]">
-                  {category.count}
+                  {space.link_count}
                 </span>
               </div>
             </Button>

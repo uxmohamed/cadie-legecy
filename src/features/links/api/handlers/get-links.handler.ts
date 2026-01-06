@@ -45,14 +45,14 @@ export class GetLinksHandler {
             const searchParams = request.nextUrl.searchParams;
             const limit = parseInt(searchParams.get("limit") || "20");
             const offset = parseInt(searchParams.get("offset") || "0");
-            const categoryId = searchParams.get("category_id") || undefined;
+            const spaceId = searchParams.get("space_id") || undefined;
             const isArchived = searchParams.get("is_archived") === "true";
             const isDeleted = searchParams.get("is_deleted") === "true";
             const searchQuery = searchParams.get("q") || undefined;
 
             // Get links using service
             const result = await this.linkService.getLinks(userId, {
-                category_id: categoryId,
+                space_id: spaceId,
                 is_archived: isArchived,
                 is_deleted: isDeleted,
             }, limit, offset, searchQuery);

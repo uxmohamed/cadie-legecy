@@ -22,14 +22,6 @@ export class SupabaseLinkRepository implements ILinkRepository {
 
         query = query.eq("user_id", userId);
 
-        if (filters?.category_id) {
-            if (filters.category_id === "uncategorized") {
-                query = query.is("category_id", null);
-            } else if (filters.category_id !== "all") {
-                query = query.eq("category_id", filters.category_id);
-            }
-        }
-
         if (filters?.is_archived !== undefined) {
             query = query.eq("is_archived", filters.is_archived);
         }
@@ -130,7 +122,6 @@ export class SupabaseLinkRepository implements ILinkRepository {
                 title: data.title,
                 domain,
                 content_type: contentType,
-                category_id: data.category_id || null,
                 color_value: data.color_value || null,
                 favicon_url: data.favicon_url || null,
                 og_image_url: data.og_image_url || null,

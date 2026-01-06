@@ -44,16 +44,22 @@ export const rateLimitMetadata = new Ratelimit({
 });
 
 /**
- * Rate limiter for category operations
+ * Rate limiter for space operations
  * Limit: 30 requests per minute
- * Used for: /api/categories
+ * Used for: /api/spaces
  */
-export const rateLimitCategories = new Ratelimit({
+export const rateLimitSpaces = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(30, "1 m"),
   analytics: true,
-  prefix: "ratelimit:categories",
+  prefix: "ratelimit:spaces",
 });
+
+/**
+ * Rate limiter for category operations (deprecated - use rateLimitSpaces)
+ * @deprecated Use rateLimitSpaces instead. Categories have been replaced by Spaces.
+ */
+export const rateLimitCategories = rateLimitSpaces;
 
 /**
  * Rate limiter for account deletion (very strict)

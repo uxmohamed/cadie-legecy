@@ -30,7 +30,6 @@ interface LinkData {
   url: string;
   title?: string;
   content_type?: string;
-  category_id?: string;
   favicon_url?: string;
 }
 
@@ -123,7 +122,6 @@ export async function POST(request: NextRequest) {
           clean_url: link.content_type === "color" ? link.url : canonicalizeUrl(link.url),
           title: link.title || link.url,
           content_type: link.content_type || "url",
-          category_id: link.category_id || null,
           favicon_url: link.favicon_url || null,
           color_value: (link as any).color_value || null,
           domain: link.content_type === "color" ? "color" : extractDomain(link.url),
