@@ -219,30 +219,6 @@ describe('createLinkSchema', () => {
   });
 
   describe('optional fields', () => {
-    it('accepts category_id as UUID', () => {
-      const result = createLinkSchema.safeParse({
-        url: 'https://example.com',
-        category_id: '550e8400-e29b-41d4-a716-446655440000',
-      });
-      expect(result.success).toBe(true);
-    });
-
-    it('accepts null category_id', () => {
-      const result = createLinkSchema.safeParse({
-        url: 'https://example.com',
-        category_id: null,
-      });
-      expect(result.success).toBe(true);
-    });
-
-    it('rejects invalid category_id UUID', () => {
-      const result = createLinkSchema.safeParse({
-        url: 'https://example.com',
-        category_id: 'not-a-uuid',
-      });
-      expect(result.success).toBe(false);
-    });
-
     it('accepts valid favicon_url', () => {
       const result = createLinkSchema.safeParse({
         url: 'https://example.com',
@@ -375,20 +351,6 @@ describe('updateLinkSchema', () => {
   it('accepts is_archived update', () => {
     const result = updateLinkSchema.safeParse({
       is_archived: true,
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it('accepts category_id update', () => {
-    const result = updateLinkSchema.safeParse({
-      category_id: '550e8400-e29b-41d4-a716-446655440000',
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it('accepts null category_id (unassign)', () => {
-    const result = updateLinkSchema.safeParse({
-      category_id: null,
     });
     expect(result.success).toBe(true);
   });
@@ -631,17 +593,6 @@ describe('validation error messages', () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.issues[0].message).toContain('Title too long');
-    }
-  });
-
-  it('provides meaningful error for invalid category_id', () => {
-    const result = createLinkSchema.safeParse({
-      url: 'https://example.com',
-      category_id: 'not-a-uuid',
-    });
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.issues[0].message).toContain('Invalid category ID');
     }
   });
 

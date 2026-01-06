@@ -6,15 +6,15 @@ interface LinkEventProperties {
   link_id?: string;
   url?: string;
   domain?: string;
-  category_id?: string | null;
+  space_id?: string | null;
   content_type?: string;
   has_notes?: boolean;
   has_rich_text?: boolean;
 }
 
-interface CategoryEventProperties {
-  category_id: string;
-  category_name: string;
+interface SpaceEventProperties {
+  space_id: string;
+  space_name: string;
   link_count?: number;
 }
 
@@ -60,10 +60,10 @@ export function trackLinkUpdated(properties: LinkEventProperties) {
 }
 
 /**
- * Track when a user creates a category
+ * Track when a user creates a space
  */
-export function trackCategoryCreated(properties: CategoryEventProperties) {
-  posthog.capture('category_created', properties);
+export function trackSpaceCreated(properties: SpaceEventProperties) {
+  posthog.capture('space_created', properties);
 }
 
 /**
