@@ -14,6 +14,7 @@ export interface ApiResponse {
   success: boolean;
   error?: string;
   duplicate?: boolean;
+  authFailed?: boolean; // Set to true when we get a 401, indicating token is invalid
 }
 
 /**
@@ -39,9 +40,14 @@ export async function saveLink(request: SaveLinkRequest): Promise<ApiResponse> {
 
     if (!response.ok) {
       if (response.status === 401) {
-        // Don't auto-clear settings - let user manually disconnect
-        // This prevents cascading issues where one failed request clears everything
-        return { success: false, error: "Auth failed. Please reconnect in settings." };
+        // Auth failed - token is invalid or expired
+        // Clear the invalid token so user can reconnect
+        await clearSettings();
+        return { 
+          success: false, 
+          error: "Auth failed. Redirecting to connect...",
+          authFailed: true 
+        };
       }
       // Try to get the actual error message from the response
       try {
