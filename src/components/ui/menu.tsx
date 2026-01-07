@@ -60,7 +60,7 @@ const DropdownMenuSubContent = React.forwardRef<
         {...(subContentProps as any)}
         style={{ ...style, marginTop: '-8px' }}
         className={cn(
-          "overlay-blur z-[60] min-w-[8rem] overflow-hidden rounded-[14px] border-[var(--overlay-border)] p-2 text-[var(--overlay-text-primary)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+          "overlay-blur z-[60] min-w-[10rem] max-w-[224px] overflow-hidden rounded-[14px] border-[var(--overlay-border)] p-2 text-[var(--overlay-text-primary)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
           className,
         )}
       />
@@ -113,18 +113,20 @@ const DropdownMenuCheckboxItem = React.forwardRef<
   <DropdownMenuPrimitive.CheckboxItem
     ref={ref}
       className={cn(
-        "relative flex cursor-default select-none items-center rounded-lg py-1.5 pl-8 pr-2 text-sm font-[470] outline-none !outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] focus:bg-[var(--overlay-hover)] focus:text-[var(--overlay-text-primary)] focus-visible:outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        "relative flex cursor-default select-none items-center justify-between rounded-lg py-1.5 px-2 text-sm font-[470] outline-none !outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] focus:bg-[var(--overlay-hover)] focus:text-[var(--overlay-text-primary)] focus-visible:outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         className,
       )}
     checked={checked}
     {...props}
   >
-    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+    <div className="flex items-center gap-4 flex-1 min-w-0">
+      {children}
+    </div>
+    <span className="flex h-3.5 w-3.5 items-center justify-center shrink-0">
       <DropdownMenuPrimitive.ItemIndicator>
         <IconCheck className="h-4 w-4" />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
-    {children}
   </DropdownMenuPrimitive.CheckboxItem>
 ))
 DropdownMenuCheckboxItem.displayName =

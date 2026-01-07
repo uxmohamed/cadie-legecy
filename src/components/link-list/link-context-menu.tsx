@@ -222,12 +222,12 @@ export function LinkContextMenu({
                       }
                     }}
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 min-w-0 flex-1">
                       <IconCapsuleHorizontalFilled 
-                        className="h-3 w-3" 
+                        className="h-3 w-3 shrink-0" 
                         style={{ color: space.color }}
                       />
-                      <span>{space.name}</span>
+                      <span className="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">{space.name}</span>
                     </div>
                   </MenuCheckboxItem>
                 );
