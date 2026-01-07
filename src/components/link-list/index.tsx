@@ -696,28 +696,28 @@ export function LinkList({
     }
   }, [isAddingItem]);
 
-  // Show empty state only when not in add mode
-  if (showEmptyState) {
-    return <LinkListEmpty />;
-  }
-
   return (
     <div className="w-full" ref={containerRef}>
-      {/* Add input - appears at top of list, pushes links down */}
-      {isAddingItem && (
-        <InlineAddItem
-          value={addInputValue}
-          onChange={onAddInputChange || (() => {})}
-          onSubmit={onAddSubmit || (() => {})}
-          onCancel={onAddCancel || (() => {})}
-        />
-      )}
+      {/* Show empty state only when not in add mode */}
+      {showEmptyState ? (
+        <LinkListEmpty />
+      ) : (
+        <>
+          {/* Add input - appears at top of list, pushes links down */}
+          {isAddingItem && (
+            <InlineAddItem
+              value={addInputValue}
+              onChange={onAddInputChange || (() => {})}
+              onSubmit={onAddSubmit || (() => {})}
+              onCancel={onAddCancel || (() => {})}
+            />
+          )}
 
-      {/* Virtualized list container */}
-      <div
-        className="py-4 relative"
-        style={{ height: `${virtualizer.getTotalSize()}px` }}
-      >
+          {/* Virtualized list container */}
+          <div
+            className="py-4 relative"
+            style={{ height: `${virtualizer.getTotalSize()}px` }}
+          >
         {virtualRows.map((virtualRow) => {
           const item = virtualItems[virtualRow.index];
 
@@ -844,11 +844,13 @@ export function LinkList({
 
           return null;
         })}
-      </div>
+          </div>
 
-      {/* Sentinel for infinite scroll */}
-      {hasMore && !isLoadingMore && (
-        <div ref={loadMoreRef} className="h-4 w-full" />
+          {/* Sentinel for infinite scroll */}
+          {hasMore && !isLoadingMore && (
+            <div ref={loadMoreRef} className="h-4 w-full" />
+          )}
+        </>
       )}
 
       {contextMenu && (
