@@ -274,8 +274,10 @@ export function DashboardContent({
     onBatchUnpin: handleBatchUnpinLinks,
   }), [handleBatchDeleteLinks, handleBatchRestoreLinks, handleBatchPermanentDeleteLinks, handleBatchPinLinks, handleBatchUnpinLinks]);
 
-  // Show skeleton when loading initial data
-  if (isLoading) {
+  // Only show skeleton on first load when there's no cached data
+  // If we have cached data, show it immediately (even if stale)
+  const hasNoData = !links || links.length === 0;
+  if (isLoading && hasNoData) {
     return <LinkListSkeleton />;
   }
 

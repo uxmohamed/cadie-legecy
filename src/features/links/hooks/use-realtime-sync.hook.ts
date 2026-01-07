@@ -19,6 +19,20 @@ interface LinksResponse {
 }
 
 /**
+ * Sort links: pinned first, then by created_at descending
+ * This ensures consistent ordering across all cache updates
+ */
+function sortLinks(links: Link[]): Link[] {
+  return [...links].sort((a, b) => {
+    // Pinned items first
+    if (a.is_pinned && !b.is_pinned) return -1;
+    if (!a.is_pinned && b.is_pinned) return 1;
+    // Then by date (newest first)
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+}
+
+/**
  * Determines which filter view a link belongs to
  */
 function classifyLink(link: Link): { view: "all" | "trash"; filters: LinkFilters } {
@@ -29,7 +43,7 @@ function classifyLink(link: Link): { view: "all" | "trash"; filters: LinkFilters
 }
 
 /**
- * Handle INSERT event - add link to appropriate cache
+ * Handle INSERT event - add link to appropriate cache (maintains sort order)
  */
 function handleInsert(
   queryClient: ReturnType<typeof useQueryClient>,
@@ -44,23 +58,23 @@ function handleInsert(
     // Check if link already exists (dedup)
     const exists = old.links.some((l) => l.id === link.id);
     if (exists) {
-      // Update existing link instead
+      // Update existing link instead (re-sort in case pinned status changed)
       return {
-        links: old.links.map((l) => (l.id === link.id ? link : l)),
+        links: sortLinks(old.links.map((l) => (l.id === link.id ? link : l))),
         total: old.total,
       };
     }
 
-    // Add to beginning (most recent)
+    // Add and maintain pinned-first sort order
     return {
-      links: [link, ...old.links],
+      links: sortLinks([link, ...old.links]),
       total: old.total + 1,
     };
   });
 }
 
 /**
- * Handle UPDATE event - update link in cache, possibly move between views
+ * Handle UPDATE event - update link in cache, possibly move between views (maintains sort order)
  */
 function handleUpdate(
   queryClient: ReturnType<typeof useQueryClient>,
@@ -82,23 +96,23 @@ function handleUpdate(
       };
     });
 
-    // Add to new view
+    // Add to new view (maintain sort order)
     const newQueryKey = queryKeys.links.list(newClassification.filters);
     queryClient.setQueryData<LinksResponse>(newQueryKey, (old) => {
       if (!old) return { links: [newLink], total: 1 };
       return {
-        links: [newLink, ...old.links.filter((l) => l.id !== newLink.id)],
+        links: sortLinks([newLink, ...old.links.filter((l) => l.id !== newLink.id)]),
         total: old.total + 1,
       };
     });
   } else {
-    // Update in same view
+    // Update in same view (re-sort in case pinned status changed)
     const queryKey = queryKeys.links.list(newClassification.filters);
     queryClient.setQueryData<LinksResponse>(queryKey, (old) => {
       if (!old) return old;
       return {
         ...old,
-        links: old.links.map((l) => (l.id === newLink.id ? newLink : l)),
+        links: sortLinks(old.links.map((l) => (l.id === newLink.id ? newLink : l))),
       };
     });
   }

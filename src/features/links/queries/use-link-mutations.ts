@@ -21,6 +21,20 @@ const ALL_FILTERS: LinkFilters = { is_deleted: false, is_archived: false };
 const TRASH_FILTERS: LinkFilters = { is_deleted: true };
 
 /**
+ * Sort links: pinned first, then by created_at descending
+ * This ensures consistent ordering across all cache updates
+ */
+function sortLinks(links: Link[]): Link[] {
+  return [...links].sort((a, b) => {
+    // Pinned items first
+    if (a.is_pinned && !b.is_pinned) return -1;
+    if (!a.is_pinned && b.is_pinned) return 1;
+    // Then by date (newest first)
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+}
+
+/**
  * Helper to update links in cache optimistically
  */
 function updateLinksCache(
@@ -50,7 +64,7 @@ function removeLinkFromCache(
 }
 
 /**
- * Add a link to a cache (at the beginning, sorted by pinned then date)
+ * Add a link to a cache (maintains pinned-first sort order)
  */
 function addLinkToCache(
   queryClient: ReturnType<typeof useQueryClient>,
@@ -64,11 +78,11 @@ function addLinkToCache(
     if (exists) {
       return {
         ...old,
-        links: old.links.map((l) => (l.id === link.id ? link : l)),
+        links: sortLinks(old.links.map((l) => (l.id === link.id ? link : l))),
       };
     }
     return {
-      links: [link, ...old.links],
+      links: sortLinks([link, ...old.links]),
       total: old.total + 1,
     };
   });
@@ -94,7 +108,7 @@ function removeLinksFromCache(
 }
 
 /**
- * Add multiple links to a cache
+ * Add multiple links to a cache (maintains pinned-first sort order)
  */
 function addLinksToCache(
   queryClient: ReturnType<typeof useQueryClient>,
@@ -102,11 +116,11 @@ function addLinksToCache(
   links: Link[]
 ) {
   updateLinksCache(queryClient, filters, (old) => {
-    if (!old) return { links, total: links.length };
+    if (!old) return { links: sortLinks(links), total: links.length };
     const existingIds = new Set(old.links.map((l) => l.id));
     const newLinks = links.filter((l) => !existingIds.has(l.id));
     return {
-      links: [...newLinks, ...old.links],
+      links: sortLinks([...newLinks, ...old.links]),
       total: old.total + newLinks.length,
     };
   });
