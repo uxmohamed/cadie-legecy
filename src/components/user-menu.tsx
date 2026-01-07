@@ -1,8 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import { clearLinksStore } from "@/features/links/store/links-store";
+import { clearUIStore } from "@/features/links/store/ui-store";
+import { clearAllCaches } from "@/lib/query/auth-reset";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import { useShortcuts } from "@/components/shortcut-context";
@@ -29,6 +31,7 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ user }: UserMenuProps) {
+  const queryClient = useQueryClient();
   const [isSigningOut, setIsSigningOut] = React.useState(false);
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
@@ -54,8 +57,10 @@ export function UserMenu({ user }: UserMenuProps) {
     try {
       setIsSigningOut(true);
       
-      // Clear links store before signing out to prevent data leakage between accounts
-      clearLinksStore();
+      // Clear all caches before signing out to prevent data leakage between accounts
+      // This clears: TanStack Query cache, IndexedDB persisted cache, and UI store
+      await clearAllCaches(queryClient);
+      clearUIStore();
       
       const supabase = createClient();
       const { error } = await supabase.auth.signOut();
@@ -72,7 +77,7 @@ export function UserMenu({ user }: UserMenuProps) {
       console.error("Error signing out:", error);
       setIsSigningOut(false);
     }
-  }, []);
+  }, [queryClient]);
 
   // Handle looping keyboard navigation
   React.useEffect(() => {

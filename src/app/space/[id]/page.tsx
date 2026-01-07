@@ -1,7 +1,9 @@
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { DashboardClient } from "@/components/dashboard-client";
 import { prefetchSpaceLinks } from "@/lib/server/prefetch-links";
+import { getQueryClient, queryKeys } from "@/lib/query";
 import type { Metadata } from "next";
 
 interface SpacePageProps {
@@ -84,15 +86,23 @@ export default async function SpacePage({ params }: SpacePageProps) {
     notFound();
   }
 
-  // Prefetch space links on server for instant render
-  const initialData = await prefetchSpaceLinks(user.id, id);
+  // Create query client for this request
+  const queryClient = getQueryClient();
 
-  // Render dashboard with space view and prefetched data
+  // Prefetch space links and hydrate the query cache
+  const filters = { space_id: id, is_deleted: false, is_archived: false };
+  await queryClient.prefetchQuery({
+    queryKey: queryKeys.links.list(filters),
+    queryFn: () => prefetchSpaceLinks(user.id, id),
+  });
+
+  // Render dashboard with space view and hydrated query cache
   return (
-    <DashboardClient
-      user={JSON.parse(JSON.stringify(user))}
-      initialView={id}
-      initialLinks={initialData}
-    />
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <DashboardClient
+        user={JSON.parse(JSON.stringify(user))}
+        initialView={id}
+      />
+    </HydrationBoundary>
   );
 }

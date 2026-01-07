@@ -69,8 +69,8 @@ interface LinkListProps {
       onBatchDelete: (ids: string[]) => Promise<void>;
       onBatchRestore: (ids: string[]) => Promise<void>;
       onBatchPermanentDelete: (ids: string[]) => Promise<void>;
-      onBatchPin: (ids: string[]) => void;
-      onBatchUnpin: (ids: string[]) => void;
+      onBatchPin: (ids: string[]) => Promise<void>;
+      onBatchUnpin: (ids: string[]) => Promise<void>;
     }
   ) => void;
   spaces?: Space[];

@@ -1,7 +1,9 @@
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardClient } from "@/components/dashboard-client";
 import { LandingPage } from "@/components/landing-page";
 import { prefetchDashboardLinks } from "@/lib/server/prefetch-links";
+import { getQueryClient, queryKeys } from "@/lib/query";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -16,15 +18,22 @@ export default async function Home() {
     return <LandingPage />;
   }
 
-  // Prefetch initial links on server for instant render
-  // This eliminates the network waterfall (page load → client fetch)
-  const initialData = await prefetchDashboardLinks(user.id);
+  // Create query client for this request
+  const queryClient = getQueryClient();
 
-  // Render dashboard with prefetched data
+  // Prefetch links and hydrate the query cache
+  const filters = { is_deleted: false, is_archived: false };
+  await queryClient.prefetchQuery({
+    queryKey: queryKeys.links.list(filters),
+    queryFn: () => prefetchDashboardLinks(user.id),
+  });
+
+  // Render dashboard with hydrated query cache
   return (
-    <DashboardClient
-      user={JSON.parse(JSON.stringify(user))}
-      initialLinks={initialData}
-    />
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <DashboardClient
+        user={JSON.parse(JSON.stringify(user))}
+      />
+    </HydrationBoundary>
   );
 }

@@ -61,6 +61,7 @@ export const metadata: Metadata = {
 
 import { ShortcutProvider } from "@/components/shortcut-context";
 import { ShortcutsHelpModal } from "@/components/shortcuts-help-modal";
+import { QueryProvider } from "@/lib/query";
 
 export default function RootLayout({
   children,
@@ -71,16 +72,18 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning className={`${inter.variable} ${customFont.variable} antialiased`}>
         <ThemeProvider defaultTheme="system">
-          <Suspense fallback={null}>
-            <PostHogPageView />
-          </Suspense>
-          <ErrorBoundary>
-            <ShortcutProvider>
-              {children}
-              <ShortcutsHelpModal />
-            </ShortcutProvider>
-          </ErrorBoundary>
-          <ToasterProvider />
+          <QueryProvider>
+            <Suspense fallback={null}>
+              <PostHogPageView />
+            </Suspense>
+            <ErrorBoundary>
+              <ShortcutProvider>
+                {children}
+                <ShortcutsHelpModal />
+              </ShortcutProvider>
+            </ErrorBoundary>
+            <ToasterProvider />
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>
