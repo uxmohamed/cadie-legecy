@@ -44,6 +44,8 @@ interface DashboardShellProps {
   onBatchUnpin?: () => void;
   spaces?: Space[];
   onCreateSpace?: () => void;
+  onEditSpace?: (space: Space) => void;
+  onDeleteSpace?: (spaceId: string) => void;
 }
 
 export function DashboardShell({
@@ -69,6 +71,8 @@ export function DashboardShell({
   onBatchUnpin,
   spaces,
   onCreateSpace,
+  onEditSpace,
+  onDeleteSpace,
 }: DashboardShellProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -152,7 +156,7 @@ export function DashboardShell({
 
     registerShortcut({
       key: "1",
-      description: "Switch to All Items view",
+      description: "Switch to All view",
       category: "Navigation",
       action: () => {
         onViewChange(null);
@@ -355,7 +359,9 @@ export function DashboardShell({
                   onViewChange={onViewChange}
                   spaces={spaces}
                   onCreateSpace={onCreateSpace}
-                  title={isTrashView ? "Trash" : selectedSpace?.name || "All Items"}
+                  onEditSpace={onEditSpace}
+                  onDeleteSpace={onDeleteSpace}
+                  title={isTrashView ? "Trash" : selectedSpace?.name || "All"}
                   isTrashView={isTrashView}
                 />
                 {isTrashView && (

@@ -73,7 +73,7 @@ export function LinkContextMenu({
         <>
           {onBatchRestore && (
             <MenuItem onClick={onBatchRestore}>
-              <IconRestore className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+              <IconRestore className="h-4 w-4 text-[var(--icon-secondary)]" />
               Restore {selectedCount} items
             </MenuItem>
           )}
@@ -84,7 +84,7 @@ export function LinkContextMenu({
                 className="text-[var(--accent-red-primary)] focus:text-[var(--accent-red-primary)]"
                 onClick={onBatchPermanentDelete}
               >
-                <IconTrash className="mr-2 h-4 w-4" />
+                <IconTrash className="h-4 w-4" />
                 Delete {selectedCount} items permanently
               </MenuItem>
             </>
@@ -103,13 +103,13 @@ export function LinkContextMenu({
       <>
         {(allUnpinned || hasMixed) && onBatchPin && (
           <MenuItem onClick={onBatchPin}>
-            <IconPin className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+            <IconPin className="h-4 w-4 text-[var(--icon-secondary)]" />
             Pin {selectedCount} items
           </MenuItem>
         )}
         {(allPinned || hasMixed) && onBatchUnpin && (
           <MenuItem onClick={onBatchUnpin}>
-            <IconPinnedOff className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+            <IconPinnedOff className="h-4 w-4 text-[var(--icon-secondary)]" />
             Unpin {selectedCount} items
           </MenuItem>
         )}
@@ -131,19 +131,21 @@ export function LinkContextMenu({
     return (
       <>
         <MenuItem onClick={() => window.open(link.url, '_blank')}>
-          <IconExternalLink className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+          <IconExternalLink className="h-4 w-4 text-[var(--icon-secondary)]" />
           Open
         </MenuItem>
-        <MenuItem onClick={() => onCopy?.(link.url)}>
-          <IconCopy className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
-          Copy URL
-          <Kbd className="ml-auto">⌘C</Kbd>
+        <MenuItem onClick={() => onCopy?.(link.url)} className="justify-between">
+          <div className="flex items-center gap-4">
+            <IconCopy className="h-4 w-4 text-[var(--icon-secondary)]" />
+            Copy URL
+          </div>
+          <Kbd>⌘C</Kbd>
         </MenuItem>
         {onRestore && (
           <>
             <MenuSeparator />
             <MenuItem onClick={() => onRestore(link.id)}>
-              <IconRestore className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+              <IconRestore className="h-4 w-4 text-[var(--icon-secondary)]" />
               Restore
             </MenuItem>
           </>
@@ -170,26 +172,28 @@ export function LinkContextMenu({
   // Normal view single item actions
   return (
     <>
-      <MenuItem onClick={() => onCopy?.(copyValue)}>
-        <IconCopy className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
-        {isColor ? 'Copy Color' : 'Copy URL'}
-        <Kbd className="ml-auto">⌘C</Kbd>
+      <MenuItem onClick={() => onCopy?.(copyValue)} className="justify-between">
+        <div className="flex items-center gap-4">
+          <IconCopy className="h-4 w-4 text-[var(--icon-secondary)]" />
+          {isColor ? 'Copy Color' : 'Copy URL'}
+        </div>
+        <Kbd>⌘C</Kbd>
       </MenuItem>
       <MenuItem onClick={() => onRename?.(link)}>
-        <IconPencil className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+        <IconPencil className="h-4 w-4 text-[var(--icon-secondary)]" />
         Rename
       </MenuItem>
       {link.is_pinned ? (
         onUnpin && (
           <MenuItem onClick={() => onUnpin(link.id)}>
-            <IconPinnedOff className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+            <IconPinnedOff className="h-4 w-4 text-[var(--icon-secondary)]" />
             Unpin
           </MenuItem>
         )
       ) : (
         onPin && (
           <MenuItem onClick={() => onPin(link.id)}>
-            <IconPin className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+            <IconPin className="h-4 w-4 text-[var(--icon-secondary)]" />
             Pin
           </MenuItem>
         )
@@ -200,7 +204,7 @@ export function LinkContextMenu({
           <MenuSeparator />
           <MenuSub>
             <MenuSubTrigger>
-              <IconCapsuleHorizontalFilled className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+              <IconCapsuleHorizontalFilled className="h-4 w-4 text-[var(--icon-secondary)]" />
               Move to Space
             </MenuSubTrigger>
             <MenuSubPopup>
@@ -218,7 +222,7 @@ export function LinkContextMenu({
                       }
                     }}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-4">
                       <IconCapsuleHorizontalFilled 
                         className="h-3 w-3" 
                         style={{ color: space.color }}
@@ -235,12 +239,14 @@ export function LinkContextMenu({
 
       <MenuSeparator />
       <MenuItem
-        className="text-[var(--accent-red-primary)] focus:text-[var(--accent-red-primary)]"
+        className="text-[var(--accent-red-primary)] focus:text-[var(--accent-red-primary)] justify-between"
         onClick={() => onDelete?.(link.id)}
       >
-        <IconTrash className="mr-2 h-4 w-4" />
-        Delete
-        <Kbd className="ml-auto">⌘⌫</Kbd>
+        <div className="flex items-center gap-4">
+          <IconTrash className="h-4 w-4" />
+          Delete
+        </div>
+        <Kbd>⌘⌫</Kbd>
       </MenuItem>
     </>
   );

@@ -9,9 +9,27 @@ import {
 import { Kbd } from "@/components/ui/kbd";
 import { Popover, PopoverTrigger, PopoverPopup } from "@/components/ui/popover";
 import {
+  Menu,
+  MenuItem,
+  MenuPopup,
+  MenuTrigger,
+} from "@/components/ui/menu";
+import {
+  AlertDialog,
+  AlertDialogPopup,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogClose,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import {
   IconCircleCheckFilled,
   IconCapsuleHorizontalFilled,
   IconTrashFilled,
+  IconDots,
+  IconPencil,
 } from "@tabler/icons-react";
 import { ChevronUpDown } from "@/components/icons/chevron-up-down";
 import type { Space } from "@/types";
@@ -22,6 +40,8 @@ interface ViewSwitcherProps {
   onViewChange?: (view: string | null) => void;
   spaces?: Space[];
   onCreateSpace?: () => void;
+  onEditSpace?: (space: Space) => void;
+  onDeleteSpace?: (spaceId: string) => void;
   title: string;
   isTrashView?: boolean;
 }
@@ -31,14 +51,33 @@ export function ViewSwitcher({
   onViewChange,
   spaces = [],
   onCreateSpace,
+  onEditSpace,
+  onDeleteSpace,
   title,
   isTrashView = false,
 }: ViewSwitcherProps) {
   const [viewPopoverOpen, setViewPopoverOpen] = React.useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [spaceToDelete, setSpaceToDelete] = React.useState<Space | null>(null);
 
   const handleViewChange = (view: string | null) => {
     onViewChange?.(view);
     setViewPopoverOpen(false);
+  };
+
+  const handleDeleteClick = (space: Space, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSpaceToDelete(space);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (spaceToDelete && onDeleteSpace) {
+      onDeleteSpace(spaceToDelete.id);
+      setViewPopoverOpen(false);
+      setDeleteDialogOpen(false);
+      setSpaceToDelete(null);
+    }
   };
 
   const isAllItemsSelected = selectedCategoryId === null;
@@ -80,22 +119,22 @@ export function ViewSwitcher({
           side="bottom"
           align="start"
           sideOffset={12}
-          className="w-56 p-2 max-h-[400px] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(255,255,255,0.1)] [&::-webkit-scrollbar-track]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(255,255,255,0.2)]"
+          className="w-56 p-2 max-h-[400px] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(255,255,255,0.1)] [&::-webkit-scrollbar-track]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(255,255,255,0.2)] border-[var(--overlay-border)] shadow-md"
           style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}
         >
           <div className="flex flex-col gap-1">
             <button
               onClick={() => handleViewChange(null)}
-              className={`relative flex w-full cursor-pointer select-none items-center justify-between rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] gap-2 min-w-0 ${
+              className={`group relative flex w-full cursor-pointer select-none items-center justify-between rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] gap-2 min-w-0 ${
                 isAllItemsSelected ? "bg-[var(--bg-selected)]" : ""
               }`}
             >
-              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div className="flex items-center gap-4 min-w-0 flex-1">
                 <IconCapsuleHorizontalFilled className="h-4 w-4 text-[var(--overlay-text-secondary)] shrink-0" />
-                <span className="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">All items</span>
+                <span className="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">All</span>
               </div>
               {isAllItemsSelected ? (
-                <IconCircleCheckFilled className="h-5 w-5 text-white shrink-0" />
+                <IconCircleCheckFilled className="h-5 w-5 text-white shrink-0 group-hover:opacity-0" />
               ) : (
                 <Kbd className="h-5 px-1.5 text-[10px] bg-[rgba(255,255,255,0.1)] text-[var(--overlay-text-secondary)] shrink-0">
                   1
@@ -122,28 +161,118 @@ export function ViewSwitcher({
                   }
                   
                   return (
-                    <button
+                    <div
                       key={space.id}
-                      onClick={() => handleViewChange(space.id)}
-                      className={`relative flex w-full cursor-pointer select-none items-center justify-between rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] gap-2 min-w-0 ${
-                        isSelected ? "bg-[var(--bg-selected)]" : ""
+                      className={`group relative flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-[470] transition-colors gap-2 min-w-0 ${
+                        isSelected ? "bg-[var(--bg-selected)]" : "hover:bg-[rgba(255,255,255,0.06)]"
                       }`}
                     >
-                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <IconCapsuleHorizontalFilled 
-                          className="h-4 w-4 shrink-0" 
-                          style={{ color: space.color }}
-                        />
-                        <span className="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">{space.name}</span>
-                      </div>
-                      {isSelected ? (
-                        <IconCircleCheckFilled className="h-5 w-5 text-white shrink-0" />
-                      ) : (
-                        <Kbd className="h-5 px-1.5 text-[10px] bg-[rgba(255,255,255,0.1)] text-[var(--overlay-text-secondary)] shrink-0">
-                          {shortcutKey}
-                        </Kbd>
-                      )}
-                    </button>
+                      <button
+                        onClick={() => handleViewChange(space.id)}
+                        className="flex w-full cursor-pointer select-none items-center justify-between gap-2 min-w-0 outline-none relative"
+                      >
+                        <div className="flex items-center gap-4 min-w-0 flex-1">
+                          <IconCapsuleHorizontalFilled 
+                            className="h-4 w-4 shrink-0" 
+                            style={{ color: space.color }}
+                          />
+                          <span className="overflow-hidden text-ellipsis whitespace-nowrap min-w-0 text-[var(--overlay-text-primary)]">{space.name}</span>
+                        </div>
+                        {isSelected ? (
+                          <>
+                            <IconCircleCheckFilled className="h-5 w-5 text-white shrink-0 group-hover:opacity-0 transition-opacity" />
+                            {(onEditSpace || onDeleteSpace) && (
+                              <Menu modal={false}>
+                                <MenuTrigger
+                                  className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 h-6 w-6 flex items-center justify-center rounded-md hover:bg-[rgba(255,255,255,0.1)] outline-none p-1"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                  }}
+                                >
+                                  <IconDots className="h-4 w-4 text-[var(--overlay-text-secondary)]" />
+                                </MenuTrigger>
+                                <MenuPopup 
+                                  align="start" 
+                                  side="right" 
+                                  sideOffset={22}
+                                  className="rounded-[14px] border-[var(--overlay-border)] shadow-md outline-none overflow-hidden"
+                                >
+                                  {onEditSpace && (
+                                    <MenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onEditSpace(space);
+                                        setViewPopoverOpen(false);
+                                      }}
+                                    >
+                                      <IconPencil className="h-4 w-4" />
+                                      Edit
+                                    </MenuItem>
+                                  )}
+                                  {onDeleteSpace && (
+                                    <MenuItem
+                                      onClick={(e) => handleDeleteClick(space, e)}
+                                      className="text-[var(--accent-red-primary)]"
+                                    >
+                                      <IconTrashFilled className="h-4 w-4" />
+                                      Remove
+                                    </MenuItem>
+                                  )}
+                                </MenuPopup>
+                              </Menu>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <Kbd className="h-5 px-1.5 text-[10px] bg-[rgba(255,255,255,0.1)] text-[var(--overlay-text-secondary)] shrink-0 group-hover:opacity-0 transition-opacity">
+                              {shortcutKey}
+                            </Kbd>
+                            {(onEditSpace || onDeleteSpace) && (
+                              <Menu modal={false}>
+                                <MenuTrigger
+                                  className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 h-6 w-6 flex items-center justify-center rounded-md hover:bg-[rgba(255,255,255,0.1)] outline-none p-1"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                  }}
+                                >
+                                  <IconDots className="h-4 w-4 text-[var(--overlay-text-secondary)]" />
+                                </MenuTrigger>
+                                <MenuPopup 
+                                  align="start" 
+                                  side="right" 
+                                  sideOffset={22}
+                                  className="rounded-[14px] border-[var(--overlay-border)] shadow-md outline-none overflow-hidden"
+                                >
+                                  {onEditSpace && (
+                                    <MenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onEditSpace(space);
+                                        setViewPopoverOpen(false);
+                                      }}
+                                    >
+                                      <IconPencil className="h-4 w-4" />
+                                      Edit
+                                    </MenuItem>
+                                  )}
+                                  {onDeleteSpace && (
+                                    <MenuItem
+                                      onClick={(e) => handleDeleteClick(space, e)}
+                                      className="text-[var(--accent-red-primary)]"
+                                    >
+                                      <IconTrashFilled className="h-4 w-4" />
+                                      Remove
+                                    </MenuItem>
+                                  )}
+                                </MenuPopup>
+                              </Menu>
+                            )}
+                          </>
+                        )}
+                      </button>
+                    </div>
                   );
                 })}
               </>
@@ -153,16 +282,16 @@ export function ViewSwitcher({
             
             <button
               onClick={() => handleViewChange("trash")}
-              className={`relative flex w-full cursor-pointer select-none items-center justify-between rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] gap-2 min-w-0 ${
+              className={`group relative flex w-full cursor-pointer select-none items-center justify-between rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] gap-2 min-w-0 ${
                 isTrashSelected ? "bg-[var(--bg-selected)]" : ""
               }`}
             >
-              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div className="flex items-center gap-4 min-w-0 flex-1">
                 <IconTrashFilled className="h-4 w-4 text-[var(--accent-red-primary)] shrink-0" />
                 <span className="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">Trash</span>
               </div>
               {isTrashSelected ? (
-                <IconCircleCheckFilled className="h-5 w-5 text-white shrink-0" />
+                <IconCircleCheckFilled className="h-5 w-5 text-white shrink-0 group-hover:opacity-0" />
               ) : (
                 <Kbd className="h-5 px-1.5 text-[10px] bg-[rgba(255,255,255,0.1)] text-[var(--overlay-text-secondary)] shrink-0">
                   ⇧T
@@ -179,11 +308,11 @@ export function ViewSwitcher({
                     onCreateSpace();
                     setViewPopoverOpen(false);
                   }}
-                  className="relative flex w-full cursor-pointer select-none items-center justify-center rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)]"
+                  className="relative flex w-full cursor-pointer select-none items-center justify-start rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] gap-2 min-w-0"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <IconPlus className="h-4 w-4" />
-                    <span>New Space</span>
+                  <div className="flex items-center gap-4 min-w-0 flex-1">
+                    <IconPlus className="h-4 w-4 shrink-0" />
+                    <span className="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">New Space</span>
                   </div>
                 </button>
               </>
@@ -191,6 +320,29 @@ export function ViewSwitcher({
           </div>
         </PopoverPopup>
       </Popover>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogPopup>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete space?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{spaceToDelete?.name}"? This will remove all links from this space.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogClose asChild>
+              <Button variant="secondary">Cancel</Button>
+            </AlertDialogClose>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+            >
+              Delete
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogPopup>
+      </AlertDialog>
     </TooltipProvider>
   );
 }

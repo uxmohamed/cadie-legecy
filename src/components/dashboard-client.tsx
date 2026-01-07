@@ -161,6 +161,11 @@ export function DashboardClient({ user, initialView = null }: DashboardClientPro
     setEditingSpace(null);
     setSpaceModalOpen(true);
   }, []);
+
+  const handleEditSpace = React.useCallback((space: Space) => {
+    setEditingSpace(space);
+    setSpaceModalOpen(true);
+  }, []);
   
   const handleSaveSpace = React.useCallback(async (name: string, color: string) => {
     if (editingSpace) {
@@ -218,6 +223,8 @@ export function DashboardClient({ user, initialView = null }: DashboardClientPro
         onViewChange={handleViewChange}
         spaces={spaces}
         onCreateSpace={handleCreateSpace}
+        onEditSpace={handleEditSpace}
+        onDeleteSpace={handleDeleteSpace}
       sortBy={sortBy}
       sortOrder={sortOrder}
       onSortChange={handleSortChange}
