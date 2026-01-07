@@ -303,7 +303,7 @@ export function DashboardContent({
       onAddInputChange={onAddInputChange}
       onAddSubmit={handleInlineAddSubmit}
       onAddCancel={onAddCancel}
-      isLoadingMore={isFetching && !isLoading}
+      isLoadingMore={false} // Never show bottom skeleton - background updates are silent
       hasMore={false} // TODO: Implement infinite scroll with useLinksInfiniteQuery
       onLoadMore={() => {}} // TODO: Implement infinite scroll
       onSelectionChange={onSelectionChange}
