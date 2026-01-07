@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { UserMenu } from "@/components/user-menu";
 import { LogoIcon } from "@/components/logo-icon";
 import { Dock } from "@/components/dock";
+import { ViewSwitcher } from "@/components/view-switcher";
 import type { User } from "@supabase/supabase-js";
 import type { Link } from "@/features/links/types";
 import type { Space } from "@/types";
@@ -161,12 +162,10 @@ export function DashboardShell({
     // Register shortcuts for spaces dynamically
     if (spaces && spaces.length > 0) {
       spaces.forEach((space, index) => {
-        const shortcutNumber = index + 2; // Start from 2 (1 is for "All items")
-        const shortcutKey = shortcutNumber <= 9 
-          ? String(shortcutNumber)
-          : `${shortcutNumber - 9}A`;
-        
-        if (shortcutNumber <= 9) {
+        let shortcutKey: string;
+        if (index < 8) {
+          // First 8 spaces: shortcuts 2-9
+          shortcutKey = String(index + 2);
           // Single key shortcuts (2-9)
           registerShortcut({
             key: shortcutKey,
@@ -177,6 +176,7 @@ export function DashboardShell({
             },
           });
         }
+        // Multi-key shortcuts (1B-9B, 1C-9C, etc.) are handled in handleKeyDown
       });
     }
 
@@ -204,10 +204,12 @@ export function DashboardShell({
         return; // Don't handle shortcuts when typing in inputs
       }
 
-      // Handle "A" key for multi-key shortcuts (1A, 2A, etc.)
-      if (pendingShortcut && e.key.toLowerCase() === "a" && spaces && spaces.length > 8) {
+      // Handle letter keys for multi-key shortcuts (1A-9A, 1B-9B, etc.)
+      if (pendingShortcut && /^[a-z]$/i.test(e.key) && spaces && spaces.length > 8) {
         const numKey = parseInt(pendingShortcut);
-        const spaceIndex = numKey + 7; // 1A -> index 8 (9th space), 2A -> index 9 (10th space), etc.
+        const letter = e.key.toUpperCase();
+        const letterIndex = letter.charCodeAt(0) - 65; // A=0, B=1, C=2, etc.
+        const spaceIndex = 8 + (letterIndex * 9) + (numKey - 1); // 1A -> index 8, 2A -> index 9, ..., 1B -> index 17, etc.
         if (spaces[spaceIndex]) {
           e.preventDefault();
           onViewChange(spaces[spaceIndex].id);
@@ -224,16 +226,19 @@ export function DashboardShell({
       if (numKey >= 1 && numKey <= 9) {
         // If we have more than 8 spaces, numbers can trigger multi-key shortcuts
         if (spaces && spaces.length > 8) {
-          // Check if this number can be used for a multi-key shortcut
-          const spaceIndexForMultiKey = numKey + 7; // 1A -> index 8, 2A -> index 9, etc.
-          const hasMultiKeySpace = spaces[spaceIndexForMultiKey] !== undefined;
+          // Check if this number can be used for a multi-key shortcut (1B-9B, 1C-9C, etc.)
+          // Calculate which spaces could use this number with a letter
+          const hasMultiKeySpace = Array.from({ length: Math.ceil((spaces.length - 8) / 9) }, (_, i) => {
+            const spaceIndex = 8 + (i * 9) + (numKey - 1);
+            return spaces[spaceIndex] !== undefined;
+          }).some(Boolean);
           
           // Check if this number can be used for a single-key shortcut
           const spaceIndexForSingleKey = numKey - 2; // 2 -> index 0, 3 -> index 1, etc.
           const hasSingleKeySpace = numKey >= 2 && numKey <= 8 && spaces[spaceIndexForSingleKey] !== undefined;
 
           if (hasMultiKeySpace || (numKey === 1 && spaces.length > 8)) {
-            // Start waiting for "A" key
+            // Start waiting for letter key (B, C, D, etc.)
             e.preventDefault();
             setPendingShortcut(e.key);
             if (pendingShortcutTimeoutRef.current) {
@@ -247,7 +252,7 @@ export function DashboardShell({
               } else if (hasSingleKeySpace) {
                 onViewChange(spaces[spaceIndexForSingleKey].id);
               }
-            }, 500); // Wait 500ms for "A" key
+            }, 500); // Wait 500ms for letter key
             return;
           }
         }
@@ -344,13 +349,15 @@ export function DashboardShell({
                 <div className="h-8 w-px bg-[var(--border-secondary)]" />
               )}
 
-              <div className="flex items-center gap-2">
-                <button
-                  className="not-italic text-lg sm:text-[22px] font-[570] leading-tight sm:leading-[32px] tracking-[-0.16px] text-[var(--text-primary)] hover:text-[var(--text-primary)] truncate"
-                  aria-label={isTrashView ? "Trash" : selectedSpace?.name || "All Items"}
-                >
-                  {isTrashView ? "Trash" : selectedSpace?.name || "All Items"}
-                </button>
+              <div className="flex items-center gap-2 min-w-0">
+                <ViewSwitcher
+                  selectedCategoryId={selectedCategoryId}
+                  onViewChange={onViewChange}
+                  spaces={spaces}
+                  onCreateSpace={onCreateSpace}
+                  title={isTrashView ? "Trash" : selectedSpace?.name || "All Items"}
+                  isTrashView={isTrashView}
+                />
                 {isTrashView && (
                   <Badge variant="secondary" className="bg-[var(--bg-field-light)] px-2 py-0.75 text-[var(--text-tertiary)] rounded-full">
                     Auto-deletes in 60 days
@@ -471,10 +478,8 @@ export function DashboardShell({
         className="fixed bottom-0 left-0 right-0 h-24 z-10 pointer-events-none bg-gradient-to-t from-[var(--bg-main-container)] to-transparent"
       />
 
-      {/* Dock */}
+      {/* Dock - Selection Toolbar Only */}
       <Dock
-        selectedCategoryId={selectedCategoryId}
-        onViewChange={onViewChange}
         selectedCount={selectedCount}
         onClearSelection={onClearSelection}
         onBatchDelete={onBatchDelete}
@@ -484,8 +489,6 @@ export function DashboardShell({
         onBatchUnpin={onBatchUnpin}
         selectedLinks={selectedLinks}
         isTrashView={isTrashView}
-        spaces={spaces}
-        onCreateSpace={onCreateSpace}
       />
     </div>
   );
