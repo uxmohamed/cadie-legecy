@@ -28,8 +28,39 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Delete user's data first (links, categories, etc.)
+    // Delete user's data first (links, spaces, link_spaces, etc.)
     // The database should have CASCADE deletes set up, but let's be explicit
+    
+    // Get user's link IDs first
+    const { data: userLinks } = await supabase
+      .from("links")
+      .select("id")
+      .eq("user_id", user.id);
+
+    // Delete link_spaces entries for user's links
+    if (userLinks && userLinks.length > 0) {
+      const linkIds = userLinks.map(l => l.id);
+      const { error: linkSpacesError } = await supabase
+        .from("link_spaces")
+        .delete()
+        .in("link_id", linkIds);
+
+      if (linkSpacesError) {
+        console.error("Error deleting link_spaces:", linkSpacesError);
+      }
+    }
+
+    // Delete spaces
+    const { error: spacesError } = await supabase
+      .from("spaces")
+      .delete()
+      .eq("user_id", user.id);
+
+    if (spacesError) {
+      console.error("Error deleting spaces:", spacesError);
+    }
+
+    // Delete links
     const { error: linksError } = await supabase
       .from("links")
       .delete()
@@ -37,15 +68,6 @@ export async function DELETE(request: NextRequest) {
 
     if (linksError) {
       console.error("Error deleting links:", linksError);
-    }
-
-    const { error: categoriesError } = await supabase
-      .from("categories")
-      .delete()
-      .eq("user_id", user.id);
-
-    if (categoriesError) {
-      console.error("Error deleting categories:", categoriesError);
     }
 
     const { error: tokensError } = await supabase

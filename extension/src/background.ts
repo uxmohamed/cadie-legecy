@@ -147,7 +147,15 @@ async function saveCurrentTab(tabId: number): Promise<void> {
         showOverlayInTab(tabId, "success");
       }
     } else {
-      // Show error overlay
+      // Check if auth failed - redirect to connection page
+      if (response.authFailed) {
+        // Auth failed - open authorization page to reconnect
+        const extensionId = chrome.runtime.id;
+        chrome.tabs.create({ url: `https://cadie.app/extension/authorize?extensionId=${extensionId}` });
+        // Don't show error overlay since we're redirecting
+        return;
+      }
+      // Show error overlay for other errors
       showOverlayInTab(tabId, "error", response.error || "Failed to save");
     }
   } catch (error) {

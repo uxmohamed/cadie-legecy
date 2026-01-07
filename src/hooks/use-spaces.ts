@@ -15,8 +15,8 @@ async function fetcher<T>(url: string): Promise<T> {
             error?: { userMessage?: string };
         }
         const errorData = (await response.json()) as ErrorResponse;
-
-        throw new Error(errorData.error?.userMessage || "Failed to fetch");
+        const error = new Error(errorData.error?.userMessage || "Failed to fetch");
+        throw error;
     }
 
     return response.json();

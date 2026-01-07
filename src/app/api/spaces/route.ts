@@ -36,24 +36,49 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get link counts for each space
-    const { data: linkSpaces, error: linkSpacesError } = await supabase
-      .from("link_spaces")
-      .select("space_id")
-      .in("space_id", spaces?.map(s => s.id) || []);
-
-    if (linkSpacesError) {
-      return NextResponse.json(
-        { error: linkSpacesError.message },
-        { status: 500 }
-      );
-    }
-
-    // Count links per space
+    // Get link counts for each space via link_spaces junction table
+    // Only count active (non-deleted, non-archived) links
+    const spaceIds = spaces?.map(s => s.id) || [];
     const counts: Record<string, number> = {};
-    linkSpaces?.forEach((ls) => {
-      counts[ls.space_id] = (counts[ls.space_id] || 0) + 1;
-    });
+    
+    if (spaceIds.length > 0) {
+      // Get all link_spaces entries for user's spaces
+      const { data: linkSpaces, error: linkSpacesError } = await supabase
+        .from("link_spaces")
+        .select("space_id, link_id")
+        .in("space_id", spaceIds);
+
+      if (linkSpacesError) {
+        return NextResponse.json(
+          { error: linkSpacesError.message },
+          { status: 500 }
+        );
+      }
+
+      // Get all links that are in these spaces and are active
+      const linkIds = [...new Set(linkSpaces?.map(ls => ls.link_id) || [])];
+      
+      if (linkIds.length > 0) {
+        const { data: activeLinks, error: linksError } = await supabase
+          .from("links")
+          .select("id")
+          .in("id", linkIds)
+          .eq("user_id", user.id)
+          .eq("is_deleted", false)
+          .eq("is_archived", false);
+
+        if (!linksError && activeLinks) {
+          const activeLinkIds = new Set(activeLinks.map(l => l.id));
+          
+          // Count active links per space
+          linkSpaces?.forEach((linkSpace) => {
+            if (activeLinkIds.has(linkSpace.link_id)) {
+              counts[linkSpace.space_id] = (counts[linkSpace.space_id] || 0) + 1;
+            }
+          });
+        }
+      }
+    }
 
     // Add counts to spaces
     const spacesWithCounts = spaces?.map((space) => ({

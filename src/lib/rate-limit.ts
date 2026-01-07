@@ -56,6 +56,12 @@ export const rateLimitSpaces = new Ratelimit({
 });
 
 /**
+ * Rate limiter for category operations (deprecated - use rateLimitSpaces)
+ * @deprecated Use rateLimitSpaces instead. Categories have been replaced by Spaces.
+ */
+export const rateLimitCategories = rateLimitSpaces;
+
+/**
  * Rate limiter for account deletion (very strict)
  * Limit: 3 requests per hour
  * Used for: /api/auth/delete-account

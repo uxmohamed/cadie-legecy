@@ -82,6 +82,17 @@ export interface UpdateLinkDTO {
     is_archived?: boolean;
     is_deleted?: boolean;
     deleted_at?: string | null;
+    // Extended metadata fields
+    site_name?: string | null;
+    final_url?: string | null;
+    canonical_url?: string | null;
+    theme_color?: string | null;
+    language?: string | null;
+    word_count?: number | null;
+    reading_time_minutes?: number | null;
+    status_code?: number | null;
+    fetch_status?: FetchStatus;
+    fetched_at?: string | null;
 }
 
 /**

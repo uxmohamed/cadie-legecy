@@ -31,7 +31,6 @@ const linksTable = table("links")
     title: string(),
     domain: string(),
     content_type: string(),
-    category_id: string().optional(),
     color_value: string().optional(),
     favicon_url: string().optional(),
     og_image_url: string().optional(),
@@ -50,15 +49,14 @@ const linksTable = table("links")
   .primaryKey("id");
 
 /**
- * Categories table schema
+ * Spaces table schema for organizing links
  */
-const categoriesTable = table("categories")
+const spacesTable = table("spaces")
   .columns({
     id: string(),
     user_id: string(),
     name: string(),
-    color: string().optional(),
-    icon: string().optional(),
+    color: string(),
     sort_order: number(),
     created_at: string(),
     updated_at: string(),
@@ -66,10 +64,22 @@ const categoriesTable = table("categories")
   .primaryKey("id");
 
 /**
+ * Link-Spaces junction table for many-to-many relationship
+ */
+const linkSpacesTable = table("link_spaces")
+  .columns({
+    id: string(),
+    link_id: string(),
+    space_id: string(),
+    created_at: string(),
+  })
+  .primaryKey("id");
+
+/**
  * Create the Zero schema with all tables
  */
 export const schema = createSchema({
-  tables: [linksTable, categoriesTable],
+  tables: [linksTable, spacesTable, linkSpacesTable],
 });
 
 /**

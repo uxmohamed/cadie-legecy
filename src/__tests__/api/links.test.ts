@@ -52,16 +52,16 @@ describe('GET /api/links', () => {
     expect(data.total).toBe(3);
   });
 
-  it('filters by category_id', async () => {
-    const categoryId = 'cat-123';
-    const links = createMockLinks(2, { category_id: categoryId });
+  it('filters by space_id', async () => {
+    const spaceId = 'space-123';
+    const links = createMockLinks(2);
     mockFetchSuccess(createLinksApiResponse(links, 2));
 
-    const response = await fetch(`/api/links?category_id=${categoryId}`);
+    const response = await fetch(`/api/links?space_id=${spaceId}`);
     const data = await response.json();
 
     expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining(`category_id=${categoryId}`)
+      expect.stringContaining(`space_id=${spaceId}`)
     );
     expect(data.links).toHaveLength(2);
   });
