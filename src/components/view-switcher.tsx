@@ -167,8 +167,15 @@ export function ViewSwitcher({
                         isSelected ? "bg-[var(--bg-selected)]" : "hover:bg-[rgba(255,255,255,0.06)]"
                       }`}
                     >
-                      <button
+                      <div
                         onClick={() => handleViewChange(space.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleViewChange(space.id);
+                          }
+                        }}
+                        tabIndex={0}
                         className="flex w-full cursor-pointer select-none items-center justify-between gap-2 min-w-0 outline-none relative"
                       >
                         <div className="flex items-center gap-4 min-w-0 flex-1">
@@ -183,15 +190,17 @@ export function ViewSwitcher({
                             <IconCircleCheckFilled className="h-5 w-5 text-white shrink-0 group-hover:opacity-0 transition-opacity" />
                             {(onEditSpace || onDeleteSpace) && (
                               <Menu modal={false}>
-                                <MenuTrigger
-                                  className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 h-6 w-6 flex items-center justify-center rounded-md hover:bg-[rgba(255,255,255,0.1)] outline-none p-1"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                  }}
-                                >
-                                  <IconDots className="h-4 w-4 text-[var(--overlay-text-secondary)]" />
-                                </MenuTrigger>
+                                <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <MenuTrigger
+                                    className="shrink-0 h-6 w-6 flex items-center justify-center rounded-md hover:bg-[rgba(255,255,255,0.1)] outline-none p-1"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                    }}
+                                  >
+                                    <IconDots className="h-4 w-4 text-[var(--overlay-text-secondary)]" />
+                                  </MenuTrigger>
+                                </div>
                                 <MenuPopup 
                                   align="start" 
                                   side="right" 
@@ -230,15 +239,17 @@ export function ViewSwitcher({
                             </Kbd>
                             {(onEditSpace || onDeleteSpace) && (
                               <Menu modal={false}>
-                                <MenuTrigger
-                                  className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 h-6 w-6 flex items-center justify-center rounded-md hover:bg-[rgba(255,255,255,0.1)] outline-none p-1"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                  }}
-                                >
-                                  <IconDots className="h-4 w-4 text-[var(--overlay-text-secondary)]" />
-                                </MenuTrigger>
+                                <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <MenuTrigger
+                                    className="shrink-0 h-6 w-6 flex items-center justify-center rounded-md hover:bg-[rgba(255,255,255,0.1)] outline-none p-1"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                    }}
+                                  >
+                                    <IconDots className="h-4 w-4 text-[var(--overlay-text-secondary)]" />
+                                  </MenuTrigger>
+                                </div>
                                 <MenuPopup 
                                   align="start" 
                                   side="right" 
@@ -271,7 +282,7 @@ export function ViewSwitcher({
                             )}
                           </>
                         )}
-                      </button>
+                      </div>
                     </div>
                   );
                 })}

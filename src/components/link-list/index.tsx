@@ -689,6 +689,13 @@ export function LinkList({
     return () => observer.disconnect();
   }, [hasMore, isLoadingMore, onLoadMore]);
 
+  // Track if component has mounted to prevent hydration mismatch
+  // On server, we always render the list container structure to match initial client render
+  const [hasMounted, setHasMounted] = React.useState(false);
+  React.useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
   // Scroll to very top when add input is triggered
   React.useEffect(() => {
     if (isAddingItem) {
@@ -698,8 +705,9 @@ export function LinkList({
 
   return (
     <div className="w-full" ref={containerRef}>
-      {/* Show empty state only when not in add mode */}
-      {showEmptyState ? (
+      {/* Show empty state only when not in add mode and after mount */}
+      {/* This prevents hydration mismatch by always rendering list structure initially */}
+      {showEmptyState && hasMounted ? (
         <LinkListEmpty />
       ) : (
         <>
