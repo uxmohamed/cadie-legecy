@@ -1,9 +1,6 @@
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { DashboardClient } from "@/components/dashboard-client";
-import { prefetchTrashLinks } from "@/lib/server/prefetch-links";
-import { getQueryClient, queryKeys } from "@/lib/query";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -23,23 +20,12 @@ export default async function TrashPage() {
     redirect("/auth");
   }
 
-  // Create query client for this request
-  const queryClient = getQueryClient();
-
-  // Prefetch trash links and hydrate the query cache
-  const filters = { is_deleted: true };
-  await queryClient.prefetchQuery({
-    queryKey: queryKeys.links.list(filters),
-    queryFn: () => prefetchTrashLinks(user.id),
-  });
-
-  // Render dashboard with trash view and hydrated query cache
+  // Render dashboard with trash view
+  // Shell renders instantly, TanStack Query handles data client-side
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <DashboardClient
-        user={JSON.parse(JSON.stringify(user))}
-        initialView="trash"
-      />
-    </HydrationBoundary>
+    <DashboardClient
+      user={JSON.parse(JSON.stringify(user))}
+      initialView="trash"
+    />
   );
 }
