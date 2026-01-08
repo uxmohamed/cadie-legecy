@@ -13,6 +13,7 @@ import {
   MenuItem,
   MenuPopup,
   MenuTrigger,
+  MenuSeparator,
 } from "@/components/ui/menu";
 import {
   AlertDialog,
@@ -119,10 +120,13 @@ export function ViewSwitcher({
           side="bottom"
           align="start"
           sideOffset={12}
-          className="w-56 p-2 max-h-[400px] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(255,255,255,0.1)] [&::-webkit-scrollbar-track]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(255,255,255,0.2)] border-[var(--overlay-border)] shadow-md"
-          style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}
+          className="w-56 p-2 border-[var(--overlay-border)] shadow-md flex flex-col"
         >
-          <div className="flex flex-col gap-1">
+          {/* Scrollable area for All and Spaces */}
+          <div 
+            className="flex flex-col gap-1 overflow-y-auto max-h-[300px] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(255,255,255,0.1)] [&::-webkit-scrollbar-track]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(255,255,255,0.2)]"
+            style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}
+          >
             <button
               onClick={() => handleViewChange(null)}
               className={`group relative flex w-full cursor-pointer select-none items-center justify-between rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] gap-2 min-w-0 ${
@@ -288,9 +292,11 @@ export function ViewSwitcher({
                 })}
               </>
             )}
-            
-            <div className="h-px bg-[var(--overlay-border)] my-1" />
-            
+          </div>
+          
+          {/* Fixed bottom section with Trash and New Space */}
+          <div className="flex flex-col gap-1 mt-1">
+            <MenuSeparator />
             <button
               onClick={() => handleViewChange("trash")}
               className={`group relative flex w-full cursor-pointer select-none items-center justify-between rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] gap-2 min-w-0 ${
@@ -312,21 +318,18 @@ export function ViewSwitcher({
             
             {/* New Space button */}
             {onCreateSpace && (
-              <>
-                <div className="h-px bg-[var(--overlay-border)] my-1" />
-                <button
-                  onClick={() => {
-                    onCreateSpace();
-                    setViewPopoverOpen(false);
-                  }}
-                  className="relative flex w-full cursor-pointer select-none items-center justify-start rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] gap-2 min-w-0"
-                >
-                  <div className="flex items-center gap-4 min-w-0 flex-1">
-                    <IconPlus className="h-4 w-4 shrink-0" />
-                    <span className="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">New Space</span>
-                  </div>
-                </button>
-              </>
+              <button
+                onClick={() => {
+                  onCreateSpace();
+                  setViewPopoverOpen(false);
+                }}
+                className="relative flex w-full cursor-pointer select-none items-center justify-start rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] gap-2 min-w-0"
+              >
+                <div className="flex items-center gap-4 min-w-0 flex-1">
+                  <IconPlus className="h-4 w-4 shrink-0" />
+                  <span className="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">New Space</span>
+                </div>
+              </button>
             )}
           </div>
         </PopoverPopup>
