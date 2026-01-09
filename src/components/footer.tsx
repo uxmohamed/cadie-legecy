@@ -28,7 +28,7 @@ export function Footer() {
                   <li>
                     <Link
                       href="/changelog"
-                      className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                      className="text-sm font-[470] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                     >
                       Changelog
                     </Link>
@@ -38,7 +38,7 @@ export function Footer() {
                       href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                      className="text-sm font-[470] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                     >
                       Chrome Extension
                     </a>
@@ -57,7 +57,7 @@ export function Footer() {
                       href="https://x.com/cadieapp_"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                      className="text-sm font-[470] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                     >
                       X (Twitter)
                     </a>
@@ -67,7 +67,7 @@ export function Footer() {
                       href="https://www.linkedin.com/company/usecadie/"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                      className="text-sm font-[470] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                     >
                       LinkedIn
                     </a>
@@ -87,15 +87,15 @@ export function Footer() {
             <div className="flex items-center gap-6">
               <Link
                 href="/terms"
-                className="text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+                className="text-sm font-[470] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
               >
                 Terms and Conditions
               </Link>
               <Link
                 href="/privacy"
-                className="text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+                className="text-sm font-[470] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
               >
-                Privacy
+                Privacy Policy
               </Link>
             </div>
           </div>

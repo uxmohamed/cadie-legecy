@@ -439,13 +439,13 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
       <section className="bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-24">
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-8 md:gap-12">
-            <h2 className="text-4xl sm:text-5xl font-medium text-[var(--text-primary)] font-custom">
+            <h2 className="text-4xl sm:text-5xl font-medium text-[var(--text-primary)] tracking-tight">
               Try Cadie
             </h2>
             <div className="flex flex-col sm:flex-row items-start gap-3">
               <Link href="/auth">
                 <Button className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-6 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--cta-primary-default)] text-[var(--text-always-white)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
-                  Start now for free
+                  Get started
                 </Button>
               </Link>
               <a
