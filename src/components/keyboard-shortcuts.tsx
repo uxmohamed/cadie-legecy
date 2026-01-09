@@ -8,16 +8,15 @@ interface KeyboardShortcut {
 }
 
 const shortcuts: KeyboardShortcut[] = [
-  { keys: ["C"], action: "Add new link" },
-  { keys: ["/"], action: "Focus search" },
-  { keys: ["M"], action: "Toggle dark/light mode" },
-  { keys: ["⇧", "T"], action: "Open Trash view" },
-  { keys: ["1"], action: "Switch to All view" },
-  { keys: ["2"], action: "Switch to first space" },
-  { keys: ["3"], action: "Switch to second space" },
-  { keys: ["⌘", "⌫"], action: "Delete selected" },
-  { keys: ["⌘", "A"], action: "Select all links" },
-  { keys: ["?"], action: "Show keyboard shortcuts" },
+  { keys: ["⌥", "D"], action: "Add new link" },
+  { keys: ["/"], action: "Search" },
+  { keys: ["M"], action: "Toggle dark mode" },
+  { keys: ["⇧", "T"], action: "Open Trash" },
+  { keys: ["1"], action: "Switch to All" },
+  { keys: ["2"], action: "Switch to Inspo" },
+  { keys: ["⌘", "⌫"], action: "Delete item" },
+  { keys: ["⌘", "A"], action: "Select all" },
+  { keys: ["?"], action: "Keyboard shortcuts" },
 ];
 
 export function KeyboardShortcuts() {
