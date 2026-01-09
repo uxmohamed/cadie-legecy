@@ -56,7 +56,7 @@ export function KeyboardShortcuts() {
   const currentShortcut = shortcuts[activeIndex];
 
   return (
-    <div className="w-full aspect-[4/3] flex items-center justify-center bg-[color-mix(in_oklab,var(--grey-50)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-900)_60%,transparent)] p-12">
+    <div className="w-full aspect-[4/3] flex items-center justify-center bg-[color-mix(in_oklab,var(--grey-50)_60%,transparent)] dark:bg-transparent p-12">
       <div className={`
         flex flex-col items-center gap-8
         transition-all duration-400

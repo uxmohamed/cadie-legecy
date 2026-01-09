@@ -11,6 +11,12 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useState } from "react";
 import { Footer } from "@/components/footer";
 import type { ChangelogEntry } from "@/types/changelog";
@@ -174,7 +180,7 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
       </div>
 
       {/* Hero Section */}
-      <main className="flex-1 pt-12 sm:pt-16 md:pt-20 pb-16 sm:pb-20 px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 pt-12 sm:pt-16 md:pt-20 pb-16 sm:pb-20 md:pb-24 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
           {/* Beta Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--bg-field-default)] mb-2 sm:mb-4">
@@ -182,7 +188,7 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
             <span className="text-sm font-medium text-[var(--text-secondary)]">Cadie beta is now live</span>
           </div>
 
-          <h1 className="text-6xl font-medium tracking-[-0.05em] text-[var(--text-primary)] mb-2 sm:mb-4 font-custom" style={{ lineHeight: 'calc(0.25rem * 17)' }}>
+          <h1 className="text-5xl sm:text-6xl font-medium tracking-[-0.05em] text-[var(--text-primary)] mb-2 sm:mb-4 font-custom leading-[1.1]">
             Your personal library <br className="hidden sm:block" />
             for the internet.
           </h1>
@@ -192,7 +198,7 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
           </p>
 
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <Link href="/auth">
+            <Link href="/auth" className="w-full sm:w-auto">
               <Button
                 size="lg"
                 className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-8 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--cta-primary-default)] text-[var(--text-always-white)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2"
@@ -200,6 +206,28 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
                 Get Started
               </Button>
             </Link>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-8 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--bg-field-light)] text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2"
+                >
+                  Watch demo
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-black border-none">
+                <DialogTitle className="sr-only">Cadie Demo Video</DialogTitle>
+                <div className="aspect-video w-full">
+                  <iframe
+                    className="h-full w-full"
+                    src="https://www.youtube.com/embed/l4sVPobIW0A?autoplay=1"
+                    title="Cadie Demo Video"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  ></iframe>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </main>
@@ -218,7 +246,7 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
         </div>
         
         {/* Product Screenshot */}
-        <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
+        <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-0">
           <div className="mx-auto max-w-4xl">
             <div className="relative overflow-hidden">
               <Image
@@ -235,7 +263,7 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8">
+      <section className="pt-16 sm:pt-20 md:pt-24 pb-0 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto space-y-12 md:space-y-16">
           
           {/* Feature 1: Save with one click - Text Left, Image Right */}
@@ -273,7 +301,15 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
 
           {/* Feature 2: Clean links by default - Image Left, Text Right */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
-            <div className="rounded-xl bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] pt-12 px-12 pb-0 md:order-1 flex flex-col justify-end overflow-hidden">
+            <div className="space-y-4 md:order-2">
+              <h2 className="text-xl sm:text-2xl font-medium text-[var(--text-primary)] font-custom">
+                Clean links by default
+              </h2>
+              <p className="text-md font-[470] text-[var(--text-secondary)] leading-relaxed max-w-md">
+                Cadie removes tracking and extra parameters when you save a link. You don&apos;t need to do anything.
+              </p>
+            </div>
+            <div className="rounded-xl bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] pt-12 px-12 pb-0 overflow-hidden md:order-1">
               <video
                 src="/vid-section02.mp4"
                 autoPlay
@@ -282,14 +318,6 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
                 playsInline
                 className="w-full aspect-[4/3] object-cover object-center block rounded-t-[6px] border-t border-x border-[color-mix(in_oklab,var(--border-primary)_40%,transparent)]"
               />
-            </div>
-            <div className="space-y-4 md:order-2">
-              <h2 className="text-xl sm:text-2xl font-medium text-[var(--text-primary)] font-custom">
-                Clean links by default
-              </h2>
-              <p className="text-md font-[470] text-[var(--text-secondary)] leading-relaxed max-w-md">
-                Cadie removes tracking and extra parameters when you save a link. You don&apos;t need to do anything.
-              </p>
             </div>
           </div>
 
@@ -313,7 +341,7 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
 
       {/* What's New Section */}
       {changelogEntries.length > 0 && (
-        <section className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8">
+        <section className="pt-16 sm:pt-20 md:pt-24 pb-0 px-4 sm:px-6 lg:px-8">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-2xl sm:text-4xl font-medium text-[var(--text-primary)] mb-6 font-custom">
@@ -438,13 +466,13 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
       {/* CTA Section */}
       <section className="bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-24">
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-8 md:gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-8 md:gap-12 items-center text-center md:text-left">
             <h2 className="text-4xl sm:text-5xl font-medium text-[var(--text-primary)] tracking-tight">
               Try Cadie
             </h2>
-            <div className="flex flex-col sm:flex-row items-start gap-3">
-              <Link href="/auth">
-                <Button className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-6 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--cta-primary-default)] text-[var(--text-always-white)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
+            <div className="flex flex-col sm:flex-row items-center md:items-start gap-3 w-full sm:w-auto">
+              <Link href="/auth" className="w-full sm:w-auto">
+                <Button className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-8 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--cta-primary-default)] text-[var(--text-always-white)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
                   Get started
                 </Button>
               </Link>
@@ -452,8 +480,9 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
                 href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
                 target="_blank"
                 rel="noopener noreferrer"
+                className="w-full sm:w-auto"
               >
-                <Button className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-6 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--bg-field-light)] text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
+                <Button className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-8 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--bg-field-light)] text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
                   Get Extension
                 </Button>
               </a>

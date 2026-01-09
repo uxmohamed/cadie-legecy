@@ -90,32 +90,31 @@ export function ViewSwitcher({
   return (
     <TooltipProvider delayDuration={300}>
       <Popover open={viewPopoverOpen} onOpenChange={setViewPopoverOpen}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <PopoverTrigger asChild>
-              <button
-                aria-label="Switch view"
-                className="flex items-center gap-2 h-auto p-0 bg-transparent hover:bg-transparent text-[var(--text-primary)] transition-colors cursor-pointer min-w-0"
-              >
-                {isTrashSelected ? (
-                  <IconTrashFilled className="h-4 w-4 text-[var(--accent-red-primary)] shrink-0" />
-                ) : (
-                  <IconCapsuleHorizontalFilled 
-                    className="h-4 w-4 shrink-0" 
-                    style={{ color: selectedSpace?.color || "var(--text-secondary)" }}
-                  />
-                )}
-                <span className="not-italic text-lg sm:text-[22px] font-[570] leading-tight sm:leading-[32px] tracking-[-0.16px] text-[var(--text-primary)] hover:text-[var(--text-primary)] overflow-hidden text-ellipsis whitespace-nowrap min-w-0">
-                  {title}
-                </span>
-                <ChevronUpDown className="w-3.5 h-3.5 shrink-0" />
-              </button>
-            </PopoverTrigger>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" sideOffset={8}>
-            <span>Switch view</span>
-          </TooltipContent>
-        </Tooltip>
+        <PopoverTrigger asChild>
+          <button
+            aria-label="Switch view"
+            className="group/trigger relative flex items-center gap-2 h-auto px-2 py-1.5 -ml-2 rounded-lg bg-transparent text-[var(--text-primary)] transition-colors cursor-pointer min-w-0"
+            style={{
+              '--hover-bg': isTrashSelected 
+                ? 'var(--accent-red-primary)' 
+                : selectedSpace?.color || 'var(--text-secondary)'
+            } as React.CSSProperties}
+          >
+            <span className="absolute inset-0 rounded-lg opacity-0 group-hover/trigger:opacity-10 transition-opacity" style={{ backgroundColor: 'var(--hover-bg)' }} />
+            {isTrashSelected ? (
+              <IconTrashFilled className="h-4 w-4 text-[var(--accent-red-primary)] shrink-0 relative" />
+            ) : (
+              <IconCapsuleHorizontalFilled 
+                className="h-4 w-4 shrink-0 relative" 
+                style={{ color: selectedSpace?.color || "var(--text-secondary)" }}
+              />
+            )}
+            <span className="not-italic text-lg sm:text-[22px] font-[570] leading-tight sm:leading-[32px] tracking-[-0.16px] text-[var(--text-primary)] hover:text-[var(--text-primary)] overflow-hidden text-ellipsis whitespace-nowrap min-w-0 relative">
+              {title}
+            </span>
+            <ChevronUpDown className="w-3.5 h-3.5 shrink-0 relative" />
+          </button>
+        </PopoverTrigger>
         <PopoverPopup
           side="bottom"
           align="start"

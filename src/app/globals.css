@@ -491,6 +491,14 @@ body {
 }
 
 /* Utility Classes */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 .overlay-blur {
   background: var(--overlay-blur-bg);
   box-shadow: var(--overlay-blur-shadow);

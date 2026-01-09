@@ -55,12 +55,12 @@ export function SettingsDialog({ user, open, onOpenChange, onProfileUpdate }: Se
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-hidden p-0 md:max-h-[640px] md:max-w-[800px] lg:max-w-[900px]">
+      <DialogContent className="overflow-hidden p-0 max-sm:h-dvh md:max-h-[640px] md:max-w-[800px] lg:max-w-[900px]">
         <DialogTitle className="sr-only">Settings</DialogTitle>
         <DialogDescription className="sr-only">
           Manage your profile and preferences.
         </DialogDescription>
-        <SidebarProvider className="items-start">
+        <SidebarProvider className="items-start h-full">
           <Sidebar collapsible="none" className="hidden md:flex">
             <SidebarContent>
               <SidebarGroup>
@@ -83,22 +83,22 @@ export function SettingsDialog({ user, open, onOpenChange, onProfileUpdate }: Se
               </SidebarGroup>
             </SidebarContent>
           </Sidebar>
-          <main className="flex h-[620px] flex-1 flex-col overflow-hidden min-w-0">
+          <main className="flex h-full md:h-[620px] flex-1 flex-col overflow-hidden min-w-0">
             {/* Mobile navigation */}
-            <header className="flex h-12 shrink-0 items-center gap-2 border-b border-[var(--border-primary)] px-4 md:hidden">
-              <nav className="flex gap-2">
+            <header className="flex h-12 shrink-0 items-center border-b border-[var(--border-primary)] md:hidden">
+              <nav className="no-scrollbar flex overflow-x-auto pl-4 pr-12 gap-2">
                 {navItems.map((item) => (
                   <button
                     key={item.id}
                     onClick={() => setActiveSection(item.id)}
-                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors ${
+                    className={`flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors ${
                       activeSection === item.id
                         ? "bg-[var(--bg-field)] text-[var(--text-primary)]"
                         : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                     }`}
                   >
                     <item.icon className="h-6 w-6" />
-                    {item.name}
+                    <span className="whitespace-nowrap">{item.name}</span>
                   </button>
                 ))}
               </nav>

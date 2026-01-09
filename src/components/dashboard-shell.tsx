@@ -420,9 +420,9 @@ export function DashboardShell({
                       className={`cursor-pointer rounded-xl ${sortBy === "date" ? "bg-[rgba(255,255,255,0.1)]" : ""}`}
                     >
                       {sortBy === "date" ? (
-                        <IconCircleCheckFilled className="w-5 h-5 text-white mr-2" />
+                        <IconCircleCheckFilled className="w-5 h-5 text-white" />
                       ) : (
-                        <div className="w-5 h-5 mr-2" />
+                        <div className="w-5 h-5" />
                       )}
                       Date Added
                       {sortBy === "date" && (
@@ -441,9 +441,9 @@ export function DashboardShell({
                       className={`cursor-pointer rounded-xl ${sortBy === "title" ? "bg-[rgba(255,255,255,0.1)]" : ""}`}
                     >
                       {sortBy === "title" ? (
-                        <IconCircleCheckFilled className="w-5 h-5 text-white mr-2" />
+                        <IconCircleCheckFilled className="w-5 h-5 text-white" />
                       ) : (
-                        <div className="w-5 h-5 mr-2" />
+                        <div className="w-5 h-5" />
                       )}
                       Name
                       {sortBy === "title" && (

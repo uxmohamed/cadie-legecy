@@ -197,7 +197,7 @@ export function LinkListItem({
                 {!isColor && (
                   <div
                     className={cn(
-                      "truncate text-sm leading-4 text-[var(--text-tertiary)] font-[470]",
+                      "hidden sm:block truncate text-sm leading-4 text-[var(--text-tertiary)] font-[470]",
                       isSelected || isFocused
                         ? "opacity-100"
                         : "opacity-0 group-hover:opacity-100"

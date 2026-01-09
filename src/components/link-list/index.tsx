@@ -722,139 +722,145 @@ export function LinkList({
           )}
 
           {/* Virtualized list container */}
-          {/* suppressHydrationWarning: Virtualized content intentionally differs between server/client */}
-          <div
-            className="py-4 relative"
-            style={{ height: hasMounted ? `${virtualizer.getTotalSize()}px` : 'auto' }}
-            suppressHydrationWarning
-          >
-        {hasMounted && virtualRows.map((virtualRow) => {
-          const item = virtualItems[virtualRow.index];
+          {/* Explicitly check hasMounted to separate server/client rendering paths */}
+          {!hasMounted ? (
+            <div 
+              className="py-4 relative" 
+              style={{ height: 'auto' }}
+            />
+          ) : (
+            <div
+              className="py-4 relative"
+              style={{ height: `${virtualizer.getTotalSize()}px` }}
+            >
+              {virtualRows.map((virtualRow) => {
+                const item = virtualItems[virtualRow.index];
 
-          // Render pinned header
-          if (item.type === "pinned-header") {
-            return (
-              <div
-                key="pinned-header"
-                data-index={virtualRow.index}
-                ref={measureElement}
-                className="absolute top-0 left-0 w-full"
-                style={{ transform: `translateY(${virtualRow.start}px)` }}
-              >
-                <div
-                  className={`mb-4 mt-4 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
-                    isAddingItem || effectiveEditingLinkId
-                      ? "opacity-20"
-                      : "opacity-100"
-                  }`}
-                >
-                  Pinned
-                </div>
-              </div>
-            );
-          }
+                // Render pinned header
+                if (item.type === "pinned-header") {
+                  return (
+                    <div
+                      key="pinned-header"
+                      data-index={virtualRow.index}
+                      ref={measureElement}
+                      className="absolute top-0 left-0 w-full"
+                      style={{ transform: `translateY(${virtualRow.start}px)` }}
+                    >
+                      <div
+                        className={`mb-4 mt-4 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
+                          isAddingItem || effectiveEditingLinkId
+                            ? "opacity-20"
+                            : "opacity-100"
+                        }`}
+                      >
+                        Pinned
+                      </div>
+                    </div>
+                  );
+                }
 
-          // Render all-links header
-          if (item.type === "all-links-header") {
-            return (
-              <div
-                key="all-links-header"
-                data-index={virtualRow.index}
-                ref={measureElement}
-                className="absolute top-0 left-0 w-full"
-                style={{ transform: `translateY(${virtualRow.start}px)` }}
-              >
-                <div
-                  className={`mb-4 mt-8 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
-                    isAddingItem || effectiveEditingLinkId
-                      ? "opacity-20"
-                      : "opacity-100"
-                  }`}
-                >
-                  All Links
-                </div>
-              </div>
-            );
-          }
+                // Render all-links header
+                if (item.type === "all-links-header") {
+                  return (
+                    <div
+                      key="all-links-header"
+                      data-index={virtualRow.index}
+                      ref={measureElement}
+                      className="absolute top-0 left-0 w-full"
+                      style={{ transform: `translateY(${virtualRow.start}px)` }}
+                    >
+                      <div
+                        className={`mb-4 mt-8 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
+                          isAddingItem || effectiveEditingLinkId
+                            ? "opacity-20"
+                            : "opacity-100"
+                        }`}
+                      >
+                        All Links
+                      </div>
+                    </div>
+                  );
+                }
 
-          // Render link item
-          if (item.type === "link") {
-            const { link, index, isPinned } = item;
-            const isThisEditing = effectiveEditingLinkId === link.id;
-            const shouldDim =
-              (isAddingItem || effectiveEditingLinkId) && !isThisEditing;
+                // Render link item
+                if (item.type === "link") {
+                  const { link, index, isPinned } = item;
+                  const isThisEditing = effectiveEditingLinkId === link.id;
+                  const shouldDim =
+                    (isAddingItem || effectiveEditingLinkId) && !isThisEditing;
 
-            return (
-              <div
-                key={link.id}
-                data-index={virtualRow.index}
-                ref={measureElement}
-                className="absolute top-0 left-0 w-full pb-0.5"
-                style={{ transform: `translateY(${virtualRow.start}px)` }}
-              >
-                <div
-                  className={`transition-opacity duration-200 ${
-                    shouldDim ? "opacity-20 pointer-events-none" : "opacity-100"
-                  }`}
-                >
-                  <LinkListItem
-                    link={link}
-                    index={index}
-                    isPinned={isPinned}
-                    isSelected={selectedIds.has(link.id)}
-                    isFocused={focusedIndex === index}
-                    linkRef={(el) => {
-                      linkRefs.current[index] = el;
-                    }}
-                    onMouseDown={handleItemMouseDown}
-                    onClick={handleItemClick}
-                    onMouseEnter={handleItemMouseEnter}
-                    onMouseLeave={(idx) => {
-                      if (focusedIndex === idx && !isDragging)
-                        setFocusedIndex(null);
-                    }}
-                    onFocus={setFocusedIndex}
-                    onContextMenu={handleContextMenu}
-                    onCopy={onCopy}
-                    onEdit={() => onEdit(link)}
-                    onPin={!isTrashView ? onPin : undefined}
-                    onUnpin={!isTrashView ? onUnpin : undefined}
-                    onDelete={onDelete}
-                    isDragging={isDragging}
-                    isEditing={isThisEditing}
-                    editMode={isThisEditing ? effectiveEditMode : null}
-                    editValue={isThisEditing ? effectiveEditValue : ""}
-                    onEditChange={handleEditChange}
-                    onEditSubmit={handleEditSubmit}
-                    onEditCancel={handleEditCancel}
-                  />
-                </div>
-              </div>
-            );
-          }
+                  return (
+                    <div
+                      key={link.id}
+                      data-index={virtualRow.index}
+                      ref={measureElement}
+                      className="absolute top-0 left-0 w-full pb-0.5"
+                      style={{ transform: `translateY(${virtualRow.start}px)` }}
+                    >
+                      <div
+                        className={`transition-opacity duration-200 ${
+                          shouldDim ? "opacity-20 pointer-events-none" : "opacity-100"
+                        }`}
+                      >
+                        <LinkListItem
+                          link={link}
+                          index={index}
+                          isPinned={isPinned}
+                          isSelected={selectedIds.has(link.id)}
+                          isFocused={focusedIndex === index}
+                          linkRef={(el) => {
+                            linkRefs.current[index] = el;
+                          }}
+                          onMouseDown={handleItemMouseDown}
+                          onClick={handleItemClick}
+                          onMouseEnter={handleItemMouseEnter}
+                          onMouseLeave={(idx) => {
+                            if (focusedIndex === idx && !isDragging)
+                              setFocusedIndex(null);
+                          }}
+                          onFocus={setFocusedIndex}
+                          onContextMenu={handleContextMenu}
+                          onCopy={onCopy}
+                          onEdit={() => onEdit(link)}
+                          onPin={!isTrashView ? onPin : undefined}
+                          onUnpin={!isTrashView ? onUnpin : undefined}
+                          onDelete={onDelete}
+                          isDragging={isDragging}
+                          isEditing={isThisEditing}
+                          editMode={isThisEditing ? effectiveEditMode : null}
+                          editValue={isThisEditing ? effectiveEditValue : ""}
+                          onEditChange={handleEditChange}
+                          onEditSubmit={handleEditSubmit}
+                          onEditCancel={handleEditCancel}
+                        />
+                      </div>
+                    </div>
+                  );
+                }
 
-          // Render loading more skeleton
-          if (item.type === "loading-more") {
-            return (
-              <div
-                key="loading-more"
-                data-index={virtualRow.index}
-                ref={measureElement}
-                className="absolute top-0 left-0 w-full"
-                style={{ transform: `translateY(${virtualRow.start}px)` }}
-              >
-                <div className="space-y-px">
-                  <LinkItemSkeleton />
-                  <LinkItemSkeleton />
-                  <LinkItemSkeleton />
-                </div>
-              </div>
-            );
-          }
+                // Render loading more skeleton
+                if (item.type === "loading-more") {
+                  return (
+                    <div
+                      key="loading-more"
+                      data-index={virtualRow.index}
+                      ref={measureElement}
+                      className="absolute top-0 left-0 w-full"
+                      style={{ transform: `translateY(${virtualRow.start}px)` }}
+                    >
+                      <div className="space-y-px">
+                        <LinkItemSkeleton />
+                        <LinkItemSkeleton />
+                        <LinkItemSkeleton />
+                      </div>
+                    </div>
+                  );
+                }
 
-          return null;
-        })}
-          </div>
+                return null;
+              })}
+            </div>
+          )}
 
           {/* Sentinel for infinite scroll */}
           {hasMore && !isLoadingMore && (

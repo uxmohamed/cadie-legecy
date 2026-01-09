@@ -140,7 +140,6 @@ function SpaceItem({ space, onUpdate, onDelete }: SpaceItemProps) {
           <ColorPicker
             selectedColor={space.color}
             onColorSelect={handleColorChange}
-            className="grid grid-cols-5 gap-2"
           />
         </PopoverContent>
       </Popover>
@@ -248,7 +247,6 @@ export function SettingsSpaces() {
                 <ColorPicker
                   selectedColor={newSpaceColor}
                   onColorSelect={setNewSpaceColor}
-                  className="grid grid-cols-5 gap-2"
                 />
               </PopoverContent>
             </Popover>

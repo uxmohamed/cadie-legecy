@@ -236,7 +236,7 @@ export function UserMenu({ user }: UserMenuProps) {
               rel="noopener noreferrer" 
               className="cursor-pointer w-full flex items-center group"
             >
-              <IconMessage className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+              <IconMessage className="h-4 w-4 text-[var(--icon-secondary)]" />
               Beta Feedback
               <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
             </a>
@@ -248,7 +248,7 @@ export function UserMenu({ user }: UserMenuProps) {
               setIsSettingsOpen(true);
             }}
           >
-            <IconSettings className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+            <IconSettings className="h-4 w-4 text-[var(--icon-secondary)]" />
             Settings
             <Kbd className="ml-auto">,</Kbd>
           </DropdownMenuItem>
@@ -264,7 +264,7 @@ export function UserMenu({ user }: UserMenuProps) {
               handleThemeToggle(!isDarkMode);
             }}
           >
-            <IconMoon className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+            <IconMoon className="h-4 w-4 text-[var(--icon-secondary)]" />
             Dark mode
             <Switch
               checked={isDarkMode}
@@ -276,14 +276,14 @@ export function UserMenu({ user }: UserMenuProps) {
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
             <Link href="/changelog" className="cursor-pointer w-full flex items-center group">
-              <IconShip className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+              <IconShip className="h-4 w-4 text-[var(--icon-secondary)]" />
               Changelog
               <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <a href="https://x.com/cadieapp_" target="_blank" rel="noopener noreferrer" className="cursor-pointer w-full flex items-center group">
-              <IconBrandX className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+              <IconBrandX className="h-4 w-4 text-[var(--icon-secondary)]" />
               Follow us on X
               <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
             </a>
@@ -295,7 +295,7 @@ export function UserMenu({ user }: UserMenuProps) {
             }}
             className="cursor-pointer"
           >
-            <IconKeyboard className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+            <IconKeyboard className="h-4 w-4 text-[var(--icon-secondary)]" />
             Keyboard Shortcuts
             <Kbd className="ml-auto">⌘/</Kbd>
           </DropdownMenuItem>
@@ -305,7 +305,7 @@ export function UserMenu({ user }: UserMenuProps) {
             disabled={isSigningOut}
             className="cursor-pointer"
           >
-            <IconLogout className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+            <IconLogout className="h-4 w-4 text-[var(--icon-secondary)]" />
             {isSigningOut ? "Signing out..." : "Log out"}
           </DropdownMenuItem>
         </DropdownMenuContent>
