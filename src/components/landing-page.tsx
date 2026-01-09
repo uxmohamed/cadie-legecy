@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
-import { IconMenu, IconX, IconConfettiFilled, IconClick, IconLayoutDashboard, IconKeyboard, IconChevronDown } from "@tabler/icons-react";
+import { IconMenu, IconX, IconConfettiFilled, IconChevronDown, IconArrowRight } from "@tabler/icons-react";
 import {
   Sheet,
   SheetContent,
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import { useState } from "react";
 import { Footer } from "@/components/footer";
+import type { ChangelogEntry } from "@/types/changelog";
 
 function FaqItem({ question, children, isOpen, onToggle }: { question: string; children: React.ReactNode; isOpen: boolean; onToggle: () => void }) {
   return (
@@ -35,7 +36,11 @@ function FaqItem({ question, children, isOpen, onToggle }: { question: string; c
   );
 }
 
-export function LandingPage() {
+interface LandingPageProps {
+  changelogEntries?: ChangelogEntry[];
+}
+
+export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openFaqId, setOpenFaqId] = useState<string | null>(null);
 
@@ -230,46 +235,169 @@ export function LandingPage() {
 
       {/* Features Section */}
       <section className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl sm:text-5xl font-medium text-[var(--text-primary)] mb-6 font-custom">
-              Built for simplicity
-            </h2>
-            <p className="text-base font-medium text-[var(--text-tertiary)] max-w-md mx-auto">
-              Everything you need, nothing you don&apos;t.
-            </p>
+        <div className="max-w-5xl mx-auto space-y-24 md:space-y-32">
+          
+          {/* Feature 1: Save with one click - Text Left, Image Right */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div className="space-y-4">
+              <h2 className="text-2xl sm:text-3xl font-medium text-[var(--text-primary)] font-custom">
+                Save with one click
+              </h2>
+              <p className="text-base text-[var(--text-secondary)] leading-relaxed max-w-md">
+                Click the Cadie Chrome extension and the current page is saved instantly to your library.
+              </p>
+              <a
+                href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm font-medium text-[var(--cadie-color-6)] hover:text-[var(--cadie-color-5)] transition-colors mt-2"
+              >
+                Get the Chrome extension
+                <IconArrowRight className="size-4" />
+              </a>
+            </div>
+            <div className="rounded-xl bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] pt-12 pr-12">
+              <div className="relative aspect-[4/3] w-full overflow-hidden">
+                <video
+                  src="/vid-section01.mp4"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover object-right-top rounded-tr-[6px] rounded-br-[6px]"
+                />
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-              <div className="text-center">
-                <div className="flex justify-center mb-4">
-                  <IconClick className="size-6 text-[var(--cadie-color-6)]" />
-                </div>
-                <p className="text-md text-[var(--text-secondary)] font-medium">
-                  <span className="font-medium text-[var(--text-primary)]">One-Click Capture.</span>{" "}
-                  Save any link instantly with our browser extension. No friction, just results.
-                </p>
+
+          {/* Feature 2: Clean links by default - Image Left, Text Right */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div className="rounded-xl bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] p-6 md:order-1">
+              <div className="relative aspect-[4/3] w-full overflow-hidden">
+                <Image
+                  src="/product-ui.png"
+                  alt="Clean links by default"
+                  fill
+                  className="object-cover"
+                />
               </div>
-              <div className="text-center">
-                <div className="flex justify-center mb-4">
-                  <IconLayoutDashboard className="size-6 text-[var(--cadie-color-6)]" />
-                </div>
-                <p className="text-md text-[var(--text-secondary)] font-medium">
-                  <span className="font-medium text-[var(--text-primary)]">Minimalist Interface.</span>{" "}
-                  A clean, clutter-free design that puts your content first. No ads, no noise.
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="flex justify-center mb-4">
-                  <IconKeyboard className="size-6 text-[var(--cadie-color-6)]" />
-                </div>
-                <p className="text-md text-[var(--text-secondary)] font-medium">
-                  <span className="font-medium text-[var(--text-primary)]">Keyboard First.</span>{" "}
-                  Navigate, organize, and search without ever touching your mouse.
-                </p>
-              </div>
+            </div>
+            <div className="space-y-4 md:order-2">
+              <h2 className="text-2xl sm:text-3xl font-medium text-[var(--text-primary)] font-custom">
+                Clean links by default
+              </h2>
+              <p className="text-base text-[var(--text-secondary)] leading-relaxed max-w-md">
+                Cadie removes tracking and extra parameters when you save a link. You don&apos;t need to do anything.
+              </p>
+            </div>
           </div>
+
+          {/* Feature 3: Keyboard-first - Text Left, Image Right */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div className="space-y-4">
+              <h2 className="text-2xl sm:text-3xl font-medium text-[var(--text-primary)] font-custom">
+                Keyboard-first
+              </h2>
+              <p className="text-base text-[var(--text-secondary)] leading-relaxed max-w-md">
+                You can navigate and manage your links using the keyboard instead of the mouse.
+              </p>
+              <p className="text-base text-[var(--text-secondary)] leading-relaxed max-w-md">
+                Everything is faster when your hands stay on the keyboard.
+              </p>
+            </div>
+            <div className="rounded-xl bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] p-6">
+              <div className="relative aspect-[4/3] w-full overflow-hidden">
+                <Image
+                  src="/product-ui.png"
+                  alt="Keyboard-first navigation"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
+
+      {/* What's New Section */}
+      {changelogEntries.length > 0 && (
+        <section className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl sm:text-5xl font-medium text-[var(--text-primary)] mb-6 font-custom">
+                What&apos;s New
+              </h2>
+              <p className="text-base font-medium text-[var(--text-tertiary)] max-w-md mx-auto">
+                Latest updates and improvements to Cadie.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {changelogEntries.map((entry) => {
+                const date = new Date(entry.date);
+                const formattedDate = date.toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                });
+                
+                return (
+                  <Link
+                    key={entry._id}
+                    href={`/changelog#${entry._raw.flattenedPath.replace("changelog/", "")}`}
+                    className="group block"
+                  >
+                    <article className="h-full bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] rounded-xl p-6 transition-all duration-200 hover:bg-[color-mix(in_oklab,var(--grey-100)_80%,transparent)] dark:hover:bg-[color-mix(in_oklab,var(--grey-800)_80%,transparent)]">
+                      <div className="flex flex-col gap-3">
+                        {/* Date */}
+                        <time className="text-sm font-medium text-[var(--text-tertiary)]">
+                          {formattedDate}
+                        </time>
+                        
+                        {/* Title */}
+                        <h3 className="text-lg font-semibold text-[var(--text-primary)] group-hover:text-[var(--cadie-color-6)] transition-colors">
+                          {entry.title}
+                        </h3>
+                        
+                        {/* Description */}
+                        <p className="text-sm text-[var(--text-secondary)] line-clamp-2">
+                          {entry.description}
+                        </p>
+                        
+                        {/* Tags */}
+                        {entry.tags && Array.isArray(entry.tags) && entry.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {entry.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="h-6 w-fit px-2 text-xs font-medium bg-[var(--bg-l1-solid)] text-[var(--text-secondary)] rounded-full border border-[var(--border-primary)] flex items-center justify-center"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </article>
+                  </Link>
+                );
+              })}
+            </div>
+            
+            {/* View All Link */}
+            <div className="text-center mt-8">
+              <Link
+                href="/changelog"
+                className="inline-flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                View all updates
+                <IconArrowRight className="size-4" />
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* FAQ Section */}
       <section className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8">

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { DashboardClient } from "@/components/dashboard-client";
 import { LandingPage } from "@/components/landing-page";
+import { allChangelogs } from "contentlayer/generated";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -12,7 +13,12 @@ export default async function Home() {
 
   // Not authenticated - show landing page
   if (!user) {
-    return <LandingPage />;
+    // Get latest changelog entries for the landing page
+    const latestChangelogs = [...allChangelogs]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 2);
+    
+    return <LandingPage changelogEntries={latestChangelogs} />;
   }
 
   // Render dashboard - TanStack Query handles data fetching client-side
