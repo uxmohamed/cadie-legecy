@@ -6,7 +6,7 @@ export function ToasterProvider() {
   return (
     <Toaster
       position="bottom-center"
-      offset={102}
+      offset={24}
       toastOptions={{
         className: "toast-dock-style",
       }}

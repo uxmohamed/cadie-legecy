@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { DashboardClient } from "@/components/dashboard-client";
 import { LandingPage } from "@/components/landing-page";
-import { prefetchDashboardLinks } from "@/lib/server/prefetch-links";
+import { allChangelogs } from "contentlayer/generated";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -13,18 +13,19 @@ export default async function Home() {
 
   // Not authenticated - show landing page
   if (!user) {
-    return <LandingPage />;
+    // Get latest changelog entries for the landing page
+    const latestChangelogs = [...allChangelogs]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 2);
+    
+    return <LandingPage changelogEntries={latestChangelogs} />;
   }
 
-  // Prefetch initial links on server for instant render
-  // This eliminates the network waterfall (page load → client fetch)
-  const initialData = await prefetchDashboardLinks(user.id);
-
-  // Render dashboard with prefetched data
+  // Render dashboard - TanStack Query handles data fetching client-side
+  // Shell renders instantly, content uses cached data or shows skeleton
   return (
     <DashboardClient
       user={JSON.parse(JSON.stringify(user))}
-      initialLinks={initialData}
     />
   );
 }

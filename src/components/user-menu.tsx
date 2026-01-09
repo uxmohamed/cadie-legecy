@@ -1,8 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import { clearLinksStore } from "@/features/links/store/links-store";
+import { clearUIStore } from "@/features/links/store/ui-store";
+import { clearAllCaches } from "@/lib/query/auth-reset";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import { useShortcuts } from "@/components/shortcut-context";
@@ -29,6 +31,7 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ user }: UserMenuProps) {
+  const queryClient = useQueryClient();
   const [isSigningOut, setIsSigningOut] = React.useState(false);
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
@@ -54,8 +57,10 @@ export function UserMenu({ user }: UserMenuProps) {
     try {
       setIsSigningOut(true);
       
-      // Clear links store before signing out to prevent data leakage between accounts
-      clearLinksStore();
+      // Clear all caches before signing out to prevent data leakage between accounts
+      // This clears: TanStack Query cache, IndexedDB persisted cache, and UI store
+      await clearAllCaches(queryClient);
+      clearUIStore();
       
       const supabase = createClient();
       const { error } = await supabase.auth.signOut();
@@ -72,7 +77,7 @@ export function UserMenu({ user }: UserMenuProps) {
       console.error("Error signing out:", error);
       setIsSigningOut(false);
     }
-  }, []);
+  }, [queryClient]);
 
   // Handle looping keyboard navigation
   React.useEffect(() => {
@@ -231,7 +236,7 @@ export function UserMenu({ user }: UserMenuProps) {
               rel="noopener noreferrer" 
               className="cursor-pointer w-full flex items-center group"
             >
-              <IconMessage className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+              <IconMessage className="h-4 w-4 text-[var(--icon-secondary)]" />
               Beta Feedback
               <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
             </a>
@@ -243,7 +248,7 @@ export function UserMenu({ user }: UserMenuProps) {
               setIsSettingsOpen(true);
             }}
           >
-            <IconSettings className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+            <IconSettings className="h-4 w-4 text-[var(--icon-secondary)]" />
             Settings
             <Kbd className="ml-auto">,</Kbd>
           </DropdownMenuItem>
@@ -259,7 +264,7 @@ export function UserMenu({ user }: UserMenuProps) {
               handleThemeToggle(!isDarkMode);
             }}
           >
-            <IconMoon className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+            <IconMoon className="h-4 w-4 text-[var(--icon-secondary)]" />
             Dark mode
             <Switch
               checked={isDarkMode}
@@ -271,14 +276,14 @@ export function UserMenu({ user }: UserMenuProps) {
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
             <Link href="/changelog" className="cursor-pointer w-full flex items-center group">
-              <IconShip className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+              <IconShip className="h-4 w-4 text-[var(--icon-secondary)]" />
               Changelog
               <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <a href="https://x.com/cadieapp_" target="_blank" rel="noopener noreferrer" className="cursor-pointer w-full flex items-center group">
-              <IconBrandX className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+              <IconBrandX className="h-4 w-4 text-[var(--icon-secondary)]" />
               Follow us on X
               <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
             </a>
@@ -290,7 +295,7 @@ export function UserMenu({ user }: UserMenuProps) {
             }}
             className="cursor-pointer"
           >
-            <IconKeyboard className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+            <IconKeyboard className="h-4 w-4 text-[var(--icon-secondary)]" />
             Keyboard Shortcuts
             <Kbd className="ml-auto">⌘/</Kbd>
           </DropdownMenuItem>
@@ -300,7 +305,7 @@ export function UserMenu({ user }: UserMenuProps) {
             disabled={isSigningOut}
             className="cursor-pointer"
           >
-            <IconLogout className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
+            <IconLogout className="h-4 w-4 text-[var(--icon-secondary)]" />
             {isSigningOut ? "Signing out..." : "Log out"}
           </DropdownMenuItem>
         </DropdownMenuContent>

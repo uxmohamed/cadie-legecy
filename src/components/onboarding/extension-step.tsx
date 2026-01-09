@@ -95,8 +95,8 @@ export function ExtensionStep({ onComplete, onSkip }: ExtensionStepProps) {
   }, [theme]);
 
   const handleInstallClick = () => {
-    // Open Chrome Web Store (placeholder URL - update when published)
-    window.open("https://chrome.google.com/webstore", "_blank");
+    // Open Chrome Web Store
+    window.open("https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd", "_blank");
     setHasClicked(true);
   };
 

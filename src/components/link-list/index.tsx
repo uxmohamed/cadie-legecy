@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import type { Link } from "@/features/links/types";
+import type { Space } from "@/types";
 import { toast } from "sonner";
 import { detectContentType } from "@/lib/content-detector";
 import { canonicalizeColor } from "@/lib/canonicalize";
@@ -68,10 +69,14 @@ interface LinkListProps {
       onBatchDelete: (ids: string[]) => Promise<void>;
       onBatchRestore: (ids: string[]) => Promise<void>;
       onBatchPermanentDelete: (ids: string[]) => Promise<void>;
-      onBatchPin: (ids: string[]) => void;
-      onBatchUnpin: (ids: string[]) => void;
+      onBatchPin: (ids: string[]) => Promise<void>;
+      onBatchUnpin: (ids: string[]) => Promise<void>;
     }
   ) => void;
+  spaces?: Space[];
+  linkSpacesMap?: Map<string, string[]>; // Map of link ID to space IDs
+  onAddToSpace?: (linkId: string, spaceId: string) => Promise<void>;
+  onRemoveFromSpace?: (linkId: string, spaceId: string) => Promise<void>;
 }
 
 export function LinkList({
@@ -106,6 +111,10 @@ export function LinkList({
   hasMore = false,
   onLoadMore,
   onSelectionChange,
+  spaces = [],
+  linkSpacesMap = new Map(),
+  onAddToSpace,
+  onRemoveFromSpace,
 }: LinkListProps) {
   const [focusedIndex, setFocusedIndex] = React.useState<number | null>(null);
   const [contextMenu, setContextMenu] = React.useState<ContextMenuState | null>(
@@ -680,6 +689,13 @@ export function LinkList({
     return () => observer.disconnect();
   }, [hasMore, isLoadingMore, onLoadMore]);
 
+  // Track if component has mounted to prevent hydration mismatch
+  // On server, we always render the list container structure to match initial client render
+  const [hasMounted, setHasMounted] = React.useState(false);
+  React.useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
   // Scroll to very top when add input is triggered
   React.useEffect(() => {
     if (isAddingItem) {
@@ -687,159 +703,170 @@ export function LinkList({
     }
   }, [isAddingItem]);
 
-  // Show empty state only when not in add mode
-  if (showEmptyState) {
-    return <LinkListEmpty />;
-  }
-
   return (
     <div className="w-full" ref={containerRef}>
-      {/* Add input - appears at top of list, pushes links down */}
-      {isAddingItem && (
-        <InlineAddItem
-          value={addInputValue}
-          onChange={onAddInputChange || (() => {})}
-          onSubmit={onAddSubmit || (() => {})}
-          onCancel={onAddCancel || (() => {})}
-        />
-      )}
+      {/* Show empty state only when not in add mode and after mount */}
+      {/* This prevents hydration mismatch by always rendering list structure initially */}
+      {showEmptyState && hasMounted ? (
+        <LinkListEmpty />
+      ) : (
+        <>
+          {/* Add input - appears at top of list, pushes links down */}
+          {isAddingItem && (
+            <InlineAddItem
+              value={addInputValue}
+              onChange={onAddInputChange || (() => {})}
+              onSubmit={onAddSubmit || (() => {})}
+              onCancel={onAddCancel || (() => {})}
+            />
+          )}
 
-      {/* Virtualized list container */}
-      <div
-        className="py-4 relative"
-        style={{ height: `${virtualizer.getTotalSize()}px` }}
-      >
-        {virtualRows.map((virtualRow) => {
-          const item = virtualItems[virtualRow.index];
+          {/* Virtualized list container */}
+          {/* Explicitly check hasMounted to separate server/client rendering paths */}
+          {!hasMounted ? (
+            <div 
+              className="py-4 relative" 
+              style={{ height: 'auto' }}
+            />
+          ) : (
+            <div
+              className="py-4 relative"
+              style={{ height: `${virtualizer.getTotalSize()}px` }}
+            >
+              {virtualRows.map((virtualRow) => {
+                const item = virtualItems[virtualRow.index];
 
-          // Render pinned header
-          if (item.type === "pinned-header") {
-            return (
-              <div
-                key="pinned-header"
-                data-index={virtualRow.index}
-                ref={measureElement}
-                className="absolute top-0 left-0 w-full"
-                style={{ transform: `translateY(${virtualRow.start}px)` }}
-              >
-                <div
-                  className={`mb-4 mt-4 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
-                    isAddingItem || effectiveEditingLinkId
-                      ? "opacity-20"
-                      : "opacity-100"
-                  }`}
-                >
-                  Pinned
-                </div>
-              </div>
-            );
-          }
+                // Render pinned header
+                if (item.type === "pinned-header") {
+                  return (
+                    <div
+                      key="pinned-header"
+                      data-index={virtualRow.index}
+                      ref={measureElement}
+                      className="absolute top-0 left-0 w-full"
+                      style={{ transform: `translateY(${virtualRow.start}px)` }}
+                    >
+                      <div
+                        className={`mb-4 mt-4 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
+                          isAddingItem || effectiveEditingLinkId
+                            ? "opacity-20"
+                            : "opacity-100"
+                        }`}
+                      >
+                        Pinned
+                      </div>
+                    </div>
+                  );
+                }
 
-          // Render all-links header
-          if (item.type === "all-links-header") {
-            return (
-              <div
-                key="all-links-header"
-                data-index={virtualRow.index}
-                ref={measureElement}
-                className="absolute top-0 left-0 w-full"
-                style={{ transform: `translateY(${virtualRow.start}px)` }}
-              >
-                <div
-                  className={`mb-4 mt-8 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
-                    isAddingItem || effectiveEditingLinkId
-                      ? "opacity-20"
-                      : "opacity-100"
-                  }`}
-                >
-                  All Links
-                </div>
-              </div>
-            );
-          }
+                // Render all-links header
+                if (item.type === "all-links-header") {
+                  return (
+                    <div
+                      key="all-links-header"
+                      data-index={virtualRow.index}
+                      ref={measureElement}
+                      className="absolute top-0 left-0 w-full"
+                      style={{ transform: `translateY(${virtualRow.start}px)` }}
+                    >
+                      <div
+                        className={`mb-4 mt-8 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
+                          isAddingItem || effectiveEditingLinkId
+                            ? "opacity-20"
+                            : "opacity-100"
+                        }`}
+                      >
+                        All Links
+                      </div>
+                    </div>
+                  );
+                }
 
-          // Render link item
-          if (item.type === "link") {
-            const { link, index, isPinned } = item;
-            const isThisEditing = effectiveEditingLinkId === link.id;
-            const shouldDim =
-              (isAddingItem || effectiveEditingLinkId) && !isThisEditing;
+                // Render link item
+                if (item.type === "link") {
+                  const { link, index, isPinned } = item;
+                  const isThisEditing = effectiveEditingLinkId === link.id;
+                  const shouldDim =
+                    (isAddingItem || effectiveEditingLinkId) && !isThisEditing;
 
-            return (
-              <div
-                key={link.id}
-                data-index={virtualRow.index}
-                ref={measureElement}
-                className="absolute top-0 left-0 w-full pb-0.5"
-                style={{ transform: `translateY(${virtualRow.start}px)` }}
-              >
-                <div
-                  className={`transition-opacity duration-200 ${
-                    shouldDim ? "opacity-20 pointer-events-none" : "opacity-100"
-                  }`}
-                >
-                  <LinkListItem
-                    link={link}
-                    index={index}
-                    isPinned={isPinned}
-                    isSelected={selectedIds.has(link.id)}
-                    isFocused={focusedIndex === index}
-                    linkRef={(el) => {
-                      linkRefs.current[index] = el;
-                    }}
-                    onMouseDown={handleItemMouseDown}
-                    onClick={handleItemClick}
-                    onMouseEnter={handleItemMouseEnter}
-                    onMouseLeave={(idx) => {
-                      if (focusedIndex === idx && !isDragging)
-                        setFocusedIndex(null);
-                    }}
-                    onFocus={setFocusedIndex}
-                    onContextMenu={handleContextMenu}
-                    onCopy={onCopy}
-                    onEdit={() => onEdit(link)}
-                    onPin={!isTrashView ? onPin : undefined}
-                    onUnpin={!isTrashView ? onUnpin : undefined}
-                    onDelete={onDelete}
-                    isDragging={isDragging}
-                    isEditing={isThisEditing}
-                    editMode={isThisEditing ? effectiveEditMode : null}
-                    editValue={isThisEditing ? effectiveEditValue : ""}
-                    onEditChange={handleEditChange}
-                    onEditSubmit={handleEditSubmit}
-                    onEditCancel={handleEditCancel}
-                  />
-                </div>
-              </div>
-            );
-          }
+                  return (
+                    <div
+                      key={link.id}
+                      data-index={virtualRow.index}
+                      ref={measureElement}
+                      className="absolute top-0 left-0 w-full pb-0.5"
+                      style={{ transform: `translateY(${virtualRow.start}px)` }}
+                    >
+                      <div
+                        className={`transition-opacity duration-200 ${
+                          shouldDim ? "opacity-20 pointer-events-none" : "opacity-100"
+                        }`}
+                      >
+                        <LinkListItem
+                          link={link}
+                          index={index}
+                          isPinned={isPinned}
+                          isSelected={selectedIds.has(link.id)}
+                          isFocused={focusedIndex === index}
+                          linkRef={(el) => {
+                            linkRefs.current[index] = el;
+                          }}
+                          onMouseDown={handleItemMouseDown}
+                          onClick={handleItemClick}
+                          onMouseEnter={handleItemMouseEnter}
+                          onMouseLeave={(idx) => {
+                            if (focusedIndex === idx && !isDragging)
+                              setFocusedIndex(null);
+                          }}
+                          onFocus={setFocusedIndex}
+                          onContextMenu={handleContextMenu}
+                          onCopy={onCopy}
+                          onEdit={() => onEdit(link)}
+                          onPin={!isTrashView ? onPin : undefined}
+                          onUnpin={!isTrashView ? onUnpin : undefined}
+                          onDelete={onDelete}
+                          isDragging={isDragging}
+                          isEditing={isThisEditing}
+                          editMode={isThisEditing ? effectiveEditMode : null}
+                          editValue={isThisEditing ? effectiveEditValue : ""}
+                          onEditChange={handleEditChange}
+                          onEditSubmit={handleEditSubmit}
+                          onEditCancel={handleEditCancel}
+                        />
+                      </div>
+                    </div>
+                  );
+                }
 
-          // Render loading more skeleton
-          if (item.type === "loading-more") {
-            return (
-              <div
-                key="loading-more"
-                data-index={virtualRow.index}
-                ref={measureElement}
-                className="absolute top-0 left-0 w-full"
-                style={{ transform: `translateY(${virtualRow.start}px)` }}
-              >
-                <div className="space-y-px">
-                  <LinkItemSkeleton />
-                  <LinkItemSkeleton />
-                  <LinkItemSkeleton />
-                </div>
-              </div>
-            );
-          }
+                // Render loading more skeleton
+                if (item.type === "loading-more") {
+                  return (
+                    <div
+                      key="loading-more"
+                      data-index={virtualRow.index}
+                      ref={measureElement}
+                      className="absolute top-0 left-0 w-full"
+                      style={{ transform: `translateY(${virtualRow.start}px)` }}
+                    >
+                      <div className="space-y-px">
+                        <LinkItemSkeleton />
+                        <LinkItemSkeleton />
+                        <LinkItemSkeleton />
+                      </div>
+                    </div>
+                  );
+                }
 
-          return null;
-        })}
-      </div>
+                return null;
+              })}
+            </div>
+          )}
 
-      {/* Sentinel for infinite scroll */}
-      {hasMore && !isLoadingMore && (
-        <div ref={loadMoreRef} className="h-4 w-full" />
+          {/* Sentinel for infinite scroll */}
+          {hasMore && !isLoadingMore && (
+            <div ref={loadMoreRef} className="h-4 w-full" />
+          )}
+        </>
       )}
 
       {contextMenu && (
@@ -868,6 +895,10 @@ export function LinkList({
               onRename={!isTrashView ? handleRename : undefined}
               onPin={!isTrashView ? onPin : undefined}
               onUnpin={!isTrashView ? onUnpin : undefined}
+              spaces={spaces}
+              linkSpaces={linkSpacesMap.get(contextMenu.link.id) || []}
+              onAddToSpace={onAddToSpace}
+              onRemoveFromSpace={onRemoveFromSpace}
               onDelete={!isTrashView ? onDelete : undefined}
               onRestore={isTrashView ? onRestore : undefined}
               onPermanentDelete={

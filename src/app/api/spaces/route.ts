@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitSpaces, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 
-
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -120,10 +119,11 @@ export async function POST(request: NextRequest) {
     interface CreateSpaceBody {
       name: string;
       color: string;
+      sort_order?: number;
     }
 
     const body = (await request.json()) as CreateSpaceBody;
-    const { name, color } = body;
+    const { name, color, sort_order } = body;
 
     if (!name || !color) {
       return NextResponse.json(
@@ -132,12 +132,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get max sort_order to append new space at the end
+    const { data: existingSpaces } = await supabase
+      .from("spaces")
+      .select("sort_order")
+      .eq("user_id", user.id)
+      .order("sort_order", { ascending: false })
+      .limit(1);
+
+    const maxSortOrder = existingSpaces?.[0]?.sort_order ?? -1;
+    const newSortOrder = sort_order ?? maxSortOrder + 1;
+
     const { data, error } = await supabase
       .from("spaces")
       .insert({
         user_id: user.id,
         name,
         color,
+        sort_order: newSortOrder,
       })
       .select()
       .single();
@@ -146,7 +158,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ space: data }, { status: 201 });
+    return NextResponse.json({ space: { ...data, link_count: 0 } }, { status: 201 });
   } catch (error) {
     console.error("Error creating space:", error);
     return NextResponse.json(

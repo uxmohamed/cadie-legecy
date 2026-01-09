@@ -4,15 +4,23 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
-import { IconMenu, IconX, IconConfettiFilled, IconClick, IconLayoutDashboard, IconKeyboard, IconChevronDown } from "@tabler/icons-react";
+import { IconMenu, IconX, IconConfettiFilled, IconChevronDown, IconArrowRight } from "@tabler/icons-react";
 import {
   Sheet,
   SheetContent,
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useState } from "react";
 import { Footer } from "@/components/footer";
+import type { ChangelogEntry } from "@/types/changelog";
+import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 
 function FaqItem({ question, children, isOpen, onToggle }: { question: string; children: React.ReactNode; isOpen: boolean; onToggle: () => void }) {
   return (
@@ -35,7 +43,11 @@ function FaqItem({ question, children, isOpen, onToggle }: { question: string; c
   );
 }
 
-export function LandingPage() {
+interface LandingPageProps {
+  changelogEntries?: ChangelogEntry[];
+}
+
+export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openFaqId, setOpenFaqId] = useState<string | null>(null);
 
@@ -54,9 +66,15 @@ export function LandingPage() {
             
             {/* Desktop Navigation - Centered */}
             <div className="hidden md:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
-              <Button disabled className="relative text-[var(--text-secondary)] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-transparent">
-                Extension (Soon)
-              </Button>
+              <a
+                href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button className="relative text-[var(--text-secondary)] hover:text-[var(--text-primary)] inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
+                  Extension
+                </Button>
+              </a>
               <Link href="/changelog">
                 <Button className="relative text-[var(--text-secondary)] hover:text-[var(--text-primary)] inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
                   Changelog
@@ -119,11 +137,15 @@ export function LandingPage() {
                     {/* Mobile Menu Items */}
                     <nav className="flex-1 overflow-y-auto p-6">
                       <div className="flex flex-col gap-6">
-                        <span 
-                          className="text-2xl font-medium text-[var(--text-tertiary)] cursor-not-allowed"
+                        <a
+                          href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-2xl font-medium text-[var(--text-primary)] hover:text-[var(--text-secondary)] transition-colors"
+                          onClick={() => setIsMenuOpen(false)}
                         >
-                          Extension (Soon)
-                        </span>
+                          Extension
+                        </a>
                         <Link 
                           href="/changelog" 
                           className="text-2xl font-medium text-[var(--text-primary)] hover:text-[var(--text-secondary)] transition-colors"
@@ -158,7 +180,7 @@ export function LandingPage() {
       </div>
 
       {/* Hero Section */}
-      <main className="flex-1 pt-12 sm:pt-16 md:pt-20 pb-16 sm:pb-20 px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 pt-12 sm:pt-16 md:pt-20 pb-16 sm:pb-20 md:pb-24 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
           {/* Beta Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--bg-field-default)] mb-2 sm:mb-4">
@@ -166,7 +188,7 @@ export function LandingPage() {
             <span className="text-sm font-medium text-[var(--text-secondary)]">Cadie beta is now live</span>
           </div>
 
-          <h1 className="text-6xl font-medium tracking-[-0.05em] text-[var(--text-primary)] mb-2 sm:mb-4 font-custom" style={{ lineHeight: 'calc(0.25rem * 17)' }}>
+          <h1 className="text-5xl sm:text-6xl font-medium tracking-[-0.05em] text-[var(--text-primary)] mb-2 sm:mb-4 font-custom leading-[1.1]">
             Your personal library <br className="hidden sm:block" />
             for the internet.
           </h1>
@@ -176,7 +198,7 @@ export function LandingPage() {
           </p>
 
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <Link href="/auth">
+            <Link href="/auth" className="w-full sm:w-auto">
               <Button
                 size="lg"
                 className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-8 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--cta-primary-default)] text-[var(--text-always-white)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2"
@@ -184,6 +206,28 @@ export function LandingPage() {
                 Get Started
               </Button>
             </Link>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-8 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--bg-field-light)] text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2"
+                >
+                  Watch demo
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-black border-none">
+                <DialogTitle className="sr-only">Cadie Demo Video</DialogTitle>
+                <div className="aspect-video w-full">
+                  <iframe
+                    className="h-full w-full"
+                    src="https://www.youtube.com/embed/l4sVPobIW0A?autoplay=1"
+                    title="Cadie Demo Video"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  ></iframe>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </main>
@@ -202,7 +246,7 @@ export function LandingPage() {
         </div>
         
         {/* Product Screenshot */}
-        <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20">
+        <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-0">
           <div className="mx-auto max-w-4xl">
             <div className="relative overflow-hidden">
               <Image
@@ -219,58 +263,165 @@ export function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl sm:text-5xl font-medium text-[var(--text-primary)] mb-6 font-custom">
-              Built for simplicity
-            </h2>
-            <p className="text-base font-medium text-[var(--text-tertiary)] max-w-md mx-auto">
-              Everything you need, nothing you don&apos;t.
-            </p>
+      <section className="pt-16 sm:pt-20 md:pt-24 pb-0 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto space-y-12 md:space-y-16">
+          
+          {/* Feature 1: Save with one click - Text Left, Image Right */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div className="space-y-4">
+              <h2 className="text-xl sm:text-2xl font-medium text-[var(--text-primary)] font-custom">
+                Save with one click
+              </h2>
+              <p className="text-md font-[470] text-[var(--text-secondary)] leading-relaxed max-w-md">
+                Click the Cadie Chrome extension and the current page is saved instantly to your library.
+              </p>
+              <a
+                href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm font-medium text-[var(--cadie-color-6)] hover:text-[var(--cadie-color-5)] transition-colors mt-2"
+              >
+                Get extension
+                <IconArrowRight className="size-4" />
+              </a>
+            </div>
+            <div className="rounded-xl bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] pt-12 pr-12">
+              <div className="relative aspect-[4/3] w-full overflow-hidden">
+                <video
+                  src="/vid-section01.mp4"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover object-right-top rounded-tr-[6px] rounded-br-[6px]"
+                />
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-              <div className="text-center">
-                <div className="flex justify-center mb-4">
-                  <IconClick className="size-6 text-[var(--cadie-color-6)]" />
-                </div>
-                <p className="text-md text-[var(--text-secondary)] font-medium">
-                  <span className="font-medium text-[var(--text-primary)]">One-Click Capture.</span>{" "}
-                  Save any link instantly with our browser extension. No friction, just results.
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="flex justify-center mb-4">
-                  <IconLayoutDashboard className="size-6 text-[var(--cadie-color-6)]" />
-                </div>
-                <p className="text-md text-[var(--text-secondary)] font-medium">
-                  <span className="font-medium text-[var(--text-primary)]">Minimalist Interface.</span>{" "}
-                  A clean, clutter-free design that puts your content first. No ads, no noise.
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="flex justify-center mb-4">
-                  <IconKeyboard className="size-6 text-[var(--cadie-color-6)]" />
-                </div>
-                <p className="text-md text-[var(--text-secondary)] font-medium">
-                  <span className="font-medium text-[var(--text-primary)]">Keyboard First.</span>{" "}
-                  Navigate, organize, and search without ever touching your mouse.
-                </p>
-              </div>
+
+          {/* Feature 2: Clean links by default - Image Left, Text Right */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div className="space-y-4 md:order-2">
+              <h2 className="text-xl sm:text-2xl font-medium text-[var(--text-primary)] font-custom">
+                Clean links by default
+              </h2>
+              <p className="text-md font-[470] text-[var(--text-secondary)] leading-relaxed max-w-md">
+                Cadie removes tracking and extra parameters when you save a link. You don&apos;t need to do anything.
+              </p>
+            </div>
+            <div className="rounded-xl bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] pt-12 px-12 pb-0 overflow-hidden md:order-1">
+              <video
+                src="/vid-section02.mp4"
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="w-full aspect-[4/3] object-cover object-center block rounded-t-[6px] border-t border-x border-[color-mix(in_oklab,var(--border-primary)_40%,transparent)]"
+              />
+            </div>
           </div>
+
+          {/* Feature 3: Keyboard-first - Text Left, Image Right */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div className="space-y-4">
+              <h2 className="text-xl sm:text-2xl font-medium text-[var(--text-primary)] font-custom">
+                Keyboard-first
+              </h2>
+              <p className="text-md font-[470] text-[var(--text-secondary)] leading-relaxed max-w-md">
+                You can navigate and manage your links using the keyboard instead of the mouse.
+              </p>
+            </div>
+            <div className="rounded-xl bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] pt-12 px-12 pb-0 overflow-hidden">
+              <KeyboardShortcuts />
+            </div>
+          </div>
+
         </div>
       </section>
+
+      {/* What's New Section */}
+      {changelogEntries.length > 0 && (
+        <section className="pt-16 sm:pt-20 md:pt-24 pb-0 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-2xl sm:text-4xl font-medium text-[var(--text-primary)] mb-6 font-custom">
+                What&apos;s New
+              </h2>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {changelogEntries.map((entry) => {
+                const date = new Date(entry.date);
+                const formattedDate = date.toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                });
+                
+                return (
+                  <Link
+                    key={entry._id}
+                    href={`/changelog#${entry._raw.flattenedPath.replace("changelog/", "")}`}
+                    className="group block"
+                  >
+                    <article className="h-full bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] rounded-xl p-6 transition-all duration-200 hover:bg-[var(--grey-200)] dark:hover:bg-[var(--grey-700)]">
+                      <div className="flex flex-col gap-3">
+                        {/* Date */}
+                        <time className="text-sm font-medium text-[var(--text-tertiary)]">
+                          {formattedDate}
+                        </time>
+                        
+                        {/* Title */}
+                        <h3 className="text-lg font-[570] text-[var(--text-primary)]">
+                          {entry.title}
+                        </h3>
+                        
+                        {/* Description */}
+                        <p className="text-base font-[470] text-[var(--text-secondary)] line-clamp-2">
+                          {entry.description}
+                        </p>
+                        
+                        {/* Tags */}
+                        {entry.tags && Array.isArray(entry.tags) && entry.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {entry.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="h-6 w-fit px-2 text-xs font-medium bg-[var(--bg-l1-solid)] text-[var(--text-secondary)] rounded-full border border-[var(--border-primary)] flex items-center justify-center"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </article>
+                  </Link>
+                );
+              })}
+            </div>
+            
+            {/* View All Link */}
+            <div className="text-center mt-8">
+              <Link
+                href="/changelog"
+                className="inline-flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                View all updates
+                <IconArrowRight className="size-4" />
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* FAQ Section */}
       <section className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl sm:text-5xl font-medium text-[var(--text-primary)] mb-6 font-custom">
-              Frequently<br />asked questions
+            <h2 className="text-2xl sm:text-4xl font-medium text-[var(--text-primary)] mb-6 font-custom">
+             FAQs
             </h2>
-            <p className="text-base font-medium text-[var(--text-tertiary)]">
-              Quick answers to common questions about Cadie.
-            </p>
           </div>
           <div className="max-w-[500px] mx-auto flex flex-col gap-1">
             <FaqItem 
@@ -285,7 +436,7 @@ export function LandingPage() {
               isOpen={openFaqId === 'save'} 
               onToggle={() => setOpenFaqId(openFaqId === 'save' ? null : 'save')}
             >
-              Manually add links from the dashboard using the input field or keyboard shortcuts. A browser extension for one-click saving is coming soon!
+              Manually add links from the dashboard using the input field or keyboard shortcuts. You can also use our Chrome extension for one-click saving!
             </FaqItem>
             <FaqItem 
               question="Is my data private?" 
@@ -313,21 +464,28 @@ export function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto">
-          <div className="bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] rounded-2xl p-8 sm:p-12 md:p-16 text-center">
-            <h2 className="text-3xl sm:text-4xl font-medium text-[var(--text-always-black)] dark:text-[var(--text-always-white)] mb-4 font-custom">
-              Start saving links<br />the simple way
+      <section className="bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-24">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-8 md:gap-12 items-center text-center md:text-left">
+            <h2 className="text-4xl sm:text-5xl font-medium text-[var(--text-primary)] tracking-tight">
+              Try Cadie
             </h2>
-            <p className="text-base font-medium text-[var(--grey-600)] dark:text-[var(--grey-400)] mb-8 max-w-md mx-auto">
-              Join the beta today and never lose an important link again.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link href="/auth">
-                <Button className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-6 py-3 text-base rounded-xl [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--cta-primary-default)] text-[var(--text-always-white)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
-                  Get Started Free
+            <div className="flex flex-col sm:flex-row items-center md:items-start gap-3 w-full sm:w-auto">
+              <Link href="/auth" className="w-full sm:w-auto">
+                <Button className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-8 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--cta-primary-default)] text-[var(--text-always-white)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
+                  Get started
                 </Button>
               </Link>
+              <a
+                href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto"
+              >
+                <Button className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-8 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--bg-field-light)] text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
+                  Get Extension
+                </Button>
+              </a>
             </div>
           </div>
         </div>

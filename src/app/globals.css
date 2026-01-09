@@ -299,6 +299,11 @@ body {
     transparent 64%
   );
 
+  /* Space-specific colors */
+  --space-purple: oklch(0.6 0.2 300);
+  --space-pink: oklch(0.65 0.2 350);
+  --space-teal: oklch(0.6 0.15 195);
+
   /* Legacy/Compat Accents */
   --accent-success-bg: oklch(0.95 0.073 167.8);
   --accent-success-fg: oklch(0.405 0.097 157);
@@ -486,6 +491,14 @@ body {
 }
 
 /* Utility Classes */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 .overlay-blur {
   background: var(--overlay-blur-bg);
   box-shadow: var(--overlay-blur-shadow);

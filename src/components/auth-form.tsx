@@ -129,11 +129,12 @@ export function AuthForm() {
     const supabase = createClient();
 
     try {
-      // Use NEXT_PUBLIC_SITE_URL if available and not localhost, otherwise fall back to window.location.origin
-      let siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-      if (!siteUrl || siteUrl.includes('localhost')) {
-        siteUrl = window.location.origin;
-      }
+      // Multi-environment support: Always use window.location.origin to ensure we use the current domain
+      // This ensures that:
+      // - Staging users get staging redirect URLs
+      // - Production users get production redirect URLs
+      // - Works automatically without environment-specific configuration
+      const siteUrl = window.location.origin;
       
       const { error } = await supabase.auth.signInWithOtp({
         email,
@@ -165,10 +166,12 @@ export function AuthForm() {
     const supabase = createClient();
 
     try {
-      let siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-      if (!siteUrl || siteUrl.includes('localhost')) {
-        siteUrl = window.location.origin;
-      }
+      // Multi-environment support: Always use window.location.origin to ensure we use the current domain
+      // This ensures that:
+      // - Staging users get staging redirect URLs
+      // - Production users get production redirect URLs
+      // - Works automatically without environment-specific configuration
+      const siteUrl = window.location.origin;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",

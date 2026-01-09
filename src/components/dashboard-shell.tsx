@@ -5,8 +5,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { UserMenu } from "@/components/user-menu";
 import { LogoIcon } from "@/components/logo-icon";
 import { Dock } from "@/components/dock";
+import { ViewSwitcher } from "@/components/view-switcher";
 import type { User } from "@supabase/supabase-js";
 import type { Link } from "@/features/links/types";
+import type { Space } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCircleCheckFilled } from "@tabler/icons-react";
@@ -40,6 +42,10 @@ interface DashboardShellProps {
   onBatchPermanentDelete?: () => void;
   onBatchPin?: () => void;
   onBatchUnpin?: () => void;
+  spaces?: Space[];
+  onCreateSpace?: () => void;
+  onEditSpace?: (space: Space) => void;
+  onDeleteSpace?: (spaceId: string) => void;
 }
 
 export function DashboardShell({
@@ -63,13 +69,20 @@ export function DashboardShell({
   onBatchPermanentDelete,
   onBatchPin,
   onBatchUnpin,
+  spaces,
+  onCreateSpace,
+  onEditSpace,
+  onDeleteSpace,
 }: DashboardShellProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const { registerShortcut, unregisterShortcut } = useShortcuts();
+  const [pendingShortcut, setPendingShortcut] = React.useState<string | null>(null);
+  const pendingShortcutTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const isTrashView = selectedCategoryId === "trash";
+  const selectedSpace = spaces?.find(s => s.id === selectedCategoryId);
 
   // Update URL immediately using history API (no navigation, instant URL update)
   const updateUrl = React.useCallback((value: string) => {
@@ -143,12 +156,33 @@ export function DashboardShell({
 
     registerShortcut({
       key: "1",
-      description: "Switch to All Items view",
+      description: "Switch to All view",
       category: "Navigation",
       action: () => {
         onViewChange(null);
       },
     });
+
+    // Register shortcuts for spaces dynamically
+    if (spaces && spaces.length > 0) {
+      spaces.forEach((space, index) => {
+        let shortcutKey: string;
+        if (index < 8) {
+          // First 8 spaces: shortcuts 2-9
+          shortcutKey = String(index + 2);
+          // Single key shortcuts (2-9)
+          registerShortcut({
+            key: shortcutKey,
+            description: `Switch to ${space.name} space`,
+            category: "Navigation",
+            action: () => {
+              onViewChange(space.id);
+            },
+          });
+        }
+        // Multi-key shortcuts (1B-9B, 1C-9C, etc.) are handled in handleKeyDown
+      });
+    }
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.shiftKey && e.key === "T") {
@@ -164,16 +198,79 @@ export function DashboardShell({
         }
       }
 
-      if (e.key === "1") {
-        const target = e.target as HTMLElement;
-        const isInputFocused =
-          target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable;
+      const target = e.target as HTMLElement;
+      const isInputFocused =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable;
 
-        if (!isInputFocused) {
+      if (isInputFocused) {
+        return; // Don't handle shortcuts when typing in inputs
+      }
+
+      // Handle letter keys for multi-key shortcuts (1A-9A, 1B-9B, etc.)
+      if (pendingShortcut && /^[a-z]$/i.test(e.key) && spaces && spaces.length > 8) {
+        const numKey = parseInt(pendingShortcut);
+        const letter = e.key.toUpperCase();
+        const letterIndex = letter.charCodeAt(0) - 65; // A=0, B=1, C=2, etc.
+        const spaceIndex = 8 + (letterIndex * 9) + (numKey - 1); // 1A -> index 8, 2A -> index 9, ..., 1B -> index 17, etc.
+        if (spaces[spaceIndex]) {
+          e.preventDefault();
+          onViewChange(spaces[spaceIndex].id);
+          setPendingShortcut(null);
+          if (pendingShortcutTimeoutRef.current) {
+            clearTimeout(pendingShortcutTimeoutRef.current);
+          }
+        }
+        return;
+      }
+
+      // Handle number keys
+      const numKey = parseInt(e.key);
+      if (numKey >= 1 && numKey <= 9) {
+        // If we have more than 8 spaces, numbers can trigger multi-key shortcuts
+        if (spaces && spaces.length > 8) {
+          // Check if this number can be used for a multi-key shortcut (1B-9B, 1C-9C, etc.)
+          // Calculate which spaces could use this number with a letter
+          const hasMultiKeySpace = Array.from({ length: Math.ceil((spaces.length - 8) / 9) }, (_, i) => {
+            const spaceIndex = 8 + (i * 9) + (numKey - 1);
+            return spaces[spaceIndex] !== undefined;
+          }).some(Boolean);
+          
+          // Check if this number can be used for a single-key shortcut
+          const spaceIndexForSingleKey = numKey - 2; // 2 -> index 0, 3 -> index 1, etc.
+          const hasSingleKeySpace = numKey >= 2 && numKey <= 8 && spaces[spaceIndexForSingleKey] !== undefined;
+
+          if (hasMultiKeySpace || (numKey === 1 && spaces.length > 8)) {
+            // Start waiting for letter key (B, C, D, etc.)
+            e.preventDefault();
+            setPendingShortcut(e.key);
+            if (pendingShortcutTimeoutRef.current) {
+              clearTimeout(pendingShortcutTimeoutRef.current);
+            }
+            pendingShortcutTimeoutRef.current = setTimeout(() => {
+              // Timeout: execute single key action
+              setPendingShortcut(null);
+              if (numKey === 1) {
+                onViewChange(null);
+              } else if (hasSingleKeySpace) {
+                onViewChange(spaces[spaceIndexForSingleKey].id);
+              }
+            }, 500); // Wait 500ms for letter key
+            return;
+          }
+        }
+
+        // Single key shortcuts
+        if (numKey === 1) {
           e.preventDefault();
           onViewChange(null);
+        } else if (numKey >= 2 && numKey <= 9 && spaces && spaces.length > 0) {
+          const spaceIndex = numKey - 2; // 2 -> index 0, 3 -> index 1, etc.
+          if (spaces[spaceIndex]) {
+            e.preventDefault();
+            onViewChange(spaces[spaceIndex].id);
+          }
         }
       }
 
@@ -197,8 +294,20 @@ export function DashboardShell({
       window.removeEventListener("keydown", handleKeyDown, true);
       unregisterShortcut("c");
       unregisterShortcut("/");
+      // Unregister space shortcuts
+      if (spaces && spaces.length > 0) {
+        spaces.forEach((space, index) => {
+          const shortcutNumber = index + 2;
+          if (shortcutNumber <= 9) {
+            unregisterShortcut(String(shortcutNumber));
+          }
+        });
+      }
+      if (pendingShortcutTimeoutRef.current) {
+        clearTimeout(pendingShortcutTimeoutRef.current);
+      }
     };
-  }, [registerShortcut, unregisterShortcut, selectedCategoryId, onOpenAddMode, onViewChange]);
+  }, [registerShortcut, unregisterShortcut, selectedCategoryId, onOpenAddMode, onViewChange, spaces, pendingShortcut]);
 
   return (
     <div className="min-h-screen bg-[var(--bg-main-container)] relative">
@@ -244,13 +353,17 @@ export function DashboardShell({
                 <div className="h-8 w-px bg-[var(--border-secondary)]" />
               )}
 
-              <div className="flex items-center gap-2">
-                <button
-                  className="not-italic text-lg sm:text-[22px] font-[570] leading-tight sm:leading-[32px] tracking-[-0.16px] text-[var(--text-primary)] hover:text-[var(--text-primary)] truncate"
-                  aria-label={isTrashView ? "Trash" : "All Items"}
-                >
-                  {isTrashView ? "Trash" : "All Items"}
-                </button>
+              <div className="flex items-center gap-2 min-w-0">
+                <ViewSwitcher
+                  selectedCategoryId={selectedCategoryId}
+                  onViewChange={onViewChange}
+                  spaces={spaces}
+                  onCreateSpace={onCreateSpace}
+                  onEditSpace={onEditSpace}
+                  onDeleteSpace={onDeleteSpace}
+                  title={isTrashView ? "Trash" : selectedSpace?.name || "All"}
+                  isTrashView={isTrashView}
+                />
                 {isTrashView && (
                   <Badge variant="secondary" className="bg-[var(--bg-field-light)] px-2 py-0.75 text-[var(--text-tertiary)] rounded-full">
                     Auto-deletes in 60 days
@@ -307,9 +420,9 @@ export function DashboardShell({
                       className={`cursor-pointer rounded-xl ${sortBy === "date" ? "bg-[rgba(255,255,255,0.1)]" : ""}`}
                     >
                       {sortBy === "date" ? (
-                        <IconCircleCheckFilled className="w-5 h-5 text-white mr-2" />
+                        <IconCircleCheckFilled className="w-5 h-5 text-white" />
                       ) : (
-                        <div className="w-5 h-5 mr-2" />
+                        <div className="w-5 h-5" />
                       )}
                       Date Added
                       {sortBy === "date" && (
@@ -328,9 +441,9 @@ export function DashboardShell({
                       className={`cursor-pointer rounded-xl ${sortBy === "title" ? "bg-[rgba(255,255,255,0.1)]" : ""}`}
                     >
                       {sortBy === "title" ? (
-                        <IconCircleCheckFilled className="w-5 h-5 text-white mr-2" />
+                        <IconCircleCheckFilled className="w-5 h-5 text-white" />
                       ) : (
-                        <div className="w-5 h-5 mr-2" />
+                        <div className="w-5 h-5" />
                       )}
                       Name
                       {sortBy === "title" && (
@@ -371,10 +484,8 @@ export function DashboardShell({
         className="fixed bottom-0 left-0 right-0 h-24 z-10 pointer-events-none bg-gradient-to-t from-[var(--bg-main-container)] to-transparent"
       />
 
-      {/* Dock */}
+      {/* Dock - Selection Toolbar Only */}
       <Dock
-        selectedCategoryId={selectedCategoryId}
-        onViewChange={onViewChange}
         selectedCount={selectedCount}
         onClearSelection={onClearSelection}
         onBatchDelete={onBatchDelete}

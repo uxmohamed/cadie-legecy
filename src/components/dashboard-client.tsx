@@ -9,25 +9,18 @@ import { DashboardContent } from "@/components/dashboard-content";
 import { LinkListSkeleton } from "@/components/skeletons";
 import { OnboardingFlow } from "@/components/onboarding";
 import { useRealtimeSync } from "@/features/links/hooks/use-realtime-sync.hook";
+import { useSpaces } from "@/features/spaces/queries";
+import { SpaceModal } from "@/components/spaces/space-modal";
 import type { User } from "@supabase/supabase-js";
 import type { Link } from "@/features/links/types";
-
-/**
- * Initial data structure for server-side prefetched links
- */
-interface InitialLinksData {
-  links: Link[];
-  total: number;
-}
+import type { Space } from "@/types";
 
 interface DashboardClientProps {
   user: User;
-  initialView?: "trash" | null;
-  /** Server-side prefetched links for instant render */
-  initialLinks?: InitialLinksData;
+  initialView?: "trash" | string | null; // "trash" for trash view, string for space ID, null for all items
 }
 
-export function DashboardClient({ user, initialView = null, initialLinks }: DashboardClientProps) {
+export function DashboardClient({ user, initialView = null }: DashboardClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -36,8 +29,10 @@ export function DashboardClient({ user, initialView = null, initialLinks }: Dash
   
   // Determine view from URL path or initialView prop
   const isTrashRoute = pathname === "/trash" || initialView === "trash";
+  const isSpaceRoute = pathname.startsWith("/space/");
+  const spaceIdFromPath = isSpaceRoute ? pathname.split("/space/")[1] : null;
   const [selectedCategoryId, setSelectedCategoryId] = React.useState<string | null>(
-    isTrashRoute ? "trash" : null
+    isTrashRoute ? "trash" : (initialView || spaceIdFromPath || null)
   );
   
   const [sortBy, setSortBy] = React.useState<"date" | "title">("date");
@@ -56,12 +51,24 @@ export function DashboardClient({ user, initialView = null, initialLinks }: Dash
     onBatchUnpin: (ids: string[]) => void;
   } | null>(null);
   
+  // Spaces management
+  const { spaces, createSpace, updateSpace, deleteSpace } = useSpaces(!!user);
+  const [spaceModalOpen, setSpaceModalOpen] = React.useState(false);
+  const [editingSpace, setEditingSpace] = React.useState<Space | null>(null);
+  
   // Sync selectedCategoryId with URL path changes
   React.useEffect(() => {
     if (pathname === "/trash") {
       setSelectedCategoryId("trash");
     } else if (pathname === "/") {
       setSelectedCategoryId(null);
+    } else if (pathname.startsWith("/space/")) {
+      const spaceId = pathname.split("/space/")[1];
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(spaceId)) {
+        setSelectedCategoryId(spaceId);
+      }
     }
   }, [pathname]);
 
@@ -126,23 +133,55 @@ export function DashboardClient({ user, initialView = null, initialLinks }: Dash
 
   // Handle view change with non-blocking navigation
   const handleViewChange = React.useCallback((categoryId: string | null) => {
-    const targetPath = categoryId === "trash" ? "/trash" : "/";
+    let targetPath: string;
     
-    // Update URL without blocking (client-side only)
-    if (typeof window !== "undefined") {
-      window.history.pushState({}, "", targetPath);
+    if (categoryId === "trash") {
+      targetPath = "/trash";
+    } else if (categoryId && categoryId !== "trash") {
+      // Space ID - navigate to /space/[id]
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(categoryId)) {
+        targetPath = `/space/${categoryId}`;
+      } else {
+        // Fallback to home if invalid
+        targetPath = "/";
+      }
+    } else {
+      targetPath = "/";
     }
     
     // Update state immediately for instant UI switch
     setSelectedCategoryId(categoryId);
     
-    // Sync with Next.js router in background (for proper route handling)
-    if (targetPath === "/trash") {
-      router.push("/trash");
-    } else {
-      router.push("/");
-    }
+    // Navigate to the target path
+    router.push(targetPath);
   }, [router]);
+  
+  const handleCreateSpace = React.useCallback(() => {
+    setEditingSpace(null);
+    setSpaceModalOpen(true);
+  }, []);
+
+  const handleEditSpace = React.useCallback((space: Space) => {
+    setEditingSpace(space);
+    setSpaceModalOpen(true);
+  }, []);
+  
+  const handleSaveSpace = React.useCallback(async (name: string, color: string) => {
+    if (editingSpace) {
+      await updateSpace(editingSpace.id, { name, color });
+    } else {
+      await createSpace(name, color);
+    }
+  }, [editingSpace, createSpace, updateSpace]);
+  
+  const handleDeleteSpace = React.useCallback(async (id: string) => {
+    await deleteSpace(id);
+    // If deleted space was selected, switch to all items
+    if (selectedCategoryId === id) {
+      handleViewChange(null);
+    }
+  }, [deleteSpace, selectedCategoryId, handleViewChange]);
 
   // Check onboarding status on mount
   React.useEffect(() => {
@@ -177,10 +216,15 @@ export function DashboardClient({ user, initialView = null, initialLinks }: Dash
   }
 
   return (
-    <DashboardShell
-      user={user}
-      selectedCategoryId={selectedCategoryId}
-      onViewChange={handleViewChange}
+    <>
+      <DashboardShell
+        user={user}
+        selectedCategoryId={selectedCategoryId}
+        onViewChange={handleViewChange}
+        spaces={spaces}
+        onCreateSpace={handleCreateSpace}
+        onEditSpace={handleEditSpace}
+        onDeleteSpace={handleDeleteSpace}
       sortBy={sortBy}
       sortOrder={sortOrder}
       onSortChange={handleSortChange}
@@ -257,9 +301,17 @@ export function DashboardClient({ user, initialView = null, initialLinks }: Dash
           onAddCancel={handleAddCancel}
           onSelectionChange={handleSelectionChange}
           searchQuery={searchQuery}
-          initialLinks={initialLinks}
         />
       </Suspense>
     </DashboardShell>
+    
+    <SpaceModal
+      open={spaceModalOpen}
+      onOpenChange={setSpaceModalOpen}
+      space={editingSpace}
+      onSave={handleSaveSpace}
+      onDelete={editingSpace ? handleDeleteSpace : undefined}
+    />
+    </>
   );
 }

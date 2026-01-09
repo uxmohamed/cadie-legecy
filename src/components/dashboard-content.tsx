@@ -3,12 +3,13 @@
 import * as React from "react";
 import { LinkList } from "@/components/link-list";
 import { LinkListSkeleton } from "@/components/skeletons";
-import { useLinks } from "@/features/links/hooks";
+import { useLinksQuery } from "@/features/links/queries/use-links-query";
+import { useLinkMutations, useCopyUrl } from "@/features/links/queries/use-link-mutations";
+import { useSpaces } from "@/features/spaces/queries";
 import type { User } from "@supabase/supabase-js";
-import type { Link } from "@/features/links/types";
+import type { Link, LinkFilters } from "@/features/links/types";
 import {
   detectMultipleContentTypes,
-  type DetectedContent,
 } from "@/lib/content-detector";
 import { toast } from "sonner";
 
@@ -16,16 +17,8 @@ export interface BatchHandlers {
   onBatchDelete: (ids: string[]) => Promise<void>;
   onBatchRestore: (ids: string[]) => Promise<void>;
   onBatchPermanentDelete: (ids: string[]) => Promise<void>;
-  onBatchPin: (ids: string[]) => void;
-  onBatchUnpin: (ids: string[]) => void;
-}
-
-/**
- * Initial data structure for server-side prefetched links
- */
-interface InitialLinksData {
-  links: Link[];
-  total: number;
+  onBatchPin: (ids: string[]) => Promise<void>;
+  onBatchUnpin: (ids: string[]) => Promise<void>;
 }
 
 interface DashboardContentProps {
@@ -40,8 +33,6 @@ interface DashboardContentProps {
   onAddCancel: () => void;
   onSelectionChange: (count: number, links: Link[], clearSelection: () => void, batchHandlers: BatchHandlers) => void;
   searchQuery: string;
-  /** Server-side prefetched links for instant render */
-  initialLinks?: InitialLinksData;
 }
 
 export function DashboardContent({
@@ -56,12 +47,20 @@ export function DashboardContent({
   onAddCancel,
   onSelectionChange,
   searchQuery,
-  initialLinks,
 }: DashboardContentProps) {
+  const { spaces, addLinksToSpace, removeLinksFromSpace } = useSpaces(!!user);
+  const [linkSpacesMap, setLinkSpacesMap] = React.useState<Map<string, string[]>>(new Map());
 
-  const filters = React.useMemo(() => {
-    if (selectedCategoryId === "trash") return { is_deleted: true };
-    return { is_archived: false };
+  // Memoize filters to prevent cache misses
+  const filters: LinkFilters = React.useMemo(() => {
+    if (selectedCategoryId === "trash") {
+      return { is_deleted: true };
+    }
+    // If selectedCategoryId is a UUID (space ID), filter by space
+    if (selectedCategoryId && selectedCategoryId !== "trash" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(selectedCategoryId)) {
+      return { space_id: selectedCategoryId, is_deleted: false, is_archived: false };
+    }
+    return { is_deleted: false, is_archived: false };
   }, [selectedCategoryId]);
 
   // Debounce the search query to avoid too many API requests
@@ -75,33 +74,87 @@ export function DashboardContent({
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Use TanStack Query for links
   const {
-    filteredLinks,
+    links,
     isLoading,
-    fetchingLinks,
-    handleSubmit,
-    handleDeleteLink,
-    handleRestoreLink,
-    handlePermanentDeleteLink,
-    handleCopyUrl,
-    handleEditLink,
-    handleUpdateLink,
-    handlePinLink,
-    handleUnpinLink,
-    handleBatchDeleteLinks,
-    handleBatchRestoreLinks,
-    handleBatchPermanentDeleteLinks,
-    handleBatchPinLinks,
-    handleBatchUnpinLinks,
-    isLoadingMore,
-    hasMore,
-    loadMore,
-  } = useLinks(!!user, filters, user.id, debouncedSearchQuery, initialLinks);
+    isFetching,
+  } = useLinksQuery(filters, debouncedSearchQuery, !!user);
+
+  // Use mutations hook
+  const {
+    deleteLink,
+    restoreLink,
+    permanentDeleteLink,
+    updateLink,
+    pinLink,
+    unpinLink,
+    batchDeleteLinks,
+    batchRestoreLinks,
+    batchPermanentDeleteLinks,
+    batchPinLinks,
+    batchUnpinLinks,
+    addLinks,
+    isAddingLinks,
+  } = useLinkMutations(filters);
+
+  // Copy URL utility
+  const { copyUrl } = useCopyUrl();
+
+  // Fetch link spaces for all links
+  React.useEffect(() => {
+    if (!user || links.length === 0) return;
+
+    const fetchLinkSpaces = async () => {
+      const supabase = (await import("@/lib/supabase/client")).createClient();
+      const linkIds = links.map(l => l.id);
+      
+      const { data } = await supabase
+        .from("link_spaces")
+        .select("link_id, space_id")
+        .in("link_id", linkIds);
+
+      if (data) {
+        const map = new Map<string, string[]>();
+        data.forEach((ls) => {
+          const existing = map.get(ls.link_id) || [];
+          map.set(ls.link_id, [...existing, ls.space_id]);
+        });
+        setLinkSpacesMap(map);
+      }
+    };
+
+    fetchLinkSpaces();
+  }, [user, links]);
+
+  const handleAddToSpace = React.useCallback(async (linkId: string, spaceId: string) => {
+    await addLinksToSpace(spaceId, [linkId]);
+    // Update local map
+    setLinkSpacesMap(prev => {
+      const updated = new Map(prev);
+      const existing = updated.get(linkId) || [];
+      if (!existing.includes(spaceId)) {
+        updated.set(linkId, [...existing, spaceId]);
+      }
+      return updated;
+    });
+  }, [addLinksToSpace]);
+
+  const handleRemoveFromSpace = React.useCallback(async (linkId: string, spaceId: string) => {
+    await removeLinksFromSpace(spaceId, [linkId]);
+    // Update local map
+    setLinkSpacesMap(prev => {
+      const updated = new Map(prev);
+      const existing = updated.get(linkId) || [];
+      updated.set(linkId, existing.filter(id => id !== spaceId));
+      return updated;
+    });
+  }, [removeLinksFromSpace]);
 
   // Sort links based on current sort settings
   const sortedLinks = React.useMemo(() => {
-    const pinned = filteredLinks.filter((link) => link.is_pinned);
-    const unpinned = filteredLinks.filter((link) => !link.is_pinned);
+    const pinned = links.filter((link) => link.is_pinned);
+    const unpinned = links.filter((link) => !link.is_pinned);
 
     const sortFunction = (a: Link, b: Link) => {
       if (sortBy === "date") {
@@ -123,10 +176,10 @@ export function DashboardContent({
     unpinned.sort(sortFunction);
 
     return [...pinned, ...unpinned];
-  }, [filteredLinks, sortBy, sortOrder]);
+  }, [links, sortBy, sortOrder]);
 
   const handleInlineAddSubmit = React.useCallback(() => {
-    if (!addInputValue.trim() || isLoading) return;
+    if (!addInputValue.trim() || isAddingLinks) return;
 
     const detectedItems = detectMultipleContentTypes(addInputValue);
     if (detectedItems.length > 0) {
@@ -151,10 +204,65 @@ export function DashboardContent({
         toast.warning("Some invalid items were skipped");
       }
 
-      handleSubmit(validItems);
+      addLinks(validItems);
       onAddSubmit();
     }
-  }, [addInputValue, isLoading, handleSubmit, onAddSubmit]);
+  }, [addInputValue, isAddingLinks, addLinks, onAddSubmit]);
+
+  // Wrapper functions to match expected signatures (async for LinkList types)
+  const handleDeleteLink = React.useCallback(async (id: string) => {
+    deleteLink(id);
+  }, [deleteLink]);
+
+  const handleRestoreLink = React.useCallback(async (id: string) => {
+    restoreLink(id);
+  }, [restoreLink]);
+
+  const handlePermanentDeleteLink = React.useCallback(async (id: string) => {
+    permanentDeleteLink(id);
+  }, [permanentDeleteLink]);
+
+  const handleUpdateLink = React.useCallback(async (id: string, updates: Partial<Link>) => {
+    updateLink(id, updates);
+  }, [updateLink]);
+
+  const handlePinLink = React.useCallback(async (id: string) => {
+    pinLink(id);
+  }, [pinLink]);
+
+  const handleUnpinLink = React.useCallback(async (id: string) => {
+    unpinLink(id);
+  }, [unpinLink]);
+
+  const handleEditLink = React.useCallback(() => {
+    toast("Edit functionality coming soon");
+  }, []);
+
+  // Batch handlers returning promises for DashboardClient compatibility
+  const handleBatchDeleteLinks = React.useCallback(async (ids: string[]) => {
+    if (ids.length === 0) return;
+    batchDeleteLinks(ids);
+  }, [batchDeleteLinks]);
+
+  const handleBatchRestoreLinks = React.useCallback(async (ids: string[]) => {
+    if (ids.length === 0) return;
+    batchRestoreLinks(ids);
+  }, [batchRestoreLinks]);
+
+  const handleBatchPermanentDeleteLinks = React.useCallback(async (ids: string[]) => {
+    if (ids.length === 0) return;
+    batchPermanentDeleteLinks(ids);
+  }, [batchPermanentDeleteLinks]);
+
+  const handleBatchPinLinks = React.useCallback(async (ids: string[]) => {
+    if (ids.length === 0) return;
+    batchPinLinks(ids);
+  }, [batchPinLinks]);
+
+  const handleBatchUnpinLinks = React.useCallback(async (ids: string[]) => {
+    if (ids.length === 0) return;
+    batchUnpinLinks(ids);
+  }, [batchUnpinLinks]);
 
   // Create stable batch handlers that accept IDs as parameters
   // These are passed to onSelectionChange and stored in DashboardClient
@@ -166,9 +274,10 @@ export function DashboardContent({
     onBatchUnpin: handleBatchUnpinLinks,
   }), [handleBatchDeleteLinks, handleBatchRestoreLinks, handleBatchPermanentDeleteLinks, handleBatchPinLinks, handleBatchUnpinLinks]);
 
-  // Show skeleton when fetching and no links to display
-  // This handles initial load and view transitions (e.g., switching to trash)
-  if (fetchingLinks) {
+  // Only show skeleton on first load when there's no cached data
+  // If we have cached data, show it immediately (even if stale)
+  const hasNoData = !links || links.length === 0;
+  if (isLoading && hasNoData) {
     return <LinkListSkeleton />;
   }
 
@@ -179,7 +288,7 @@ export function DashboardContent({
       onRestore={handleRestoreLink}
       onPermanentDelete={handlePermanentDeleteLink}
       onEdit={handleEditLink}
-      onCopy={handleCopyUrl}
+      onCopy={copyUrl}
       onPin={handlePinLink}
       onUnpin={handleUnpinLink}
       onBatchDelete={handleBatchDeleteLinks}
@@ -194,10 +303,14 @@ export function DashboardContent({
       onAddInputChange={onAddInputChange}
       onAddSubmit={handleInlineAddSubmit}
       onAddCancel={onAddCancel}
-      isLoadingMore={isLoadingMore}
-      hasMore={hasMore}
-      onLoadMore={loadMore}
+      isLoadingMore={false} // Never show bottom skeleton - background updates are silent
+      hasMore={false} // TODO: Implement infinite scroll with useLinksInfiniteQuery
+      onLoadMore={() => {}} // TODO: Implement infinite scroll
       onSelectionChange={onSelectionChange}
+      spaces={spaces}
+      linkSpacesMap={linkSpacesMap}
+      onAddToSpace={handleAddToSpace}
+      onRemoveFromSpace={handleRemoveFromSpace}
     />
   );
 }

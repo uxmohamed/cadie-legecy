@@ -75,3 +75,53 @@ export async function prefetchTrashLinks(
 ): Promise<{ links: Link[]; total: number }> {
   return prefetchLinks(userId, { is_deleted: true });
 }
+
+/**
+ * Prefetch links for a specific space
+ */
+export async function prefetchSpaceLinks(
+  userId: string,
+  spaceId: string
+): Promise<{ links: Link[]; total: number }> {
+  const supabase = await createClient();
+
+  // First, get link IDs in this space
+  const { data: linkSpaces, error: linkSpacesError } = await supabase
+    .from("link_spaces")
+    .select("link_id")
+    .eq("space_id", spaceId);
+
+  if (linkSpacesError || !linkSpaces || linkSpaces.length === 0) {
+    return { links: [], total: 0 };
+  }
+
+  const linkIds = linkSpaces.map(ls => ls.link_id);
+
+  // Now query links with those IDs
+  let query = supabase
+    .from("links")
+    .select("*", { count: "exact" })
+    .eq("user_id", userId)
+    .in("id", linkIds)
+    .eq("is_deleted", false)
+    .eq("is_archived", false);
+
+  // Apply sorting - pinned first, then by created_at
+  query = query.order("is_pinned", { ascending: false });
+  query = query.order("created_at", { ascending: false });
+
+  // Apply limit
+  query = query.limit(INITIAL_PAGE_SIZE);
+
+  const { data, error, count } = await query;
+
+  if (error) {
+    console.error("Error prefetching space links:", error);
+    return { links: [], total: 0 };
+  }
+
+  return {
+    links: (data as Link[]) || [],
+    total: count || 0,
+  };
+}

@@ -106,6 +106,8 @@ AlertDialogDescription.displayName =
   AlertDialogPrimitive.Description.displayName;
 
 const AlertDialogClose = AlertDialogPrimitive.Cancel;
+const AlertDialogAction = AlertDialogPrimitive.Action;
+const AlertDialogCancel = AlertDialogPrimitive.Cancel;
 
 export {
   AlertDialog,
@@ -120,4 +122,6 @@ export {
   AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogClose,
+  AlertDialogAction,
+  AlertDialogCancel,
 };

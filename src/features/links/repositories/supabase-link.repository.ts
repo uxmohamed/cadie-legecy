@@ -16,6 +16,74 @@ export class SupabaseLinkRepository implements ILinkRepository {
     async findAll(userId: string, filters?: LinkFilters, limit?: number, offset?: number, searchQuery?: string): Promise<{ links: Link[], total: number }> {
         const supabase = await createClient();
 
+        // If filtering by space, we need to join with link_spaces
+        if (filters?.space_id) {
+            // First, get link IDs in this space
+            const { data: linkSpaces, error: linkSpacesError } = await supabase
+                .from("link_spaces")
+                .select("link_id")
+                .eq("space_id", filters.space_id);
+
+            if (linkSpacesError) {
+                console.error("Error fetching link_spaces:", linkSpacesError);
+                return { links: [], total: 0 };
+            }
+
+            const linkIds = linkSpaces?.map(ls => ls.link_id) || [];
+            
+            if (linkIds.length === 0) {
+                return { links: [], total: 0 };
+            }
+
+            // Now query links with those IDs
+            let query = supabase
+                .from("links")
+                .select("*", { count: 'exact' })
+                .eq("user_id", userId)
+                .in("id", linkIds);
+
+            if (filters?.is_archived !== undefined) {
+                query = query.eq("is_archived", filters.is_archived);
+            }
+
+            if (filters?.is_deleted !== undefined) {
+                query = query.eq("is_deleted", filters.is_deleted);
+            }
+
+            if (filters?.is_pinned !== undefined) {
+                query = query.eq("is_pinned", filters.is_pinned);
+            }
+
+            if (filters?.content_type) {
+                query = query.eq("content_type", filters.content_type);
+            }
+
+            // Apply search filter
+            if (searchQuery && searchQuery.trim()) {
+                const searchTerm = `%${searchQuery.trim()}%`;
+                query = query.or(`title.ilike.${searchTerm},url.ilike.${searchTerm},domain.ilike.${searchTerm},description.ilike.${searchTerm},color_value.ilike.${searchTerm}`);
+            }
+
+            // Apply sorting
+            query = query.order("is_pinned", { ascending: false });
+            query = query.order("created_at", { ascending: false });
+
+            // Apply pagination
+            if (limit !== undefined && offset !== undefined) {
+                query = query.range(offset, offset + limit - 1);
+            }
+
+            const { data, error, count } = await query;
+
+            if (error) {
+                console.error("Error fetching links by space:", error);
+                return { links: [], total: 0 };
+            }
+
+            return { links: data || [], total: count || 0 };
+        }
+
+        // Standard query without space filter
         let query = supabase
             .from("links")
             .select("*", { count: 'exact' });
