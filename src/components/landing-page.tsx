@@ -14,6 +14,7 @@ import {
 import { useState } from "react";
 import { Footer } from "@/components/footer";
 import type { ChangelogEntry } from "@/types/changelog";
+import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 
 function FaqItem({ question, children, isOpen, onToggle }: { question: string; children: React.ReactNode; isOpen: boolean; onToggle: () => void }) {
   return (
@@ -235,15 +236,15 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
 
       {/* Features Section */}
       <section className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto space-y-24 md:space-y-32">
+        <div className="max-w-5xl mx-auto space-y-12 md:space-y-16">
           
           {/* Feature 1: Save with one click - Text Left, Image Right */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
             <div className="space-y-4">
-              <h2 className="text-2xl sm:text-3xl font-medium text-[var(--text-primary)] font-custom">
+              <h2 className="text-xl sm:text-2xl font-medium text-[var(--text-primary)] font-custom">
                 Save with one click
               </h2>
-              <p className="text-base text-[var(--text-secondary)] leading-relaxed max-w-md">
+              <p className="text-md font-[470] text-[var(--text-secondary)] leading-relaxed max-w-md">
                 Click the Cadie Chrome extension and the current page is saved instantly to your library.
               </p>
               <a
@@ -252,7 +253,7 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-sm font-medium text-[var(--cadie-color-6)] hover:text-[var(--cadie-color-5)] transition-colors mt-2"
               >
-                Get the Chrome extension
+                Get extension
                 <IconArrowRight className="size-4" />
               </a>
             </div>
@@ -272,21 +273,21 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
 
           {/* Feature 2: Clean links by default - Image Left, Text Right */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
-            <div className="rounded-xl bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] p-6 md:order-1">
-              <div className="relative aspect-[4/3] w-full overflow-hidden">
-                <Image
-                  src="/product-ui.png"
-                  alt="Clean links by default"
-                  fill
-                  className="object-cover"
-                />
-              </div>
+            <div className="rounded-xl bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] pt-12 px-12 pb-0 md:order-1 flex flex-col justify-end overflow-hidden">
+              <video
+                src="/vid-section02.mp4"
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="w-full aspect-[4/3] object-cover object-center block rounded-t-[6px] border-t border-x border-[color-mix(in_oklab,var(--border-primary)_40%,transparent)]"
+              />
             </div>
             <div className="space-y-4 md:order-2">
-              <h2 className="text-2xl sm:text-3xl font-medium text-[var(--text-primary)] font-custom">
+              <h2 className="text-xl sm:text-2xl font-medium text-[var(--text-primary)] font-custom">
                 Clean links by default
               </h2>
-              <p className="text-base text-[var(--text-secondary)] leading-relaxed max-w-md">
+              <p className="text-md font-[470] text-[var(--text-secondary)] leading-relaxed max-w-md">
                 Cadie removes tracking and extra parameters when you save a link. You don&apos;t need to do anything.
               </p>
             </div>
@@ -295,25 +296,15 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
           {/* Feature 3: Keyboard-first - Text Left, Image Right */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
             <div className="space-y-4">
-              <h2 className="text-2xl sm:text-3xl font-medium text-[var(--text-primary)] font-custom">
+              <h2 className="text-xl sm:text-2xl font-medium text-[var(--text-primary)] font-custom">
                 Keyboard-first
               </h2>
-              <p className="text-base text-[var(--text-secondary)] leading-relaxed max-w-md">
+              <p className="text-md font-[470] text-[var(--text-secondary)] leading-relaxed max-w-md">
                 You can navigate and manage your links using the keyboard instead of the mouse.
               </p>
-              <p className="text-base text-[var(--text-secondary)] leading-relaxed max-w-md">
-                Everything is faster when your hands stay on the keyboard.
-              </p>
             </div>
-            <div className="rounded-xl bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] p-6">
-              <div className="relative aspect-[4/3] w-full overflow-hidden">
-                <Image
-                  src="/product-ui.png"
-                  alt="Keyboard-first navigation"
-                  fill
-                  className="object-cover"
-                />
-              </div>
+            <div className="rounded-xl bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] pt-12 px-12 pb-0 overflow-hidden">
+              <KeyboardShortcuts />
             </div>
           </div>
 
@@ -325,12 +316,9 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
         <section className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-4xl sm:text-5xl font-medium text-[var(--text-primary)] mb-6 font-custom">
+              <h2 className="text-2xl sm:text-4xl font-medium text-[var(--text-primary)] mb-6 font-custom">
                 What&apos;s New
               </h2>
-              <p className="text-base font-medium text-[var(--text-tertiary)] max-w-md mx-auto">
-                Latest updates and improvements to Cadie.
-              </p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -348,7 +336,7 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
                     href={`/changelog#${entry._raw.flattenedPath.replace("changelog/", "")}`}
                     className="group block"
                   >
-                    <article className="h-full bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] rounded-xl p-6 transition-all duration-200 hover:bg-[color-mix(in_oklab,var(--grey-100)_80%,transparent)] dark:hover:bg-[color-mix(in_oklab,var(--grey-800)_80%,transparent)]">
+                    <article className="h-full bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] rounded-xl p-6 transition-all duration-200 hover:bg-[var(--grey-200)] dark:hover:bg-[var(--grey-700)]">
                       <div className="flex flex-col gap-3">
                         {/* Date */}
                         <time className="text-sm font-medium text-[var(--text-tertiary)]">
@@ -356,12 +344,12 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
                         </time>
                         
                         {/* Title */}
-                        <h3 className="text-lg font-semibold text-[var(--text-primary)] group-hover:text-[var(--cadie-color-6)] transition-colors">
+                        <h3 className="text-lg font-[570] text-[var(--text-primary)]">
                           {entry.title}
                         </h3>
                         
                         {/* Description */}
-                        <p className="text-sm text-[var(--text-secondary)] line-clamp-2">
+                        <p className="text-base font-[470] text-[var(--text-secondary)] line-clamp-2">
                           {entry.description}
                         </p>
                         
@@ -403,12 +391,9 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
       <section className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl sm:text-5xl font-medium text-[var(--text-primary)] mb-6 font-custom">
-              Frequently<br />asked questions
+            <h2 className="text-2xl sm:text-4xl font-medium text-[var(--text-primary)] mb-6 font-custom">
+             FAQs
             </h2>
-            <p className="text-base font-medium text-[var(--text-tertiary)]">
-              Quick answers to common questions about Cadie.
-            </p>
           </div>
           <div className="max-w-[500px] mx-auto flex flex-col gap-1">
             <FaqItem 
@@ -451,21 +436,27 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto">
-          <div className="bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] rounded-2xl p-8 sm:p-12 md:p-16 text-center">
-            <h2 className="text-3xl sm:text-4xl font-medium text-[var(--text-always-black)] dark:text-[var(--text-always-white)] mb-4 font-custom">
-              Start saving links<br />the simple way
+      <section className="bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-24">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-8 md:gap-12">
+            <h2 className="text-4xl sm:text-5xl font-medium text-[var(--text-primary)] font-custom">
+              Try Cadie
             </h2>
-            <p className="text-base font-medium text-[var(--grey-600)] dark:text-[var(--grey-400)] mb-8 max-w-md mx-auto">
-              Join the beta today and never lose an important link again.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <div className="flex flex-col sm:flex-row items-start gap-3">
               <Link href="/auth">
-                <Button className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-6 py-3 text-base rounded-xl [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--cta-primary-default)] text-[var(--text-always-white)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
-                  Get Started Free
+                <Button className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-6 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--cta-primary-default)] text-[var(--text-always-white)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
+                  Start now for free
                 </Button>
               </Link>
+              <a
+                href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-6 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--bg-field-light)] text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
+                  Get Extension
+                </Button>
+              </a>
             </div>
           </div>
         </div>
