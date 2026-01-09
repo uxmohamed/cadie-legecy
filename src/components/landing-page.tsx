@@ -54,9 +54,15 @@ export function LandingPage() {
             
             {/* Desktop Navigation - Centered */}
             <div className="hidden md:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
-              <Button disabled className="relative text-[var(--text-secondary)] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-transparent">
-                Extension (Soon)
-              </Button>
+              <a
+                href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button className="relative text-[var(--text-secondary)] hover:text-[var(--text-primary)] inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
+                  Extension
+                </Button>
+              </a>
               <Link href="/changelog">
                 <Button className="relative text-[var(--text-secondary)] hover:text-[var(--text-primary)] inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
                   Changelog
@@ -119,11 +125,15 @@ export function LandingPage() {
                     {/* Mobile Menu Items */}
                     <nav className="flex-1 overflow-y-auto p-6">
                       <div className="flex flex-col gap-6">
-                        <span 
-                          className="text-2xl font-medium text-[var(--text-tertiary)] cursor-not-allowed"
+                        <a
+                          href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-2xl font-medium text-[var(--text-primary)] hover:text-[var(--text-secondary)] transition-colors"
+                          onClick={() => setIsMenuOpen(false)}
                         >
-                          Extension (Soon)
-                        </span>
+                          Extension
+                        </a>
                         <Link 
                           href="/changelog" 
                           className="text-2xl font-medium text-[var(--text-primary)] hover:text-[var(--text-secondary)] transition-colors"
@@ -285,7 +295,7 @@ export function LandingPage() {
               isOpen={openFaqId === 'save'} 
               onToggle={() => setOpenFaqId(openFaqId === 'save' ? null : 'save')}
             >
-              Manually add links from the dashboard using the input field or keyboard shortcuts. A browser extension for one-click saving is coming soon!
+              Manually add links from the dashboard using the input field or keyboard shortcuts. You can also use our Chrome extension for one-click saving!
             </FaqItem>
             <FaqItem 
               question="Is my data private?" 

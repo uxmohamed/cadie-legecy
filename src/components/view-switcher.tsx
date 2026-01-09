@@ -341,7 +341,7 @@ export function ViewSwitcher({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete space?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{spaceToDelete?.name}"? This will remove all links from this space.
+              Are you sure you want to delete "<span className="inline-block max-w-[200px] truncate align-bottom font-medium text-[var(--text-primary)]">{spaceToDelete?.name}</span>"? This will remove all links from this space.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

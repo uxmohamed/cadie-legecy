@@ -3,23 +3,47 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-export type SpaceColor = 
+export type SpaceColor =
   | "blue"
-  | "red"
+  | "sky"
+  | "cyan"
+  | "teal"
   | "green"
+  | "emerald"
+  | "lime"
   | "yellow"
-  | "purple"
+  | "amber"
+  | "orange"
+  | "red"
+  | "crimson"
   | "pink"
-  | "teal";
+  | "hotPink"
+  | "purple"
+  | "violet"
+  | "indigo"
+  | "brown"
+  | "slate";
 
 export const SPACE_COLORS: Record<SpaceColor, { cssVar: string; label: string }> = {
-  blue: { cssVar: "var(--accent-blue-primary)", label: "Blue" },
-  red: { cssVar: "var(--accent-red-primary)", label: "Red" },
-  green: { cssVar: "var(--accent-green-primary)", label: "Green" },
-  yellow: { cssVar: "var(--accent-yellow-primary)", label: "Yellow" },
-  purple: { cssVar: "var(--space-purple)", label: "Purple" },
-  pink: { cssVar: "var(--space-pink)", label: "Pink" },
-  teal: { cssVar: "var(--space-teal)", label: "Teal" },
+  blue: { cssVar: "#2783DE", label: "Blue" },
+  sky: { cssVar: "#007AFF", label: "Sky" },
+  cyan: { cssVar: "#00D3F2", label: "Cyan" },
+  teal: { cssVar: "#30B0C7", label: "Teal" },
+  green: { cssVar: "#48E7A5", label: "Green" },
+  emerald: { cssVar: "#34C759", label: "Emerald" },
+  lime: { cssVar: "#BBF451", label: "Lime" },
+  yellow: { cssVar: "#FFCB30", label: "Yellow" },
+  amber: { cssVar: "#FF9F0A", label: "Amber" },
+  orange: { cssVar: "#EF5A3C", label: "Orange" },
+  red: { cssVar: "#FF5050", label: "Red" },
+  crimson: { cssVar: "#FF3B30", label: "Crimson" },
+  pink: { cssVar: "#EF95C2", label: "Pink" },
+  hotPink: { cssVar: "#FF2D55", label: "Hot Pink" },
+  purple: { cssVar: "#A684FF", label: "Purple" },
+  violet: { cssVar: "#AF52DE", label: "Violet" },
+  indigo: { cssVar: "#5856D6", label: "Indigo" },
+  brown: { cssVar: "#A2845E", label: "Brown" },
+  slate: { cssVar: "#64748B", label: "Slate" },
 };
 
 interface ColorPickerProps {

@@ -722,11 +722,13 @@ export function LinkList({
           )}
 
           {/* Virtualized list container */}
+          {/* suppressHydrationWarning: Virtualized content intentionally differs between server/client */}
           <div
             className="py-4 relative"
-            style={{ height: `${virtualizer.getTotalSize()}px` }}
+            style={{ height: hasMounted ? `${virtualizer.getTotalSize()}px` : 'auto' }}
+            suppressHydrationWarning
           >
-        {virtualRows.map((virtualRow) => {
+        {hasMounted && virtualRows.map((virtualRow) => {
           const item = virtualItems[virtualRow.index];
 
           // Render pinned header

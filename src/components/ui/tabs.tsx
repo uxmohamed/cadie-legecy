@@ -19,7 +19,7 @@ const TabsList = React.forwardRef<
       "relative z-0 flex w-fit items-center justify-center gap-x-0.5 text-[var(--text-secondary)]",
       "data-[orientation=vertical]:flex-col",
       variant === "default"
-        ? "rounded-lg bg-[var(--bg-l0-solid)] p-0.5 text-[var(--text-tertiary)]"
+        ? "rounded-lg bg-black/12 dark:bg-white/20 p-0.5 text-[var(--text-tertiary)]"
         : "data-[orientation=vertical]:px-1 data-[orientation=horizontal]:py-1",
       className,
     )}

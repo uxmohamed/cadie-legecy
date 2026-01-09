@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { User } from "@supabase/supabase-js";
-import { IconUserFilled, IconPaletteFilled, IconInfoCircleFilled, IconPuzzleFilled } from "@tabler/icons-react";
+import { IconUserFilled, IconPaletteFilled, IconInfoCircleFilled, IconPuzzleFilled, IconCapsuleHorizontalFilled } from "@tabler/icons-react";
 
 import {
   Dialog,
@@ -21,14 +21,16 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { SettingsProfile } from "@/components/settings/settings-profile";
+import { SettingsSpaces } from "@/components/settings/settings-spaces";
 import { SettingsAppearance } from "@/components/settings/settings-appearance";
 import { SettingsAbout } from "@/components/settings/settings-about";
 import { SettingsExtensions } from "@/components/settings/settings-extensions";
 
-type SettingsSection = "profile" | "appearance" | "extensions" | "about";
+type SettingsSection = "profile" | "spaces" | "appearance" | "extensions" | "about";
 
 const navItems = [
   { id: "profile" as const, name: "Profile", icon: IconUserFilled },
+  { id: "spaces" as const, name: "Spaces", icon: IconCapsuleHorizontalFilled },
   { id: "appearance" as const, name: "Appearance", icon: IconPaletteFilled },
   { id: "extensions" as const, name: "Extensions", icon: IconPuzzleFilled },
   { id: "about" as const, name: "About", icon: IconInfoCircleFilled },
@@ -81,7 +83,7 @@ export function SettingsDialog({ user, open, onOpenChange, onProfileUpdate }: Se
               </SidebarGroup>
             </SidebarContent>
           </Sidebar>
-          <main className="flex h-[620px] flex-1 flex-col overflow-hidden">
+          <main className="flex h-[620px] flex-1 flex-col overflow-hidden min-w-0">
             {/* Mobile navigation */}
             <header className="flex h-12 shrink-0 items-center gap-2 border-b border-[var(--border-primary)] px-4 md:hidden">
               <nav className="flex gap-2">
@@ -102,11 +104,12 @@ export function SettingsDialog({ user, open, onOpenChange, onProfileUpdate }: Se
               </nav>
             </header>
             {/* Content area */}
-            <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
+            <div className="flex flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden p-6 min-w-0">
               <h2 className="text-lg font-semibold text-[var(--text-primary)]">
                 {navItems.find((item) => item.id === activeSection)?.name}
               </h2>
               {activeSection === "profile" && <SettingsProfile user={user} onProfileUpdate={onProfileUpdate} />}
+              {activeSection === "spaces" && <SettingsSpaces />}
               {activeSection === "appearance" && <SettingsAppearance />}
               {activeSection === "extensions" && <SettingsExtensions />}
               {activeSection === "about" && <SettingsAbout />}
