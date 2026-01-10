@@ -14,7 +14,6 @@ import { SpaceModal } from "@/components/spaces/space-modal";
 import type { User } from "@supabase/supabase-js";
 import type { Link } from "@/features/links/types";
 import type { Space } from "@/types";
-import { toast } from "sonner";
 
 interface DashboardClientProps {
   user: User;
