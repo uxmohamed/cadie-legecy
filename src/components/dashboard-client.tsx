@@ -153,9 +153,9 @@ export function DashboardClient({ user, initialView = null }: DashboardClientPro
           return;
         }
 
+        // Call addLinks - the mutation handles toasts including duplicates
         if (addLinksRef.current) {
           addLinksRef.current(validItems);
-          toast.success(`Added ${validItems.length} item${validItems.length > 1 ? 's' : ''} from clipboard`);
         }
       }
     } catch (err) {
