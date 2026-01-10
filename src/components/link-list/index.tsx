@@ -393,7 +393,7 @@ export function LinkList({
           if (link.content_type === "color") {
             // Check if the new title is a color
             const detected = detectContentType(newTitle);
-            if (detected.type === "color") {
+            if (detected && detected.type === "color") {
               // Get the new color's hex value
               const newColorHex = canonicalizeColor(detected.value);
               const currentColorHex = canonicalizeColor(

@@ -90,8 +90,11 @@ export function DashboardClient({ user, initialView = null }: DashboardClientPro
     setIsAddingItem((prev) => !prev);
   }, [selectedCategoryId]);
 
-  const handleOpenAddMode = React.useCallback(() => {
+  const handleOpenAddMode = React.useCallback((initialValue?: string) => {
     if (selectedCategoryId === "trash") return;
+    if (initialValue) {
+      setAddInputValue(initialValue);
+    }
     setIsAddingItem(true);
   }, [selectedCategoryId]);
 
@@ -112,57 +115,6 @@ export function DashboardClient({ user, initialView = null }: DashboardClientPro
     setAddInputValue("");
     setIsAddingItem(false);
   }, []);
-
-  // Ref to store addLinks function from DashboardContent
-  const addLinksRef = React.useRef<((items: any[]) => void) | null>(null);
-
-  // Callback to receive addLinks function from DashboardContent
-  const handleClipboardPasteReady = React.useCallback((addLinksFunction: (items: any[]) => void) => {
-    addLinksRef.current = addLinksFunction;
-  }, []);
-
-  // Function to handle clipboard paste
-  const handleClipboardPaste = React.useCallback(async () => {
-    if (selectedCategoryId === "trash") return;
-    
-    try {
-      const text = await navigator.clipboard.readText();
-      if (!text || !text.trim()) return;
-
-      const clipboardContent = text.trim();
-      
-      // Import the detection function
-      const { detectMultipleContentTypes } = await import("@/lib/content-detector");
-      const detectedItems = detectMultipleContentTypes(clipboardContent);
-      
-      if (detectedItems.length > 0) {
-        const validItems = detectedItems.filter(item => {
-          if (item.type === 'url') {
-            try {
-              const url = new URL(item.value);
-              return url.hostname === 'localhost' || url.hostname.includes('.');
-            } catch {
-              return false;
-            }
-          }
-          return true;
-        });
-
-        if (validItems.length === 0) {
-          toast.error("Clipboard contains invalid URL or color");
-          return;
-        }
-
-        // Call addLinks - the mutation handles toasts including duplicates
-        if (addLinksRef.current) {
-          addLinksRef.current(validItems);
-        }
-      }
-    } catch (err) {
-      // Permission denied or clipboard API not available - silently fail
-      console.debug("Clipboard read failed:", err);
-    }
-  }, [selectedCategoryId]);
 
   const handleSelectionChange = React.useCallback(
     (count: number, links: Link[], clearSelection: () => void, batchHandlers: {
@@ -283,7 +235,6 @@ export function DashboardClient({ user, initialView = null }: DashboardClientPro
       isAddingItem={isAddingItem}
       onToggleAddMode={handleToggleAddMode}
       onOpenAddMode={handleOpenAddMode}
-      onClipboardPaste={handleClipboardPaste}
       searchQuery={searchQuery}
       onSearchChange={handleSearchChange}
       selectedCount={selectedCount}
@@ -354,7 +305,6 @@ export function DashboardClient({ user, initialView = null }: DashboardClientPro
           onAddCancel={handleAddCancel}
           onSelectionChange={handleSelectionChange}
           searchQuery={searchQuery}
-          onClipboardPasteReady={handleClipboardPasteReady}
         />
       </Suspense>
     </DashboardShell>

@@ -115,8 +115,8 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case "add":
-        // Direct insert instead of RPC to ensure proper defaults
-        const linksToInsert = links!.map((link) => ({
+        // Prepare links with clean_url for duplicate checking
+        const linksToCheck = links!.map((link) => ({
           user_id: user.id,
           url: link.url,
           clean_url: link.content_type === "color" ? link.url : canonicalizeUrl(link.url),
@@ -130,19 +130,49 @@ export async function POST(request: NextRequest) {
           is_pinned: false,
         }));
 
-        const insertResult = await supabase
+        // Check for existing links (duplicates) - only check non-deleted links
+        const cleanUrls = linksToCheck.map(l => l.clean_url);
+        const { data: existingLinks } = await supabase
           .from("links")
-          .insert(linksToInsert)
-          .select();
+          .select("clean_url")
+          .eq("user_id", user.id)
+          .eq("is_deleted", false)
+          .in("clean_url", cleanUrls);
 
-        result = {
-          data: {
-            links: insertResult.data || [],
-            count: insertResult.data?.length || 0,
-            restored: 0,
-          },
-          error: insertResult.error,
-        };
+        const existingCleanUrls = new Set(existingLinks?.map(l => l.clean_url) || []);
+        
+        // Filter out duplicates
+        const linksToInsert = linksToCheck.filter(l => !existingCleanUrls.has(l.clean_url));
+        const duplicateCount = linksToCheck.length - linksToInsert.length;
+
+        // Only insert non-duplicate links
+        if (linksToInsert.length > 0) {
+          const insertResult = await supabase
+            .from("links")
+            .insert(linksToInsert)
+            .select();
+
+          result = {
+            data: {
+              links: insertResult.data || [],
+              count: insertResult.data?.length || 0,
+              duplicates: duplicateCount,
+              restored: 0,
+            },
+            error: insertResult.error,
+          };
+        } else {
+          // All links were duplicates
+          result = {
+            data: {
+              links: [],
+              count: 0,
+              duplicates: duplicateCount,
+              restored: 0,
+            },
+            error: null,
+          };
+        }
 
         // Enrich links with comprehensive metadata immediately
         if (!result.error && result.data?.links) {

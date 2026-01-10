@@ -31,8 +31,7 @@ interface DashboardShellProps {
   onSortChange: (sortBy: "date" | "title") => void;
   isAddingItem: boolean;
   onToggleAddMode: () => void;
-  onOpenAddMode: () => void;
-  onClipboardPaste: () => void;
+  onOpenAddMode: (initialValue?: string) => void;
   searchQuery: string;
   onSearchChange: (value: string) => void;
   selectedCount: number;
@@ -60,7 +59,6 @@ export function DashboardShell({
   isAddingItem,
   onToggleAddMode,
   onOpenAddMode,
-  onClipboardPaste,
   searchQuery,
   onSearchChange,
   selectedCount,
@@ -198,7 +196,19 @@ export function DashboardShell({
         // Only intercept if not in an input field and not in trash view
         if (!isInputFocused && selectedCategoryId !== "trash") {
           e.preventDefault();
-          onClipboardPaste();
+          
+          // Read clipboard and open add mode with the content
+          navigator.clipboard
+            .readText()
+            .then((text) => {
+              if (text && text.trim()) {
+                onOpenAddMode(text.trim());
+              }
+            })
+            .catch((err) => {
+              // Permission denied or clipboard API not available - silently fail
+              console.debug("Clipboard read failed:", err);
+            });
         }
         return;
       }
