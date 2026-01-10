@@ -32,6 +32,7 @@ interface DashboardShellProps {
   isAddingItem: boolean;
   onToggleAddMode: () => void;
   onOpenAddMode: () => void;
+  onClipboardPaste: () => void;
   searchQuery: string;
   onSearchChange: (value: string) => void;
   selectedCount: number;
@@ -59,6 +60,7 @@ export function DashboardShell({
   isAddingItem,
   onToggleAddMode,
   onOpenAddMode,
+  onClipboardPaste,
   searchQuery,
   onSearchChange,
   selectedCount,
@@ -185,6 +187,22 @@ export function DashboardShell({
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Handle Cmd+V / Ctrl+V for clipboard paste
+      if ((e.metaKey || e.ctrlKey) && e.key === "v") {
+        const target = e.target as HTMLElement;
+        const isInputFocused =
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable;
+
+        // Only intercept if not in an input field and not in trash view
+        if (!isInputFocused && selectedCategoryId !== "trash") {
+          e.preventDefault();
+          onClipboardPaste();
+        }
+        return;
+      }
+
       if (e.shiftKey && e.key === "T") {
         const target = e.target as HTMLElement;
         const isInputFocused =

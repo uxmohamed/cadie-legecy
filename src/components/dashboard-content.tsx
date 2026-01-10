@@ -33,6 +33,7 @@ interface DashboardContentProps {
   onAddCancel: () => void;
   onSelectionChange: (count: number, links: Link[], clearSelection: () => void, batchHandlers: BatchHandlers) => void;
   searchQuery: string;
+  onClipboardPasteReady?: (addLinksFunction: (items: any[]) => void) => void;
 }
 
 export function DashboardContent({
@@ -47,6 +48,7 @@ export function DashboardContent({
   onAddCancel,
   onSelectionChange,
   searchQuery,
+  onClipboardPasteReady,
 }: DashboardContentProps) {
   const { spaces, addLinksToSpace, removeLinksFromSpace } = useSpaces(!!user);
   const [linkSpacesMap, setLinkSpacesMap] = React.useState<Map<string, string[]>>(new Map());
@@ -126,6 +128,13 @@ export function DashboardContent({
 
     fetchLinkSpaces();
   }, [user, links]);
+
+  // Expose addLinks function to parent for clipboard paste functionality
+  React.useEffect(() => {
+    if (onClipboardPasteReady && addLinks) {
+      onClipboardPasteReady(addLinks);
+    }
+  }, [onClipboardPasteReady, addLinks]);
 
   const handleAddToSpace = React.useCallback(async (linkId: string, spaceId: string) => {
     await addLinksToSpace(spaceId, [linkId]);
