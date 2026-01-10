@@ -197,7 +197,7 @@ export function detectContentType(input: string): DetectedContent | null {
   }
 
   // If nothing matched, return null - this is not valid content
-  return null as unknown as DetectedContent;
+  return null;
 }
 
 function normalizeUrl(url: string): string {
