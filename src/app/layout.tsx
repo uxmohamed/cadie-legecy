@@ -25,8 +25,11 @@ const customFont = Inter({
   adjustFontFallback: true,
 });
 
+// Force production URL for OG images - never use localhost
+const SITE_URL = "https://cadie.app";
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://cadie.app"),
+  metadataBase: new URL(SITE_URL),
   title: "Cadie",
   description: "Your personal library for the internet",
   icons: {
@@ -41,13 +44,16 @@ export const metadata: Metadata = {
     title: "Cadie",
     description: "Your personal library for the internet",
     type: "website",
-    url: process.env.NEXT_PUBLIC_SITE_URL || "https://cadie.app",
+    url: SITE_URL,
+    siteName: "Cadie",
+    locale: "en_US",
     images: [
       {
-        url: "/og-image.png",
+        url: `${SITE_URL}/og-image.png`,
         width: 1200,
         height: 630,
         alt: "Cadie - Your personal library for the internet",
+        type: "image/png",
       },
     ],
   },
@@ -55,7 +61,16 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Cadie",
     description: "Your personal library for the internet",
-    images: ["/og-image.png"],
+    site: "@caaboray",
+    creator: "@caaboray",
+    images: [
+      {
+        url: `${SITE_URL}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "Cadie - Your personal library for the internet",
+      },
+    ],
   },
 };
 
