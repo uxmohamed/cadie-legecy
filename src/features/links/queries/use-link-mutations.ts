@@ -696,13 +696,27 @@ export function useLinkMutations(filters: LinkFilters) {
         throw new Error(errorData.error ?? "Failed to add links");
       }
 
-      return response.json() as Promise<{ links?: Link[]; count?: number; restored?: number }>;
+      return response.json() as Promise<{ links?: Link[]; count?: number; restored?: number; duplicates?: number }>;
     },
-    onSuccess: (data, items) => {
+    onMutate: (items) => {
+      // Show loading toast immediately
+      const loadingToastId = toast.loading(
+        items.length === 1 ? "Adding..." : `Adding ${items.length} items...`
+      );
+      return { loadingToastId };
+    },
+    onSuccess: (data, items, context) => {
+      // Dismiss loading toast
+      if (context?.loadingToastId) {
+        toast.dismiss(context.loadingToastId);
+      }
+
       const createdLinks = data.links ?? [];
       const count = data.count ?? createdLinks.length;
       const restored = data.restored ?? 0;
       const successCount = count - restored;
+      // Use duplicates from API response (server-side detection)
+      const duplicateCount = data.duplicates ?? 0;
 
       // Update ALL cache with new links (they're not in trash)
       if (createdLinks.length > 0) {
@@ -711,7 +725,10 @@ export function useLinkMutations(filters: LinkFilters) {
 
       // Show appropriate toast
       if (items.length === 1) {
-        if (restored === 1) {
+        if (duplicateCount === 1) {
+          // Single item was a duplicate
+          toast.info(items[0].type === "color" ? "Color already in your list" : "Link already in your list");
+        } else if (restored === 1) {
           toast.success(items[0].type === "color" ? "Color restored from trash" : "Link restored from trash");
         } else if (successCount === 1) {
           toast.success(items[0].type === "color" ? "Color saved successfully" : "Link saved successfully");
@@ -720,12 +737,17 @@ export function useLinkMutations(filters: LinkFilters) {
         const parts: string[] = [];
         if (successCount > 0) parts.push(`${successCount} added`);
         if (restored > 0) parts.push(`${restored} restored from trash`);
+        if (duplicateCount > 0) parts.push(`${duplicateCount} already in list`);
         if (parts.length > 0) {
           toast.success(parts.join(", "));
         }
       }
     },
-    onError: (err) => {
+    onError: (err, _items, context) => {
+      // Dismiss loading toast
+      if (context?.loadingToastId) {
+        toast.dismiss(context.loadingToastId);
+      }
       toast.error(err instanceof Error ? err.message : "Failed to save");
     },
   });

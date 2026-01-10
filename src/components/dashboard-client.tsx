@@ -89,8 +89,11 @@ export function DashboardClient({ user, initialView = null }: DashboardClientPro
     setIsAddingItem((prev) => !prev);
   }, [selectedCategoryId]);
 
-  const handleOpenAddMode = React.useCallback(() => {
+  const handleOpenAddMode = React.useCallback((initialValue?: string) => {
     if (selectedCategoryId === "trash") return;
+    if (initialValue) {
+      setAddInputValue(initialValue);
+    }
     setIsAddingItem(true);
   }, [selectedCategoryId]);
 

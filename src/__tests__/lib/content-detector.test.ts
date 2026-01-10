@@ -18,152 +18,179 @@ describe('detectContentType', () => {
   describe('hex colors', () => {
     it('detects 6-digit hex with hash', () => {
       const result = detectContentType('#FF5733');
-      expect(result.type).toBe('color');
-      expect(result.value).toBe('#FF5733');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
+      expect(result!.value).toBe('#FF5733');
     });
 
     it('detects 6-digit hex without hash and adds it', () => {
       const result = detectContentType('FF5733');
-      expect(result.type).toBe('color');
-      expect(result.value).toBe('#FF5733');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
+      expect(result!.value).toBe('#FF5733');
     });
 
     it('detects 3-digit hex with hash', () => {
       const result = detectContentType('#F53');
-      expect(result.type).toBe('color');
-      expect(result.value).toBe('#F53');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
+      expect(result!.value).toBe('#F53');
     });
 
     it('detects 3-digit hex without hash and adds it', () => {
       const result = detectContentType('F53');
-      expect(result.type).toBe('color');
-      expect(result.value).toBe('#F53');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
+      expect(result!.value).toBe('#F53');
     });
 
     it('detects lowercase hex', () => {
       const result = detectContentType('#ff5733');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
 
     it('detects mixed case hex', () => {
       const result = detectContentType('#fF5733');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
   });
 
   describe('rgb colors', () => {
     it('detects rgb format', () => {
       const result = detectContentType('rgb(255, 87, 51)');
-      expect(result.type).toBe('color');
-      expect(result.value).toBe('rgb(255, 87, 51)');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
+      expect(result!.value).toBe('rgb(255, 87, 51)');
     });
 
     it('detects rgb without spaces', () => {
       const result = detectContentType('rgb(255,87,51)');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
 
     it('detects rgb with minimal spacing', () => {
       const result = detectContentType('rgb(0,0,0)');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
 
     it('detects rgb with max values', () => {
       const result = detectContentType('rgb(255, 255, 255)');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
 
     it('handles case-insensitive rgb', () => {
       const result = detectContentType('RGB(255, 87, 51)');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
   });
 
   describe('rgba colors', () => {
     it('detects rgba format', () => {
       const result = detectContentType('rgba(255, 87, 51, 0.5)');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
 
     it('detects rgba with alpha 0', () => {
       const result = detectContentType('rgba(255, 87, 51, 0)');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
 
     it('detects rgba with alpha 1', () => {
       const result = detectContentType('rgba(255, 87, 51, 1)');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
 
     it('detects rgba with decimal alpha', () => {
       const result = detectContentType('rgba(255, 87, 51, 0.75)');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
   });
 
   describe('hsl colors', () => {
     it('detects hsl format', () => {
       const result = detectContentType('hsl(9, 100%, 60%)');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
 
     it('detects hsl with zero values', () => {
       const result = detectContentType('hsl(0, 0%, 0%)');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
 
     it('detects hsl with max values', () => {
       const result = detectContentType('hsl(360, 100%, 100%)');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
   });
 
   describe('hsla colors', () => {
     it('detects hsla format', () => {
       const result = detectContentType('hsla(9, 100%, 60%, 0.5)');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
   });
 
   describe('modern CSS Color Level 4 formats', () => {
     it('detects oklch format', () => {
       const result = detectContentType('oklch(0.6 0.15 30)');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
 
     it('detects oklch with alpha', () => {
       const result = detectContentType('oklch(0.6 0.15 30 / 0.5)');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
 
     it('detects oklab format', () => {
       const result = detectContentType('oklab(0.6 0.1 0.05)');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
 
     it('detects oklab with negative values', () => {
       const result = detectContentType('oklab(0.6 -0.1 0.05)');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
 
     it('detects lab format', () => {
       const result = detectContentType('lab(50 25 -25)');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
 
     it('detects lch format', () => {
       const result = detectContentType('lch(50 30 180)');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
 
     it('detects color() function with display-p3', () => {
       const result = detectContentType('color(display-p3 1 0.5 0)');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
 
     it('detects color() function with srgb', () => {
       const result = detectContentType('color(srgb 1 0.5 0)');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
   });
 
@@ -177,98 +204,120 @@ describe('detectContentType', () => {
     namedColors.forEach(color => {
       it(`detects named color: ${color}`, () => {
         const result = detectContentType(color);
-        expect(result.type).toBe('color');
-        expect(result.value).toBe(color);
+        expect(result).not.toBeNull();
+        expect(result!.type).toBe('color');
+        expect(result!.value).toBe(color);
       });
     });
 
     it('detects named colors case-insensitively', () => {
       const result = detectContentType('RED');
-      expect(result.type).toBe('color');
-      expect(result.value).toBe('red');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
+      expect(result!.value).toBe('red');
     });
 
     it('detects mixed case named colors', () => {
       const result = detectContentType('Red');
-      expect(result.type).toBe('color');
-      expect(result.value).toBe('red');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
+      expect(result!.value).toBe('red');
     });
   });
 
   describe('URLs', () => {
     it('detects https URLs', () => {
       const result = detectContentType('https://example.com');
-      expect(result.type).toBe('url');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('url');
     });
 
     it('detects http URLs', () => {
       const result = detectContentType('http://example.com');
-      expect(result.type).toBe('url');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('url');
     });
 
     it('detects www URLs and adds protocol', () => {
       const result = detectContentType('www.example.com');
-      expect(result.type).toBe('url');
-      expect(result.value).toBe('https://example.com');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('url');
+      expect(result!.value).toBe('https://example.com');
     });
 
     it('detects URLs with paths', () => {
       const result = detectContentType('https://example.com/path/to/page');
-      expect(result.type).toBe('url');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('url');
     });
 
     it('detects URLs with query strings', () => {
       const result = detectContentType('https://example.com?query=test');
-      expect(result.type).toBe('url');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('url');
     });
 
     it('detects URLs with fragments', () => {
       const result = detectContentType('https://example.com#section');
-      expect(result.type).toBe('url');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('url');
     });
 
     it('detects URLs with ports', () => {
       const result = detectContentType('https://example.com:8080');
-      expect(result.type).toBe('url');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('url');
     });
 
     it('adds https to bare domain', () => {
       const result = detectContentType('example.com');
-      expect(result.type).toBe('url');
-      expect(result.value).toBe('https://example.com');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('url');
+      expect(result!.value).toBe('https://example.com');
     });
 
     it('normalizes URL by removing www', () => {
       const result = detectContentType('https://www.example.com');
-      expect(result.value).toBe('https://example.com');
+      expect(result).not.toBeNull();
+      expect(result!.value).toBe('https://example.com');
     });
   });
 
   describe('edge cases', () => {
     it('handles whitespace around input', () => {
       const result = detectContentType('  https://example.com  ');
-      expect(result.type).toBe('url');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('url');
     });
 
-    it('treats ambiguous input as URL', () => {
-      // Non-color, non-obvious URL input defaults to URL
+    it('returns null for ambiguous input that is not a valid domain', () => {
+      // Non-color, non-domain input should return null
       const result = detectContentType('something');
-      expect(result.type).toBe('url');
+      expect(result).toBeNull();
     });
 
-    it('handles empty string', () => {
+    it('returns null for empty string', () => {
       const result = detectContentType('');
-      expect(result.type).toBe('url');
+      expect(result).toBeNull();
+    });
+
+    it('returns null for words with trailing dots like sentences', () => {
+      // "it." and "changes." should NOT be detected as URLs
+      expect(detectContentType('it.')).toBeNull();
+      expect(detectContentType('changes.')).toBeNull();
+      expect(detectContentType('something.')).toBeNull();
     });
 
     it('handles URLs with special characters', () => {
       const result = detectContentType('https://example.com/path?q=hello+world');
-      expect(result.type).toBe('url');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('url');
     });
 
     it('handles URLs with encoded characters', () => {
       const result = detectContentType('https://example.com/path%20with%20spaces');
-      expect(result.type).toBe('url');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('url');
     });
   });
 
@@ -276,13 +325,15 @@ describe('detectContentType', () => {
     it('prioritizes hex color over URL-like strings', () => {
       // A 6-character hex string should be detected as color, not URL
       const result = detectContentType('#AABBCC');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
 
     it('prioritizes named color over URL', () => {
       // "red" is a named color, not a URL
       const result = detectContentType('red');
-      expect(result.type).toBe('color');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
     });
   });
 });
@@ -490,9 +541,8 @@ oklch(0.5 0.2 240)`;
     const result = detectMultipleContentTypes(input);
     // The current implementation splits by whitespace including spaces inside the color notation
     // This results in 6 parts: ['oklch(0.7', '0.15', '180)', 'oklch(0.5', '0.2', '240)']
-    // Each part is treated as a URL since they don't match color patterns
-    expect(result).toHaveLength(6);
-    expect(result.every(r => r.type === 'url')).toBe(true);
+    // Now that invalid content is filtered out, these parts return empty array
+    expect(result).toHaveLength(0);
     // For proper oklch batch input, use newline separation or single values via detectContentType
   });
 
@@ -502,7 +552,8 @@ oklch(0.5 0.2 240)`;
     const input = 'oklch(0.7 0.15 180)';
     // For single value detection, use detectContentType directly
     const result = detectContentType(input);
-    expect(result.type).toBe('color');
+    expect(result).not.toBeNull();
+    expect(result!.type).toBe('color');
   });
 
   it('handles single URL with complex query params', () => {

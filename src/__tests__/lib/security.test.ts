@@ -38,7 +38,8 @@ describe('XSS Prevention', () => {
     it('accepts URLs with javascript in path as valid URLs', () => {
       // This is a valid URL, should be accepted but sanitized when displayed
       const result = detectContentType('https://example.com/javascript:alert(1)');
-      expect(result.type).toBe('url');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('url');
       // The important thing is it's identified as URL, not executed
     });
 
@@ -139,7 +140,8 @@ describe('Input Sanitization', () => {
   describe('whitespace handling', () => {
     it('trims leading/trailing whitespace from URLs', () => {
       const result = detectContentType('   https://example.com   ');
-      expect(result.value.trim()).toBe(result.value);
+      expect(result).not.toBeNull();
+      expect(result!.value.trim()).toBe(result!.value);
     });
 
     it('handles multiple newlines in batch input', () => {

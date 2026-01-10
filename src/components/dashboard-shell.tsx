@@ -31,7 +31,7 @@ interface DashboardShellProps {
   onSortChange: (sortBy: "date" | "title") => void;
   isAddingItem: boolean;
   onToggleAddMode: () => void;
-  onOpenAddMode: () => void;
+  onOpenAddMode: (initialValue?: string) => void;
   searchQuery: string;
   onSearchChange: (value: string) => void;
   selectedCount: number;
@@ -185,6 +185,34 @@ export function DashboardShell({
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Handle Cmd+V / Ctrl+V for clipboard paste
+      if ((e.metaKey || e.ctrlKey) && e.key === "v") {
+        const target = e.target as HTMLElement;
+        const isInputFocused =
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable;
+
+        // Only intercept if not in an input field and not in trash view
+        if (!isInputFocused && selectedCategoryId !== "trash") {
+          e.preventDefault();
+          
+          // Read clipboard and open add mode with the content
+          navigator.clipboard
+            .readText()
+            .then((text) => {
+              if (text && text.trim()) {
+                onOpenAddMode(text.trim());
+              }
+            })
+            .catch((err) => {
+              // Permission denied or clipboard API not available - silently fail
+              console.debug("Clipboard read failed:", err);
+            });
+        }
+        return;
+      }
+
       if (e.shiftKey && e.key === "T") {
         const target = e.target as HTMLElement;
         const isInputFocused =
