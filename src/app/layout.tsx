@@ -34,11 +34,11 @@ export const metadata: Metadata = {
   description: "Your personal library for the internet",
   icons: {
     icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/icon.png", type: "image/png" },
+      { url: `${SITE_URL}/icon.svg`, type: "image/svg+xml" },
+      { url: `${SITE_URL}/icon.png`, type: "image/png" },
     ],
-    apple: "/icon.png",
-    shortcut: "/icon.png",
+    apple: `${SITE_URL}/icon.png`,
+    shortcut: `${SITE_URL}/icon.png`,
   },
   openGraph: {
     title: "Cadie",
