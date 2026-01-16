@@ -44,7 +44,7 @@ export function WelcomeStep({ user, onComplete, isLoading = false }: WelcomeStep
           Customize your Account
         </h1>
         <p className="text-[16px] font-medium leading-[32px] text-[var(--grey-400)] text-center">
-          Give your account an profile picture and name
+          Give your account a profile picture and name
         </p>
       </div>
 
