@@ -723,14 +723,17 @@ export function LinkList({
 
           {/* Virtualized list container */}
           {/* Explicitly check hasMounted to separate server/client rendering paths */}
+          {/* Server placeholder must match LinkListSkeleton structure to avoid hydration mismatch */}
           {!hasMounted ? (
-            <div 
-              className="py-4 relative" 
-              style={{ height: 'auto' }}
-            />
+            <div className="space-y-px py-4 relative">
+              {/* Render skeleton items matching the Suspense fallback structure */}
+              {Array.from({ length: Math.min(8, virtualItems.length || 8) }).map((_, index) => (
+                <LinkItemSkeleton key={index} />
+              ))}
+            </div>
           ) : (
             <div
-              className="py-4 relative"
+              className="space-y-px py-4 relative"
               style={{ height: `${virtualizer.getTotalSize()}px` }}
             >
               {virtualRows.map((virtualRow) => {

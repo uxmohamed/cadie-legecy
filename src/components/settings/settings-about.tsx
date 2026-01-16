@@ -67,17 +67,17 @@ export function SettingsAbout() {
 
           <div className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-field)] p-4">
             <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand-primary)] text-white">
-                <IconMail className="h-5 w-5" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-blue-primary)]">
+                <IconMail className="h-5 w-5 text-white" />
               </div>
               <div>
                 <h4 className="text-sm font-medium">Share Feedback</h4>
                 <p className="text-xs text-[var(--text-secondary)]">Found a bug or have an idea?</p>
               </div>
             </div>
-            <Button variant="secondary" size="sm" className="w-full gap-2" asChild>
+            <Button variant="secondary" size="sm" className="w-full justify-between" asChild>
               <a href="https://x.com/messages/compose?recipient_id=1649994120725778432" target="_blank" rel="noopener noreferrer">
-                Send Message
+                <span>Send Message</span>
                 <IconArrowRight className="h-3 w-3 opacity-50" />
               </a>
             </Button>

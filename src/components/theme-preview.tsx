@@ -91,14 +91,14 @@ export function ThemePreview({ variant, isSelected = false, className = "" }: Th
         {/* Light half - left side */}
         <div 
           className="absolute inset-0"
-          style={{ clipPath: 'polygon(0 0, 55% 0, 45% 100%, 0 100%)' }}
+          style={{ clipPath: 'polygon(0 0, 50% 0, 50% 100%, 0 100%)' }}
         >
           {lightPreview}
         </div>
         {/* Dark half - right side */}
         <div 
           className="absolute inset-0"
-          style={{ clipPath: 'polygon(55% 0, 100% 0, 100% 100%, 45% 100%)' }}
+          style={{ clipPath: 'polygon(50% 0, 100% 0, 100% 100%, 50% 100%)' }}
         >
           {darkPreview}
         </div>
