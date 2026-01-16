@@ -244,7 +244,6 @@ export function OnboardingFlow({ user, onComplete }: OnboardingFlowProps) {
                   <ThemeStep
                     onComplete={handleThemeComplete}
                     isLoading={isSubmitting}
-                    isDarkMode={isDarkMode}
                   />
                 )}
               </motion.div>
