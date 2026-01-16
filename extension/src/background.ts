@@ -110,8 +110,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // ============================================================================
 
 /**
- * Save a URL to Cadie with optimistic UI
- * Shows success immediately, API call happens in background with retry logic
+ * Save a URL to Cadie
+ * Shows brief loading state, then actual result from API
  * @param tabId - The tab ID to show overlays in
  * @param url - The URL to save
  */
@@ -148,11 +148,11 @@ async function saveUrl(tabId: number, url: string): Promise<void> {
       return;
     }
 
-    // OPTIMISTIC UI: Show success immediately!
-    showOverlayInTab(tabId, "success");
+    // Show loading state immediately
+    showOverlayInTab(tabId, "loading");
 
-    // Save to Cadie in background with retry logic
-    saveWithRetry(tabId, url, 3);
+    // Save to Cadie with retry logic - will update overlay with result
+    await saveWithRetry(tabId, url, 3);
   } finally {
     // Remove the save lock
     savesInProgress.delete(saveKey);
@@ -160,8 +160,8 @@ async function saveUrl(tabId: number, url: string): Promise<void> {
 }
 
 /**
- * Save link with retry logic (runs in background)
- * @param tabId - Tab ID for showing error overlay if all retries fail
+ * Save link with retry logic
+ * @param tabId - Tab ID for showing result overlay
  * @param url - URL to save
  * @param maxRetries - Maximum number of retry attempts
  */
@@ -173,10 +173,11 @@ async function saveWithRetry(tabId: number, url: string, maxRetries: number): Pr
       const response = await saveLink({ url });
 
       if (response.success) {
-        // Success or duplicate - we're done (overlay already showing success)
+        // Show appropriate result
         if (response.duplicate) {
-          // Update to show duplicate state
           showOverlayInTab(tabId, "duplicate");
+        } else {
+          showOverlayInTab(tabId, "success");
         }
         return;
       }

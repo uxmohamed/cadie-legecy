@@ -47,26 +47,38 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
     hideTimeout = null;
   }
 
-  // If overlay already exists, just update the content (don't re-render)
+  // If overlay already exists, animate the content transition
   if (overlayElement && document.body.contains(overlayElement)) {
     const content = overlayElement.querySelector(".cadie-overlay-content");
+    const inner = overlayElement.querySelector(".cadie-overlay-inner");
     const icon = overlayElement.querySelector(".cadie-overlay-icon");
     const textEl = overlayElement.querySelector(".cadie-overlay-text");
 
-    if (content && icon && textEl) {
-      // Update icon state and content
-      icon.setAttribute("data-state", state);
-      icon.innerHTML = getIconHTML(state);
+    if (content && inner && icon && textEl) {
+      // Fade out, update, fade in
+      inner.classList.add("cadie-fading");
+      inner.classList.remove("cadie-fade-in");
 
-      // Update text
-      textEl.textContent = text;
+      setTimeout(() => {
+        // Update icon state and content
+        icon.setAttribute("data-state", state);
+        icon.innerHTML = getIconHTML(state);
 
-      // Update progress class
-      if (withProgress) {
-        content.classList.add("cadie-with-progress");
-      } else {
-        content.classList.remove("cadie-with-progress");
-      }
+        // Update text
+        textEl.textContent = text;
+
+        // Update progress class
+        if (withProgress) {
+          content.classList.add("cadie-with-progress");
+        } else {
+          content.classList.remove("cadie-with-progress");
+        }
+
+        // Fade back in
+        inner.classList.remove("cadie-fading");
+        inner.classList.add("cadie-fade-in");
+      }, 90); // Match the fade-out duration
+
       return;
     }
   }
@@ -77,6 +89,10 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
 
   const content = document.createElement("div");
   content.className = "cadie-overlay-content" + (withProgress ? " cadie-with-progress" : "");
+
+  // Inner wrapper for fade transitions
+  const inner = document.createElement("div");
+  inner.className = "cadie-overlay-inner";
 
   // Icon with data-state for CSS styling
   const icon = document.createElement("div");
@@ -89,8 +105,9 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
   textEl.className = "cadie-overlay-text";
   textEl.textContent = text;
 
-  content.appendChild(icon);
-  content.appendChild(textEl);
+  inner.appendChild(icon);
+  inner.appendChild(textEl);
+  content.appendChild(inner);
   overlayElement.appendChild(content);
 
   try {
