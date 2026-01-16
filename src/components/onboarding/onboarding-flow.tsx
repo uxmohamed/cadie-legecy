@@ -38,7 +38,7 @@ interface OnboardingFlowProps {
 export function OnboardingFlow({ user, onComplete }: OnboardingFlowProps) {
   const { complete } = useOnboarding(user);
   const { theme } = useTheme();
-  const [currentStep, setCurrentStep] = React.useState<OnboardingStep>("welcome");
+  const [currentStep, setCurrentStep] = React.useState<OnboardingStep>("auth");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
 
