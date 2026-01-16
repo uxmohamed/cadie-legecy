@@ -246,7 +246,7 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
         </div>
         
         {/* Product Screenshot */}
-        <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-0">
+        <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-12">
           <div className="mx-auto max-w-4xl">
             <div className="relative overflow-hidden">
               <Image

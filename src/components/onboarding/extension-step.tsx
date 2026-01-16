@@ -3,11 +3,13 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { IconArrowRight } from "@tabler/icons-react";
-import { useTheme } from "@/components/theme-provider";
 
 interface ExtensionStepProps {
   onComplete: () => void;
   onSkip: () => void;
+  onInstallClick?: () => void;
+  isLoading?: boolean;
+  isDarkMode?: boolean;
 }
 
 // Link icon SVG
@@ -31,17 +33,7 @@ function LinkIcon({ className }: { className?: string }) {
 }
 
 // Chrome logo SVG for top of card
-function ChromeLogo({ className }: { className?: string }) {
-  const { theme } = useTheme();
-  
-  // Determine if dark mode is effectively active
-  const isDarkMode = React.useMemo(() => {
-    if (theme === 'dark') return true;
-    if (theme === 'system' && typeof window !== 'undefined') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  }, [theme]);
+function ChromeLogo({ className, isDarkMode }: { className?: string; isDarkMode: boolean }) {
   
   return (
     <svg className={className} viewBox="0 0 256 223" xmlns="http://www.w3.org/2000/svg">
@@ -81,106 +73,113 @@ function ChromeLogo({ className }: { className?: string }) {
 }
 
 
-export function ExtensionStep({ onComplete, onSkip }: ExtensionStepProps) {
-  const { theme } = useTheme();
+export function ExtensionStep({ onComplete, onSkip, onInstallClick, isLoading = false, isDarkMode = false }: ExtensionStepProps) {
   const [hasClicked, setHasClicked] = React.useState(false);
-  
-  // Determine if dark mode is effectively active
-  const isDarkMode = React.useMemo(() => {
-    if (theme === 'dark') return true;
-    if (theme === 'system' && typeof window !== 'undefined') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  }, [theme]);
 
   const handleInstallClick = () => {
     // Open Chrome Web Store
     window.open("https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd", "_blank");
     setHasClicked(true);
+    onInstallClick?.();
   };
 
   return (
-    <div className="w-full max-w-[450px] flex justify-center">
-      {/* Card Container - Matching Figma Design */}
-      <div 
-        className="rounded-[24px] p-[48px] flex flex-col gap-[48px] items-center w-full max-w-[500px] text-[15px]"
-        style={{
-          backgroundColor: isDarkMode 
-            ? 'color-mix(in oklab, oklch(1 0 0) 20%, oklch(0 0 0) 80%)'
-            : 'var(--bg-l2-solid)',
-          boxShadow: isDarkMode 
-            ? '0 2px 2px 0 rgba(0, 0, 0, 0.2), 0 4px 4px 0 rgba(0, 0, 0, 0.15), 0 2px 24px 0 rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border-primary)'
-            : '0 2px 2px 0 rgba(0, 0, 0, 0.01), 0 4px 4px 0 rgba(0, 0, 0, 0.01), 0 2px 24px 0 rgba(0, 0, 0, 0.03), 0 0 0 1px #E5E5E5',
-          borderWidth: '0px',
-        }}
-      >
-        {/* Logo and Header Section */}
-        <div className="flex flex-col gap-[18px] items-center w-full">
-          {/* Chrome Logo */}
-          <div className="flex justify-center w-full">
-            <ChromeLogo className="h-12 w-auto" />
-          </div>
-
-          {/* Header Section */}
-          <div className="flex flex-col gap-[2px] items-center w-full">
-            <h1 className="text-[18px] font-semibold leading-[32px] text-[var(--text-primary)] text-center">
-              One Click and it's saved!
-            </h1>
-            <p className="text-[16px] font-medium leading-[32px] text-[var(--grey-400)] text-center">
-              Save links you want to remember.
-            </p>
-          </div>
+    <>
+      {/* Logo and Header Section */}
+      <div className="flex flex-col gap-[18px] items-center w-full">
+        {/* Chrome Logo */}
+        <div className="flex justify-center w-full">
+          <ChromeLogo className="h-12 w-auto" isDarkMode={isDarkMode} />
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col gap-[12px] items-start w-full">
-          {!hasClicked ? (
-            <>
-              <Button
-                type="button"
-                onClick={handleInstallClick}
-                variant="secondary"
-                className="w-full p-3 rounded-[12px] gap-2"
-              >
-                <LinkIcon className="size-6" />
-                <span className="font-medium text-[14px] leading-[24px]">
-                  Add to Chrome
-                </span>
-              </Button>
-
-              <Button
-                type="button"
-                onClick={onSkip}
-                variant="ghost"
-                className="w-full p-3 rounded-[12px]"
-              >
-                <span className="font-medium text-[14px] leading-[24px]">
-                  I&apos;ll do this later
-                </span>
-              </Button>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-[var(--text-tertiary)] text-center w-full">
-                After installing, click the extension icon to save any page!
-              </p>
-              
-              <Button
-                type="button"
-                onClick={onComplete}
-                variant="default"
-                className="w-full p-3 rounded-[12px] text-white"
-              >
-                <span className="font-medium text-[14px] leading-[24px] text-white">
-                  Continue to Cadie
-                </span>
-                <IconArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </>
-          )}
+        {/* Header Section */}
+        <div className="flex flex-col gap-[2px] items-center w-full">
+          <h1 className="text-[18px] font-semibold leading-[32px] text-[var(--text-primary)] text-center">
+            One Click and it's saved!
+          </h1>
+          <p className="text-[16px] font-medium leading-[32px] text-[var(--grey-400)] text-center">
+            Save links you want to remember.
+          </p>
         </div>
       </div>
-    </div>
+
+      {/* Action Buttons */}
+      <div className="flex flex-col gap-[12px] items-start w-full">
+        {!hasClicked ? (
+          <>
+            <Button
+              type="button"
+              onClick={handleInstallClick}
+              variant="secondary"
+              className="w-full p-3 rounded-[12px] gap-2"
+            >
+              <LinkIcon className="size-6" />
+              <span className="font-medium text-[14px] leading-[24px]">
+                Add to Chrome
+              </span>
+            </Button>
+
+            <Button
+              type="button"
+              onClick={onSkip}
+              variant="ghost"
+              className="w-full p-3 rounded-[12px]"
+            >
+              <span className="font-medium text-[14px] leading-[24px]">
+                I&apos;ll do this later
+              </span>
+            </Button>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-[var(--text-tertiary)] text-center w-full">
+              After installing, click the extension icon to save any page!
+            </p>
+
+            <Button
+              type="button"
+              onClick={onComplete}
+              variant="default"
+              className="w-full p-3 rounded-[12px] text-white"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <svg
+                    className="size-4 animate-spin"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  <span className="font-medium text-[14px] leading-[24px] text-white">
+                    Setting up...
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="font-medium text-[14px] leading-[24px] text-white">
+                    Continue to Cadie
+                  </span>
+                  <IconArrowRight className="h-4 w-4 ml-2" />
+                </>
+              )}
+            </Button>
+          </>
+        )}
+      </div>
+    </>
   );
 }
