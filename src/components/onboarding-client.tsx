@@ -13,9 +13,10 @@ export function OnboardingClient({ user }: OnboardingClientProps) {
   const router = useRouter();
 
   const handleComplete = React.useCallback(() => {
-    // Refresh the page to re-check onboarding status
-    router.refresh();
-  }, [router]);
+    // Navigate to home page to trigger fresh server-side check
+    // This clears any stale OAuth flow state from URL hash
+    window.location.href = '/';
+  }, []);
 
   return <OnboardingFlow user={user} onComplete={handleComplete} />;
 }

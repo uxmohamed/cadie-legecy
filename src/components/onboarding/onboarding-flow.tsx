@@ -126,12 +126,13 @@ export function OnboardingFlow({ user, onComplete }: OnboardingFlowProps) {
 
       setIsSubmitting(true);
       try {
-        const success = await complete(initialName, initialAvatar);
-        if (success) {
-          onComplete();
-        }
+        await complete(initialName, initialAvatar);
+        // Always navigate even if complete() fails - user can retry later
+        onComplete();
       } catch (error) {
         console.error("Error completing onboarding:", error);
+        // Still navigate to dashboard - onboarding completion is best-effort
+        onComplete();
       } finally {
         setIsSubmitting(false);
       }
@@ -141,12 +142,13 @@ export function OnboardingFlow({ user, onComplete }: OnboardingFlowProps) {
     setIsSubmitting(true);
 
     try {
-      const success = await complete(profileData.displayName, profileData.avatarUrl);
-      if (success) {
-        onComplete();
-      }
+      await complete(profileData.displayName, profileData.avatarUrl);
+      // Always navigate even if complete() fails - user can retry later
+      onComplete();
     } catch (error) {
       console.error("Error completing onboarding:", error);
+      // Still navigate to dashboard - onboarding completion is best-effort
+      onComplete();
     } finally {
       setIsSubmitting(false);
     }
