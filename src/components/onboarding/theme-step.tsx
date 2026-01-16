@@ -9,7 +9,6 @@ import { ThemePreview } from "@/components/theme-preview";
 interface ThemeStepProps {
   onComplete: () => void;
   isLoading?: boolean;
-  isDarkMode?: boolean;
 }
 
 export function ThemeStep({ onComplete, isLoading = false }: ThemeStepProps) {
