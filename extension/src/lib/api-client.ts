@@ -1,6 +1,5 @@
 /**
  * Cadie API client for Chrome extension
- * Minimal - just saves URLs to Cadie
  */
 
 import { getApiToken, getCadieUrl, clearSettings } from "./storage";
@@ -10,21 +9,35 @@ export interface SaveLinkRequest {
   url: string;
 }
 
-export interface ApiResponse {
+export interface SaveLinkResponse {
   success: boolean;
   error?: string;
   duplicate?: boolean;
-  authFailed?: boolean; // Set to true when we get a 401, indicating token is invalid
+  authFailed?: boolean;
+  linkId?: string; // The ID of the saved/existing link
+}
+
+export interface Space {
+  id: string;
+  name: string;
+  color: string;
+  link_count: number;
+}
+
+export interface SpacesResponse {
+  success: boolean;
+  error?: string;
+  spaces?: Space[];
 }
 
 /**
  * Save a link to Cadie
  */
-export async function saveLink(request: SaveLinkRequest): Promise<ApiResponse> {
+export async function saveLink(request: SaveLinkRequest): Promise<SaveLinkResponse> {
   try {
     const token = await getApiToken();
     const cadieUrl = await getCadieUrl();
-    
+
     if (!token || token.length < 32) {
       return { success: false, error: "Not connected. Please connect in settings." };
     }
@@ -40,16 +53,13 @@ export async function saveLink(request: SaveLinkRequest): Promise<ApiResponse> {
 
     if (!response.ok) {
       if (response.status === 401) {
-        // Auth failed - token is invalid or expired
-        // Clear the invalid token so user can reconnect
         await clearSettings();
-        return { 
-          success: false, 
+        return {
+          success: false,
           error: "Auth failed. Redirecting to connect...",
-          authFailed: true 
+          authFailed: true
         };
       }
-      // Try to get the actual error message from the response
       try {
         const errorData = await response.json();
         const errorMsg = errorData?.error?.message || errorData?.error || errorData?.details?.[0]?.message || `Error ${response.status}`;
@@ -60,7 +70,103 @@ export async function saveLink(request: SaveLinkRequest): Promise<ApiResponse> {
     }
 
     const data = await response.json();
-    return { success: true, duplicate: data.duplicate === true };
+    return {
+      success: true,
+      duplicate: data.duplicate === true,
+      linkId: data.link?.id
+    };
+  } catch (error) {
+    return { success: false, error: "Network error" };
+  }
+}
+
+/**
+ * Fetch all spaces for the user
+ */
+export async function fetchSpaces(): Promise<SpacesResponse> {
+  try {
+    const token = await getApiToken();
+    const cadieUrl = await getCadieUrl();
+
+    if (!token || token.length < 32) {
+      return { success: false, error: "Not connected" };
+    }
+
+    const response = await fetch(`${cadieUrl}/api/spaces`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      return { success: false, error: `Error ${response.status}` };
+    }
+
+    const data = await response.json();
+    return { success: true, spaces: data.spaces || [] };
+  } catch (error) {
+    return { success: false, error: "Network error" };
+  }
+}
+
+/**
+ * Add a link to a space
+ */
+export async function addLinkToSpace(spaceId: string, linkId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const token = await getApiToken();
+    const cadieUrl = await getCadieUrl();
+
+    if (!token || token.length < 32) {
+      return { success: false, error: "Not connected" };
+    }
+
+    const response = await fetch(`${cadieUrl}/api/spaces/${spaceId}/links`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ link_ids: [linkId] }),
+    });
+
+    if (!response.ok) {
+      return { success: false, error: `Error ${response.status}` };
+    }
+
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "Network error" };
+  }
+}
+
+/**
+ * Remove a link from a space
+ */
+export async function removeLinkFromSpace(spaceId: string, linkId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const token = await getApiToken();
+    const cadieUrl = await getCadieUrl();
+
+    if (!token || token.length < 32) {
+      return { success: false, error: "Not connected" };
+    }
+
+    const response = await fetch(`${cadieUrl}/api/spaces/${spaceId}/links`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ link_ids: [linkId] }),
+    });
+
+    if (!response.ok) {
+      return { success: false, error: `Error ${response.status}` };
+    }
+
+    return { success: true };
   } catch (error) {
     return { success: false, error: "Network error" };
   }

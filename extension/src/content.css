@@ -32,15 +32,14 @@
   backdrop-filter: blur(13.5px) !important;
   -webkit-backdrop-filter: blur(13.5px) !important;
 
-  /* Pill shape */
-  border-radius: 50px !important;
+  /* Rounded corners - adjusts based on content */
+  border-radius: 24px !important;
   border: 1px solid rgba(255, 255, 255, 0.16) !important;
 
-  /* Layout */
-  padding: 12px 20px 12px 16px !important;
+  /* Layout - column for main content + spaces row */
+  padding: 0 !important;
   display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
+  flex-direction: column !important;
   pointer-events: auto !important;
 
   /* For progress fill */
@@ -53,6 +52,7 @@
   display: flex !important;
   align-items: center !important;
   gap: 12px !important;
+  padding: 12px 20px 12px 16px !important;
   transition: opacity 0.09s cubic-bezier(0.25, 1, 0.5, 1) !important;
 }
 
@@ -259,4 +259,141 @@
 .cadie-close-btn svg {
   width: 16px !important;
   height: 16px !important;
+}
+
+/* ============================================================================
+   SPACES ROW - "Add to space" expandable section
+   ============================================================================ */
+
+.cadie-spaces-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  margin-top: 0 !important;
+  overflow: hidden !important;
+}
+
+.cadie-spaces-row.cadie-hidden {
+  display: none !important;
+}
+
+/* Header row */
+.cadie-spaces-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 10px 16px !important;
+  cursor: pointer !important;
+  transition: background 0.15s ease !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+.cadie-spaces-header:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+.cadie-spaces-header-text {
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.cadie-spaces-chevron {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.cadie-spaces-chevron svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.cadie-expanded .cadie-spaces-chevron {
+  transform: rotate(180deg) !important;
+}
+
+/* Expandable content */
+.cadie-spaces-expandable {
+  max-height: 0 !important;
+  overflow: hidden !important;
+  transition: max-height 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.cadie-expanded .cadie-spaces-expandable {
+  max-height: 200px !important;
+}
+
+/* Loading state */
+.cadie-spaces-loading {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 12px !important;
+}
+
+.cadie-spinner-small {
+  width: 14px !important;
+  height: 14px !important;
+  border: 2px solid rgba(255, 255, 255, 0.15) !important;
+  border-top-color: #3b82f6 !important;
+  border-radius: 50% !important;
+  animation: cadieSpin 0.7s linear infinite !important;
+}
+
+/* Empty state */
+.cadie-spaces-empty {
+  padding: 12px 16px !important;
+  font-size: 13px !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+  text-align: center !important;
+}
+
+/* Space chips container */
+.cadie-space-chips {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  padding: 12px 16px !important;
+}
+
+/* Individual space chip */
+.cadie-space-chip {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 6px 12px !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-family: inherit !important;
+}
+
+.cadie-space-chip:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.cadie-space-chip.cadie-selected {
+  background: rgba(59, 130, 246, 0.2) !important;
+  border-color: rgba(59, 130, 246, 0.5) !important;
+  color: #ffffff !important;
+}
+
+.cadie-space-chip.cadie-loading {
+  opacity: 0.6 !important;
+  pointer-events: none !important;
+}
+
+/* Color dot */
+.cadie-space-dot {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  flex-shrink: 0 !important;
 }

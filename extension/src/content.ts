@@ -2,28 +2,42 @@
  * Content script - runs on web pages
  * Features:
  * - Show save overlay (toast notification)
+ * - Add to space functionality
  * - Handle authorization flow for extension connection
  */
 
-// Track overlay element
+import { fetchSpaces, addLinkToSpace, type Space } from "./lib/api-client";
+
+// Track overlay state
 let overlayElement: HTMLElement | null = null;
 let hideTimeout: number | null = null;
+let currentLinkId: string | null = null;
+let isHovering = false;
+let spacesExpanded = false;
+let spacesCache: Space[] | null = null;
+let selectedSpaces: Set<string> = new Set();
 
 // Listen for messages from background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "showSaveOverlay") {
-    const { state, message } = request;
+    const { state, message, linkId } = request;
+
+    // Store linkId for space assignment
+    if (linkId) {
+      currentLinkId = linkId;
+    }
+
     if (state === "loading") {
-      showOverlay("Saving to Cadie...", "loading", false);
+      showOverlay("Saving to Cadie...", "loading", false, false);
     } else if (state === "success") {
-      showOverlay("Saved to Cadie", "success", true);
-      hideTimeout = window.setTimeout(() => hideOverlay(), 2500);
+      showOverlay("Saved to Cadie", "success", true, true);
+      startHideTimer(2500);
     } else if (state === "duplicate") {
-      showOverlay("Already in Cadie!", "duplicate", true);
-      hideTimeout = window.setTimeout(() => hideOverlay(), 2500);
+      showOverlay("Already in Cadie!", "duplicate", true, true);
+      startHideTimer(2500);
     } else if (state === "error") {
-      showOverlay(message || "Failed to save", "error", true);
-      hideTimeout = window.setTimeout(() => hideOverlay(), 3000);
+      showOverlay(message || "Failed to save", "error", true, false);
+      startHideTimer(3000);
     } else if (state === "auth-required") {
       showAuthPromptOverlay();
     }
@@ -33,19 +47,38 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true; // Keep message channel open for async response
 });
 
+/**
+ * Start hide timer (respects hover state)
+ */
+function startHideTimer(delay: number) {
+  if (hideTimeout) {
+    clearTimeout(hideTimeout);
+  }
+  hideTimeout = window.setTimeout(() => {
+    if (!isHovering && !spacesExpanded) {
+      hideOverlay();
+    }
+  }, delay);
+}
+
 
 /**
  * Show the save overlay
  * @param text - Text to display
  * @param state - Visual state of the overlay
  * @param withProgress - Whether to show progress fill animation
+ * @param showSpacesRow - Whether to show the "Add to space" row
  */
-function showOverlay(text: string, state: "loading" | "success" | "error" | "duplicate", withProgress: boolean = false) {
+function showOverlay(text: string, state: "loading" | "success" | "error" | "duplicate", withProgress: boolean = false, showSpacesRow: boolean = false) {
   // Clear any existing hide timeout
   if (hideTimeout) {
     clearTimeout(hideTimeout);
     hideTimeout = null;
   }
+
+  // Reset spaces state for new overlay
+  spacesExpanded = false;
+  selectedSpaces.clear();
 
   // If overlay already exists, animate the content transition
   if (overlayElement && document.body.contains(overlayElement)) {
@@ -53,6 +86,7 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
     const inner = overlayElement.querySelector(".cadie-overlay-inner");
     const icon = overlayElement.querySelector(".cadie-overlay-icon");
     const textEl = overlayElement.querySelector(".cadie-overlay-text");
+    const spacesRow = overlayElement.querySelector(".cadie-spaces-row");
 
     if (content && inner && icon && textEl) {
       // Fade out, update, fade in
@@ -74,6 +108,15 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
           content.classList.remove("cadie-with-progress");
         }
 
+        // Show/hide spaces row
+        if (spacesRow) {
+          if (showSpacesRow) {
+            spacesRow.classList.remove("cadie-hidden");
+          } else {
+            spacesRow.classList.add("cadie-hidden");
+          }
+        }
+
         // Fade back in
         inner.classList.remove("cadie-fading");
         inner.classList.add("cadie-fade-in");
@@ -86,6 +129,22 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
   // Create new overlay
   overlayElement = document.createElement("div");
   overlayElement.id = "cadie-save-overlay";
+
+  // Add hover listeners to pause auto-hide
+  overlayElement.addEventListener("mouseenter", () => {
+    isHovering = true;
+    if (hideTimeout) {
+      clearTimeout(hideTimeout);
+      hideTimeout = null;
+    }
+  });
+
+  overlayElement.addEventListener("mouseleave", () => {
+    isHovering = false;
+    if (!spacesExpanded) {
+      startHideTimer(1000); // Shorter delay after hover
+    }
+  });
 
   const content = document.createElement("div");
   content.className = "cadie-overlay-content" + (withProgress ? " cadie-with-progress" : "");
@@ -108,6 +167,14 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
   inner.appendChild(icon);
   inner.appendChild(textEl);
   content.appendChild(inner);
+
+  // Add "Add to space" row (shown for success/duplicate)
+  const spacesRow = createSpacesRow();
+  if (!showSpacesRow) {
+    spacesRow.classList.add("cadie-hidden");
+  }
+  content.appendChild(spacesRow);
+
   overlayElement.appendChild(content);
 
   try {
@@ -119,6 +186,142 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
   } catch (error) {
     console.error("Failed to add overlay to DOM:", error);
   }
+}
+
+/**
+ * Create the "Add to space" expandable row
+ */
+function createSpacesRow(): HTMLElement {
+  const spacesRow = document.createElement("div");
+  spacesRow.className = "cadie-spaces-row";
+
+  // Header row (always visible)
+  const header = document.createElement("div");
+  header.className = "cadie-spaces-header";
+
+  const headerText = document.createElement("span");
+  headerText.className = "cadie-spaces-header-text";
+  headerText.textContent = "Add to space";
+
+  const chevron = document.createElement("span");
+  chevron.className = "cadie-spaces-chevron";
+  chevron.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 9 12 15 18 9"></polyline>
+    </svg>
+  `;
+
+  header.appendChild(headerText);
+  header.appendChild(chevron);
+
+  // Expandable content
+  const expandable = document.createElement("div");
+  expandable.className = "cadie-spaces-expandable";
+
+  // Loading placeholder
+  const loading = document.createElement("div");
+  loading.className = "cadie-spaces-loading";
+  loading.innerHTML = `<div class="cadie-spinner-small"></div>`;
+  expandable.appendChild(loading);
+
+  spacesRow.appendChild(header);
+  spacesRow.appendChild(expandable);
+
+  // Toggle expansion on header click
+  header.addEventListener("click", async () => {
+    spacesExpanded = !spacesExpanded;
+    spacesRow.classList.toggle("cadie-expanded", spacesExpanded);
+
+    if (spacesExpanded) {
+      // Clear hide timeout while expanded
+      if (hideTimeout) {
+        clearTimeout(hideTimeout);
+        hideTimeout = null;
+      }
+
+      // Fetch spaces if not cached
+      if (!spacesCache) {
+        const response = await fetchSpaces();
+        if (response.success && response.spaces) {
+          spacesCache = response.spaces;
+        } else {
+          spacesCache = [];
+        }
+      }
+
+      // Render space chips
+      renderSpaceChips(expandable, spacesCache);
+    }
+  });
+
+  return spacesRow;
+}
+
+/**
+ * Render space chips in the expandable area
+ */
+function renderSpaceChips(container: HTMLElement, spaces: Space[]) {
+  container.innerHTML = "";
+
+  if (spaces.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "cadie-spaces-empty";
+    empty.textContent = "No spaces yet";
+    container.appendChild(empty);
+    return;
+  }
+
+  const chipsContainer = document.createElement("div");
+  chipsContainer.className = "cadie-space-chips";
+
+  spaces.forEach((space) => {
+    const chip = document.createElement("button");
+    chip.className = "cadie-space-chip";
+    chip.setAttribute("data-space-id", space.id);
+
+    if (selectedSpaces.has(space.id)) {
+      chip.classList.add("cadie-selected");
+    }
+
+    // Color dot
+    const dot = document.createElement("span");
+    dot.className = "cadie-space-dot";
+    dot.style.backgroundColor = space.color;
+
+    // Name
+    const name = document.createElement("span");
+    name.textContent = space.name;
+
+    chip.appendChild(dot);
+    chip.appendChild(name);
+
+    // Toggle selection on click
+    chip.addEventListener("click", async () => {
+      if (!currentLinkId) return;
+
+      const isSelected = selectedSpaces.has(space.id);
+
+      if (isSelected) {
+        // Already selected - for now just deselect visually (removal not implemented)
+        selectedSpaces.delete(space.id);
+        chip.classList.remove("cadie-selected");
+      } else {
+        // Add to space
+        chip.classList.add("cadie-loading");
+        const response = await addLinkToSpace(space.id, currentLinkId);
+        chip.classList.remove("cadie-loading");
+
+        if (response.success) {
+          selectedSpaces.add(space.id);
+          chip.classList.add("cadie-selected");
+        }
+      }
+    });
+
+    chipsContainer.appendChild(chip);
+  });
+
+  container.appendChild(chipsContainer);
 }
 
 /**
@@ -161,6 +364,11 @@ function hideOverlay() {
         overlayElement.remove();
         overlayElement = null;
       }
+      // Reset state
+      currentLinkId = null;
+      isHovering = false;
+      spacesExpanded = false;
+      selectedSpaces.clear();
     }, 200);
   }
 }

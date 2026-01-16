@@ -173,11 +173,11 @@ async function saveWithRetry(tabId: number, url: string, maxRetries: number): Pr
       const response = await saveLink({ url });
 
       if (response.success) {
-        // Show appropriate result
+        // Show appropriate result with linkId for space assignment
         if (response.duplicate) {
-          showOverlayInTab(tabId, "duplicate");
+          showOverlayInTab(tabId, "duplicate", undefined, response.linkId);
         } else {
-          showOverlayInTab(tabId, "success");
+          showOverlayInTab(tabId, "success", undefined, response.linkId);
         }
         return;
       }
@@ -213,12 +213,14 @@ async function saveWithRetry(tabId: number, url: string, maxRetries: number): Pr
 function showOverlayInTab(
   tabId: number,
   state: "loading" | "success" | "error" | "duplicate" | "auth-required",
-  message?: string
+  message?: string,
+  linkId?: string
 ): void {
   chrome.tabs.sendMessage(tabId, {
     action: "showSaveOverlay",
     state,
     message,
+    linkId,
   }).catch(() => {
     // Content script not available on this page, silently ignore
   });
