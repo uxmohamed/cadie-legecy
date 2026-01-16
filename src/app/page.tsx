@@ -7,7 +7,6 @@ import { allChangelogs } from "contentlayer/generated";
 export default async function Home(props: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const searchParams = await props.searchParams;
   const supabase = await createClient();
 
   // Server-side auth check (no client-side flash)
