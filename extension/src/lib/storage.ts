@@ -132,3 +132,36 @@ export async function getCadieUrl(): Promise<string> {
   });
 }
 
+// ============================================================================
+// PENDING URL STORAGE - For queuing saves during auth flow
+// ============================================================================
+
+/**
+ * Get pending URL to save after authentication
+ */
+export async function getPendingUrl(): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    chrome.storage.local.get({ pendingUrl: "" }, (items) => {
+      resolve(items.pendingUrl || undefined);
+    });
+  });
+}
+
+/**
+ * Set pending URL to save after authentication
+ */
+export async function setPendingUrl(url: string): Promise<void> {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ pendingUrl: url }, () => resolve());
+  });
+}
+
+/**
+ * Clear pending URL after it has been saved
+ */
+export async function clearPendingUrl(): Promise<void> {
+  return new Promise((resolve) => {
+    chrome.storage.local.remove("pendingUrl", () => resolve());
+  });
+}
+

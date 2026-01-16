@@ -4,7 +4,7 @@
  */
 
 import { saveLink } from "./lib/api-client";
-import { getApiToken } from "./lib/storage";
+import { getApiToken, getPendingUrl, setPendingUrl, clearPendingUrl } from "./lib/storage";
 
 // Track saves in progress to prevent duplicates
 const savesInProgress = new Set<string>();
@@ -28,14 +28,18 @@ chrome.runtime.onInstalled.addListener(() => {
 // Context menu click listener
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === "save-to-cadie" && tab?.id) {
-    await saveCurrentTab(tab.id);
+    // Use linkUrl if right-clicking a link, otherwise use pageUrl or tab.url
+    const urlToSave = info.linkUrl || info.pageUrl || tab.url;
+    if (urlToSave) {
+      await saveUrl(tab.id, urlToSave);
+    }
   }
 });
 
 // Extension icon/keyboard shortcut click listener - save page directly
 chrome.action.onClicked.addListener(async (tab) => {
-  if (tab?.id) {
-    await saveCurrentTab(tab.id);
+  if (tab?.id && tab.url) {
+    await saveUrl(tab.id, tab.url);
   }
 });
 
@@ -43,8 +47,8 @@ chrome.action.onClicked.addListener(async (tab) => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "saveCurrentTab") {
     chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-      if (tabs[0]?.id) {
-        await saveCurrentTab(tabs[0].id);
+      if (tabs[0]?.id && tabs[0].url) {
+        await saveUrl(tabs[0].id, tabs[0].url);
         sendResponse({ success: true });
       } else {
         sendResponse({ success: false, error: "No active tab" });
@@ -53,25 +57,46 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Keep message channel open for async response
   }
 
+  // Handle open auth page request from content script
+  if (request.action === "openAuthPage") {
+    const extensionId = chrome.runtime.id;
+    chrome.tabs.create({ url: `https://cadie.app/extension/authorize?extensionId=${extensionId}` });
+    sendResponse({ success: true });
+    return true;
+  }
+
   // Handle authorization success from content script
   if (request.type === "CADIE_AUTH_SUCCESS" && request.data) {
-    const { token, email, url, cadieUrl } = request.data;
+    const { token, email } = request.data;
 
     // Always use production URL for the extension
     const cadieUrlToUse = "https://cadie.app";
 
-    // Save settings directly to storage
-    chrome.storage.sync.set({
-      apiToken: token,
-      cadieUrl: cadieUrlToUse,
-      userEmail: email || "",
-    }, () => {
-      // Notify any open options pages that auth completed
-      chrome.runtime.sendMessage({
-        type: "CADIE_AUTH_COMPLETE",
-        data: { cadieUrl: cadieUrlToUse },
-      }).catch(() => {
-        // Options page might not be listening, that's okay
+    // Save API token to local storage (sensitive)
+    chrome.storage.local.set({ apiToken: token }, () => {
+      // Save non-sensitive settings to sync storage
+      chrome.storage.sync.set({
+        cadieUrl: cadieUrlToUse,
+        userEmail: email || "",
+      }, async () => {
+        // Notify any open options pages that auth completed
+        chrome.runtime.sendMessage({
+          type: "CADIE_AUTH_COMPLETE",
+          data: { cadieUrl: cadieUrlToUse },
+        }).catch(() => {
+          // Options page might not be listening, that's okay
+        });
+
+        // Check for pending URL to save after auth
+        const pendingUrl = await getPendingUrl();
+        if (pendingUrl) {
+          await clearPendingUrl();
+          // Get active tab and save the pending URL
+          const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+          if (tab?.id) {
+            await saveUrl(tab.id, pendingUrl);
+          }
+        }
       });
     });
 
@@ -85,48 +110,40 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // ============================================================================
 
 /**
- * Save the current tab to Cadie
+ * Save a URL to Cadie
+ * @param tabId - The tab ID to show overlays in
+ * @param url - The URL to save
  */
-async function saveCurrentTab(tabId: number): Promise<void> {
+async function saveUrl(tabId: number, url: string): Promise<void> {
+  // Create a unique key for this save operation
+  const saveKey = url;
+
+  // Check if we're already saving this URL
+  if (savesInProgress.has(saveKey)) {
+    return;
+  }
+
+  // Mark this URL as being saved
+  savesInProgress.add(saveKey);
+
   try {
-    // Check if token is configured and valid (should be 43+ characters)
-    const token = await getApiToken();
-    
-    if (!token || token.length < 32) {
-      // Not connected or invalid token - open authorize flow directly
-      const extensionId = chrome.runtime.id;
-      chrome.tabs.create({ url: `https://cadie.app/extension/authorize?extensionId=${extensionId}` });
-      return;
-    }
-
-    // Get tab information
-    const tab = await chrome.tabs.get(tabId);
-
-    // Create a unique key for this save operation
-    const saveKey = `${tab.url}`;
-
-    // Check if we're already saving this URL
-    if (savesInProgress.has(saveKey)) {
-      return;
-    }
-
-    // Mark this URL as being saved
-    savesInProgress.add(saveKey);
-
-    if (!tab.url) {
-      showOverlayInTab(tabId, "error", "Could not get page URL");
-      savesInProgress.delete(saveKey);
-      return;
-    }
-
     // Don't save chrome:// or extension pages
     if (
-      tab.url.startsWith("chrome://") ||
-      tab.url.startsWith("chrome-extension://") ||
-      tab.url.startsWith("about:")
+      url.startsWith("chrome://") ||
+      url.startsWith("chrome-extension://") ||
+      url.startsWith("about:")
     ) {
       showOverlayInTab(tabId, "error", "Cannot save browser pages");
-      savesInProgress.delete(saveKey);
+      return;
+    }
+
+    // Check if token is configured and valid (should be 43+ characters)
+    const token = await getApiToken();
+
+    if (!token || token.length < 32) {
+      // Not connected - store the pending URL and show auth prompt overlay
+      await setPendingUrl(url);
+      showOverlayInTab(tabId, "auth-required");
       return;
     }
 
@@ -135,9 +152,7 @@ async function saveCurrentTab(tabId: number): Promise<void> {
 
     // Save to Cadie - only URL needed!
     // Server extracts title from domain, then enriches with full metadata via background job
-    const response = await saveLink({
-      url: tab.url,
-    });
+    const response = await saveLink({ url });
 
     if (response.success) {
       // Show success overlay - different message for duplicates
@@ -147,19 +162,17 @@ async function saveCurrentTab(tabId: number): Promise<void> {
         showOverlayInTab(tabId, "success");
       }
     } else {
-      // Check if auth failed - redirect to connection page
+      // Check if auth failed - store pending URL and show auth prompt
       if (response.authFailed) {
-        // Auth failed - open authorization page to reconnect
-        const extensionId = chrome.runtime.id;
-        chrome.tabs.create({ url: `https://cadie.app/extension/authorize?extensionId=${extensionId}` });
-        // Don't show error overlay since we're redirecting
+        await setPendingUrl(url);
+        showOverlayInTab(tabId, "auth-required");
         return;
       }
       // Show error overlay for other errors
       showOverlayInTab(tabId, "error", response.error || "Failed to save");
     }
   } catch (error) {
-    console.error("Error saving tab:", error);
+    console.error("Error saving URL:", error);
     showOverlayInTab(
       tabId,
       "error",
@@ -167,11 +180,7 @@ async function saveCurrentTab(tabId: number): Promise<void> {
     );
   } finally {
     // Always remove the save lock, even if there was an error
-    const tab = await chrome.tabs.get(tabId).catch(() => null);
-    if (tab?.url) {
-      const saveKey = `${tab.url}`;
-      savesInProgress.delete(saveKey);
-    }
+    savesInProgress.delete(saveKey);
   }
 }
 
@@ -180,7 +189,7 @@ async function saveCurrentTab(tabId: number): Promise<void> {
  */
 function showOverlayInTab(
   tabId: number,
-  state: "loading" | "success" | "error" | "duplicate",
+  state: "loading" | "success" | "error" | "duplicate" | "auth-required",
   message?: string
 ): void {
   chrome.tabs.sendMessage(tabId, {

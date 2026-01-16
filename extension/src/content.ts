@@ -24,6 +24,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } else if (state === "error") {
       showOverlay(message || "Failed to save", "error");
       hideTimeout = window.setTimeout(() => hideOverlay(), 3000);
+    } else if (state === "auth-required") {
+      showAuthPromptOverlay();
     }
     sendResponse({ success: true });
   }
@@ -132,6 +134,84 @@ function hideOverlay() {
         overlayElement = null;
       }
     }, 200);
+  }
+}
+
+/**
+ * Show auth prompt overlay with connect button
+ */
+function showAuthPromptOverlay() {
+  // Clear any existing hide timeout
+  if (hideTimeout) {
+    clearTimeout(hideTimeout);
+    hideTimeout = null;
+  }
+
+  // Remove existing overlay if present
+  if (overlayElement) {
+    overlayElement.remove();
+    overlayElement = null;
+  }
+
+  // Create new auth prompt overlay
+  overlayElement = document.createElement("div");
+  overlayElement.id = "cadie-save-overlay";
+  overlayElement.className = "cadie-auth-prompt";
+
+  const content = document.createElement("div");
+  content.className = "cadie-overlay-content cadie-auth-content";
+
+  // Icon
+  const icon = document.createElement("div");
+  icon.className = "cadie-overlay-icon";
+  icon.setAttribute("data-state", "auth");
+  icon.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+      <polyline points="10 17 15 12 10 7"/>
+      <line x1="15" y1="12" x2="3" y2="12"/>
+    </svg>
+  `;
+
+  // Text
+  const textEl = document.createElement("div");
+  textEl.className = "cadie-overlay-text";
+  textEl.textContent = "Connect to Cadie";
+
+  // Connect button
+  const connectBtn = document.createElement("button");
+  connectBtn.className = "cadie-connect-btn";
+  connectBtn.textContent = "Connect";
+  connectBtn.addEventListener("click", () => {
+    chrome.runtime.sendMessage({ action: "openAuthPage" });
+    hideOverlay();
+  });
+
+  // Close button
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "cadie-close-btn";
+  closeBtn.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  `;
+  closeBtn.addEventListener("click", () => hideOverlay());
+
+  content.appendChild(icon);
+  content.appendChild(textContainer);
+  content.appendChild(connectBtn);
+  content.appendChild(closeBtn);
+  overlayElement.appendChild(content);
+
+  try {
+    if (document.body) {
+      document.body.appendChild(overlayElement);
+    } else {
+      document.documentElement.appendChild(overlayElement);
+    }
+  } catch (error) {
+    console.error("Failed to add auth prompt overlay to DOM:", error);
   }
 }
 
