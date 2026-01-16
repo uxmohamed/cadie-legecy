@@ -3,11 +3,9 @@
 import * as React from "react";
 import { Suspense } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { DashboardContent } from "@/components/dashboard-content";
 import { LinkListSkeleton } from "@/components/skeletons";
-import { OnboardingFlow } from "@/components/onboarding";
 import { useRealtimeSync } from "@/features/links/hooks/use-realtime-sync.hook";
 import { useSpaces } from "@/features/spaces/queries";
 import { SpaceModal } from "@/components/spaces/space-modal";
@@ -24,8 +22,6 @@ export function DashboardClient({ user, initialView = null }: DashboardClientPro
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [profileChecked, setProfileChecked] = React.useState(false);
-  const [needsOnboarding, setNeedsOnboarding] = React.useState(false);
   
   // Determine view from URL path or initialView prop
   const isTrashRoute = pathname === "/trash" || initialView === "trash";
@@ -185,38 +181,6 @@ export function DashboardClient({ user, initialView = null }: DashboardClientPro
       handleViewChange(null);
     }
   }, [deleteSpace, selectedCategoryId, handleViewChange]);
-
-  // Check onboarding status on mount
-  React.useEffect(() => {
-    const checkProfile = async () => {
-      const supabase = createClient();
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
-
-      if (!profile || profile.needs_onboarding) {
-        setNeedsOnboarding(true);
-      }
-      setProfileChecked(true);
-    };
-
-    checkProfile();
-  }, [user.id]);
-
-  // Show onboarding if needed
-  if (profileChecked && needsOnboarding) {
-    return (
-      <OnboardingFlow
-        user={user}
-        onComplete={() => {
-          setNeedsOnboarding(false);
-          router.refresh();
-        }}
-      />
-    );
-  }
 
   return (
     <>

@@ -1,9 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { DashboardClient } from "@/components/dashboard-client";
 import { LandingPage } from "@/components/landing-page";
+import { OnboardingClient } from "@/components/onboarding-client";
 import { allChangelogs } from "contentlayer/generated";
 
-export default async function Home() {
+export default async function Home(props: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const supabase = await createClient();
 
   // Server-side auth check (no client-side flash)
@@ -19,6 +22,20 @@ export default async function Home() {
       .slice(0, 2);
     
     return <LandingPage changelogEntries={latestChangelogs} />;
+  }
+
+  // Check if user needs onboarding (server-side to prevent flash)
+  const { data: profile } = await supabase
+    .from("user_profiles")
+    .select("onboarding_completed")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  // If no profile or onboarding not completed, show onboarding
+  const needsOnboarding = !profile || !profile.onboarding_completed;
+  
+  if (needsOnboarding) {
+    return <OnboardingClient user={JSON.parse(JSON.stringify(user))} />;
   }
 
   // Render dashboard - TanStack Query handles data fetching client-side
