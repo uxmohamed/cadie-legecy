@@ -14,15 +14,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "showSaveOverlay") {
     const { state, message } = request;
     if (state === "loading") {
-      showOverlay("Saving to Cadie...", "loading");
+      showOverlay("Saving to Cadie...", "loading", false);
     } else if (state === "success") {
-      showOverlay("Saved to Cadie", "success");
+      showOverlay("Saved to Cadie", "success", true);
       hideTimeout = window.setTimeout(() => hideOverlay(), 2500);
     } else if (state === "duplicate") {
-      showOverlay("Already in Cadie!", "duplicate");
+      showOverlay("Already in Cadie!", "duplicate", true);
       hideTimeout = window.setTimeout(() => hideOverlay(), 2500);
     } else if (state === "error") {
-      showOverlay(message || "Failed to save", "error");
+      showOverlay(message || "Failed to save", "error", true);
       hideTimeout = window.setTimeout(() => hideOverlay(), 3000);
     } else if (state === "auth-required") {
       showAuthPromptOverlay();
@@ -36,8 +36,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 /**
  * Show the save overlay
+ * @param text - Text to display
+ * @param state - Visual state of the overlay
+ * @param withProgress - Whether to show progress fill animation
  */
-function showOverlay(text: string, state: "loading" | "success" | "error" | "duplicate") {
+function showOverlay(text: string, state: "loading" | "success" | "error" | "duplicate", withProgress: boolean = false) {
   // Clear any existing hide timeout
   if (hideTimeout) {
     clearTimeout(hideTimeout);
@@ -46,16 +49,24 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
 
   // If overlay already exists, just update the content (don't re-render)
   if (overlayElement && document.body.contains(overlayElement)) {
+    const content = overlayElement.querySelector(".cadie-overlay-content");
     const icon = overlayElement.querySelector(".cadie-overlay-icon");
     const textEl = overlayElement.querySelector(".cadie-overlay-text");
-    
-    if (icon && textEl) {
+
+    if (content && icon && textEl) {
       // Update icon state and content
       icon.setAttribute("data-state", state);
       icon.innerHTML = getIconHTML(state);
-      
+
       // Update text
       textEl.textContent = text;
+
+      // Update progress class
+      if (withProgress) {
+        content.classList.add("cadie-with-progress");
+      } else {
+        content.classList.remove("cadie-with-progress");
+      }
       return;
     }
   }
@@ -65,7 +76,7 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
   overlayElement.id = "cadie-save-overlay";
 
   const content = document.createElement("div");
-  content.className = "cadie-overlay-content";
+  content.className = "cadie-overlay-content" + (withProgress ? " cadie-with-progress" : "");
 
   // Icon with data-state for CSS styling
   const icon = document.createElement("div");
@@ -199,7 +210,7 @@ function showAuthPromptOverlay() {
   closeBtn.addEventListener("click", () => hideOverlay());
 
   content.appendChild(icon);
-  content.appendChild(textContainer);
+  content.appendChild(textEl);
   content.appendChild(connectBtn);
   content.appendChild(closeBtn);
   overlayElement.appendChild(content);

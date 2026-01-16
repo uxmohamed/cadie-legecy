@@ -110,7 +110,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // ============================================================================
 
 /**
- * Save a URL to Cadie
+ * Save a URL to Cadie with optimistic UI
+ * Shows success immediately, API call happens in background with retry logic
  * @param tabId - The tab ID to show overlays in
  * @param url - The URL to save
  */
@@ -147,41 +148,62 @@ async function saveUrl(tabId: number, url: string): Promise<void> {
       return;
     }
 
-    // Show loading overlay immediately (fast feedback)
-    showOverlayInTab(tabId, "loading");
+    // OPTIMISTIC UI: Show success immediately!
+    showOverlayInTab(tabId, "success");
 
-    // Save to Cadie - only URL needed!
-    // Server extracts title from domain, then enriches with full metadata via background job
-    const response = await saveLink({ url });
+    // Save to Cadie in background with retry logic
+    saveWithRetry(tabId, url, 3);
+  } finally {
+    // Remove the save lock
+    savesInProgress.delete(saveKey);
+  }
+}
 
-    if (response.success) {
-      // Show success overlay - different message for duplicates
-      if (response.duplicate) {
-        showOverlayInTab(tabId, "duplicate");
-      } else {
-        showOverlayInTab(tabId, "success");
+/**
+ * Save link with retry logic (runs in background)
+ * @param tabId - Tab ID for showing error overlay if all retries fail
+ * @param url - URL to save
+ * @param maxRetries - Maximum number of retry attempts
+ */
+async function saveWithRetry(tabId: number, url: string, maxRetries: number): Promise<void> {
+  let lastError: string | undefined;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await saveLink({ url });
+
+      if (response.success) {
+        // Success or duplicate - we're done (overlay already showing success)
+        if (response.duplicate) {
+          // Update to show duplicate state
+          showOverlayInTab(tabId, "duplicate");
+        }
+        return;
       }
-    } else {
-      // Check if auth failed - store pending URL and show auth prompt
+
+      // Check if auth failed - show auth prompt
       if (response.authFailed) {
         await setPendingUrl(url);
         showOverlayInTab(tabId, "auth-required");
         return;
       }
-      // Show error overlay for other errors
-      showOverlayInTab(tabId, "error", response.error || "Failed to save");
+
+      // Other error - store for potential retry
+      lastError = response.error || "Failed to save";
+
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : "Failed to save";
     }
-  } catch (error) {
-    console.error("Error saving URL:", error);
-    showOverlayInTab(
-      tabId,
-      "error",
-      error instanceof Error ? error.message : "Failed to save"
-    );
-  } finally {
-    // Always remove the save lock, even if there was an error
-    savesInProgress.delete(saveKey);
+
+    // Wait before retry (exponential backoff: 500ms, 1000ms, 2000ms)
+    if (attempt < maxRetries) {
+      await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, attempt - 1)));
+    }
   }
+
+  // All retries failed - show error to user
+  console.error(`Failed to save URL after ${maxRetries} attempts:`, lastError);
+  showOverlayInTab(tabId, "error", lastError || "Failed to save");
 }
 
 /**
