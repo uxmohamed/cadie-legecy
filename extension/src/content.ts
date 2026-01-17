@@ -6,7 +6,7 @@
  * - Handle authorization flow for extension connection
  */
 
-import type { Space, SpacesResponse } from "./lib/api-client";
+import type { Space, SpacesResponse, LinkSpacesResponse } from "./lib/api-client";
 
 // ============================================================================
 // Tabler Icons (inline SVGs)
@@ -76,6 +76,19 @@ async function fetchSpacesViaBackground(): Promise<SpacesResponse> {
 async function addLinkToSpaceViaBackground(spaceId: string, linkId: string): Promise<{ success: boolean; error?: string }> {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage({ action: "addLinkToSpace", spaceId, linkId }, (response) => {
+      if (chrome.runtime.lastError) {
+        resolve({ success: false, error: chrome.runtime.lastError.message });
+      } else {
+        resolve(response || { success: false, error: "No response" });
+      }
+    });
+  });
+}
+
+// Fetch link spaces via background script
+async function fetchLinkSpacesViaBackground(linkId: string): Promise<LinkSpacesResponse> {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ action: "fetchLinkSpaces", linkId }, (response) => {
       if (chrome.runtime.lastError) {
         resolve({ success: false, error: chrome.runtime.lastError.message });
       } else {
@@ -352,6 +365,7 @@ function createSpacesRow(): HTMLElement {
       // Setup click-outside handler when expanded
       setupClickOutsideHandler();
 
+      // Fetch spaces list if not cached
       if (!spacesCache) {
         const response = await fetchSpacesViaBackground();
         if (response.success && response.spaces) {
@@ -359,6 +373,23 @@ function createSpacesRow(): HTMLElement {
         } else {
           spacesCache = [];
         }
+      }
+
+      // Fetch current link's spaces to show selected state
+      if (currentLinkId) {
+        const linkSpacesResponse = await fetchLinkSpacesViaBackground(currentLinkId);
+        if (linkSpacesResponse.success && linkSpacesResponse.space_ids) {
+          // Populate selectedSpaces with fetched space IDs
+          selectedSpaces.clear();
+          linkSpacesResponse.space_ids.forEach((spaceId) => {
+            selectedSpaces.add(spaceId);
+          });
+        } else {
+          // If fetch fails, clear selection
+          selectedSpaces.clear();
+        }
+      } else {
+        selectedSpaces.clear();
       }
 
       renderSpaceList(expandable, spacesCache);

@@ -171,3 +171,39 @@ export async function removeLinkFromSpace(spaceId: string, linkId: string): Prom
     return { success: false, error: "Network error" };
   }
 }
+
+/**
+ * Fetch all spaces that a link belongs to
+ */
+export interface LinkSpacesResponse {
+  success: boolean;
+  error?: string;
+  space_ids?: string[];
+}
+
+export async function fetchLinkSpaces(linkId: string): Promise<LinkSpacesResponse> {
+  try {
+    const token = await getApiToken();
+    const cadieUrl = await getCadieUrl();
+
+    if (!token || token.length < 32) {
+      return { success: false, error: "Not connected" };
+    }
+
+    const response = await fetch(`${cadieUrl}/api/links/${linkId}/spaces`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      return { success: false, error: `Error ${response.status}` };
+    }
+
+    const data = await response.json();
+    return { success: true, space_ids: data.space_ids || [] };
+  } catch (error) {
+    return { success: false, error: "Network error" };
+  }
+}

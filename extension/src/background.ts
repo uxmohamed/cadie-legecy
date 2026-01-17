@@ -3,7 +3,7 @@
  * Handles context menus, keyboard shortcuts, and saving links
  */
 
-import { saveLink, fetchSpaces, addLinkToSpace } from "./lib/api-client";
+import { saveLink, fetchSpaces, addLinkToSpace, fetchLinkSpaces } from "./lib/api-client";
 import { getApiToken, getPendingUrl, setPendingUrl, clearPendingUrl } from "./lib/storage";
 
 // Track saves in progress to prevent duplicates
@@ -79,6 +79,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse(response);
     });
     return true;
+  }
+
+  // Handle fetchLinkSpaces request from content script
+  if (request.action === "fetchLinkSpaces") {
+    fetchLinkSpaces(request.linkId).then(response => {
+      sendResponse(response);
+    });
+    return true; // Keep message channel open for async response
   }
 
   // Handle authorization success from content script
