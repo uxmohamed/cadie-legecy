@@ -120,10 +120,10 @@ export function useLinksQuery(
     queryFn: () => fetchLinks(stableFilters, searchQuery),
     enabled,
     initialData,
-    // Links are always fresh - realtime handles updates
-    staleTime: 0,
-    // Keep in cache for 24 hours
-    gcTime: 24 * 60 * 60 * 1000,
+    // Allow realtime to handle updates for 5 minutes before considering stale
+    staleTime: 5 * 60 * 1000,
+    // Keep in cache for 2 hours (reduced from 24 to prevent stale data issues)
+    gcTime: 2 * 60 * 60 * 1000,
   });
 
   return {
@@ -171,8 +171,8 @@ export function useLinksInfiniteQuery(
       pages: [initialData],
       pageParams: [0],
     } : undefined,
-    staleTime: 0,
-    gcTime: 24 * 60 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 2 * 60 * 60 * 1000,
   });
 
   // Flatten all pages into a single array

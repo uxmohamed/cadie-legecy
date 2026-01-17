@@ -8,10 +8,10 @@ import { cache } from "react";
 const queryClientOptions = {
   defaultOptions: {
     queries: {
-      // 1 minute - prevents immediate refetch on hydration
-      staleTime: 60 * 1000,
-      // 24 hours - keep data in cache for persistence
-      gcTime: 24 * 60 * 60 * 1000,
+      // 5 minutes - allow realtime to handle updates
+      staleTime: 5 * 60 * 1000,
+      // 2 hours - keep data in cache (reduced from 24 to prevent stale data issues)
+      gcTime: 2 * 60 * 60 * 1000,
       // Don't refetch on window focus by default (realtime handles updates)
       refetchOnWindowFocus: false,
       // Retry failed requests once

@@ -616,7 +616,6 @@ window.addEventListener("message", (event: MessageEvent) => {
   const data = event.data;
   if (data?.type === "CADIE_AUTH_SUCCESS" && data?.token && !authProcessed) {
     authProcessed = true;
-    console.log("[Cadie] Content script received token, length:", data.token?.length || 0);
     chrome.runtime.sendMessage({
       type: "CADIE_AUTH_SUCCESS",
       data: {
@@ -627,7 +626,6 @@ window.addEventListener("message", (event: MessageEvent) => {
         state: data.state,
       },
     }, (response) => {
-      console.log("[Cadie] Background response:", response);
       if (chrome.runtime.lastError) {
         console.error("Error sending auth message:", chrome.runtime.lastError);
         authProcessed = false;

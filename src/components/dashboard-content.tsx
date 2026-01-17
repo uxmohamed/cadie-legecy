@@ -274,10 +274,12 @@ export function DashboardContent({
     onBatchUnpin: handleBatchUnpinLinks,
   }), [handleBatchDeleteLinks, handleBatchRestoreLinks, handleBatchPermanentDeleteLinks, handleBatchPinLinks, handleBatchUnpinLinks]);
 
-  // Only show skeleton on first load when there's no cached data
-  // If we have cached data, show it immediately (even if stale)
-  const hasNoData = !links || links.length === 0;
-  if (isLoading && hasNoData) {
+  // Show skeleton when:
+  // 1. Initial load for this query key (isLoading)
+  // 2. Filter changed to one with no cached data (fetching but empty)
+  // This prevents showing stale data from a different filter during navigation
+  const showSkeleton = isLoading || (isFetching && links.length === 0);
+  if (showSkeleton) {
     return <LinkListSkeleton />;
   }
 

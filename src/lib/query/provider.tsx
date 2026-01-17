@@ -7,11 +7,21 @@ import { makeQueryClient } from "./get-query-client";
 import { createIDBPersister } from "./persister";
 
 /**
+ * Cache buster version - increment to invalidate all users' persisted caches
+ * Use this when:
+ * - Making breaking changes to cached data structure
+ * - Needing to force all users to refetch fresh data
+ * - Fixing bugs caused by stale cached data
+ */
+const CACHE_BUSTER = "v2";
+
+/**
  * QueryProvider with IndexedDB persistence
- * 
+ *
  * - Only enables persistence in browser (not SSR)
  * - Uses versioned cache key for easy invalidation
  * - Dehydrates/rehydrates query cache on page load
+ * - Buster option allows forced cache invalidation across deployments
  */
 export function QueryProvider({ children }: { children: React.ReactNode }) {
   // Create QueryClient once, stable across re-renders
@@ -40,8 +50,10 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       client={queryClient}
       persistOptions={{
         persister,
-        // Max age of persisted data (24 hours)
-        maxAge: 24 * 60 * 60 * 1000,
+        // Max age of persisted data (1 hour - reduced from 24 to prevent stale data issues)
+        maxAge: 1 * 60 * 60 * 1000,
+        // Buster invalidates cache when changed - use for breaking changes or forced refresh
+        buster: CACHE_BUSTER,
         // Dehydrate options - what to persist
         dehydrateOptions: {
           shouldDehydrateQuery: (query) => {
