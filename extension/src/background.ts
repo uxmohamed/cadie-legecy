@@ -3,7 +3,7 @@
  * Handles context menus, keyboard shortcuts, and saving links
  */
 
-import { saveLink } from "./lib/api-client";
+import { saveLink, fetchSpaces, addLinkToSpace } from "./lib/api-client";
 import { getApiToken, getPendingUrl, setPendingUrl, clearPendingUrl } from "./lib/storage";
 
 // Track saves in progress to prevent duplicates
@@ -62,6 +62,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const extensionId = chrome.runtime.id;
     chrome.tabs.create({ url: `https://cadie.app/extension/authorize?extensionId=${extensionId}` });
     sendResponse({ success: true });
+    return true;
+  }
+
+  // Handle fetchSpaces request from content script (content scripts can't make cross-origin requests)
+  if (request.action === "fetchSpaces") {
+    fetchSpaces().then(response => {
+      sendResponse(response);
+    });
+    return true; // Keep message channel open for async response
+  }
+
+  // Handle addLinkToSpace request from content script
+  if (request.action === "addLinkToSpace") {
+    addLinkToSpace(request.spaceId, request.linkId).then(response => {
+      sendResponse(response);
+    });
     return true;
   }
 

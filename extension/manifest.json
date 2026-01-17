@@ -14,7 +14,8 @@
     "storage"
   ],
   "host_permissions": [
-    "https://cadie.app/*"
+    "https://cadie.app/*",
+    "http://localhost:3000/*"
   ],
   "content_scripts": [
     {

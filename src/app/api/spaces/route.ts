@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitSpaces, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
+import { authenticateRequest } from "@/lib/auth-middleware";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    // Use authenticateRequest to support both Bearer token (extension) and session auth (web)
+    const userId = await authenticateRequest(request);
     
-    if (!user) {
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Rate limiting
-    const identifier = getIdentifier(request, user.id);
+    const identifier = getIdentifier(request, userId);
     const { success, limit, reset, remaining } = await rateLimitSpaces.limit(identifier);
     
     if (!success) {
@@ -23,10 +24,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Get spaces with link counts
+    const supabase = await createClient();
     const { data: spaces, error: spacesError } = await supabase
       .from("spaces")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .order("sort_order", { ascending: true });
 
     if (spacesError) {
@@ -63,7 +65,7 @@ export async function GET(request: NextRequest) {
           .from("links")
           .select("id")
           .in("id", linkIds)
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .eq("is_deleted", false)
           .eq("is_archived", false);
 
@@ -98,15 +100,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    // Use authenticateRequest to support both Bearer token (extension) and session auth (web)
+    const userId = await authenticateRequest(request);
     
-    if (!user) {
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Rate limiting
-    const identifier = getIdentifier(request, user.id);
+    const identifier = getIdentifier(request, userId);
     const { success, limit, reset, remaining } = await rateLimitSpaces.limit(identifier);
     
     if (!success) {
@@ -133,10 +135,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Get max sort_order to append new space at the end
+    const supabase = await createClient();
     const { data: existingSpaces } = await supabase
       .from("spaces")
       .select("sort_order")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .order("sort_order", { ascending: false })
       .limit(1);
 
@@ -146,7 +149,7 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase
       .from("spaces")
       .insert({
-        user_id: user.id,
+        user_id: userId,
         name,
         color,
         sort_order: newSortOrder,

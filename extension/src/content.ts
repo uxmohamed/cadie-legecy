@@ -6,37 +6,120 @@
  * - Handle authorization flow for extension connection
  */
 
-import { fetchSpaces, addLinkToSpace, type Space } from "./lib/api-client";
+import type { Space, SpacesResponse } from "./lib/api-client";
 
-// Track overlay state
+// ============================================================================
+// Tabler Icons (inline SVGs)
+// ============================================================================
+
+const TABLER_ICONS = {
+  // IconLoader2 - spinner (loading state)
+  loader: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 3a9 9 0 1 0 9 9"/>
+  </svg>`,
+
+  // IconCircleCheckFilled - success (green checkmark)
+  circleCheckFilled: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M17 3.34a10 10 0 1 1 -14.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 14.995 -8.336zm-1.293 5.953a1 1 0 0 0 -1.32 -.083l-.094 .083l-3.293 3.292l-1.293 -1.292l-.094 -.083a1 1 0 0 0 -1.403 1.403l.083 .094l2 2l.094 .083a1 1 0 0 0 1.226 0l.094 -.083l4 -4l.083 -.094a1 1 0 0 0 -.083 -1.32z"/>
+  </svg>`,
+
+  // IconAlertTriangleFilled - duplicate/warning (yellow triangle)
+  alertTriangleFilled: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 1.67c.955 0 1.845 .467 2.39 1.247l.105 .16l8.114 13.548a2.914 2.914 0 0 1 -2.307 4.363l-.195 .008h-16.225a2.914 2.914 0 0 1 -2.582 -4.2l.099 -.185l8.11 -13.538a2.914 2.914 0 0 1 2.491 -1.403zm.01 13.33l-.127 .007a1 1 0 0 0 0 1.986l.117 .007l.127 -.007a1 1 0 0 0 0 -1.986l-.117 -.007zm-.01 -7a1 1 0 0 0 -.993 .883l-.007 .117v4l.007 .117a1 1 0 0 0 1.986 0l.007 -.117v-4l-.007 -.117a1 1 0 0 0 -.993 -.883z"/>
+  </svg>`,
+
+  // IconCircleXFilled - error (red X)
+  circleXFilled: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M17 3.34a10 10 0 1 1 -14.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 14.995 -8.336zm-6.489 5.8a1 1 0 0 0 -1.218 1.567l1.292 1.293l-1.292 1.293l-.083 .094a1 1 0 0 0 1.497 1.32l1.293 -1.292l1.293 1.292l.094 .083a1 1 0 0 0 1.32 -1.497l-1.292 -1.293l1.292 -1.293l.083 -.094a1 1 0 0 0 -1.497 -1.32l-1.293 1.292l-1.293 -1.292l-.094 -.083z"/>
+  </svg>`,
+
+  // IconChevronDown
+  chevronDown: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 9l6 6l6 -6"/>
+  </svg>`,
+
+  // IconLogin - auth/connect
+  login: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M15 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"/>
+    <path d="M21 12h-13l3 -3"/>
+    <path d="M11 15l-3 -3"/>
+  </svg>`,
+
+  // IconX - close
+  x: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 6l-12 12"/>
+    <path d="M6 6l12 12"/>
+  </svg>`,
+
+  // IconCheck - checkmark for selected items
+  check: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 12l5 5l10 -10"/>
+  </svg>`,
+};
+
+// ============================================================================
+// Background Script Communication
+// ============================================================================
+
+async function fetchSpacesViaBackground(): Promise<SpacesResponse> {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ action: "fetchSpaces" }, (response) => {
+      if (chrome.runtime.lastError) {
+        resolve({ success: false, error: chrome.runtime.lastError.message });
+      } else {
+        resolve(response || { success: false, error: "No response" });
+      }
+    });
+  });
+}
+
+async function addLinkToSpaceViaBackground(spaceId: string, linkId: string): Promise<{ success: boolean; error?: string }> {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ action: "addLinkToSpace", spaceId, linkId }, (response) => {
+      if (chrome.runtime.lastError) {
+        resolve({ success: false, error: chrome.runtime.lastError.message });
+      } else {
+        resolve(response || { success: false, error: "No response" });
+      }
+    });
+  });
+}
+
+// ============================================================================
+// Overlay State
+// ============================================================================
+
 let overlayElement: HTMLElement | null = null;
 let hideTimeout: number | null = null;
+let clickOutsideHandler: ((e: MouseEvent) => void) | null = null;
 let currentLinkId: string | null = null;
 let isHovering = false;
 let spacesExpanded = false;
 let spacesCache: Space[] | null = null;
 let selectedSpaces: Set<string> = new Set();
 
-// Listen for messages from background script
+// ============================================================================
+// Message Listener
+// ============================================================================
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "showSaveOverlay") {
     const { state, message, linkId } = request;
 
-    // Store linkId for space assignment
     if (linkId) {
       currentLinkId = linkId;
     }
 
     if (state === "loading") {
-      showOverlay("Saving to Cadie...", "loading", false, false);
+      showOverlay("Saving to Cadie...", "loading", false);
     } else if (state === "success") {
-      showOverlay("Saved to Cadie", "success", true, true);
+      showOverlay("Saved to Cadie", "success", true);
       startHideTimer(2500);
     } else if (state === "duplicate") {
-      showOverlay("Already in Cadie!", "duplicate", true, true);
+      showOverlay("Already in Cadie", "duplicate", true);
       startHideTimer(2500);
     } else if (state === "error") {
-      showOverlay(message || "Failed to save", "error", true, false);
+      showOverlay(message || "Failed to save", "error", false);
       startHideTimer(3000);
     } else if (state === "auth-required") {
       showAuthPromptOverlay();
@@ -44,12 +127,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ success: true });
   }
 
-  return true; // Keep message channel open for async response
+  return true;
 });
 
-/**
- * Start hide timer (respects hover state)
- */
+// ============================================================================
+// Timer Management
+// ============================================================================
+
 function startHideTimer(delay: number) {
   if (hideTimeout) {
     clearTimeout(hideTimeout);
@@ -61,54 +145,70 @@ function startHideTimer(delay: number) {
   }, delay);
 }
 
+// ============================================================================
+// Click Outside Handler
+// ============================================================================
 
-/**
- * Show the save overlay
- * @param text - Text to display
- * @param state - Visual state of the overlay
- * @param withProgress - Whether to show progress fill animation
- * @param showSpacesRow - Whether to show the "Add to space" row
- */
-function showOverlay(text: string, state: "loading" | "success" | "error" | "duplicate", withProgress: boolean = false, showSpacesRow: boolean = false) {
-  // Clear any existing hide timeout
+function setupClickOutsideHandler() {
+  // Remove existing handler if any
+  removeClickOutsideHandler();
+
+  clickOutsideHandler = (e: MouseEvent) => {
+    if (!overlayElement || !spacesExpanded) {
+      return;
+    }
+
+    // Check if click is outside the overlay
+    const target = e.target as Node;
+    if (overlayElement.contains(target)) {
+      // Click is inside - do nothing
+      return;
+    }
+
+    // Click is outside and spaces are expanded - hide immediately
+    hideOverlay();
+  };
+
+  // Add listener with capture to catch events early
+  document.addEventListener("click", clickOutsideHandler, true);
+}
+
+function removeClickOutsideHandler() {
+  if (clickOutsideHandler) {
+    document.removeEventListener("click", clickOutsideHandler, true);
+    clickOutsideHandler = null;
+  }
+}
+
+// ============================================================================
+// Overlay Display
+// ============================================================================
+
+function showOverlay(text: string, state: "loading" | "success" | "error" | "duplicate", showSpacesRow: boolean = false) {
   if (hideTimeout) {
     clearTimeout(hideTimeout);
     hideTimeout = null;
   }
 
-  // Reset spaces state for new overlay
   spacesExpanded = false;
   selectedSpaces.clear();
 
-  // If overlay already exists, animate the content transition
+  // If overlay exists, update content with transition
   if (overlayElement && document.body.contains(overlayElement)) {
-    const content = overlayElement.querySelector(".cadie-overlay-content");
-    const inner = overlayElement.querySelector(".cadie-overlay-inner");
+    const card = overlayElement.querySelector(".cadie-overlay-card");
     const icon = overlayElement.querySelector(".cadie-overlay-icon");
     const textEl = overlayElement.querySelector(".cadie-overlay-text");
     const spacesRow = overlayElement.querySelector(".cadie-spaces-row");
 
-    if (content && inner && icon && textEl) {
-      // Fade out, update, fade in
-      inner.classList.add("cadie-fading");
-      inner.classList.remove("cadie-fade-in");
+    if (card && icon && textEl) {
+      card.classList.add("cadie-fading");
+      card.classList.remove("cadie-fade-in");
 
       setTimeout(() => {
-        // Update icon state and content
         icon.setAttribute("data-state", state);
         icon.innerHTML = getIconHTML(state);
-
-        // Update text
         textEl.textContent = text;
 
-        // Update progress class
-        if (withProgress) {
-          content.classList.add("cadie-with-progress");
-        } else {
-          content.classList.remove("cadie-with-progress");
-        }
-
-        // Show/hide spaces row
         if (spacesRow) {
           if (showSpacesRow) {
             spacesRow.classList.remove("cadie-hidden");
@@ -117,10 +217,9 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
           }
         }
 
-        // Fade back in
-        inner.classList.remove("cadie-fading");
-        inner.classList.add("cadie-fade-in");
-      }, 90); // Match the fade-out duration
+        card.classList.remove("cadie-fading");
+        card.classList.add("cadie-fade-in");
+      }, 90);
 
       return;
     }
@@ -130,7 +229,6 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
   overlayElement = document.createElement("div");
   overlayElement.id = "cadie-save-overlay";
 
-  // Add hover listeners to pause auto-hide
   overlayElement.addEventListener("mouseenter", () => {
     isHovering = true;
     if (hideTimeout) {
@@ -142,33 +240,43 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
   overlayElement.addEventListener("mouseleave", () => {
     isHovering = false;
     if (!spacesExpanded) {
-      startHideTimer(1000); // Shorter delay after hover
+      startHideTimer(1000);
     }
   });
 
+  // Outer container (glassmorphism)
   const content = document.createElement("div");
-  content.className = "cadie-overlay-content" + (withProgress ? " cadie-with-progress" : "");
+  content.className = "cadie-overlay-content";
 
-  // Inner wrapper for fade transitions
+  // Inner wrapper (margin)
   const inner = document.createElement("div");
   inner.className = "cadie-overlay-inner";
 
-  // Icon with data-state for CSS styling
+  // White card with shadow
+  const card = document.createElement("div");
+  card.className = "cadie-overlay-card";
+
+  // Icon
   const icon = document.createElement("div");
   icon.className = "cadie-overlay-icon";
   icon.setAttribute("data-state", state);
   icon.innerHTML = getIconHTML(state);
 
-  // Text
+  // Text container
+  const textContainer = document.createElement("div");
+  textContainer.className = "cadie-overlay-text-container";
+
   const textEl = document.createElement("div");
   textEl.className = "cadie-overlay-text";
   textEl.textContent = text;
 
-  inner.appendChild(icon);
-  inner.appendChild(textEl);
+  textContainer.appendChild(textEl);
+  card.appendChild(icon);
+  card.appendChild(textContainer);
+  inner.appendChild(card);
   content.appendChild(inner);
 
-  // Add "Add to space" row (shown for success/duplicate)
+  // Add "Add to space" row (shown on hover for success/duplicate)
   const spacesRow = createSpacesRow();
   if (!showSpacesRow) {
     spacesRow.classList.add("cadie-hidden");
@@ -188,14 +296,15 @@ function showOverlay(text: string, state: "loading" | "success" | "error" | "dup
   }
 }
 
-/**
- * Create the "Add to space" expandable row
- */
+// ============================================================================
+// Spaces Row Component
+// ============================================================================
+
 function createSpacesRow(): HTMLElement {
   const spacesRow = document.createElement("div");
   spacesRow.className = "cadie-spaces-row";
 
-  // Header row (always visible)
+  // Header row
   const header = document.createElement("div");
   header.className = "cadie-spaces-header";
 
@@ -205,11 +314,7 @@ function createSpacesRow(): HTMLElement {
 
   const chevron = document.createElement("span");
   chevron.className = "cadie-spaces-chevron";
-  chevron.innerHTML = `
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="6 9 12 15 18 9"></polyline>
-    </svg>
-  `;
+  chevron.innerHTML = TABLER_ICONS.chevronDown;
 
   header.appendChild(headerText);
   header.appendChild(chevron);
@@ -232,16 +337,23 @@ function createSpacesRow(): HTMLElement {
     spacesExpanded = !spacesExpanded;
     spacesRow.classList.toggle("cadie-expanded", spacesExpanded);
 
+    // Also toggle expanded class on content for background change
+    const content = spacesRow.closest(".cadie-overlay-content");
+    if (content) {
+      content.classList.toggle("cadie-expanded", spacesExpanded);
+    }
+
     if (spacesExpanded) {
-      // Clear hide timeout while expanded
       if (hideTimeout) {
         clearTimeout(hideTimeout);
         hideTimeout = null;
       }
 
-      // Fetch spaces if not cached
+      // Setup click-outside handler when expanded
+      setupClickOutsideHandler();
+
       if (!spacesCache) {
-        const response = await fetchSpaces();
+        const response = await fetchSpacesViaBackground();
         if (response.success && response.spaces) {
           spacesCache = response.spaces;
         } else {
@@ -249,18 +361,21 @@ function createSpacesRow(): HTMLElement {
         }
       }
 
-      // Render space chips
-      renderSpaceChips(expandable, spacesCache);
+      renderSpaceList(expandable, spacesCache);
+    } else {
+      // Remove click-outside handler when collapsed
+      removeClickOutsideHandler();
     }
   });
 
   return spacesRow;
 }
 
-/**
- * Render space chips in the expandable area
- */
-function renderSpaceChips(container: HTMLElement, spaces: Space[]) {
+// ============================================================================
+// Space List Renderer (list style, not chips)
+// ============================================================================
+
+function renderSpaceList(container: HTMLElement, spaces: Space[]) {
   container.innerHTML = "";
 
   if (spaces.length === 0) {
@@ -271,100 +386,105 @@ function renderSpaceChips(container: HTMLElement, spaces: Space[]) {
     return;
   }
 
-  const chipsContainer = document.createElement("div");
-  chipsContainer.className = "cadie-space-chips";
+  const list = document.createElement("div");
+  list.className = "cadie-space-list";
 
   spaces.forEach((space) => {
-    const chip = document.createElement("button");
-    chip.className = "cadie-space-chip";
-    chip.setAttribute("data-space-id", space.id);
+    const item = document.createElement("button");
+    item.className = "cadie-space-item";
+    item.setAttribute("data-space-id", space.id);
 
-    if (selectedSpaces.has(space.id)) {
-      chip.classList.add("cadie-selected");
+    const isSelected = selectedSpaces.has(space.id);
+    if (isSelected) {
+      item.classList.add("cadie-selected");
     }
 
-    // Color dot
+    // Content wrapper (dot + name)
+    const content = document.createElement("div");
+    content.className = "cadie-space-item-content";
+
+    // Color dot (pill shape)
     const dot = document.createElement("span");
     dot.className = "cadie-space-dot";
     dot.style.backgroundColor = space.color;
 
     // Name
     const name = document.createElement("span");
+    name.className = "cadie-space-name";
     name.textContent = space.name;
 
-    chip.appendChild(dot);
-    chip.appendChild(name);
+    content.appendChild(dot);
+    content.appendChild(name);
+    item.appendChild(content);
+
+    // Checkmark (shown when selected)
+    const checkContainer = document.createElement("span");
+    checkContainer.className = "cadie-space-check";
+    if (isSelected) {
+      checkContainer.innerHTML = TABLER_ICONS.check;
+    }
+    item.appendChild(checkContainer);
 
     // Toggle selection on click
-    chip.addEventListener("click", async () => {
+    item.addEventListener("click", async () => {
       if (!currentLinkId) return;
 
-      const isSelected = selectedSpaces.has(space.id);
+      const wasSelected = selectedSpaces.has(space.id);
 
-      if (isSelected) {
-        // Already selected - for now just deselect visually (removal not implemented)
+      if (wasSelected) {
         selectedSpaces.delete(space.id);
-        chip.classList.remove("cadie-selected");
+        item.classList.remove("cadie-selected");
+        checkContainer.innerHTML = "";
       } else {
-        // Add to space
-        chip.classList.add("cadie-loading");
-        const response = await addLinkToSpace(space.id, currentLinkId);
-        chip.classList.remove("cadie-loading");
+        item.classList.add("cadie-loading");
+        const response = await addLinkToSpaceViaBackground(space.id, currentLinkId);
+        item.classList.remove("cadie-loading");
 
         if (response.success) {
           selectedSpaces.add(space.id);
-          chip.classList.add("cadie-selected");
+          item.classList.add("cadie-selected");
+          checkContainer.innerHTML = TABLER_ICONS.check;
         }
       }
     });
 
-    chipsContainer.appendChild(chip);
+    list.appendChild(item);
   });
 
-  container.appendChild(chipsContainer);
+  container.appendChild(list);
 }
 
-/**
- * Get icon HTML based on state
- */
+// ============================================================================
+// Icon Renderer
+// ============================================================================
+
 function getIconHTML(state: "loading" | "success" | "error" | "duplicate"): string {
   if (state === "loading") {
-    return `<div class="cadie-spinner"></div>`;
+    return `<div class="cadie-spinner">${TABLER_ICONS.loader}</div>`;
   } else if (state === "success") {
-    return `
-      <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="20 6 9 17 4 12"></polyline>
-      </svg>
-    `;
+    return TABLER_ICONS.circleCheckFilled;
   } else if (state === "duplicate") {
-    return `
-      <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-      </svg>
-    `;
+    return TABLER_ICONS.alertTriangleFilled;
   } else {
-    return `
-      <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="15" y1="9" x2="9" y2="15"></line>
-        <line x1="9" y1="9" x2="15" y2="15"></line>
-      </svg>
-    `;
+    return TABLER_ICONS.circleXFilled;
   }
 }
 
-/**
- * Hide the overlay
- */
+// ============================================================================
+// Hide Overlay
+// ============================================================================
+
 function hideOverlay() {
   if (overlayElement) {
+    // Clean up click-outside handler
+    removeClickOutsideHandler();
+    
     overlayElement.classList.add("cadie-hiding");
     setTimeout(() => {
       if (overlayElement) {
         overlayElement.remove();
         overlayElement = null;
       }
-      // Reset state
       currentLinkId = null;
       isHovering = false;
       spacesExpanded = false;
@@ -373,23 +493,21 @@ function hideOverlay() {
   }
 }
 
-/**
- * Show auth prompt overlay with connect button
- */
+// ============================================================================
+// Auth Prompt Overlay
+// ============================================================================
+
 function showAuthPromptOverlay() {
-  // Clear any existing hide timeout
   if (hideTimeout) {
     clearTimeout(hideTimeout);
     hideTimeout = null;
   }
 
-  // Remove existing overlay if present
   if (overlayElement) {
     overlayElement.remove();
     overlayElement = null;
   }
 
-  // Create new auth prompt overlay
   overlayElement = document.createElement("div");
   overlayElement.id = "cadie-save-overlay";
   overlayElement.className = "cadie-auth-prompt";
@@ -397,17 +515,17 @@ function showAuthPromptOverlay() {
   const content = document.createElement("div");
   content.className = "cadie-overlay-content cadie-auth-content";
 
+  const inner = document.createElement("div");
+  inner.className = "cadie-overlay-inner";
+
+  const card = document.createElement("div");
+  card.className = "cadie-overlay-card";
+
   // Icon
   const icon = document.createElement("div");
   icon.className = "cadie-overlay-icon";
   icon.setAttribute("data-state", "auth");
-  icon.innerHTML = `
-    <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-      <polyline points="10 17 15 12 10 7"/>
-      <line x1="15" y1="12" x2="3" y2="12"/>
-    </svg>
-  `;
+  icon.innerHTML = TABLER_ICONS.login;
 
   // Text
   const textEl = document.createElement("div");
@@ -426,18 +544,15 @@ function showAuthPromptOverlay() {
   // Close button
   const closeBtn = document.createElement("button");
   closeBtn.className = "cadie-close-btn";
-  closeBtn.innerHTML = `
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18"/>
-      <line x1="6" y1="6" x2="18" y2="18"/>
-    </svg>
-  `;
+  closeBtn.innerHTML = TABLER_ICONS.x;
   closeBtn.addEventListener("click", () => hideOverlay());
 
-  content.appendChild(icon);
-  content.appendChild(textEl);
-  content.appendChild(connectBtn);
-  content.appendChild(closeBtn);
+  card.appendChild(icon);
+  card.appendChild(textEl);
+  card.appendChild(connectBtn);
+  card.appendChild(closeBtn);
+  inner.appendChild(card);
+  content.appendChild(inner);
   overlayElement.appendChild(content);
 
   try {
@@ -451,32 +566,26 @@ function showAuthPromptOverlay() {
   }
 }
 
-// Track if we've already processed auth to prevent duplicates
+// ============================================================================
+// Authorization Flow
+// ============================================================================
+
 let authProcessed = false;
 
-// Allowed origins for receiving auth messages
 const ALLOWED_AUTH_ORIGINS = [
   "https://cadie.app",
   "https://www.cadie.app",
 ];
 
-// Listen for authorization success via postMessage (works across isolated worlds)
-// SECURITY: Strict origin validation to prevent token theft
 window.addEventListener("message", (event: MessageEvent) => {
-  // Only accept messages from the same window
   if (event.source !== window) return;
-  
-  // SECURITY: Validate origin strictly - only accept from cadie.app
   if (!ALLOWED_AUTH_ORIGINS.includes(event.origin)) return;
-  
-  // Only process auth messages on cadie.app domain
   if (!window.location.hostname.includes("cadie.app")) return;
   
   const data = event.data;
   if (data?.type === "CADIE_AUTH_SUCCESS" && data?.token && !authProcessed) {
     authProcessed = true;
     console.log("[Cadie] Content script received token, length:", data.token?.length || 0);
-    // Send auth data to background script
     chrome.runtime.sendMessage({
       type: "CADIE_AUTH_SUCCESS",
       data: {
@@ -490,34 +599,28 @@ window.addEventListener("message", (event: MessageEvent) => {
       console.log("[Cadie] Background response:", response);
       if (chrome.runtime.lastError) {
         console.error("Error sending auth message:", chrome.runtime.lastError);
-        authProcessed = false; // Allow retry on error
+        authProcessed = false;
       } else {
-        // Send acknowledgment back to page via postMessage
         window.postMessage({ type: "CADIE_AUTH_ACK", success: true }, "*");
       }
     });
   }
 });
 
-// Also check for auth data in DOM (fallback and polling)
-// Only runs on cadie.app authorize page
 if (window.location.hostname.includes("cadie.app") && window.location.pathname.includes("/extension/authorize")) {
-  // Check immediately
   checkForAuthData();
 
-  // Also poll in case content script loads after the event
   const pollInterval = setInterval(() => {
     if (checkForAuthData()) {
       clearInterval(pollInterval);
     }
   }, 500);
 
-  // Stop polling after 10 seconds
   setTimeout(() => clearInterval(pollInterval), 10000);
 }
 
 function checkForAuthData(): boolean {
-  if (authProcessed) return true; // Already processed
+  if (authProcessed) return true;
   
   const authDataElement = document.getElementById("cadie-auth-data");
   if (authDataElement) {
@@ -530,16 +633,15 @@ function checkForAuthData(): boolean {
           data: {
             token: authData.token,
             email: authData.email,
-            url: "https://cadie.app", // Always use production
+            url: "https://cadie.app",
             cadieUrl: "https://cadie.app",
             state: authData.state,
           },
         }, (response) => {
           if (chrome.runtime.lastError) {
             console.error("Error sending auth message:", chrome.runtime.lastError);
-            authProcessed = false; // Allow retry on error
+            authProcessed = false;
           } else {
-            // Send acknowledgment back to page via postMessage
             window.postMessage({ type: "CADIE_AUTH_ACK", success: true }, "*");
           }
         });

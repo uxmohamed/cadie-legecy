@@ -1,23 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitSpaces, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
+import { authenticateRequest } from "@/lib/auth-middleware";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    // Use authenticateRequest to support both Bearer token (extension) and session auth (web)
+    const userId = await authenticateRequest(request);
     
-    if (!user) {
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
 
     // Rate limiting
-    const identifier = getIdentifier(request, user.id);
+    const identifier = getIdentifier(request, userId);
     const { success, limit, reset, remaining } = await rateLimitSpaces.limit(identifier);
     
     if (!success) {
@@ -37,11 +38,12 @@ export async function PATCH(
     const { name, color, sort_order } = body;
 
     // Verify space belongs to user
+    const supabase = await createClient();
     const { data: existingSpace, error: fetchError } = await supabase
       .from("spaces")
       .select("id")
       .eq("id", id)
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .single();
 
     if (fetchError || !existingSpace) {
@@ -61,7 +63,7 @@ export async function PATCH(
       .from("spaces")
       .update(updateData)
       .eq("id", id)
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .select()
       .single();
 
@@ -84,17 +86,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    // Use authenticateRequest to support both Bearer token (extension) and session auth (web)
+    const userId = await authenticateRequest(request);
     
-    if (!user) {
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
 
     // Rate limiting
-    const identifier = getIdentifier(request, user.id);
+    const identifier = getIdentifier(request, userId);
     const { success, limit, reset, remaining } = await rateLimitSpaces.limit(identifier);
     
     if (!success) {
@@ -105,11 +107,12 @@ export async function DELETE(
     }
 
     // Verify space belongs to user
+    const supabase = await createClient();
     const { data: existingSpace, error: fetchError } = await supabase
       .from("spaces")
       .select("id")
       .eq("id", id)
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .single();
 
     if (fetchError || !existingSpace) {
@@ -124,7 +127,7 @@ export async function DELETE(
       .from("spaces")
       .delete()
       .eq("id", id)
-      .eq("user_id", user.id);
+      .eq("user_id", userId);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

@@ -1,13 +1,16 @@
 @import "./tokens.css";
 
-/* Cadie Save Overlay - Glassmorphism Toast */
+/* ============================================================================
+   Cadie Save Overlay - Toast Notification
+   Based on Figma design node 90:812
+   ============================================================================ */
+
 #cadie-save-overlay {
   position: fixed !important;
   top: 24px !important;
   right: 24px !important;
   z-index: 2147483647 !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "SF Pro Display",
-    Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
   -webkit-font-smoothing: antialiased !important;
   text-rendering: optimizeLegibility !important;
   animation: cadieSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
@@ -15,128 +18,142 @@
 }
 
 #cadie-save-overlay.cadie-hiding {
-  animation: cadieSlideOut 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: cadieSlideOut 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
-/* Glassmorphism overlay content */
+/* ============================================================================
+   Toast Container (outer wrapper with blur)
+   ============================================================================ */
+
 .cadie-overlay-content {
-  /* Dark glassmorphism effect */
-  background: linear-gradient(
-      180deg,
-      rgba(25, 25, 25, 0.5) 0%,
-      rgba(2, 2, 2, 0.5) 100%
-    ),
-    rgba(2, 2, 2, 0.8) !important;
-  box-shadow: 0 0 1px 0 rgba(0, 0, 0, 0.4), 0 0 1.5px 0 rgba(0, 0, 0, 0.3),
-    0 7px 22px 0 rgba(0, 0, 0, 0.25) !important;
-  backdrop-filter: blur(13.5px) !important;
-  -webkit-backdrop-filter: blur(13.5px) !important;
-
-  /* Rounded corners - adjusts based on content */
-  border-radius: 24px !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-
-  /* Layout - column for main content + spaces row */
-  padding: 0 !important;
+  /* Glassmorphism outer container */
+  backdrop-filter: blur(60px) !important;
+  -webkit-backdrop-filter: blur(60px) !important;
+  background: rgba(213, 213, 213, 0.18) !important;
+  border-radius: 16px !important;
+  width: 250px !important;
+  padding: 4px 0 !important;
+  
+  /* Layout */
   display: flex !important;
   flex-direction: column !important;
   pointer-events: auto !important;
-
-  /* For progress fill */
-  position: relative !important;
-  overflow: hidden !important;
+  
+  /* Smooth transitions for background and shadow */
+  transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  
+  /* No shadow by default */
+  box-shadow: none !important;
 }
 
-/* Inner content wrapper for state transitions */
+/* Hover/expanded state - more opaque background with shadow */
+.cadie-overlay-content:hover,
+.cadie-overlay-content.cadie-expanded {
+  background: #F9F8F7 !important;
+  box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1),
+              0px 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* ============================================================================
+   Inner Card (white background with shadow)
+   ============================================================================ */
+
 .cadie-overlay-inner {
+  /* Margin wrapper */
+  padding: 0 4px !important;
+}
+
+.cadie-overlay-card {
+  /* White card with shadow */
+  background: white !important;
+  border-radius: 12px !important;
+  box-shadow: 0px 0px 0px 1px rgba(25, 28, 33, 0.04),
+              0px 1px 2px 0px rgba(25, 28, 33, 0.06) !important;
+  
+  /* Layout */
   display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
-  padding: 12px 20px 12px 16px !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+  padding: 16px 12px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Fade transitions */
+.cadie-overlay-card.cadie-fading {
+  opacity: 0 !important;
   transition: opacity 0.09s cubic-bezier(0.25, 1, 0.5, 1) !important;
 }
 
-/* Fade out when transitioning */
-.cadie-overlay-inner.cadie-fading {
-  opacity: 0 !important;
-}
-
-/* Fade in after content update */
-.cadie-overlay-inner.cadie-fade-in {
+.cadie-overlay-card.cadie-fade-in {
   animation: cadieContentFadeIn 0.15s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
 }
 
-/* Progress fill overlay - sharp edges inside rounded container */
-.cadie-overlay-content::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.1);
-  transform-origin: left center;
-  transform: scaleX(0);
-  pointer-events: none;
-}
+/* ============================================================================
+   Icon Styles
+   ============================================================================ */
 
-/* Animate progress fill for auto-hiding states */
-.cadie-overlay-content.cadie-with-progress::after {
-  animation: cadieProgressFill 2.5s linear forwards;
-}
-
-/* Icon container */
 .cadie-overlay-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  width: 20px !important;
+  height: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
 }
 
 .cadie-overlay-icon svg {
-  width: 18px;
-  height: 18px;
+  width: 20px !important;
+  height: 20px !important;
 }
 
-/* Spinner for loading state */
+/* Loading spinner */
 .cadie-spinner {
-  width: 18px;
-  height: 18px;
-  border: 2.5px solid rgba(255, 255, 255, 0.15);
-  border-top-color: #3b82f6;
-  border-radius: 50%;
-  animation: cadieSpin 0.7s linear infinite;
+  width: 20px !important;
+  height: 20px !important;
+  animation: cadieSpin 1s linear infinite !important;
 }
 
-/* Text styling */
+.cadie-spinner svg {
+  width: 20px !important;
+  height: 20px !important;
+  stroke: #2783DE !important; /* Caddy/500 */
+}
+
+/* State-specific icon colors (from Figma) */
+.cadie-overlay-icon[data-state="loading"] svg {
+  stroke: #2783DE !important; /* Caddy/500 */
+}
+
+.cadie-overlay-icon[data-state="success"] svg {
+  fill: #00A05E !important; /* green/500 */
+}
+
+.cadie-overlay-icon[data-state="duplicate"] svg {
+  fill: #FFCB30 !important; /* yellow/300 */
+}
+
+.cadie-overlay-icon[data-state="error"] svg {
+  fill: #FF5050 !important; /* red/500 */
+}
+
+/* ============================================================================
+   Text Styles
+   ============================================================================ */
+
 .cadie-overlay-text {
-  font-size: 14px;
-  font-weight: 500;
-  color: #ffffff;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
+  font-size: 13.9px !important;
+  font-weight: 600 !important;
+  color: #2b2b34 !important;
+  line-height: 20px !important;
+  white-space: nowrap !important;
 }
 
-/* State-specific icon backgrounds */
-.cadie-overlay-icon[data-state="loading"] {
-  background: rgba(255, 255, 255, 0.08);
-}
+/* ============================================================================
+   Animations
+   ============================================================================ */
 
-.cadie-overlay-icon[data-state="success"] {
-  background: rgba(16, 185, 129, 0.2);
-  animation: cadiePulse 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.cadie-overlay-icon[data-state="duplicate"] {
-  background: rgba(245, 158, 11, 0.2);
-}
-
-.cadie-overlay-icon[data-state="error"] {
-  background: rgba(239, 68, 68, 0.2);
-}
-
-/* Slide + fade animation from right */
 @keyframes cadieSlideIn {
   from {
     opacity: 0;
@@ -159,67 +176,30 @@
   }
 }
 
-/* Content fade for state transitions */
 @keyframes cadieContentFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes cadieContentFadeOut {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes cadieSpin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
-@keyframes cadiePulse {
-  0% {
-    transform: scale(0.8);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
+/* ============================================================================
+   Auth Prompt Styles
+   ============================================================================ */
+
+.cadie-overlay-icon[data-state="auth"] svg {
+  stroke: var(--accent-blue-primary) !important;
 }
 
-@keyframes cadieProgressFill {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
-/* Auth prompt overlay styles */
-.cadie-overlay-icon[data-state="auth"] {
-  background: rgba(59, 130, 246, 0.2);
-}
-
-.cadie-auth-content {
-  padding: 12px 12px 12px 16px !important;
+.cadie-auth-content .cadie-overlay-card {
   gap: 10px !important;
 }
 
 .cadie-connect-btn {
-  background: #3b82f6 !important;
-  color: #ffffff !important;
+  background: var(--cta-primary-default) !important;
+  color: white !important;
   border: none !important;
   border-radius: 20px !important;
   padding: 8px 16px !important;
@@ -232,11 +212,11 @@
 }
 
 .cadie-connect-btn:hover {
-  background: #2563eb !important;
+  background: var(--cta-primary-hover) !important;
 }
 
 .cadie-connect-btn:active {
-  background: #1d4ed8 !important;
+  background: var(--cta-primary-active) !important;
 }
 
 .cadie-close-btn {
@@ -247,13 +227,14 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  color: rgba(255, 255, 255, 0.4) !important;
-  transition: color 0.15s ease !important;
+  color: #2b2b34 !important;
+  opacity: 0.5 !important;
+  transition: opacity 0.15s ease !important;
   margin-left: 4px !important;
 }
 
 .cadie-close-btn:hover {
-  color: rgba(255, 255, 255, 0.8) !important;
+  opacity: 1 !important;
 }
 
 .cadie-close-btn svg {
@@ -266,50 +247,63 @@
    ============================================================================ */
 
 .cadie-spaces-row {
-  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
-  margin-top: 0 !important;
+  /* Hidden by default, shown on hover */
+  max-height: 0 !important;
+  opacity: 0 !important;
   overflow: hidden !important;
+  transition: max-height 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .cadie-spaces-row.cadie-hidden {
   display: none !important;
 }
 
-/* Header row */
+/* Show on hover over the overlay content */
+.cadie-overlay-content:hover .cadie-spaces-row:not(.cadie-hidden) {
+  max-height: 400px !important;
+  opacity: 1 !important;
+}
+
+/* Keep visible when expanded */
+.cadie-spaces-row.cadie-expanded {
+  max-height: 400px !important;
+  opacity: 1 !important;
+}
+
+/* Header row - "Add to space" */
 .cadie-spaces-header {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  padding: 10px 16px !important;
+  padding: 12px 16px !important;
   cursor: pointer !important;
-  transition: background 0.15s ease !important;
-  background: rgba(255, 255, 255, 0.03) !important;
-}
-
-.cadie-spaces-header:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
+  overflow: hidden !important;
 }
 
 .cadie-spaces-header-text {
-  font-size: 13px !important;
-  font-weight: 400 !important;
-  color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #2b2b34 !important;
+  line-height: normal !important;
 }
 
 .cadie-spaces-chevron {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  color: rgba(255, 255, 255, 0.4) !important;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  width: 20px !important;
+  height: 20px !important;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .cadie-spaces-chevron svg {
-  width: 16px !important;
-  height: 16px !important;
+  width: 20px !important;
+  height: 20px !important;
+  stroke: #2b2b34 !important;
 }
 
-.cadie-expanded .cadie-spaces-chevron {
+.cadie-spaces-row.cadie-expanded .cadie-spaces-chevron {
   transform: rotate(180deg) !important;
 }
 
@@ -317,11 +311,11 @@
 .cadie-spaces-expandable {
   max-height: 0 !important;
   overflow: hidden !important;
-  transition: max-height 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: max-height 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-.cadie-expanded .cadie-spaces-expandable {
-  max-height: 200px !important;
+.cadie-spaces-row.cadie-expanded .cadie-spaces-expandable {
+  max-height: 300px !important;
 }
 
 /* Loading state */
@@ -333,10 +327,10 @@
 }
 
 .cadie-spinner-small {
-  width: 14px !important;
-  height: 14px !important;
-  border: 2px solid rgba(255, 255, 255, 0.15) !important;
-  border-top-color: #3b82f6 !important;
+  width: 16px !important;
+  height: 16px !important;
+  border: 2px solid rgba(0, 0, 0, 0.1) !important;
+  border-top-color: var(--accent-blue-primary) !important;
   border-radius: 50% !important;
   animation: cadieSpin 0.7s linear infinite !important;
 }
@@ -345,55 +339,90 @@
 .cadie-spaces-empty {
   padding: 12px 16px !important;
   font-size: 13px !important;
-  color: rgba(255, 255, 255, 0.4) !important;
+  color: rgba(43, 43, 52, 0.5) !important;
   text-align: center !important;
 }
 
-/* Space chips container */
-.cadie-space-chips {
+/* ============================================================================
+   Space Items (list view, not chips)
+   ============================================================================ */
+
+.cadie-space-list {
   display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 8px !important;
-  padding: 12px 16px !important;
+  flex-direction: column !important;
+  padding: 0 8px !important;
 }
 
-/* Individual space chip */
-.cadie-space-chip {
+.cadie-space-item {
   display: flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  padding: 6px 12px !important;
-  border-radius: 16px !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  background: rgba(255, 255, 255, 0.05) !important;
+  justify-content: space-between !important;
+  padding: 8px !important;
+  border-radius: 10px !important;
   cursor: pointer !important;
-  transition: all 0.15s ease !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  color: rgba(255, 255, 255, 0.8) !important;
+  transition: background 0.15s ease !important;
+  background: transparent !important;
+  border: none !important;
+  width: 100% !important;
+  text-align: left !important;
   font-family: inherit !important;
 }
 
-.cadie-space-chip:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
+.cadie-space-item:hover {
+  background: rgba(0, 0, 0, 0.06) !important;
 }
 
-.cadie-space-chip.cadie-selected {
-  background: rgba(59, 130, 246, 0.2) !important;
-  border-color: rgba(59, 130, 246, 0.5) !important;
-  color: #ffffff !important;
+.cadie-space-item.cadie-selected {
+  background: transparent !important; /* No background for selected */
 }
 
-.cadie-space-chip.cadie-loading {
+.cadie-space-item.cadie-selected:hover {
+  background: rgba(0, 0, 0, 0.06) !important;
+}
+
+.cadie-space-item.cadie-loading {
   opacity: 0.6 !important;
   pointer-events: none !important;
 }
 
-/* Color dot */
-.cadie-space-dot {
-  width: 8px !important;
-  height: 8px !important;
-  border-radius: 50% !important;
+/* Space item content wrapper */
+.cadie-space-item-content {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+/* Checkmark for selected items */
+.cadie-space-check {
+  width: 16px !important;
+  height: 16px !important;
   flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.cadie-space-check svg {
+  width: 16px !important;
+  height: 16px !important;
+  stroke: #2b2b34 !important;
+}
+
+/* Color dot - pill shape */
+.cadie-space-dot {
+  width: 16px !important;
+  height: 10px !important;
+  border-radius: 99px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Space name */
+.cadie-space-name {
+  font-size: 13px !important;
+  font-weight: 570 !important;
+  color: black !important;
+  line-height: 23px !important;
+  letter-spacing: -0.1px !important;
 }

@@ -1,23 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitSpaces, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
+import { authenticateRequest } from "@/lib/auth-middleware";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    // Use authenticateRequest to support both Bearer token (extension) and session auth (web)
+    const userId = await authenticateRequest(request);
     
-    if (!user) {
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id: spaceId } = await params;
 
     // Rate limiting
-    const identifier = getIdentifier(request, user.id);
+    const identifier = getIdentifier(request, userId);
     const { success, limit, reset, remaining } = await rateLimitSpaces.limit(identifier);
     
     if (!success) {
@@ -42,11 +43,12 @@ export async function POST(
     }
 
     // Verify space belongs to user
+    const supabase = await createClient();
     const { data: space, error: spaceError } = await supabase
       .from("spaces")
       .select("id")
       .eq("id", spaceId)
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .single();
 
     if (spaceError || !space) {
@@ -60,7 +62,7 @@ export async function POST(
     const { data: links, error: linksError } = await supabase
       .from("links")
       .select("id")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .in("id", link_ids);
 
     if (linksError) {
@@ -117,17 +119,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    // Use authenticateRequest to support both Bearer token (extension) and session auth (web)
+    const userId = await authenticateRequest(request);
     
-    if (!user) {
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id: spaceId } = await params;
 
     // Rate limiting
-    const identifier = getIdentifier(request, user.id);
+    const identifier = getIdentifier(request, userId);
     const { success, limit, reset, remaining } = await rateLimitSpaces.limit(identifier);
     
     if (!success) {
@@ -152,11 +154,12 @@ export async function DELETE(
     }
 
     // Verify space belongs to user
+    const supabase = await createClient();
     const { data: space, error: spaceError } = await supabase
       .from("spaces")
       .select("id")
       .eq("id", spaceId)
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .single();
 
     if (spaceError || !space) {
