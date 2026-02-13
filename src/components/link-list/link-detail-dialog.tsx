@@ -9,7 +9,6 @@ import {
   DialogOverlay,
   DialogPortal,
 } from "@/components/ui/dialog";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { 
   IconX, 
@@ -107,11 +106,9 @@ export function LinkDetailDialog({
           className="fixed left-[50%] top-[50%] z-50 flex flex-col w-[95vw] h-[95vh] translate-x-[-50%] translate-y-[-50%] gap-0 border border-border bg-[#FAFAFA] dark:bg-[#09090b] p-0 shadow-2xl transition-[scale,opacity,translate] duration-200 ease-in-out will-change-transform data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:rounded-2xl overflow-hidden"
         >
           {/* Accessible title - visually hidden */}
-          <VisuallyHidden>
-            <DialogPrimitive.Title>
-              {link.title}
-            </DialogPrimitive.Title>
-          </VisuallyHidden>
+          <DialogPrimitive.Title className="sr-only">
+            {link.title}
+          </DialogPrimitive.Title>
 
           <div className="flex flex-col md:flex-row h-full min-h-0">
             {/* Left Panel: Browser Preview */}
