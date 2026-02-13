@@ -61,7 +61,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
             // Apply search filter
             if (searchQuery && searchQuery.trim()) {
                 const searchTerm = `%${searchQuery.trim()}%`;
-                query = query.or(`title.ilike."${searchTerm}",url.ilike."${searchTerm}",domain.ilike."${searchTerm}",description.ilike."${searchTerm}",color_value.ilike."${searchTerm}"`);
+                query = query.or(`title.ilike."${searchTerm}",url.ilike."${searchTerm}",domain.ilike."${searchTerm}",description.ilike."${searchTerm}",color_value.ilike."${searchTerm}",ai_tags.cs.{"${searchQuery.trim().toLowerCase()}"}`);
             }
 
             // Apply sorting
@@ -109,7 +109,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
         // Apply search filter - search across title, url, domain, description, color_value
         if (searchQuery && searchQuery.trim()) {
             const searchTerm = `%${searchQuery.trim()}%`;
-            query = query.or(`title.ilike."${searchTerm}",url.ilike."${searchTerm}",domain.ilike."${searchTerm}",description.ilike."${searchTerm}",color_value.ilike."${searchTerm}"`);
+            query = query.or(`title.ilike."${searchTerm}",url.ilike."${searchTerm}",domain.ilike."${searchTerm}",description.ilike."${searchTerm}",color_value.ilike."${searchTerm}",ai_tags.cs.{"${searchQuery.trim().toLowerCase()}"}`);
         }
 
         // Apply sorting

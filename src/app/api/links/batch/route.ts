@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { MetadataService } from "@/features/links/services/metadata.service";
 import { canonicalizeUrl } from "@/lib/canonicalize";
+import { enqueueBatchAITagging } from "@/lib/job-queue";
 import { rateLimitLinks, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 import { validateRequestBody } from "@/lib/validation/validate";
 import { batchActionSchema } from "@/lib/validation/link.schemas";
@@ -245,6 +246,13 @@ export async function POST(request: NextRequest) {
 
             result.data.links = [...nonUrlLinks, ...(enrichedUrls || urlLinks)];
           }
+
+          // Enqueue AI tagging jobs for URL links (fire-and-forget)
+          const aiTagJobs = urlLinks.map((link: CreatedLink) => ({
+            linkId: link.id,
+            userId: user.id,
+          }));
+          enqueueBatchAITagging(aiTagJobs).catch(() => {});
         }
         break;
 

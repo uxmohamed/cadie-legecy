@@ -11,6 +11,7 @@ import {
   IconPlus,
   IconPencil
 } from "@tabler/icons-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -92,7 +93,30 @@ export function SidebarPanel({
         <div className="text-fg font-bold text-right truncate">
           {link.domain || "Direct Link"}
         </div>
+
+        {/* Category */}
+        {(link.ai_key_themes as { category?: string })?.category && (
+          <>
+            <div className="text-fg-subtle">Category</div>
+            <div className="text-right">
+              <Badge variant="outline" size="sm">
+                {(link.ai_key_themes as { category: string }).category}
+              </Badge>
+            </div>
+          </>
+        )}
       </div>
+
+      {/* AI Tags */}
+      {link.ai_tags && link.ai_tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-8">
+          {link.ai_tags.map((tag) => (
+            <Badge key={tag} variant="secondary" size="sm">
+              {tag}
+            </Badge>
+          ))}
+        </div>
+      )}
 
       {/* Action Buttons Row - Improved UX */}
       <div className="flex items-center gap-2 mb-8">

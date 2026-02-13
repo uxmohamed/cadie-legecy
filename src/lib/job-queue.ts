@@ -44,11 +44,50 @@ export async function enqueueMetadataEnrichment(job: EnrichMetadataJob): Promise
 
 /**
  * Enqueue multiple metadata enrichment jobs
- * 
+ *
  * @param jobs - Array of job payloads
  */
 export async function enqueueBatchMetadataEnrichment(jobs: EnrichMetadataJob[]): Promise<void> {
   await Promise.allSettled(
     jobs.map(job => enqueueMetadataEnrichment(job))
+  );
+}
+
+/**
+ * Job payload for AI tag enrichment
+ */
+export interface EnrichAITagsJob {
+  linkId: string;
+  userId: string;
+}
+
+/**
+ * Enqueue an AI tagging job
+ *
+ * Uses a 5s delay to let metadata settle first.
+ */
+export async function enqueueAITagging(job: EnrichAITagsJob): Promise<void> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+    || "http://localhost:3000";
+
+  try {
+    await qstash.publishJSON({
+      url: `${baseUrl}/api/jobs/enrich-ai-tags`,
+      body: job,
+      retries: 3,
+      delay: 5, // 5 second delay to let metadata settle
+    });
+  } catch (error) {
+    console.error("[QStash] Failed to enqueue AI tagging:", error);
+  }
+}
+
+/**
+ * Enqueue multiple AI tagging jobs
+ */
+export async function enqueueBatchAITagging(jobs: EnrichAITagsJob[]): Promise<void> {
+  await Promise.allSettled(
+    jobs.map(job => enqueueAITagging(job))
   );
 }

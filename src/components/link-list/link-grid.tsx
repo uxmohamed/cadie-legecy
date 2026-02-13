@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import type { Link } from "@/features/links/types";
+import { Badge } from "@/components/ui/badge";
 import { Favicon } from "@/components/ui/favicon";
 import { formatDate } from "@/lib/utils";
 import { IconPinFilled } from "@tabler/icons-react";
@@ -114,6 +115,20 @@ function LinkGridCard({
         <div className="text-sm font-medium text-fg line-clamp-2">
           {link.title || link.url}
         </div>
+        {link.ai_tags && link.ai_tags.length > 0 && (
+          <div className="flex items-center gap-1 flex-wrap">
+            {link.ai_tags.slice(0, 2).map((tag) => (
+              <Badge key={tag} variant="secondary" size="sm" className="text-[10px] leading-tight">
+                {tag}
+              </Badge>
+            ))}
+            {link.ai_tags.length > 2 && (
+              <span className="text-[10px] text-fg-subtle">
+                +{link.ai_tags.length - 2}
+              </span>
+            )}
+          </div>
+        )}
         <div className="text-xs text-fg-subtle">
           {formatDate(new Date(link.created_at))}
         </div>
