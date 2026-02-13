@@ -149,7 +149,11 @@ function TwitterPreview({ tweetId, link }: { tweetId: string; link: Link }) {
     }
 
     embedTweet();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      // Remove any DOM nodes injected by a still-in-flight createTweet
+      if (container) container.innerHTML = "";
+    };
   }, [tweetId, effectiveTheme]);
 
   if (error) return <FallbackTwitterPreview link={link} />;
@@ -232,7 +236,7 @@ export function PreviewPanel({ link }: PreviewPanelProps) {
     case "youtube":
       return <YouTubePreview videoId={embedInfo.embedId!} />;
     case "twitter":
-      return <TwitterPreview tweetId={embedInfo.embedId!} link={link} />;
+      return <TwitterPreview key={embedInfo.embedId} tweetId={embedInfo.embedId!} link={link} />;
     case "color":
       return <ColorPreview colorValue={link.color_value || "#000000"} />;
     case "image":

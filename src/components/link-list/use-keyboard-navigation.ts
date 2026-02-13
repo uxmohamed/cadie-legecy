@@ -20,6 +20,7 @@ interface UseKeyboardNavigationOptions {
   isTrashView?: boolean;
   lastSelectedIndex: number | null;
   setLastSelectedIndex: (index: number | null) => void;
+  disabled?: boolean;
 }
 
 import { useShortcuts } from "@/components/shortcut-context";
@@ -43,6 +44,7 @@ export function useKeyboardNavigation({
   isTrashView,
   lastSelectedIndex,
   setLastSelectedIndex,
+  disabled = false,
 }: UseKeyboardNavigationOptions) {
   const { registerShortcut, unregisterShortcut } = useShortcuts();
 
@@ -64,6 +66,8 @@ export function useKeyboardNavigation({
 
   React.useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (disabled) return;
+
       const target = e.target as HTMLElement;
       const isInputFocused =
         target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
@@ -278,5 +282,6 @@ export function useKeyboardNavigation({
     isTrashView,
     lastSelectedIndex,
     setLastSelectedIndex,
+    disabled,
   ]);
 }

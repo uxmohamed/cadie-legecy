@@ -508,6 +508,7 @@ export function LinkList({
     isTrashView,
     lastSelectedIndex,
     setLastSelectedIndex,
+    disabled: sheetOpen,
   });
 
   const handleContextMenu = (e: React.MouseEvent, link: Link) => {
