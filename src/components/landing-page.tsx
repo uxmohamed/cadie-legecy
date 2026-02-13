@@ -17,24 +17,24 @@ import {
   DialogTrigger,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Footer } from "@/components/footer";
 import type { ChangelogEntry } from "@/types/changelog";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 
 function FaqItem({ question, children, isOpen, onToggle }: { question: string; children: React.ReactNode; isOpen: boolean; onToggle: () => void }) {
   return (
-    <div className="bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] rounded-xl transition-colors duration-150">
+    <div className="bg-bg-field-light rounded-xl transition-colors duration-150">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between text-left gap-4 px-5 py-4"
+        className="w-full flex items-center justify-between text-left gap-4 px-5 py-4 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
         <span className="text-sm font-medium text-fg">{question}</span>
         <IconChevronDown 
           className={`size-5 text-[var(--brand)] shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
         />
       </button>
-      <div className={`overflow-hidden transition-all duration-200 ${isOpen ? 'max-h-40' : 'max-h-0'}`}>
+      <div className={`overflow-hidden transition-[max-height] duration-200 ${isOpen ? 'max-h-40' : 'max-h-0'}`}>
         <p className="px-5 pb-4 text-sm text-fg-muted pr-12">
           {children}
         </p>
@@ -50,11 +50,29 @@ interface LandingPageProps {
 export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openFaqId, setOpenFaqId] = useState<string | null>(null);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col bg-bg selection:bg-brand/10 selection:text-brand">
       {/* Header */}
-      <div>
+      <header className={`sticky top-0 z-50 transition-all duration-200 ${isScrolled ? "bg-bg/90 backdrop-blur-md border-b border-border" : "bg-transparent"}`}>
         <div className="max-w-5xl mx-auto relative">
           <div className="p-3 sm:p-4 md:p-3 flex items-center justify-between relative">
             {/* Logo */}
@@ -65,51 +83,47 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
             </div>
             
             {/* Desktop Navigation - Centered */}
-            <div className="hidden md:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
-              <a
-                href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button className="relative text-fg-muted hover:text-fg inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2">
+            <nav className="hidden md:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
+              <Button asChild variant="ghost" className="text-fg-muted hover:text-fg">
+                <a
+                  href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   Extension
-                </Button>
-              </a>
-              <Link href="/changelog">
-                <Button className="relative text-fg-muted hover:text-fg inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2">
-                  Changelog
-                </Button>
-              </Link>
-              <a
-                href="https://x.com/cadieapp_"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button className="relative text-fg-muted hover:text-fg inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2">
+                </a>
+              </Button>
+              <Button asChild variant="ghost" className="text-fg-muted hover:text-fg">
+                <Link href="/changelog">Changelog</Link>
+              </Button>
+              <Button asChild variant="ghost" className="text-fg-muted hover:text-fg">
+                <a
+                  href="https://x.com/cadieapp_"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   X (Twitter)
-                </Button>
-              </a>
-            </div>
+                </a>
+              </Button>
+            </nav>
             
             {/* Right Side - Auth Buttons + Mobile Menu */}
             <div className="flex items-center gap-3">
               {/* Get Started Button - Always visible */}
-              <Link href="/auth" className="hidden sm:block">
-                <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-9 px-3.5 py-2 text-sm rounded-lg bg-[var(--btn-primary)] text-fg-on-accent hover:bg-[var(--btn-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--btn-primary)] focus-visible:ring-offset-2">
-                  Get Started
-                </Button>
-              </Link>
+              <Button asChild size="lg" className="hidden sm:inline-flex text-sm">
+                <Link href="/auth">Get Started</Link>
+              </Button>
               
               {/* Mobile Menu */}
               <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button className="md:hidden py-2 px-2 bg-transparent border-0 text-fg rounded-xl shadow-none hover:bg-bg-hover transition-colors duration-150">
+                  <Button className="md:hidden py-2 px-2 bg-transparent border-0 text-fg rounded-xl shadow-none hover:bg-bg-hover transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" aria-label="Open menu">
                     <IconMenu className="h-6 w-6" />
                   </Button>
                 </SheetTrigger>
                 <SheetContent 
                   side="right" 
-                  className="w-full !max-w-none p-0 inset-y-0 right-0 left-0 !transition-all !duration-[400ms] ease-in-out data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:animate-in data-[state=open]:slide-in-from-right" 
+                  className="w-full !max-w-none p-0 inset-y-0 right-0 left-0 !transition-[transform,opacity] !duration-[400ms] ease-in-out data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:animate-in data-[state=open]:slide-in-from-right" 
                   showCloseButton={false}
                 >
                   <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
@@ -120,14 +134,15 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
                         <Logo className="h-6 w-auto" />
                       </Link>
                       <div className="flex items-center gap-2">
-                        <Link href="/auth" onClick={() => setIsMenuOpen(false)}>
-                          <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-[var(--btn-primary)] text-fg-on-accent hover:bg-[var(--btn-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--btn-primary)] focus-visible:ring-offset-2">
+                        <Button asChild>
+                          <Link href="/auth" onClick={() => setIsMenuOpen(false)}>
                             Get Started
-                          </Button>
-                        </Link>
-                        <Button 
+                          </Link>
+                        </Button>
+                        <Button
                           onClick={() => setIsMenuOpen(false)}
-                          className="py-2 px-2 bg-transparent border-0 text-fg-muted rounded-xl shadow-none hover:bg-bg-hover transition-colors duration-150"
+                          className="py-2 px-2 bg-transparent border-0 text-fg-muted rounded-xl shadow-none hover:bg-bg-hover transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          aria-label="Close menu"
                         >
                           <IconX className="h-5 w-5" />
                         </Button>
@@ -177,7 +192,7 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Hero Section */}
       <main className="flex-1 pt-12 sm:pt-16 md:pt-20 pb-16 sm:pb-20 md:pb-24 px-4 sm:px-6 lg:px-8">
@@ -198,19 +213,14 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
           </p>
 
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <Link href="/auth" className="w-full sm:w-auto">
-              <Button
-                size="lg"
-                className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-8 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--btn-primary)] text-fg-on-accent hover:bg-[var(--btn-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--btn-primary)] focus-visible:ring-offset-2"
-              >
-                Get Started
-              </Button>
-            </Link>
+            <Button asChild className="w-full sm:w-auto min-h-10 px-8 py-3 text-base rounded-lg">
+              <Link href="/auth">Get Started</Link>
+            </Button>
             <Dialog>
               <DialogTrigger asChild>
                 <Button
                   size="lg"
-                  className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-8 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--bg-muted)] text-fg hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
+                  className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-8 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-bg-muted text-fg hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
                 >
                   Watch demo
                 </Button>
@@ -285,11 +295,11 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
                 <IconArrowRight className="size-4" />
               </a>
             </div>
-            <div className="rounded-xl bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] pt-12 pr-12">
+            <div className="rounded-xl bg-bg-muted pt-12 pr-12">
               <div className="relative aspect-[4/3] w-full overflow-hidden">
                 <video
                   src="/vid-section01.mp4"
-                  autoPlay
+                  autoPlay={!prefersReducedMotion}
                   muted
                   loop
                   playsInline
@@ -309,10 +319,10 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
                 Cadie removes tracking and extra parameters when you save a link. You don&apos;t need to do anything.
               </p>
             </div>
-            <div className="rounded-xl bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] pt-12 px-12 pb-0 overflow-hidden md:order-1">
+            <div className="rounded-xl bg-bg-muted pt-12 px-12 pb-0 overflow-hidden md:order-1">
               <video
                 src="/vid-section02.mp4"
-                autoPlay
+                autoPlay={!prefersReducedMotion}
                 muted
                 loop
                 playsInline
@@ -331,7 +341,7 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
                 You can navigate and manage your links using the keyboard instead of the mouse.
               </p>
             </div>
-            <div className="rounded-xl bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] pt-12 px-12 pb-0 overflow-hidden">
+            <div className="rounded-xl bg-bg-muted pt-12 px-12 pb-0 overflow-hidden">
               <KeyboardShortcuts />
             </div>
           </div>
@@ -352,11 +362,11 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {changelogEntries.map((entry) => {
                 const date = new Date(entry.date);
-                const formattedDate = date.toLocaleDateString("en-US", {
+                const formattedDate = new Intl.DateTimeFormat(undefined, {
                   year: "numeric",
                   month: "long",
                   day: "numeric",
-                });
+                }).format(date);
                 
                 return (
                   <Link
@@ -364,7 +374,7 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
                     href={`/changelog#${entry._raw.flattenedPath.replace("changelog/", "")}`}
                     className="group block"
                   >
-                    <article className="h-full bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)] rounded-xl p-6 transition-all duration-200 hover:bg-[var(--grey-200)] dark:hover:bg-[var(--grey-700)]">
+                    <article className="h-full bg-bg-muted rounded-xl p-6 transition-colors duration-200 hover:bg-bg-hover">
                       <div className="flex flex-col gap-3">
                         {/* Date */}
                         <time className="text-sm font-medium text-fg-subtle">
@@ -464,36 +474,34 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-[color-mix(in_oklab,var(--grey-100)_60%,transparent)] dark:bg-[color-mix(in_oklab,var(--grey-800)_60%,transparent)]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-24">
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-8 md:gap-12 items-center text-center md:text-left">
-            <h2 className="text-4xl sm:text-5xl font-medium text-fg tracking-tight">
-              Try Cadie
+      <section className="bg-[linear-gradient(to_bottom,var(--bg)_60%,var(--accent-muted)_100%)]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
+          <div className="flex flex-col items-center text-center space-y-8">
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-medium text-fg tracking-tight leading-[1.1]">
+              Save your web, simply.
             </h2>
-            <div className="flex flex-col sm:flex-row items-center md:items-start gap-3 w-full sm:w-auto">
-              <Link href="/auth" className="w-full sm:w-auto">
-                <Button className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-8 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--btn-primary)] text-fg-on-accent hover:bg-[var(--btn-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--btn-primary)] focus-visible:ring-offset-2">
-                  Get started
-                </Button>
-              </Link>
-              <a
-                href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto"
-              >
-                <Button className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-8 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--bg-muted)] text-fg hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2">
-                  Get Extension
-                </Button>
-              </a>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
+              <Button asChild className="w-full sm:w-auto min-h-12 px-8 text-base rounded-lg">
+                <Link href="/auth">Open app</Link>
+              </Button>
+              <Button asChild variant="secondary" className="w-full sm:w-auto min-h-12 px-8 text-base rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)] text-fg border border-border">
+                <a
+                  href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Get extension
+                </a>
+              </Button>
             </div>
           </div>
         </div>
       </section>
 
-      <Footer />
+      <div className="border-t border-border">
+        <Footer />
+      </div>
     </div>
   );
 }
-
 
