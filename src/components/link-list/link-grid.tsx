@@ -81,7 +81,7 @@ function LinkGridCard({
       onMouseDown={(e) => onMouseDown(index, e)}
       onClick={(e) => onClick(e, link, index)}
       onContextMenu={(e) => onContextMenu(e, link)}
-      className={`mb-4 break-inside-avoid rounded-xl border overflow-hidden cursor-pointer group transition-colors ${
+      className={`mb-4 rounded-xl border overflow-hidden cursor-pointer group transition-colors ${
         isSelected
           ? "border-accent"
           : "border-border hover:border-border-hover"
@@ -122,6 +122,73 @@ function LinkGridCard({
   );
 }
 
+/**
+ * Distribute items into columns in row-first (round-robin) order.
+ * Item 0 → col 0, item 1 → col 1, ..., item N → col 0, etc.
+ * This ensures horizontal reading order while allowing variable card heights.
+ */
+function useColumns<T>(items: T[], columnCount: number): T[][] {
+  return React.useMemo(() => {
+    const cols: T[][] = Array.from({ length: columnCount }, () => []);
+    items.forEach((item, i) => {
+      cols[i % columnCount].push(item);
+    });
+    return cols;
+  }, [items, columnCount]);
+}
+
+function useResponsiveColumnCount() {
+  const [count, setCount] = React.useState(5);
+
+  React.useEffect(() => {
+    const update = () => {
+      const w = window.innerWidth;
+      if (w < 640) setCount(2);
+      else if (w < 768) setCount(3);
+      else if (w < 1024) setCount(4);
+      else setCount(5);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  return count;
+}
+
+interface MasonryGridProps {
+  items: { link: Link; index: number }[];
+  selectedIds: Set<string>;
+  onItemMouseDown: (index: number, e: React.MouseEvent) => void;
+  onItemClick: (e: React.MouseEvent<HTMLDivElement>, link: Link, index: number) => void;
+  onContextMenu: (e: React.MouseEvent, link: Link) => void;
+}
+
+function MasonryGrid({ items, selectedIds, onItemMouseDown, onItemClick, onContextMenu }: MasonryGridProps) {
+  const columnCount = useResponsiveColumnCount();
+  const columns = useColumns(items, columnCount);
+
+  return (
+    <div className="flex gap-4">
+      {columns.map((col, colIdx) => (
+        <div key={colIdx} className="flex-1 min-w-0">
+          {col.map(({ link, index }) => (
+            <LinkGridCard
+              key={link.id}
+              link={link}
+              index={index}
+              isSelected={selectedIds.has(link.id)}
+              onMouseDown={onItemMouseDown}
+              onClick={onItemClick}
+              onContextMenu={onContextMenu}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function LinkGrid({
   pinnedLinks,
   unpinnedLinks,
@@ -132,6 +199,15 @@ export function LinkGrid({
   onContextMenu,
   isAddingItem,
 }: LinkGridProps) {
+  const pinnedItems = React.useMemo(
+    () => pinnedLinks.map((link, i) => ({ link, index: i })),
+    [pinnedLinks]
+  );
+  const unpinnedItems = React.useMemo(
+    () => unpinnedLinks.map((link, i) => ({ link, index: pinnedLinks.length + i })),
+    [unpinnedLinks, pinnedLinks.length]
+  );
+
   return (
     <div className="py-4 space-y-6">
       {pinnedLinks.length > 0 && (
@@ -143,19 +219,13 @@ export function LinkGrid({
           >
             Pinned
           </div>
-          <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4">
-            {pinnedLinks.map((link, i) => (
-              <LinkGridCard
-                key={link.id}
-                link={link}
-                index={i}
-                isSelected={selectedIds.has(link.id)}
-                onMouseDown={onItemMouseDown}
-                onClick={onItemClick}
-                onContextMenu={onContextMenu}
-              />
-            ))}
-          </div>
+          <MasonryGrid
+            items={pinnedItems}
+            selectedIds={selectedIds}
+            onItemMouseDown={onItemMouseDown}
+            onItemClick={onItemClick}
+            onContextMenu={onContextMenu}
+          />
         </div>
       )}
 
@@ -170,19 +240,13 @@ export function LinkGrid({
               All Links
             </div>
           )}
-          <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4">
-            {unpinnedLinks.map((link, i) => (
-              <LinkGridCard
-                key={link.id}
-                link={link}
-                index={pinnedLinks.length + i}
-                isSelected={selectedIds.has(link.id)}
-                onMouseDown={onItemMouseDown}
-                onClick={onItemClick}
-                onContextMenu={onContextMenu}
-              />
-            ))}
-          </div>
+          <MasonryGrid
+            items={unpinnedItems}
+            selectedIds={selectedIds}
+            onItemMouseDown={onItemMouseDown}
+            onItemClick={onItemClick}
+            onContextMenu={onContextMenu}
+          />
         </div>
       )}
     </div>
