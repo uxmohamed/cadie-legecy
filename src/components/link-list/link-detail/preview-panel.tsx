@@ -34,12 +34,12 @@ function YouTubePreview({ videoId }: { videoId: string }) {
  */
 function TwitterPreview({ link }: { link: Link }) {
   return (
-    <div className="w-full h-full relative bg-bg-surface">
+    <div className="w-full h-full relative bg-bg-surface flex items-center justify-center">
       {link.og_image_url ? (
         <img
           src={link.og_image_url}
           alt={link.title}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-[#000000]">
@@ -82,15 +82,15 @@ function ColorPreview({ colorValue }: { colorValue: string }) {
 }
 
 /**
- * OG Image preview with object-cover
+ * OG Image preview with object-contain
  */
 function ImagePreview({ link }: { link: Link }) {
   return (
-    <div className="w-full h-full bg-bg-surface">
+    <div className="w-full h-full bg-transparent flex items-center justify-center">
       <img
         src={link.og_image_url!}
         alt={link.title}
-        className="w-full h-full object-cover"
+        className="w-full h-full object-contain rounded-sm"
       />
     </div>
   );
@@ -138,3 +138,4 @@ export function PreviewPanel({ link }: PreviewPanelProps) {
       return <FaviconPreview link={link} />;
   }
 }
+

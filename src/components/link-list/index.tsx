@@ -940,6 +940,27 @@ export function LinkList({
         linkSpaces={selectedLink ? linkSpacesMap.get(selectedLink.id) || [] : []}
         onAddToSpace={onAddToSpace}
         onRemoveFromSpace={onRemoveFromSpace}
+        // Navigation Props
+        onNext={() => {
+           const idx = displayLinks.findIndex(l => l.id === selectedLink?.id);
+           if (idx !== -1 && idx < displayLinks.length - 1) {
+             setSelectedLink(displayLinks[idx + 1]);
+           }
+        }}
+        onPrev={() => {
+           const idx = displayLinks.findIndex(l => l.id === selectedLink?.id);
+           if (idx > 0) {
+             setSelectedLink(displayLinks[idx - 1]);
+           }
+        }}
+        hasNext={(() => {
+           const idx = displayLinks.findIndex(l => l.id === selectedLink?.id);
+           return idx !== -1 && idx < displayLinks.length - 1;
+        })()}
+        hasPrev={(() => {
+           const idx = displayLinks.findIndex(l => l.id === selectedLink?.id);
+           return idx > 0;
+        })()}
       />
 
       <AlertDialog
