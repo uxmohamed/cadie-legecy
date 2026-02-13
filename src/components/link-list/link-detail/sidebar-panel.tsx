@@ -81,10 +81,10 @@ export function SidebarPanel({
           {formatDate(new Date(link.created_at))} ago
         </div>
         
-        {/* By (Author/Domain) */}
+        {/* By (Site Name/Domain) */}
         <div className="text-fg-subtle">By</div>
         <div className="text-fg font-medium text-right truncate">
-          {link.author || link.domain || "Unknown"}
+          {link.site_name || link.domain || "Unknown"}
         </div>
         
         {/* Source */}
