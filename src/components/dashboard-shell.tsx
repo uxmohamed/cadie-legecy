@@ -11,12 +11,13 @@ import type { Link } from "@/features/links/types";
 import type { Space } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCircleCheckFilled } from "@tabler/icons-react";
+import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCircleCheckFilled, IconLayoutList, IconLayoutGrid } from "@tabler/icons-react";
 import { Kbd } from "@/components/ui/kbd";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/menu";
 import { useShortcuts } from "@/components/shortcut-context";
@@ -42,6 +43,8 @@ interface DashboardShellProps {
   onBatchPermanentDelete?: () => void;
   onBatchPin?: () => void;
   onBatchUnpin?: () => void;
+  viewMode: "list" | "grid";
+  onViewModeChange: (mode: "list" | "grid") => void;
   spaces?: Space[];
   onCreateSpace?: () => void;
   onEditSpace?: (space: Space) => void;
@@ -69,6 +72,8 @@ export function DashboardShell({
   onBatchPermanentDelete,
   onBatchPin,
   onBatchUnpin,
+  viewMode,
+  onViewModeChange,
   spaces,
   onCreateSpace,
   onEditSpace,
@@ -142,6 +147,15 @@ export function DashboardShell({
       category: "Global",
       action: () => {
         searchInputRef.current?.focus();
+      },
+    });
+
+    registerShortcut({
+      key: "v",
+      description: "Toggle view mode",
+      category: "Global",
+      action: () => {
+        onViewModeChange(viewMode === "list" ? "grid" : "list");
       },
     });
 
@@ -322,6 +336,7 @@ export function DashboardShell({
       window.removeEventListener("keydown", handleKeyDown, true);
       unregisterShortcut("c");
       unregisterShortcut("/");
+      unregisterShortcut("v");
       // Unregister space shortcuts
       if (spaces && spaces.length > 0) {
         spaces.forEach((space, index) => {
@@ -335,7 +350,7 @@ export function DashboardShell({
         clearTimeout(pendingShortcutTimeoutRef.current);
       }
     };
-  }, [registerShortcut, unregisterShortcut, selectedCategoryId, onOpenAddMode, onViewChange, spaces, pendingShortcut]);
+  }, [registerShortcut, unregisterShortcut, selectedCategoryId, onOpenAddMode, onViewChange, viewMode, onViewModeChange, spaces, pendingShortcut]);
 
   return (
     <div className="min-h-screen bg-bg relative">
@@ -434,6 +449,30 @@ export function DashboardShell({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
+                  {/* View Mode Toggle */}
+                  <div className="flex items-center justify-between px-2 py-2">
+                    <p className="text-xs font-medium text-fg-on-overlay-muted">
+                      View
+                    </p>
+                    <div className="flex items-center rounded-lg bg-btn-overlay-hover/50 p-0.5 gap-0.5">
+                      <button
+                        onClick={() => onViewModeChange("list")}
+                        className={`flex items-center justify-center h-7 w-7 rounded-md transition-colors ${viewMode === "list" ? "bg-btn-overlay-hover text-fg-on-overlay" : "text-fg-on-overlay-muted hover:text-fg-on-overlay"}`}
+                        aria-label="List view"
+                      >
+                        <IconLayoutList className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => onViewModeChange("grid")}
+                        className={`flex items-center justify-center h-7 w-7 rounded-md transition-colors ${viewMode === "grid" ? "bg-btn-overlay-hover text-fg-on-overlay" : "text-fg-on-overlay-muted hover:text-fg-on-overlay"}`}
+                        aria-label="Grid view"
+                      >
+                        <IconLayoutGrid className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator />
+                  {/* Sort */}
                   <div className="px-2 py-2">
                     <p className="text-xs font-medium text-fg-on-overlay-muted">
                       Sort by
@@ -489,20 +528,24 @@ export function DashboardShell({
           </div>
         </div>
 
-        {/* Column Headers */}
-        <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 md:px-8">
-          <div className="grid grid-cols-[1fr_80px] sm:grid-cols-[1fr_120px] md:grid-cols-[1fr_150px] gap-1 items-center text-xs font-medium text-fg-subtle select-none pt-2 pb-3">
-            <div>Title</div>
-            <div className="text-right">Created</div>
-          </div>
+        {/* Column Headers + Divider */}
+        <div className={`mx-auto w-full ${viewMode === "list" ? "max-w-4xl" : ""} px-4 sm:px-6 md:px-8`}>
+          {viewMode === "list" ? (
+            <div className="grid grid-cols-[1fr_80px] sm:grid-cols-[1fr_120px] md:grid-cols-[1fr_150px] gap-1 items-center text-xs font-medium text-fg-subtle select-none pt-2 pb-3">
+              <div>Title</div>
+              <div className="text-right">Created</div>
+            </div>
+          ) : (
+            <div className="pt-2 pb-3" />
+          )}
           {/* Divider line */}
-          <div className="-mx-6 border-b border-border-muted" />
+          <div className="border-b border-border-muted" />
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 md:px-8 pt-6 pb-32 sm:pb-28">
-        <div className="-mx-2">
+      <div className={`mx-auto w-full ${viewMode === "list" ? "max-w-4xl" : ""} px-4 sm:px-6 md:px-8 pt-6 pb-32 sm:pb-28`}>
+        <div className={viewMode === "list" ? "-mx-2" : ""}>
           {children}
         </div>
       </div>

@@ -37,6 +37,10 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
     isTrashRoute ? "trash" : (initialView || spaceIdFromPath || null)
   );
   
+  const [viewMode, setViewMode] = React.useState<"list" | "grid">(() => {
+    if (typeof window === "undefined") return "list";
+    return (localStorage.getItem("cadie-view-mode") as "list" | "grid") || "list";
+  });
   const [sortBy, setSortBy] = React.useState<"date" | "title">("date");
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("desc");
   const [isAddingItem, setIsAddingItem] = React.useState(false);
@@ -101,6 +105,11 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
 
   const handleAddInputChange = React.useCallback((value: string) => {
     setAddInputValue(value);
+  }, []);
+
+  const handleViewModeChange = React.useCallback((mode: "list" | "grid") => {
+    setViewMode(mode);
+    localStorage.setItem("cadie-view-mode", mode);
   }, []);
 
   const handleSearchChange = React.useCallback((value: string) => {
@@ -194,6 +203,8 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
         user={user}
         selectedCategoryId={selectedCategoryId}
         onViewChange={handleViewChange}
+        viewMode={viewMode}
+        onViewModeChange={handleViewModeChange}
         spaces={spaces}
         onCreateSpace={handleCreateSpace}
         onEditSpace={handleEditSpace}
@@ -274,6 +285,7 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
           onAddCancel={handleAddCancel}
           onSelectionChange={handleSelectionChange}
           searchQuery={searchQuery}
+          viewMode={viewMode}
         />
       </Suspense>
     </DashboardShell>

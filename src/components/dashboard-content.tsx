@@ -34,6 +34,7 @@ interface DashboardContentProps {
   onAddCancel: () => void;
   onSelectionChange: (count: number, links: Link[], clearSelection: () => void, batchHandlers: BatchHandlers) => void;
   searchQuery: string;
+  viewMode?: "list" | "grid";
 }
 
 export function DashboardContent({
@@ -48,6 +49,7 @@ export function DashboardContent({
   onAddCancel,
   onSelectionChange,
   searchQuery,
+  viewMode = "list",
 }: DashboardContentProps) {
   const { spaces, addLinksToSpace, removeLinksFromSpace } = useSpaces(!!user);
   const [linkSpacesMap, setLinkSpacesMap] = React.useState<Map<string, string[]>>(new Map());
@@ -314,6 +316,7 @@ export function DashboardContent({
       linkSpacesMap={linkSpacesMap}
       onAddToSpace={handleAddToSpace}
       onRemoveFromSpace={handleRemoveFromSpace}
+      viewMode={viewMode}
     />
   );
 }
