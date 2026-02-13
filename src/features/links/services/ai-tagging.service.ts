@@ -30,11 +30,11 @@ interface TaggingResult {
 }
 
 const SYSTEM_PROMPT = `You are a link categorization assistant. Given metadata about a web link, generate:
-1. 3-5 descriptive topic tags (lowercase, 1-2 words each, no special characters)
+1. 5-10 descriptive topic tags (lowercase, 1-2 words each, no special characters)
 2. Exactly 1 category from this list: article, tool, video, portfolio, documentation, social-media, shopping, news, reference, other
 
 Respond ONLY with valid JSON in this exact format:
-{"tags": ["tag1", "tag2", "tag3"], "category": "article"}`;
+{"tags": ["tag1", "tag2", "tag3", "tag4", "tag5", "tag6"], "category": "article"}`;
 
 function buildUserPrompt(context: TaggingContext): string {
   const parts: string[] = [];
@@ -57,8 +57,8 @@ function validateAndClean(raw: unknown): TaggingResult | null {
     .map((t) => t.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, ""))
     .filter((t) => t.length > 0 && t.split(/\s+/).length <= 2);
 
-  // Dedupe and limit to 5
-  const uniqueTags = [...new Set(tags)].slice(0, 5);
+  // Dedupe and limit to 10
+  const uniqueTags = [...new Set(tags)].slice(0, 10);
   if (uniqueTags.length === 0) return null;
 
   // Validate category
