@@ -167,7 +167,7 @@ export function LinkListItem({
           rel={isColor ? undefined : "noopener noreferrer nofollow"}
           onClick={(e) => e.preventDefault()}
           onFocus={() => onFocus(index)}
-          className="flex min-w-0 items-center gap-3 focus:outline-none select-none"
+          className="flex min-w-0 items-center gap-3 focus-visible:outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring select-none"
           onDragStart={(e) => e.preventDefault()}
         >
           {isColor ? (
@@ -186,8 +186,9 @@ export function LinkListItem({
                 value={editValue}
                 onChange={(e) => onEditChange?.(e.target.value)}
                 onKeyDown={handleEditKeyDown}
-                className="w-full bg-transparent text-sm leading-4 text-fg font-[470] placeholder:text-fg-subtle outline-none"
+                className="w-full bg-transparent text-sm leading-4 text-fg font-[470] placeholder:text-fg-subtle outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-sm"
                 autoComplete="off"
+                aria-label="Edit link title"
               />
             ) : (
               <div className="flex items-center gap-2">
@@ -242,7 +243,7 @@ export function LinkListItem({
                   onUnpin?.(link.id);
                 }}
                 className="h-8 w-8 hover:bg-bg-surface"
-                title="Unpin"
+                aria-label="Unpin"
               >
                 <IconPinnedOff className="h-4 w-4" />
               </Button>

@@ -280,8 +280,9 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
               <h3 className="text-sm font-medium text-fg">Danger Zone</h3>
               <AlertDialog onOpenChange={(open) => !open && setDeleteConfirmEmail("")}>
                 <AlertDialogTrigger asChild>
-                  <div 
-                    className="rounded-lg bg-bg-muted p-4 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" 
+                  <button
+                    type="button"
+                    className="w-full text-left rounded-lg bg-bg-muted p-4 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     style={{ backgroundColor: 'rgba(255, 80, 80, 0.1)' }}
                     onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 80, 80, 0.14)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 80, 80, 0.1)'; }}
@@ -292,7 +293,7 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
                     <p className="text-sm text-fg-muted">
                       Deleting your account will permanently delete all your data. This action cannot be undone.
                     </p>
-                  </div>
+                  </button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>

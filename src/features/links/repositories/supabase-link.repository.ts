@@ -80,7 +80,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
                 return { links: [], total: 0 };
             }
 
-            return { links: data || [], total: count || 0 };
+            return { links: (data as Link[]) || [], total: count || 0 };
         }
 
         // Standard query without space filter
@@ -129,7 +129,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
             return { links: [], total: 0 };
         }
 
-        return { links: data || [], total: count || 0 };
+        return { links: (data as Link[]) || [], total: count || 0 };
     }
 
     /**
@@ -317,88 +317,74 @@ export class SupabaseLinkRepository implements ILinkRepository {
 
     /**
      * Check if a link exists for a user (for duplicate detection)
+     * Uses clean_url index for fast lookup instead of fetching all links
      */
     async exists(userId: string, url: string): Promise<Link | null> {
         const supabase = await createClient();
+        const cleanUrl = canonicalizeUrl(url);
 
-        // Normalize URL for comparison
-        let normalizedUrl = url;
-        try {
-            const urlObj = new URL(url);
-            normalizedUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname.replace(/\/$/, '')}`;
-        } catch {
-            // If URL parsing fails, use original
-            normalizedUrl = url;
-        }
-
-        const { data: links } = await supabase
+        // Query by clean_url directly in the database
+        const { data } = await supabase
             .from("links")
-            .select("*")
+            .select("id, url, clean_url, title, domain, content_type, color_value, favicon_url, is_pinned, is_deleted, is_archived, deleted_at, created_at, updated_at, description")
             .eq("user_id", userId)
-            .eq("is_archived", false)
-            .eq("is_deleted", false);
+            .eq("clean_url", cleanUrl)
+            .eq("is_deleted", false)
+            .maybeSingle();
 
-        // Check if any existing link matches
-        const existingLink = links?.find((link: Link) => {
-            if (link.url === url) return true;
+        if (data) return data as Link;
 
-            // Also check normalized URLs
-            try {
-                const existingUrlObj = new URL(link.url);
-                const existingNormalized = `${existingUrlObj.protocol}//${existingUrlObj.host}${existingUrlObj.pathname.replace(/\/$/, '')}`;
-                return existingNormalized === normalizedUrl;
-            } catch {
-                return false;
-            }
-        });
+        // Fallback: check by exact URL match in case clean_url doesn't match
+        const { data: fallback } = await supabase
+            .from("links")
+            .select("id, url, clean_url, title, domain, content_type, color_value, favicon_url, is_pinned, is_deleted, is_archived, deleted_at, created_at, updated_at, description")
+            .eq("user_id", userId)
+            .eq("url", url)
+            .eq("is_deleted", false)
+            .maybeSingle();
 
-        return existingLink || null;
+        return (fallback as Link) || null;
     }
 
     /**
      * Find a link by URL, including trashed links
      * Returns the link and whether it's currently in trash
+     * Uses clean_url index for fast lookup instead of fetching all links
      */
     async findByUrl(userId: string, url: string): Promise<{ link: Link; isInTrash: boolean } | null> {
         const supabase = await createClient();
+        const cleanUrl = canonicalizeUrl(url);
 
-        // Normalize URL for comparison
-        let normalizedUrl = url;
-        try {
-            const urlObj = new URL(url);
-            normalizedUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname.replace(/\/$/, '')}`;
-        } catch {
-            // If URL parsing fails, use original
-            normalizedUrl = url;
+        // Query by clean_url directly in the database
+        const { data } = await supabase
+            .from("links")
+            .select("id, url, clean_url, title, domain, content_type, color_value, favicon_url, is_pinned, is_deleted, is_archived, deleted_at, created_at, updated_at, description")
+            .eq("user_id", userId)
+            .eq("clean_url", cleanUrl)
+            .maybeSingle();
+
+        if (data) {
+            return {
+                link: data as Link,
+                isInTrash: data.is_deleted || data.is_archived
+            };
         }
 
-        // Fetch all links for the user (including trashed ones)
-        const { data: links } = await supabase
+        // Fallback: check by exact URL match
+        const { data: fallback } = await supabase
             .from("links")
-            .select("*")
-            .eq("user_id", userId);
+            .select("id, url, clean_url, title, domain, content_type, color_value, favicon_url, is_pinned, is_deleted, is_archived, deleted_at, created_at, updated_at, description")
+            .eq("user_id", userId)
+            .eq("url", url)
+            .maybeSingle();
 
-        // Check if any existing link matches
-        const existingLink = links?.find((link: Link) => {
-            if (link.url === url) return true;
-
-            // Also check normalized URLs
-            try {
-                const existingUrlObj = new URL(link.url);
-                const existingNormalized = `${existingUrlObj.protocol}//${existingUrlObj.host}${existingUrlObj.pathname.replace(/\/$/, '')}`;
-                return existingNormalized === normalizedUrl;
-            } catch {
-                return false;
-            }
-        });
-
-        if (!existingLink) {
+        if (!fallback) {
             return null;
         }
 
         return {
-            link: existingLink,
-            isInTrash: existingLink.is_deleted || existingLink.is_archived
+            link: fallback as Link,
+            isInTrash: fallback.is_deleted || fallback.is_archived
         };
     }
 }

@@ -24,7 +24,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/menu";
-import { SettingsDialog } from "@/components/settings-dialog";
+import dynamic from "next/dynamic";
+
+const SettingsDialog = dynamic(
+  () => import("@/components/settings-dialog").then((mod) => mod.SettingsDialog),
+  { ssr: false }
+);
 
 interface UserMenuProps {
   user: User;

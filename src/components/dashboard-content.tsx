@@ -11,6 +11,7 @@ import type { Link, LinkFilters } from "@/features/links/types";
 import {
   detectMultipleContentTypes,
 } from "@/lib/content-detector";
+import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
 export interface BatchHandlers {
@@ -106,7 +107,7 @@ export function DashboardContent({
     if (!user || links.length === 0) return;
 
     const fetchLinkSpaces = async () => {
-      const supabase = (await import("@/lib/supabase/client")).createClient();
+      const supabase = createClient();
       const linkIds = links.map(l => l.id);
       
       const { data } = await supabase

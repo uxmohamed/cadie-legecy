@@ -178,8 +178,11 @@ export function LinkList({
     });
 
     if (isTrashView) return uniqueLinks;
-    const pinned = uniqueLinks.filter((l) => l.is_pinned);
-    const unpinned = uniqueLinks.filter((l) => !l.is_pinned);
+    const pinned: typeof uniqueLinks = [];
+    const unpinned: typeof uniqueLinks = [];
+    for (const link of uniqueLinks) {
+      (link.is_pinned ? pinned : unpinned).push(link);
+    }
     return [...pinned, ...unpinned];
   }, [links, isTrashView]);
 
@@ -712,12 +715,12 @@ export function LinkList({
       ) : (
         <>
           {/* Add input - appears at top of list, pushes links down */}
-          {isAddingItem && (
+          {isAddingItem && onAddInputChange && onAddSubmit && onAddCancel && (
             <InlineAddItem
               value={addInputValue}
-              onChange={onAddInputChange || (() => {})}
-              onSubmit={onAddSubmit || (() => {})}
-              onCancel={onAddCancel || (() => {})}
+              onChange={onAddInputChange}
+              onSubmit={onAddSubmit}
+              onCancel={onAddCancel}
             />
           )}
 

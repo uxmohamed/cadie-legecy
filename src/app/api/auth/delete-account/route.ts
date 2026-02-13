@@ -50,43 +50,18 @@ export async function DELETE(request: NextRequest) {
       }
     }
 
-    // Delete spaces
-    const { error: spacesError } = await supabase
-      .from("spaces")
-      .delete()
-      .eq("user_id", user.id);
+    // Delete spaces, links, tokens, and profile in parallel (all independent)
+    const [spacesResult, linksResult, tokensResult, profileResult] = await Promise.all([
+      supabase.from("spaces").delete().eq("user_id", user.id),
+      supabase.from("links").delete().eq("user_id", user.id),
+      supabase.from("api_tokens").delete().eq("user_id", user.id),
+      supabase.from("profiles").delete().eq("id", user.id),
+    ]);
 
-    if (spacesError) {
-      console.error("Error deleting spaces:", spacesError);
-    }
-
-    // Delete links
-    const { error: linksError } = await supabase
-      .from("links")
-      .delete()
-      .eq("user_id", user.id);
-
-    if (linksError) {
-      console.error("Error deleting links:", linksError);
-    }
-
-    const { error: tokensError } = await supabase
-      .from("api_tokens")
-      .delete()
-      .eq("user_id", user.id);
-
-    if (tokensError) {
-      console.error("Error deleting tokens:", tokensError);
-    }
-
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .delete()
-      .eq("id", user.id);
-
-    if (profileError) {
-      console.error("Error deleting profile:", profileError);
-    }
+    if (spacesResult.error) console.error("Error deleting spaces:", spacesResult.error);
+    if (linksResult.error) console.error("Error deleting links:", linksResult.error);
+    if (tokensResult.error) console.error("Error deleting tokens:", tokensResult.error);
+    if (profileResult.error) console.error("Error deleting profile:", profileResult.error);
 
     // Delete the user from Supabase Auth using admin client
     const supabaseAdmin = createAdminClient(

@@ -78,7 +78,7 @@ export function AuthEmailStep({ onComplete, onBack, isLoading = false }: AuthEma
                 required
                 disabled={loading || isLoading}
                 autoFocus
-                className="w-full px-4 py-4 bg-bg-input border border-transparent text-fg text-[14px] font-medium rounded-[12px] outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#2783de] placeholder:text-fg-subtle disabled:opacity-50"
+                className="w-full px-4 py-4 bg-bg-input border border-transparent text-fg text-[14px] font-medium rounded-[12px] focus-visible:outline-none transition-colors focus:border-transparent focus:ring-2 focus:ring-[#2783de] placeholder:text-fg-subtle disabled:opacity-50"
               />
             </div>
             {error && (

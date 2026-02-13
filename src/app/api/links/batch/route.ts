@@ -191,24 +191,22 @@ export async function POST(request: NextRequest) {
               timeout: 5000,
             });
 
-            // Update each link with comprehensive metadata
-            const updatePromises = urlLinks.map(async (link: CreatedLink) => {
+            // Build batch update records for a single upsert instead of N individual updates
+            const upsertRecords = urlLinks.map((link: CreatedLink) => {
               const metadata = metadataMap.get(link.url);
               const domain = metadata?.domain || extractDomain(link.url);
 
-              // Even if metadata fetch failed, at least set the domain
-              const updateData: Record<string, unknown> = {
+              const record: Record<string, unknown> = {
+                id: link.id,
                 domain,
               };
 
-              // Add metadata fields if available
               if (metadata) {
-                Object.assign(updateData, {
+                Object.assign(record, {
                   title: metadata.title || link.title,
                   favicon_url: metadata.favicon_url || link.favicon_url,
                   description: metadata.description || link.description,
                   og_image_url: metadata.preview_image_url || link.og_image_url,
-                  // Extended metadata
                   site_name: metadata.site_name,
                   final_url: metadata.final_url,
                   canonical_url: metadata.canonical_url,
@@ -227,29 +225,25 @@ export async function POST(request: NextRequest) {
                 });
               }
 
-              try {
-                const { data: updatedLink } = await supabase
-                  .from("links")
-                  .update(updateData)
-                  .eq("id", link.id)
-                  .select()
-                  .single();
-
-                return updatedLink || { ...link, domain };
-              } catch (err) {
-                console.error(`Metadata update failed for ${link.url}:`, err);
-                return { ...link, domain };
-              }
+              return record;
             });
 
-            const enrichedUrls = await Promise.all(updatePromises);
+            // Single upsert instead of N individual update queries
+            const { data: enrichedUrls, error: upsertError } = await supabase
+              .from("links")
+              .upsert(upsertRecords, { onConflict: "id" })
+              .select();
+
+            if (upsertError) {
+              console.error("Batch metadata upsert failed:", upsertError);
+            }
 
             // Merge enriched URLs back with non-URL links
             const nonUrlLinks = result.data.links.filter(
               (link: CreatedLink) => link.content_type && link.content_type !== "url"
             );
 
-            result.data.links = [...nonUrlLinks, ...enrichedUrls];
+            result.data.links = [...nonUrlLinks, ...(enrichedUrls || urlLinks)];
           }
         }
         break;

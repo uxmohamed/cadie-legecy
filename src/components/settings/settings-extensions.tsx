@@ -179,6 +179,7 @@ export function SettingsExtensions() {
                     size="sm"
                     className="text-fg-muted hover:text-destructive hover:bg-destructive-muted"
                     disabled={disconnectingId === token.id}
+                    aria-label="Disconnect extension"
                   >
                     {disconnectingId === token.id ? (
                       <IconLoader2 className="h-4 w-4 animate-spin" />

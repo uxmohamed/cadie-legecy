@@ -146,6 +146,12 @@ export function CompletionStep({
     onComplete();
   }, [onComplete]);
 
+  // Detect reduced motion preference
+  const prefersReducedMotion = React.useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }, []);
+
   // Get easing curves
   const textEasing = COMPLETION_EASING_CURVES[config.textEasing];
   const buttonEasing = COMPLETION_EASING_CURVES[config.buttonEasing];
@@ -161,7 +167,7 @@ export function CompletionStep({
         <motion.div
           layoutId="onboarding-logo"
           className="flex items-center justify-center"
-          transition={{
+          transition={prefersReducedMotion ? { duration: 0 } : {
             type: "spring",
             stiffness: config.logoSpringStiffness,
             damping: config.logoSpringDamping,
@@ -172,7 +178,7 @@ export function CompletionStep({
             animate={{
               "--logo-fill": logoFillColor,
             } as any}
-            transition={{
+            transition={prefersReducedMotion ? { duration: 0 } : {
               type: "spring",
               stiffness: config.logoSpringStiffness,
               damping: config.logoSpringDamping,
@@ -195,9 +201,9 @@ export function CompletionStep({
             {taglineWords.map((word, index) => (
               <motion.span
                 key={index}
-                initial={{ opacity: 0, y: config.textSlideDistance, filter: `blur(${config.textBlurAmount}px)` }}
+                initial={prefersReducedMotion ? { opacity: 1, y: 0, filter: "none" } : { opacity: 0, y: config.textSlideDistance, filter: `blur(${config.textBlurAmount}px)` }}
                 animate={showContent ? { opacity: 1, y: 0, filter: "blur(0px)" } : {}}
-                transition={{
+                transition={prefersReducedMotion ? { duration: 0 } : {
                   duration: config.textDuration / 1000,
                   delay: (index * config.textStagger) / 1000,
                   ease: textEasing,
@@ -214,13 +220,13 @@ export function CompletionStep({
 
           {/* Button with delayed fade + slide + blur */}
           <motion.div
-            initial={{ 
-              opacity: 0, 
+            initial={prefersReducedMotion ? { opacity: 1, y: 0, filter: "none" } : {
+              opacity: 0,
               y: config.buttonSlideDistance,
               filter: `blur(${config.buttonBlurAmount}px)`,
             }}
-            animate={showContent ? { 
-              opacity: 1, 
+            animate={showContent ? {
+              opacity: 1,
               y: 0,
               filter: "blur(0px)",
             } : {
@@ -228,7 +234,7 @@ export function CompletionStep({
               y: config.buttonSlideDistance,
               filter: `blur(${config.buttonBlurAmount}px)`,
             }}
-            transition={{
+            transition={prefersReducedMotion ? { duration: 0 } : {
               opacity: {
                 duration: config.buttonDuration / 1000,
                 delay: buttonDelaySeconds,

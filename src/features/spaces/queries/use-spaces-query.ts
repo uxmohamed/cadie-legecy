@@ -41,13 +41,14 @@ async function fetchSpaces(): Promise<SpacesResponse> {
  * - Background revalidation
  * - Optimistic updates via mutations
  */
-export function useSpacesQuery(enabled: boolean = true) {
+export function useSpacesQuery(enabled: boolean = true, initialSpaces?: Space[]) {
   const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: queryKeys.spaces.list(),
     queryFn: fetchSpaces,
     enabled,
+    initialData: initialSpaces ? { spaces: initialSpaces } : undefined,
     // Spaces are relatively stable - 5 minute stale time
     staleTime: 5 * 60 * 1000,
     // Keep in cache for 24 hours
@@ -327,8 +328,8 @@ export function useSpaceMutations() {
  * Combined hook that provides both query and mutations
  * This maintains the same API as the old useSpaces hook for easier migration
  */
-export function useSpaces(isAuthenticated: boolean) {
-  const { spaces, isLoading, isError, error, refetch } = useSpacesQuery(isAuthenticated);
+export function useSpaces(isAuthenticated: boolean, initialSpaces?: Space[]) {
+  const { spaces, isLoading, isError, error, refetch } = useSpacesQuery(isAuthenticated, initialSpaces);
   const {
     createSpace,
     updateSpace,

@@ -56,8 +56,22 @@ export function OnboardingFlow({ user, onComplete }: OnboardingFlowProps) {
     return false;
   }, [theme, mounted]);
 
+  // Detect reduced motion preference
+  const prefersReducedMotion = React.useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }, []);
+
   // Memoize transitions
   const { layoutTransition, fadeEnterTransition, fadeExitTransition } = React.useMemo(() => {
+    if (prefersReducedMotion) {
+      return {
+        layoutTransition: { layout: { duration: 0 } } as Transition,
+        fadeEnterTransition: { duration: 0 } as Transition,
+        fadeExitTransition: { duration: 0 } as Transition,
+      };
+    }
+
     const fadeEasing = EASING_CURVES[animationConfig.fadeEasing];
     const layoutEasing = EASING_CURVES[animationConfig.layoutEasing];
 
@@ -77,7 +91,7 @@ export function OnboardingFlow({ user, onComplete }: OnboardingFlowProps) {
         ease: fadeEasing,
       } as Transition,
     };
-  }, []);
+  }, [prefersReducedMotion]);
   
   // Store profile data between steps
   const [profileData, setProfileData] = React.useState<{

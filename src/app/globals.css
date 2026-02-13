@@ -468,6 +468,12 @@ body {
   animation-fill-mode: both;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .dock-content {
+    animation-duration: 0ms;
+  }
+}
+
 .dock-selection[data-state="visible"] {
   animation-name: dockEnterFromBottom;
   pointer-events: auto;

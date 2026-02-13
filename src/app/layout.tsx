@@ -85,7 +85,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="theme-color" content="#F6F4EE" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#1f1f1f" media="(prefers-color-scheme: dark)" />
+      </head>
       <body suppressHydrationWarning className={`${inter.variable} ${customFont.variable} antialiased`}>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-bg focus:text-fg">
+          Skip to content
+        </a>
         <ThemeProvider defaultTheme="system">
           <QueryProvider>
             <Suspense fallback={null}>
@@ -93,7 +100,11 @@ export default function RootLayout({
             </Suspense>
             <ErrorBoundary>
               <ShortcutProvider>
-                {children}
+                <Suspense fallback={null}>
+                  <main id="main-content">
+                    {children}
+                  </main>
+                </Suspense>
                 <ShortcutsHelpModal />
               </ShortcutProvider>
             </ErrorBoundary>

@@ -105,7 +105,7 @@ export function AvatarPicker({ value, onChange, userId, userInitial = "U" }: Ava
         type="button"
         onClick={handleEditClick}
         disabled={isUploading}
-        className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-bg text-fg-muted transition-transform hover:scale-110 hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-ring-offset disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+        className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-bg text-fg-muted transition-transform hover:scale-110 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-ring-offset disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
         style={{
           boxShadow: '0 1.556px 4.667px 0 rgba(0, 0, 0, .1)'
         }}

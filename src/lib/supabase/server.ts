@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
@@ -28,6 +29,15 @@ export async function createClient() {
     }
   )
 }
+
+/**
+ * Cached auth user getter - deduplicates getUser() calls within a single request.
+ * Use this in server components and generateMetadata to avoid redundant auth checks.
+ */
+export const getUser = cache(async () => {
+  const supabase = await createClient();
+  return supabase.auth.getUser();
+});
 
 /**
  * Create a Supabase client with Service Role privileges

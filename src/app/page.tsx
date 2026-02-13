@@ -1,18 +1,17 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { DashboardClient } from "@/components/dashboard-client";
 import { LandingPage } from "@/components/landing-page";
 import { OnboardingClient } from "@/components/onboarding-client";
+import { prefetchSpaces } from "@/lib/server/prefetch-links";
 import { allChangelogs } from "contentlayer/generated";
 
 export default async function Home(props: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const supabase = await createClient();
-
   // Server-side auth check (no client-side flash)
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await getUser();
 
   // Not authenticated - show landing page
   if (!user) {
@@ -25,6 +24,7 @@ export default async function Home(props: {
   }
 
   // Check if user needs onboarding (server-side to prevent flash)
+  const supabase = await createClient();
   const { data: profile } = await supabase
     .from("user_profiles")
     .select("onboarding_completed")
@@ -35,14 +35,18 @@ export default async function Home(props: {
   const needsOnboarding = !profile || !profile.onboarding_completed;
   
   if (needsOnboarding) {
-    return <OnboardingClient user={JSON.parse(JSON.stringify(user))} />;
+    return <OnboardingClient user={user} />;
   }
+
+  // Prefetch spaces server-side for instant rendering
+  const initialSpaces = await prefetchSpaces(user.id);
 
   // Render dashboard - TanStack Query handles data fetching client-side
   // Shell renders instantly, content uses cached data or shows skeleton
   return (
     <DashboardClient
-      user={JSON.parse(JSON.stringify(user))}
+      user={user}
+      initialSpaces={initialSpaces}
     />
   );
 }

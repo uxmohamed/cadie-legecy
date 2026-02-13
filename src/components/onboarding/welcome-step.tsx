@@ -74,7 +74,7 @@ export function WelcomeStep({ user, onComplete, isLoading = false }: WelcomeStep
               required
               disabled={isLoading}
               autoFocus
-              className="w-full px-4 py-4 bg-bg-input border border-transparent text-fg text-[14px] font-medium rounded-[12px] outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#2783de] placeholder:text-fg-subtle disabled:opacity-50 text-left"
+              className="w-full px-4 py-4 bg-bg-input border border-transparent text-fg text-[14px] font-medium rounded-[12px] focus-visible:outline-none transition-colors focus:border-transparent focus:ring-2 focus:ring-[#2783de] placeholder:text-fg-subtle disabled:opacity-50 text-left"
             />
           </div>
           {error && (

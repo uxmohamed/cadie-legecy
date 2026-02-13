@@ -8,7 +8,12 @@ import { DashboardContent } from "@/components/dashboard-content";
 import { LinkListSkeleton } from "@/components/skeletons";
 import { useRealtimeSync } from "@/features/links/hooks/use-realtime-sync.hook";
 import { useSpaces } from "@/features/spaces/queries";
-import { SpaceModal } from "@/components/spaces/space-modal";
+import dynamic from "next/dynamic";
+
+const SpaceModal = dynamic(
+  () => import("@/components/spaces/space-modal").then((mod) => mod.SpaceModal),
+  { ssr: false }
+);
 import type { User } from "@supabase/supabase-js";
 import type { Link } from "@/features/links/types";
 import type { Space } from "@/types";
@@ -16,9 +21,10 @@ import type { Space } from "@/types";
 interface DashboardClientProps {
   user: User;
   initialView?: "trash" | string | null; // "trash" for trash view, string for space ID, null for all items
+  initialSpaces?: Space[];
 }
 
-export function DashboardClient({ user, initialView = null }: DashboardClientProps) {
+export function DashboardClient({ user, initialView = null, initialSpaces }: DashboardClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -48,7 +54,7 @@ export function DashboardClient({ user, initialView = null }: DashboardClientPro
   } | null>(null);
   
   // Spaces management
-  const { spaces, createSpace, updateSpace, deleteSpace } = useSpaces(!!user);
+  const { spaces, createSpace, updateSpace, deleteSpace } = useSpaces(!!user, initialSpaces);
   const [spaceModalOpen, setSpaceModalOpen] = React.useState(false);
   const [editingSpace, setEditingSpace] = React.useState<Space | null>(null);
   

@@ -23,64 +23,59 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get spaces with link counts
+    // Get spaces and active link IDs in parallel
     const supabase = await createClient();
-    const { data: spaces, error: spacesError } = await supabase
-      .from("spaces")
-      .select("*")
-      .eq("user_id", userId)
-      .order("sort_order", { ascending: true });
+    const [spacesResult, activeLinksResult] = await Promise.all([
+      supabase
+        .from("spaces")
+        .select("*")
+        .eq("user_id", userId)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("links")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("is_deleted", false)
+        .eq("is_archived", false),
+    ]);
 
-    if (spacesError) {
+    if (spacesResult.error) {
       return NextResponse.json(
-        { error: spacesError.message },
+        { error: spacesResult.error.message },
         { status: 500 }
       );
     }
 
-    // Get link counts for each space via link_spaces junction table
-    // Only count active (non-deleted, non-archived) links
+    const spaces = spacesResult.data;
     const spaceIds = spaces?.map(s => s.id) || [];
-    const counts: Record<string, number> = {};
-    
-    if (spaceIds.length > 0) {
-      // Get all link_spaces entries for user's spaces
-      const { data: linkSpaces, error: linkSpacesError } = await supabase
-        .from("link_spaces")
-        .select("space_id, link_id")
-        .in("space_id", spaceIds);
 
-      if (linkSpacesError) {
-        return NextResponse.json(
-          { error: linkSpacesError.message },
-          { status: 500 }
-        );
-      }
-
-      // Get all links that are in these spaces and are active
-      const linkIds = [...new Set(linkSpaces?.map(ls => ls.link_id) || [])];
-      
-      if (linkIds.length > 0) {
-        const { data: activeLinks, error: linksError } = await supabase
-          .from("links")
-          .select("id")
-          .in("id", linkIds)
-          .eq("user_id", userId)
-          .eq("is_deleted", false)
-          .eq("is_archived", false);
-
-        if (!linksError && activeLinks) {
-          const activeLinkIds = new Set(activeLinks.map(l => l.id));
-          
-          // Count active links per space
-          linkSpaces?.forEach((linkSpace) => {
-            if (activeLinkIds.has(linkSpace.link_id)) {
-              counts[linkSpace.space_id] = (counts[linkSpace.space_id] || 0) + 1;
-            }
-          });
-        }
-      }
+    if (spaceIds.length === 0 || !activeLinksResult.data) {
+      const spacesWithCounts = spaces?.map((space) => ({
+        ...space,
+        link_count: 0,
+      }));
+      const response = NextResponse.json({ spaces: spacesWithCounts });
+      response.headers.set(
+        "Cache-Control",
+        "private, max-age=60, stale-while-revalidate=120"
+      );
+      return response;
     }
+
+    // Get link_spaces mappings for all spaces in a single query
+    const activeLinkIds = new Set(activeLinksResult.data.map(l => l.id));
+    const { data: linkSpaces } = await supabase
+      .from("link_spaces")
+      .select("space_id, link_id")
+      .in("space_id", spaceIds);
+
+    // Count active links per space
+    const counts: Record<string, number> = {};
+    linkSpaces?.forEach((linkSpace) => {
+      if (activeLinkIds.has(linkSpace.link_id)) {
+        counts[linkSpace.space_id] = (counts[linkSpace.space_id] || 0) + 1;
+      }
+    });
 
     // Add counts to spaces
     const spacesWithCounts = spaces?.map((space) => ({
@@ -88,7 +83,12 @@ export async function GET(request: NextRequest) {
       link_count: counts[space.id] || 0,
     }));
 
-    return NextResponse.json({ spaces: spacesWithCounts });
+    const response = NextResponse.json({ spaces: spacesWithCounts });
+    response.headers.set(
+      "Cache-Control",
+      "private, max-age=60, stale-while-revalidate=120"
+    );
+    return response;
   } catch (error) {
     console.error("Error fetching spaces:", error);
     return NextResponse.json(

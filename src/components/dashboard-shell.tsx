@@ -345,7 +345,7 @@ export function DashboardShell({
         <header className="flex h-16 items-center justify-between px-4 sm:px-6 md:px-8">
           <button
             onClick={() => onViewChange(null)}
-            className={`focus:outline-none ${selectedCategoryId !== null ? 'cursor-pointer' : 'cursor-default'}`}
+            className={`focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-lg ${selectedCategoryId !== null ? 'cursor-pointer' : 'cursor-default'}`}
             aria-label="Go to All Items"
           >
             <LogoIcon className="h-8 w-8" />

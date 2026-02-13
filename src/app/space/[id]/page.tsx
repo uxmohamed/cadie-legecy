@@ -1,6 +1,7 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { DashboardClient } from "@/components/dashboard-client";
+import { prefetchSpaces } from "@/lib/server/prefetch-links";
 import type { Metadata } from "next";
 
 interface SpacePageProps {
@@ -11,11 +12,10 @@ interface SpacePageProps {
 
 export async function generateMetadata({ params }: SpacePageProps): Promise<Metadata> {
   const { id } = await params;
-  const supabase = await createClient();
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await getUser();
 
   // If not authenticated, return default metadata
   if (!user) {
@@ -33,6 +33,7 @@ export async function generateMetadata({ params }: SpacePageProps): Promise<Meta
   }
 
   // Fetch space name for metadata
+  const supabase = await createClient();
   const { data: space } = await supabase
     .from("spaces")
     .select("name")
@@ -54,11 +55,10 @@ export async function generateMetadata({ params }: SpacePageProps): Promise<Meta
 
 export default async function SpacePage({ params }: SpacePageProps) {
   const { id } = await params;
-  const supabase = await createClient();
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await getUser();
 
   // Not authenticated - redirect to auth
   if (!user) {
@@ -72,6 +72,7 @@ export default async function SpacePage({ params }: SpacePageProps) {
   }
 
   // Verify space exists and belongs to user
+  const supabase = await createClient();
   const { data: space, error: spaceError } = await supabase
     .from("spaces")
     .select("id, name")
@@ -83,12 +84,16 @@ export default async function SpacePage({ params }: SpacePageProps) {
     notFound();
   }
 
+  // Prefetch spaces server-side for instant rendering
+  const initialSpaces = await prefetchSpaces(user.id);
+
   // Render dashboard with space view
   // Shell renders instantly, TanStack Query handles data client-side
   return (
     <DashboardClient
-      user={JSON.parse(JSON.stringify(user))}
+      user={user}
       initialView={id}
+      initialSpaces={initialSpaces}
     />
   );
 }

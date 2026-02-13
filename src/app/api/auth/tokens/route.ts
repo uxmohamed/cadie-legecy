@@ -48,7 +48,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ tokens: tokens || [] });
+    const response = NextResponse.json({ tokens: tokens || [] });
+    response.headers.set("Cache-Control", "private, max-age=0");
+    return response;
   } catch (error) {
     console.error("Error in GET /api/auth/tokens:", error);
     return NextResponse.json(

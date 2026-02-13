@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Link, LinkFilters } from "@/features/links/types";
+import type { Space } from "@/types";
 
 /**
  * Initial page size for prefetching - balanced for performance and scrolling experience
@@ -74,6 +75,57 @@ export async function prefetchTrashLinks(
   userId: string
 ): Promise<{ links: Link[]; total: number }> {
   return prefetchLinks(userId, { is_deleted: true });
+}
+
+/**
+ * Server-side function to prefetch spaces for a user
+ * Called from Server Components to pass initial data to client
+ */
+export async function prefetchSpaces(userId: string): Promise<Space[]> {
+  const supabase = await createClient();
+
+  // Run spaces and active links queries in parallel
+  const [spacesResult, activeLinksResult] = await Promise.all([
+    supabase
+      .from("spaces")
+      .select("*")
+      .eq("user_id", userId)
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("links")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("is_deleted", false)
+      .eq("is_archived", false),
+  ]);
+
+  if (spacesResult.error || !spacesResult.data) {
+    console.error("Error prefetching spaces:", spacesResult.error);
+    return [];
+  }
+
+  const spaces = spacesResult.data;
+  const spaceIds = spaces.map(s => s.id);
+
+  if (spaceIds.length === 0 || !activeLinksResult.data) {
+    return spaces.map(s => ({ ...s, link_count: 0 }));
+  }
+
+  const activeLinkIds = new Set(activeLinksResult.data.map(l => l.id));
+
+  const { data: linkSpaces } = await supabase
+    .from("link_spaces")
+    .select("space_id, link_id")
+    .in("space_id", spaceIds);
+
+  const counts: Record<string, number> = {};
+  linkSpaces?.forEach((ls) => {
+    if (activeLinkIds.has(ls.link_id)) {
+      counts[ls.space_id] = (counts[ls.space_id] || 0) + 1;
+    }
+  });
+
+  return spaces.map(s => ({ ...s, link_count: counts[s.id] || 0 }));
 }
 
 /**

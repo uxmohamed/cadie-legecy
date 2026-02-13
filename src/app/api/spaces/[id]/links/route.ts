@@ -8,19 +8,25 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Use authenticateRequest to support both Bearer token (extension) and session auth (web)
-    const userId = await authenticateRequest(request);
-    
+    interface AddLinksBody {
+      link_ids: string[];
+    }
+
+    // Parallelize independent async operations
+    const [userId, { id: spaceId }, body] = await Promise.all([
+      authenticateRequest(request),
+      params,
+      request.json() as Promise<AddLinksBody>,
+    ]);
+
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id: spaceId } = await params;
-
-    // Rate limiting
+    // Rate limiting (depends on userId)
     const identifier = getIdentifier(request, userId);
     const { success, limit, reset, remaining } = await rateLimitSpaces.limit(identifier);
-    
+
     if (!success) {
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
@@ -28,11 +34,6 @@ export async function POST(
       );
     }
 
-    interface AddLinksBody {
-      link_ids: string[];
-    }
-
-    const body = (await request.json()) as AddLinksBody;
     const { link_ids } = body;
 
     if (!link_ids || !Array.isArray(link_ids) || link_ids.length === 0) {
@@ -42,37 +43,37 @@ export async function POST(
       );
     }
 
-    // Verify space belongs to user
+    // Verify space belongs to user AND all links belong to user in parallel
     const supabase = await createClient();
-    const { data: space, error: spaceError } = await supabase
-      .from("spaces")
-      .select("id")
-      .eq("id", spaceId)
-      .eq("user_id", userId)
-      .single();
+    const [spaceResult, linksResult] = await Promise.all([
+      supabase
+        .from("spaces")
+        .select("id")
+        .eq("id", spaceId)
+        .eq("user_id", userId)
+        .single(),
+      supabase
+        .from("links")
+        .select("id")
+        .eq("user_id", userId)
+        .in("id", link_ids),
+    ]);
 
-    if (spaceError || !space) {
+    if (spaceResult.error || !spaceResult.data) {
       return NextResponse.json(
         { error: "Space not found" },
         { status: 404 }
       );
     }
 
-    // Verify all links belong to user
-    const { data: links, error: linksError } = await supabase
-      .from("links")
-      .select("id")
-      .eq("user_id", userId)
-      .in("id", link_ids);
-
-    if (linksError) {
+    if (linksResult.error) {
       return NextResponse.json(
-        { error: linksError.message },
+        { error: linksResult.error.message },
         { status: 500 }
       );
     }
 
-    if (!links || links.length !== link_ids.length) {
+    if (!linksResult.data || linksResult.data.length !== link_ids.length) {
       return NextResponse.json(
         { error: "One or more links not found" },
         { status: 404 }
@@ -119,19 +120,25 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Use authenticateRequest to support both Bearer token (extension) and session auth (web)
-    const userId = await authenticateRequest(request);
-    
+    interface RemoveLinksBody {
+      link_ids: string[];
+    }
+
+    // Parallelize independent async operations
+    const [userId, { id: spaceId }, body] = await Promise.all([
+      authenticateRequest(request),
+      params,
+      request.json() as Promise<RemoveLinksBody>,
+    ]);
+
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id: spaceId } = await params;
-
-    // Rate limiting
+    // Rate limiting (depends on userId)
     const identifier = getIdentifier(request, userId);
     const { success, limit, reset, remaining } = await rateLimitSpaces.limit(identifier);
-    
+
     if (!success) {
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
@@ -139,11 +146,6 @@ export async function DELETE(
       );
     }
 
-    interface RemoveLinksBody {
-      link_ids: string[];
-    }
-
-    const body = (await request.json()) as RemoveLinksBody;
     const { link_ids } = body;
 
     if (!link_ids || !Array.isArray(link_ids) || link_ids.length === 0) {
