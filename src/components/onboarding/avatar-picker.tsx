@@ -95,7 +95,7 @@ export function AvatarPicker({ value, onChange, userId, userInitial = "U" }: Ava
       {/* Avatar Display */}
       <Avatar className="h-24 w-24">
         <AvatarImage src={value} alt="Your avatar" />
-        <AvatarFallback className="bg-[var(--bg-inverse)] text-[var(--text-inverse)] text-2xl">
+        <AvatarFallback className="bg-bg-inverse text-fg-inverse text-2xl">
           {userInitial}
         </AvatarFallback>
       </Avatar>
@@ -105,7 +105,7 @@ export function AvatarPicker({ value, onChange, userId, userInitial = "U" }: Ava
         type="button"
         onClick={handleEditClick}
         disabled={isUploading}
-        className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--background)] text-[var(--icon-secondary)] transition-transform hover:scale-110 hover:text-[var(--icon-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-l0-solid)] disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+        className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-bg text-fg-muted transition-transform hover:scale-110 hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-ring-offset disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
         style={{
           boxShadow: '0 1.556px 4.667px 0 rgba(0, 0, 0, .1)'
         }}
@@ -130,7 +130,7 @@ export function AvatarPicker({ value, onChange, userId, userInitial = "U" }: Ava
 
       {/* Error Message */}
       {error && (
-        <p className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-[var(--accent-red-primary)] whitespace-nowrap">
+        <p className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-destructive whitespace-nowrap">
           {error}
         </p>
       )}

@@ -20,17 +20,17 @@ export function SettingsAppearance() {
           <button
             key={option.id}
             onClick={() => setTheme(option.id)}
-            className="group relative flex flex-col gap-3 rounded-xl p-2 text-left transition-all outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
+            className="group relative flex flex-col gap-3 rounded-xl p-2 text-left transition-all outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-ring"
           >
             <div className={`relative aspect-[4/3] w-full overflow-hidden rounded-lg border-2 transition-all group-hover:brightness-[0.97] dark:group-hover:brightness-110 ${
               theme === option.id
-                ? "border-[var(--accent-blue-primary)]"
-                : "border-[var(--border-secondary)]"
+                ? "border-accent"
+                : "border-border-muted"
             }`}>
               <ThemePreview variant={option.id} isSelected={theme === option.id} />
             </div>
             <div className="px-1 pb-1">
-              <span className="block text-sm font-medium text-[var(--text-primary)]">
+              <span className="block text-sm font-medium text-fg">
                 {option.label}
               </span>
             </div>

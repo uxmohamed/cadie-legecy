@@ -20,7 +20,7 @@ export function ChangelogList({ entries }: ChangelogListProps) {
   if (entries.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-[var(--text-tertiary)]">No changelog entries yet.</p>
+        <p className="text-fg-subtle">No changelog entries yet.</p>
       </div>
     );
   }
@@ -52,7 +52,7 @@ export function ChangelogList({ entries }: ChangelogListProps) {
               {/* Left column - Date */}
               <div className="md:w-48 flex-shrink-0">
                 <div className="md:sticky md:top-8 h-5 flex items-center">
-                  <time className="text-sm font-medium text-[var(--text-tertiary)]">
+                  <time className="text-sm font-medium text-fg-subtle">
                     {formattedDate}
                   </time>
                 </div>
@@ -62,13 +62,13 @@ export function ChangelogList({ entries }: ChangelogListProps) {
               <div className="flex-1 justify-start md:pl-8 relative pb-8 md:pb-10">
                 {/* Vertical timeline line - hidden for last entry */}
                 {index < sortedEntries.length - 1 && (
-                  <div className="hidden md:block absolute top-2.5 left-0 w-px h-full -translate-x-1/2 bg-[var(--border-primary)]" />
+                  <div className="hidden md:block absolute top-2.5 left-0 w-px h-full -translate-x-1/2 bg-border" />
                 )}
                 {/* Sticky timeline dot - moves with date, hidden if only one entry */}
                 {sortedEntries.length > 1 && (
                   <div className="hidden md:block absolute left-0 top-0 h-full z-10">
                     <div className="sticky top-8 h-5 flex items-center">
-                      <div className="-translate-x-1/2 size-1.5 rounded-full bg-[var(--accent-blue-primary)]" />
+                      <div className="-translate-x-1/2 size-1.5 rounded-full bg-[var(--accent)]" />
                     </div>
                   </div>
                 )}

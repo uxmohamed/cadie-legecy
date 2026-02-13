@@ -6,17 +6,17 @@ interface LogoProps {
 }
 
 const variantClasses = {
-  "neutral-900": "fill-[var(--text-primary)]",
-  "neutral-800": "fill-[var(--text-primary)]",
-  "neutral-700": "fill-[var(--text-secondary)]",
-  "neutral-600": "fill-[var(--text-secondary)]",
-  "neutral-500": "fill-[var(--text-tertiary)]",
-  "neutral-400": "fill-[var(--text-tertiary)]",
-  "neutral-300": "fill-[var(--text-tertiary)]",
-  "neutral-200": "fill-[var(--text-tertiary)]",
-  "neutral-100": "fill-[var(--text-tertiary)]",
-  "white": "fill-[var(--text-inverse)]",
-  "black": "fill-[var(--text-primary)]",
+  "neutral-900": "fill-[var(--fg)]",
+  "neutral-800": "fill-[var(--fg)]",
+  "neutral-700": "fill-[var(--fg-muted)]",
+  "neutral-600": "fill-[var(--fg-muted)]",
+  "neutral-500": "fill-[var(--fg-subtle)]",
+  "neutral-400": "fill-[var(--fg-subtle)]",
+  "neutral-300": "fill-[var(--fg-subtle)]",
+  "neutral-200": "fill-[var(--fg-subtle)]",
+  "neutral-100": "fill-[var(--fg-subtle)]",
+  "white": "fill-[var(--fg-inverse)]",
+  "black": "fill-[var(--fg)]",
 } as const;
 
 export function Logo({ className, variant = "neutral-900" }: LogoProps) {
@@ -24,10 +24,10 @@ export function Logo({ className, variant = "neutral-900" }: LogoProps) {
   const getFillClass = () => {
     // For variants that should be theme-aware, use dark mode classes
     if (variant === "white") {
-      return "fill-[var(--text-inverse)] dark:fill-[var(--text-primary)]";
+      return "fill-[var(--fg-inverse)] dark:fill-[var(--fg)]";
     }
     if (variant === "neutral-200") {
-      return "fill-[var(--text-tertiary)] dark:fill-[var(--text-primary)]";
+      return "fill-[var(--fg-subtle)] dark:fill-[var(--fg)]";
     }
     // For other variants, use the existing CSS variable approach
     return variantClasses[variant];

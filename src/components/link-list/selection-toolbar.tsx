@@ -78,7 +78,7 @@ export function SelectionToolbar({
           <Button
             variant="ghost"
             onClick={onBatchPermanentDelete}
-            className="rounded-full h-auto gap-1.5 px-3 py-1.5 text-sm font-[470] text-[var(--accent-red-primary)] hover:bg-white/25 transition-colors"
+            className="rounded-full h-auto gap-1.5 px-3 py-1.5 text-sm font-[470] text-[var(--destructive)] hover:bg-white/25 transition-colors"
           >
             <IconTrash className="h-4 w-4" />
             Delete permanently
@@ -108,7 +108,7 @@ export function SelectionToolbar({
       <Button
         variant="ghost"
         onClick={onBatchDelete}
-        className="rounded-full h-auto gap-1.5 px-3 py-1.5 text-sm font-[470] text-[var(--accent-red-primary)] hover:bg-white/25 transition-colors"
+        className="rounded-full h-auto gap-1.5 px-3 py-1.5 text-sm font-[470] text-[var(--destructive)] hover:bg-white/25 transition-colors"
       >
         <IconTrash className="h-4 w-4" />
         Delete

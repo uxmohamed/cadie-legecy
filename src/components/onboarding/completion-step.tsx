@@ -71,7 +71,7 @@ export function CompletionStep({
   const { theme } = useTheme();
   const [showContent, setShowContent] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
-  const [logoFillColor, setLogoFillColor] = React.useState<string>("var(--text-tertiary)");
+  const [logoFillColor, setLogoFillColor] = React.useState<string>("var(--fg-subtle)");
 
   // Wait for mount to avoid hydration mismatch with window.matchMedia
   React.useEffect(() => {
@@ -89,7 +89,7 @@ export function CompletionStep({
 
   // Update logo fill color when dark mode changes (initial gray color)
   React.useEffect(() => {
-    setLogoFillColor(isDarkMode ? "var(--text-secondary)" : "var(--text-tertiary)");
+    setLogoFillColor(isDarkMode ? "var(--fg-muted)" : "var(--fg-subtle)");
   }, [isDarkMode]);
 
   // Calculate durations based on animation speed
@@ -128,7 +128,7 @@ export function CompletionStep({
     // Light mode: gray → black, Dark mode: gray → white
     // The spring animation will handle the smooth transition
     const logoColorTimer = setTimeout(() => {
-      setLogoFillColor(isDarkMode ? "var(--text-inverse)" : "var(--text-primary)");
+      setLogoFillColor(isDarkMode ? "var(--fg-inverse)" : "var(--fg)");
     }, 0);
 
     // Show content after logo settles
@@ -154,7 +154,7 @@ export function CompletionStep({
   const buttonDelaySeconds = (((taglineWords.length - 1) * config.textStagger) + config.buttonDelay) / 1000;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-[var(--bg-l0-solid)]">
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-bg">
       {/* Fixed centered container - no layout animations */}
       <div className="flex flex-col items-center text-center">
         {/* Logo with shared layout animation from top */}
@@ -191,7 +191,7 @@ export function CompletionStep({
         {/* Text and button container - fixed position below logo */}
         <div className="mt-8 flex flex-col items-center gap-6">
           {/* Tagline text - word by word animation */}
-          <p className="text-2xl font-medium text-[var(--text-primary)] tracking-[-0.5px] flex flex-wrap justify-center gap-x-[0.3em]">
+          <p className="text-2xl font-medium text-[var(--fg)] tracking-[-0.5px] flex flex-wrap justify-center gap-x-[0.3em]">
             {taglineWords.map((word, index) => (
               <motion.span
                 key={index}

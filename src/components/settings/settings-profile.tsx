@@ -164,7 +164,7 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <IconLoader2 className="h-6 w-6 animate-spin text-[var(--icon-secondary)]" />
+        <IconLoader2 className="h-6 w-6 animate-spin text-fg-muted" />
       </div>
     );
   }
@@ -176,7 +176,7 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
         <div className="relative group">
           <Avatar className="h-24 w-24 shadow-sm">
             <AvatarImage src={avatarUrl} alt={displayName} />
-            <AvatarFallback className="bg-[var(--brand-primary)] text-white text-2xl">
+            <AvatarFallback className="bg-accent text-white text-2xl">
               {displayName.charAt(0).toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
@@ -184,7 +184,7 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploadingAvatar}
-            className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--secondary)] text-[var(--icon-secondary)] transition-transform hover:scale-110 hover:text-[var(--icon-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-active)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-l0-solid)] disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-btn-secondary text-fg-muted transition-transform hover:scale-110 hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-ring-offset disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             style={{
               boxShadow: 'none'
             }}
@@ -205,7 +205,7 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
           />
         </div>
         <div>
-          <h3 className="text-sm font-normal text-[var(--text-primary)]">Profile Photo</h3>
+          <h3 className="text-sm font-normal text-fg">Profile Photo</h3>
         </div>
       </div>
 
@@ -219,13 +219,13 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Your name"
-              className="w-full bg-[var(--bg-field-default)] border-transparent shadow-none before:shadow-none [&_input]:px-4 [&_input]:pr-24 [&_input]:py-[12px]"
+              className="w-full bg-bg-input border-transparent shadow-none before:shadow-none [&_input]:px-4 [&_input]:pr-24 [&_input]:py-[12px]"
             />
             <Button 
               onClick={handleSaveName} 
               disabled={isSaving || displayName.trim() === originalDisplayName.trim()}
               variant="default"
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-4 text-sm text-[var(--text-always-white)]"
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-4 text-sm text-fg-on-accent"
             >
               {isSaving ? (
                 <>
@@ -250,7 +250,7 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
                     value={user.email}
                     readOnly
                     disabled
-                    className="w-full bg-[var(--bg-field-default)] border-transparent shadow-none before:shadow-none opacity-75 [&_input]:px-4 [&_input]:py-[12px]"
+                    className="w-full bg-bg-input border-transparent shadow-none before:shadow-none opacity-75 [&_input]:px-4 [&_input]:py-[12px]"
                     style={{ cursor: 'not-allowed' }}
                   />
                 </div>
@@ -277,19 +277,19 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
             </Button>
 
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-[var(--text-primary)]">Danger Zone</h3>
+              <h3 className="text-sm font-medium text-fg">Danger Zone</h3>
               <AlertDialog onOpenChange={(open) => !open && setDeleteConfirmEmail("")}>
                 <AlertDialogTrigger asChild>
                   <div 
-                    className="rounded-lg bg-[var(--bg-field)] p-4 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-active)] focus-visible:ring-offset-2" 
+                    className="rounded-lg bg-bg-muted p-4 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" 
                     style={{ backgroundColor: 'rgba(255, 80, 80, 0.1)' }}
                     onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 80, 80, 0.14)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 80, 80, 0.1)'; }}
                   >
-                    <div className="text-sm font-medium text-[var(--cadie-red)] mb-3">
+                    <div className="text-sm font-medium text-destructive mb-3">
                       Delete Account
                     </div>
-                    <p className="text-sm text-[var(--text-secondary)]">
+                    <p className="text-sm text-fg-muted">
                       Deleting your account will permanently delete all your data. This action cannot be undone.
                     </p>
                   </div>
@@ -303,15 +303,15 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
                           This action cannot be undone. This will permanently delete your account and all associated data.
                         </p>
                         <div className="space-y-2">
-                          <Label htmlFor="confirm-email" className="text-[var(--text-secondary)]">
-                            Type <span className="font-medium text-[var(--text-primary)]">{user.email}</span> to confirm
+                          <Label htmlFor="confirm-email" className="text-fg-muted">
+                            Type <span className="font-medium text-fg">{user.email}</span> to confirm
                           </Label>
                           <Input
                             id="confirm-email"
                             value={deleteConfirmEmail}
                             onChange={(e) => setDeleteConfirmEmail(e.target.value)}
                             placeholder="Enter your email"
-                            className="bg-[var(--bg-field-default)] border-transparent shadow-none before:shadow-none"
+                            className="bg-bg-input border-transparent shadow-none before:shadow-none"
                           />
                         </div>
                       </div>

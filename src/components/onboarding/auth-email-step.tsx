@@ -53,10 +53,10 @@ export function AuthEmailStep({ onComplete, onBack, isLoading = false }: AuthEma
     <>
       {/* Header Section */}
       <div className="flex flex-col gap-[2px] items-center w-full">
-        <h1 className="text-[18px] font-semibold leading-[32px] text-[var(--text-primary)] text-center">
+        <h1 className="text-[18px] font-semibold leading-[32px] text-fg text-center">
           Continue with Email
         </h1>
-        <p className="text-[16px] font-medium leading-[32px] text-[var(--grey-400)] text-center">
+        <p className="text-[16px] font-medium leading-[32px] text-fg-muted text-center">
           We&apos;ll send you a magic link to sign in.
         </p>
       </div>
@@ -78,11 +78,11 @@ export function AuthEmailStep({ onComplete, onBack, isLoading = false }: AuthEma
                 required
                 disabled={loading || isLoading}
                 autoFocus
-                className="w-full px-4 py-4 bg-[var(--bg-field-default)] border border-transparent text-[var(--text-primary)] text-[14px] font-medium rounded-[12px] outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#2783de] placeholder:text-[var(--text-tertiary)] disabled:opacity-50"
+                className="w-full px-4 py-4 bg-bg-input border border-transparent text-fg text-[14px] font-medium rounded-[12px] outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#2783de] placeholder:text-fg-subtle disabled:opacity-50"
               />
             </div>
             {error && (
-              <p className="text-sm text-[var(--accent-red-primary)]">
+              <p className="text-sm text-destructive">
                 {error}
               </p>
             )}
@@ -142,13 +142,13 @@ export function AuthEmailStep({ onComplete, onBack, isLoading = false }: AuthEma
       </div>
       
       {/* Terms & Conditions Text */}
-      <p className="font-normal leading-[16px] text-[12px] text-[var(--text-tertiary)] text-center w-full">
+      <p className="font-normal leading-[16px] text-[12px] text-fg-subtle text-center w-full">
         <span>By continuing, you acknowledge that you understand and agree to the </span>
-        <a href="/terms" className="underline text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
+        <a href="/terms" className="underline text-fg-subtle hover:text-fg transition-colors">
           Terms & Conditions
         </a>
         <span> and </span>
-        <a href="/privacy" className="underline text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
+        <a href="/privacy" className="underline text-fg-subtle hover:text-fg transition-colors">
           Privacy Policy
         </a>.
       </p>

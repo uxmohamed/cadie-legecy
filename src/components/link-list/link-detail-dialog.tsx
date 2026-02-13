@@ -2,123 +2,147 @@
 
 import * as React from "react";
 import type { Link } from "@/features/links/types";
-import { formatDate } from "@/lib/utils";
-import { Favicon } from "@/components/ui/favicon";
+import type { Space } from "@/types";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
-import { IconWorld, IconExternalLink } from "@tabler/icons-react";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { PreviewPanel } from "./link-detail/preview-panel";
+import { SidebarPanel } from "./link-detail/sidebar-panel";
+import { ActionBar } from "./link-detail/action-bar";
 
 interface LinkDetailDialogProps {
   link: Link | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // Action handlers
+  onCopy?: (url: string, isColor?: boolean) => Promise<void>;
+  onPin?: (id: string) => Promise<void>;
+  onUnpin?: (id: string) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
+  onRename?: (link: Link) => void;
+  // Spaces
+  spaces?: Space[];
+  linkSpaces?: string[];
+  onAddToSpace?: (linkId: string, spaceId: string) => Promise<void>;
+  onRemoveFromSpace?: (linkId: string, spaceId: string) => Promise<void>;
 }
 
 export function LinkDetailDialog({
   link,
   open,
   onOpenChange,
+  onCopy,
+  onPin,
+  onUnpin,
+  onDelete,
+  onRename,
+  spaces = [],
+  linkSpaces = [],
+  onAddToSpace,
+  onRemoveFromSpace,
 }: LinkDetailDialogProps) {
   if (!link) return null;
 
   const isColor = link.content_type === "color";
-  const isUrl = link.content_type === "url";
+
+  // Action handlers
+  const handleOpen = () => {
+    window.open(link.url, "_blank", "noopener,noreferrer");
+  };
+
+  const handleCopy = async () => {
+    const copyValue = isColor ? (link.color_value || link.title) : link.url;
+    if (onCopy) {
+      await onCopy(copyValue, isColor);
+    } else {
+      await navigator.clipboard.writeText(copyValue);
+      toast.success(isColor ? "Color copied" : "URL copied");
+    }
+  };
+
+  const handlePin = async () => {
+    if (onPin) {
+      await onPin(link.id);
+    }
+  };
+
+  const handleUnpin = async () => {
+    if (onUnpin) {
+      await onUnpin(link.id);
+    }
+  };
+
+  const handleRename = () => {
+    if (onRename) {
+      onRename(link);
+      onOpenChange(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (onDelete) {
+      await onDelete(link.id);
+      onOpenChange(false);
+    }
+  };
+
+  const handleAddToSpace = async (spaceId: string) => {
+    if (onAddToSpace) {
+      await onAddToSpace(link.id, spaceId);
+    }
+  };
+
+  const handleRemoveFromSpace = async (spaceId: string) => {
+    if (onRemoveFromSpace) {
+      await onRemoveFromSpace(link.id, spaceId);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden gap-0">
-        {/* Open Graph Image or Placeholder */}
-        <div className="w-full aspect-video bg-[var(--bg-l1-solid)] relative border-b border-[var(--border-primary)]">
-          {link.og_image_url ? (
-            <img
-              src={link.og_image_url}
-              alt={link.title}
-              className="w-full h-full object-cover"
+      <DialogContent
+        className="sm:max-w-[960px] p-0 overflow-hidden gap-0 max-h-[90vh]"
+        showCloseButton={true}
+      >
+        {/* Accessible title - visually hidden */}
+        <VisuallyHidden>
+          <DialogPrimitive.Title>
+            {link.title}
+          </DialogPrimitive.Title>
+        </VisuallyHidden>
+
+        {/* Split panel layout */}
+        <div className="flex flex-col sm:flex-row min-h-[500px] max-h-[90vh]">
+          {/* Preview Panel - Left side (60%) */}
+          <div className="w-full sm:w-[60%] aspect-video sm:aspect-auto sm:min-h-[500px] border-b sm:border-b-0 sm:border-r border-border overflow-hidden">
+            <PreviewPanel link={link} />
+          </div>
+
+          {/* Sidebar Panel - Right side (40%) */}
+          <div className="w-full sm:w-[40%] flex flex-col p-5 overflow-hidden">
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <SidebarPanel link={link} />
+            </div>
+
+            {/* Action Bar - Sticky at bottom */}
+            <ActionBar
+              link={link}
+              onOpen={handleOpen}
+              onCopy={handleCopy}
+              onPin={handlePin}
+              onUnpin={handleUnpin}
+              onRename={handleRename}
+              onDelete={handleDelete}
+              spaces={spaces}
+              linkSpaces={linkSpaces}
+              onAddToSpace={handleAddToSpace}
+              onRemoveFromSpace={handleRemoveFromSpace}
             />
-          ) : isColor && link.color_value ? (
-            <div
-              className="w-full h-full"
-              style={{ backgroundColor: link.color_value }}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              {link.domain ? (
-                <div className="transform scale-150">
-                  <Favicon
-                    url={link.favicon_url || ""}
-                    domain={link.domain}
-                    className="h-16 w-16"
-                  />
-                </div>
-              ) : (
-                <IconWorld className="h-16 w-16 text-[var(--text-tertiary)]" />
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="p-6 space-y-4">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-[var(--text-primary)] leading-tight">
-              {link.title}
-            </DialogTitle>
-          </DialogHeader>
-
-          {/* Domain + Favicon */}
-          {(link.domain || isColor) && (
-            <div className="flex items-center gap-2">
-              {link.domain && (
-                <div className="flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)]">
-                  <Favicon
-                    url={link.favicon_url || ""}
-                    domain={link.domain}
-                    className="h-4 w-4"
-                  />
-                  <span>{link.domain}</span>
-                </div>
-              )}
-              {isColor && link.color_value && (
-                <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                   <div 
-                    className="w-4 h-4 rounded-full border border-[var(--border-primary)]"
-                    style={{ backgroundColor: link.color_value }} 
-                   />
-                   <code className="font-mono text-xs">{link.color_value}</code>
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Metadata: Save Date */}
-           <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
-              <span>Saved {formatDate(new Date(link.created_at))}</span>
-           </div>
-
-          {/* Description */}
-          {link.description && (
-            <div className="text-sm text-[var(--text-secondary)] leading-relaxed">
-              {link.description}
-            </div>
-          )}
-          
-           {/* URL Link (if it is a URL) */}
-           {isUrl && (
-              <div className="pt-2">
-                <a
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow"
-                  className="inline-flex items-center gap-2 text-sm text-[var(--accent-blue-primary)] hover:underline"
-                >
-                  <IconExternalLink className="h-4 w-4" />
-                  {link.url}
-                </a>
-              </div>
-            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

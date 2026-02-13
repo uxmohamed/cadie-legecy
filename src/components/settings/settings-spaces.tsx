@@ -84,7 +84,7 @@ function SpaceItem({ space, onUpdate, onDelete }: SpaceItemProps) {
 
   if (isEditing) {
     return (
-      <div className="flex items-center gap-3 py-2 px-2 rounded-md bg-[var(--bg-field)]">
+      <div className="flex items-center gap-3 py-2 px-2 rounded-md bg-bg-muted">
         <IconCapsuleHorizontalFilled 
           className="h-4 w-4 shrink-0" 
           style={{ color: space.color }}
@@ -96,14 +96,14 @@ function SpaceItem({ space, onUpdate, onDelete }: SpaceItemProps) {
           onChange={(e) => setEditName(e.target.value)}
           onKeyDown={handleKeyDown}
           onBlur={handleSaveName}
-          className="flex-1 h-8 bg-[var(--bg-field-default)] border-transparent shadow-none before:shadow-none focus:bg-[var(--bg-main)] focus:border-[var(--border-active)] px-2"
+          className="flex-1 h-8 bg-bg-input border-transparent shadow-none before:shadow-none focus:bg-bg focus:border-accent px-2"
         />
 
         <div className="flex items-center gap-1">
           <Button
             size="icon"
             variant="ghost"
-            className="h-7 w-7 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--text-secondary)]"
+            className="h-7 w-7 text-fg-muted hover:text-fg hover:bg-bg-hover disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-fg-muted"
             onClick={handleSaveName}
             disabled={editName.trim() === space.name || !editName.trim()}
           >
@@ -112,7 +112,7 @@ function SpaceItem({ space, onUpdate, onDelete }: SpaceItemProps) {
           <Button
             size="icon"
             variant="ghost"
-            className="h-7 w-7 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)]"
+            className="h-7 w-7 text-fg-muted hover:text-fg hover:bg-bg-hover"
             onClick={handleCancel}
           >
             <IconX className="h-4 w-4" />
@@ -123,11 +123,11 @@ function SpaceItem({ space, onUpdate, onDelete }: SpaceItemProps) {
   }
 
   return (
-    <div className="group flex items-center gap-3 py-2 px-2 rounded-md hover:bg-[var(--bg-field-hover)] transition-colors w-full max-w-full overflow-hidden">
+    <div className="group flex items-center gap-3 py-2 px-2 rounded-md hover:bg-bg-hover transition-colors w-full max-w-full overflow-hidden">
       <Popover>
         <PopoverTrigger asChild>
           <button
-            className="h-6 w-6 flex items-center justify-center shrink-0 ring-2 ring-transparent hover:ring-[var(--border-hover)] transition-all cursor-pointer rounded-md"
+            className="h-6 w-6 flex items-center justify-center shrink-0 ring-2 ring-transparent hover:ring-border-hover transition-all cursor-pointer rounded-md"
             aria-label="Change color"
           >
             <IconCapsuleHorizontalFilled 
@@ -143,7 +143,7 @@ function SpaceItem({ space, onUpdate, onDelete }: SpaceItemProps) {
           />
         </PopoverContent>
       </Popover>
-      <span className="flex-1 w-0 text-sm text-[var(--text-primary)] font-medium overflow-hidden text-ellipsis whitespace-nowrap">
+      <span className="flex-1 w-0 text-sm text-fg font-medium overflow-hidden text-ellipsis whitespace-nowrap">
         {space.name}
       </span>
 
@@ -151,7 +151,7 @@ function SpaceItem({ space, onUpdate, onDelete }: SpaceItemProps) {
         <Button
           size="icon"
           variant="ghost"
-          className="h-7 w-7 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-overlay-hover)]"
+          className="h-7 w-7 text-fg-subtle hover:text-fg hover:bg-bg-hover"
           onClick={() => setIsEditing(true)}
         >
           <IconPencil className="h-3.5 w-3.5" />
@@ -161,7 +161,7 @@ function SpaceItem({ space, onUpdate, onDelete }: SpaceItemProps) {
             <Button
               size="icon"
               variant="ghost"
-              className="h-7 w-7 text-[var(--text-tertiary)] hover:text-[var(--text-destructive)] hover:bg-[var(--bg-overlay-destructive)]"
+              className="h-7 w-7 text-fg-subtle hover:text-destructive hover:bg-destructive-muted"
             >
               <IconTrash className="h-3.5 w-3.5" />
             </Button>
@@ -178,7 +178,7 @@ function SpaceItem({ space, onUpdate, onDelete }: SpaceItemProps) {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                className="bg-[var(--accent-red-primary)] text-white hover:opacity-90 border-transparent"
+                className="bg-destructive text-white hover:opacity-90 border-transparent"
                 onClick={() => onDelete(space.id)}
               >
                 Delete
@@ -230,11 +230,11 @@ export function SettingsSpaces() {
         ))}
 
         {isCreating ? (
-          <div className="flex items-center gap-3 py-2 px-2 rounded-md bg-[var(--bg-field)]">
+          <div className="flex items-center gap-3 py-2 px-2 rounded-md bg-bg-muted">
             <Popover>
               <PopoverTrigger asChild>
                 <button
-                  className="h-6 w-6 flex items-center justify-center shrink-0 ring-2 ring-transparent hover:ring-[var(--border-hover)] transition-all cursor-pointer rounded-md"
+                  className="h-6 w-6 flex items-center justify-center shrink-0 ring-2 ring-transparent hover:ring-border-hover transition-all cursor-pointer rounded-md"
                   aria-label="Select color"
                 >
                   <IconCapsuleHorizontalFilled 
@@ -260,14 +260,14 @@ export function SettingsSpaces() {
                 if (e.key === "Escape") setIsCreating(false);
               }}
               placeholder="Space name..."
-              className="flex-1 h-8 bg-[var(--bg-field-default)] border-transparent shadow-none before:shadow-none focus:bg-[var(--bg-main)] focus:border-[var(--border-active)] px-2"
+              className="flex-1 h-8 bg-bg-input border-transparent shadow-none before:shadow-none focus:bg-bg focus:border-accent px-2"
             />
 
             <div className="flex items-center gap-1">
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-7 w-7 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)]"
+                className="h-7 w-7 text-fg-muted hover:text-fg hover:bg-bg-hover"
                 onClick={handleCreate}
               >
                 <IconCheck className="h-4 w-4" />
@@ -275,7 +275,7 @@ export function SettingsSpaces() {
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-7 w-7 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)]"
+                className="h-7 w-7 text-fg-muted hover:text-fg hover:bg-bg-hover"
                 onClick={() => setIsCreating(false)}
               >
                 <IconX className="h-4 w-4" />
@@ -285,7 +285,7 @@ export function SettingsSpaces() {
         ) : (
           <Button
             variant="ghost"
-            className="justify-start px-2 h-10 text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)] hover:text-[var(--text-primary)] group mt-2"
+            className="justify-start px-2 h-10 text-fg-muted hover:bg-bg-hover hover:text-fg group mt-2"
             onClick={() => setIsCreating(true)}
           >
             <IconPlus className="mr-3 h-4 w-4" />

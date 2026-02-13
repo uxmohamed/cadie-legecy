@@ -25,19 +25,19 @@ export function ThemeStep({ onComplete, isLoading = false }: ThemeStepProps) {
       {/* Header Section */}
       <div className="flex flex-col gap-[12px] items-center w-full">
         <div className={`flex h-12 w-12 items-center justify-center rounded-full mb-2 ${
-          theme === 'dark' ? 'bg-[var(--grey-800)]' : 'bg-[var(--grey-100)]'
+          theme === 'dark' ? 'bg-bg-surface' : 'bg-bg-muted'
         }`}>
           {theme === 'dark' ? (
-            <IconMoon className="h-6 w-6 text-[var(--text-primary)]" />
+            <IconMoon className="h-6 w-6 text-fg" />
           ) : (
-            <IconSun className="h-6 w-6 text-[var(--text-primary)]" />
+            <IconSun className="h-6 w-6 text-fg" />
           )}
         </div>
         <div className="flex flex-col gap-[2px] items-center w-full">
-          <h1 className="text-[18px] font-semibold leading-[32px] text-[var(--text-primary)] text-center">
+          <h1 className="text-[18px] font-semibold leading-[32px] text-fg text-center">
             Choose your theme
           </h1>
-          <p className="text-[16px] font-medium leading-[32px] text-[var(--grey-400)] text-center">
+          <p className="text-[16px] font-medium leading-[32px] text-fg-muted text-center">
             You can change this anytime in settings.
           </p>
         </div>
@@ -52,12 +52,12 @@ export function ThemeStep({ onComplete, isLoading = false }: ThemeStepProps) {
         >
           <div className={`w-full aspect-[4/3] rounded-[8px] overflow-hidden border-2 transition-all group-hover:brightness-[0.97] ${
             theme === 'light'
-              ? 'border-[var(--accent-blue-primary)]'
-              : 'border-[var(--border-secondary)]'
+              ? 'border-accent'
+              : 'border-border-muted'
           }`}>
             <ThemePreview variant="light" isSelected={theme === 'light'} />
           </div>
-          <span className="font-medium text-[var(--text-primary)]">Light</span>
+          <span className="font-medium text-fg">Light</span>
         </button>
 
         {/* Dark Mode Option */}
@@ -67,12 +67,12 @@ export function ThemeStep({ onComplete, isLoading = false }: ThemeStepProps) {
         >
           <div className={`w-full aspect-[4/3] rounded-[8px] overflow-hidden border-2 transition-all group-hover:brightness-110 ${
             theme === 'dark'
-              ? 'border-[var(--accent-blue-primary)]'
-              : 'border-[var(--border-secondary)]'
+              ? 'border-accent'
+              : 'border-border-muted'
           }`}>
             <ThemePreview variant="dark" isSelected={theme === 'dark'} />
           </div>
-          <span className="font-medium text-[var(--text-primary)]">Dark</span>
+          <span className="font-medium text-fg">Dark</span>
         </button>
       </div>
 

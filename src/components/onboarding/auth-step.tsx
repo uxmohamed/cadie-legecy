@@ -74,10 +74,10 @@ export function AuthStep({ onComplete, onEmailClick, isLoading = false }: AuthSt
     <>
       {/* Header Section */}
       <div className="flex flex-col gap-[2px] items-center w-full">
-        <h1 className="text-[18px] font-semibold leading-[32px] text-[var(--text-primary)] text-center">
+        <h1 className="text-[18px] font-semibold leading-[32px] text-fg text-center">
           Welcome to Cadie
         </h1>
-        <p className="text-[16px] font-medium leading-[32px] text-[var(--grey-400)] text-center">
+        <p className="text-[16px] font-medium leading-[32px] text-fg-muted text-center">
           Log in or sign up to get started.
         </p>
       </div>
@@ -130,7 +130,7 @@ export function AuthStep({ onComplete, onEmailClick, isLoading = false }: AuthSt
         </Button>
 
         {error && (
-          <p className="text-sm text-[var(--accent-red-primary)] w-full text-center">
+          <p className="text-sm text-destructive w-full text-center">
             {error}
           </p>
         )}
@@ -150,13 +150,13 @@ export function AuthStep({ onComplete, onEmailClick, isLoading = false }: AuthSt
       </div>
       
       {/* Terms & Conditions Text */}
-      <p className="font-normal leading-[16px] text-[12px] text-[var(--text-tertiary)] text-center w-full">
+      <p className="font-normal leading-[16px] text-[12px] text-fg-subtle text-center w-full">
         <span>By continuing, you acknowledge that you understand and agree to the </span>
-        <a href="/terms" className="underline text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
+        <a href="/terms" className="underline text-fg-subtle hover:text-fg transition-colors">
           Terms & Conditions
         </a>
         <span> and </span>
-        <a href="/privacy" className="underline text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
+        <a href="/privacy" className="underline text-fg-subtle hover:text-fg transition-colors">
           Privacy Policy
         </a>.
       </p>

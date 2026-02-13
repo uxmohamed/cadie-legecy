@@ -21,14 +21,14 @@ export function Footer() {
             <div className="grid grid-cols-2 gap-8 md:gap-12">
               {/* Resources */}
               <div>
-                <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">
+                <h3 className="text-sm font-semibold text-fg mb-4">
                   Resources
                 </h3>
                 <ul className="space-y-3">
                   <li>
                     <Link
                       href="/changelog"
-                      className="text-sm font-[470] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                      className="text-sm font-[470] text-fg-muted hover:text-fg transition-colors"
                     >
                       Changelog
                     </Link>
@@ -38,7 +38,7 @@ export function Footer() {
                       href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm font-[470] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                      className="text-sm font-[470] text-fg-muted hover:text-fg transition-colors"
                     >
                       Chrome Extension
                     </a>
@@ -48,7 +48,7 @@ export function Footer() {
 
               {/* Social */}
               <div>
-                <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">
+                <h3 className="text-sm font-semibold text-fg mb-4">
                   Social
                 </h3>
                 <ul className="space-y-3">
@@ -57,7 +57,7 @@ export function Footer() {
                       href="https://x.com/cadieapp_"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm font-[470] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                      className="text-sm font-[470] text-fg-muted hover:text-fg transition-colors"
                     >
                       X (Twitter)
                     </a>
@@ -67,7 +67,7 @@ export function Footer() {
                       href="https://www.linkedin.com/company/usecadie/"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm font-[470] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                      className="text-sm font-[470] text-fg-muted hover:text-fg transition-colors"
                     >
                       LinkedIn
                     </a>
@@ -79,21 +79,21 @@ export function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-[var(--border-tertiary)] py-6">
+        <div className="border-t border-border-muted py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-[var(--text-tertiary)]">
+            <p className="text-sm text-fg-subtle">
               © {currentYear} Cadie. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
               <Link
                 href="/terms"
-                className="text-sm font-[470] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+                className="text-sm font-[470] text-fg-subtle hover:text-fg transition-colors"
               >
                 Terms and Conditions
               </Link>
               <Link
                 href="/privacy"
-                className="text-sm font-[470] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+                className="text-sm font-[470] text-fg-subtle hover:text-fg transition-colors"
               >
                 Privacy Policy
               </Link>

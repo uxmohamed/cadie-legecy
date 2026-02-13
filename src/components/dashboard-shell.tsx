@@ -196,7 +196,7 @@ export function DashboardShell({
         // Only intercept if not in an input field and not in trash view
         if (!isInputFocused && selectedCategoryId !== "trash") {
           e.preventDefault();
-          
+
           // Read clipboard and open add mode with the content
           navigator.clipboard
             .readText()
@@ -264,7 +264,7 @@ export function DashboardShell({
             const spaceIndex = 8 + (i * 9) + (numKey - 1);
             return spaces[spaceIndex] !== undefined;
           }).some(Boolean);
-          
+
           // Check if this number can be used for a single-key shortcut
           const spaceIndexForSingleKey = numKey - 2; // 2 -> index 0, 3 -> index 1, etc.
           const hasSingleKeySpace = numKey >= 2 && numKey <= 8 && spaces[spaceIndexForSingleKey] !== undefined;
@@ -338,9 +338,9 @@ export function DashboardShell({
   }, [registerShortcut, unregisterShortcut, selectedCategoryId, onOpenAddMode, onViewChange, spaces, pendingShortcut]);
 
   return (
-    <div className="min-h-screen bg-[var(--bg-main-container)] relative">
+    <div className="min-h-screen bg-bg relative">
       {/* Sticky Header Zone */}
-      <div className="sticky top-0 z-20 bg-[var(--bg-main-container)]">
+      <div className="sticky top-0 z-20 bg-bg">
         {/* Top Header Bar */}
         <header className="flex h-16 items-center justify-between px-4 sm:px-6 md:px-8">
           <button
@@ -350,7 +350,7 @@ export function DashboardShell({
           >
             <LogoIcon className="h-8 w-8" />
           </button>
-          <span className="ml-2 px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)] border border-dashed border-[var(--border-primary)] rounded-full">
+          <span className="ml-2 px-2 py-0.5 text-xs font-medium text-fg-muted border border-dashed border-border rounded-full">
             Beta
           </span>
           <div className="flex-1" />
@@ -369,7 +369,7 @@ export function DashboardShell({
                   size="icon"
                   onClick={onToggleAddMode}
                   disabled={isAddingItem}
-                  className={`h-9 w-9 rounded-md border-[var(--border-primary)] bg-transparent dark:bg-[var(--bg-field-light)] hover:bg-[var(--bg-field-hover)] ${isAddingItem ? "bg-[var(--bg-field-hover)] dark:bg-[var(--bg-field-hover)] pointer-events-none" : ""}`}
+                  className={`h-9 w-9 rounded-md border-[var(--border-primary)] bg-[var(--bg-control-btn)] text-[var(--fg)] hover:bg-[var(--bg-field-hover)] focus-visible:ring-[var(--border-primary)] shadow-[0_0_0_1px_rgba(31,34,37,0.09)_inset,0_2px_8px_-2px_rgba(0,0,0,0.04),0_2px_4px_-2px_rgba(0,0,0,0.04)] transition-none ${isAddingItem ? "bg-[var(--bg-field-hover)] pointer-events-none" : ""}`}
                   aria-label="Add item"
                 >
                   <IconPlus className="h-4 w-4" />
@@ -378,7 +378,7 @@ export function DashboardShell({
 
               {/* Vertical Divider */}
               {!isTrashView && (
-                <div className="h-8 w-px bg-[var(--border-secondary)]" />
+                <div className="h-8 w-px bg-border-muted" />
               )}
 
               <div className="flex items-center gap-2 min-w-0">
@@ -393,7 +393,7 @@ export function DashboardShell({
                   isTrashView={isTrashView}
                 />
                 {isTrashView && (
-                  <Badge variant="secondary" className="bg-[var(--bg-field-light)] px-2 py-0.75 text-[var(--text-tertiary)] rounded-full">
+                  <Badge variant="secondary" className="bg-bg-muted px-2 py-0.75 text-fg-subtle rounded-full">
                     Auto-deletes in 60 days
                   </Badge>
                 )}
@@ -403,7 +403,7 @@ export function DashboardShell({
             {/* Right side: Search + Options */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <div className="relative">
-                <IconSearch className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none z-10" />
+                <IconSearch className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-fg-subtle pointer-events-none z-10" />
                 <input
                   ref={searchInputRef}
                   type="text"
@@ -411,11 +411,11 @@ export function DashboardShell({
                   onChange={handleSearchInputChange}
                   onKeyDown={handleSearchKeyDown}
                   placeholder="Search..."
-                  className="h-9 w-32 sm:w-48 md:w-[250px] py-0 pl-[26px] pr-[22px] rounded-lg outline-none placeholder:text-[var(--text-tertiary)] text-[var(--text-primary)] bg-[var(--bg-field-light)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2 transition-shadow text-sm font-[470] tracking-[-0.1px]"
+                  className="h-9 w-32 sm:w-48 md:w-[250px] py-0 pl-[26px] pr-[22px] rounded-lg outline-none placeholder:text-fg-subtle text-fg bg-bg-input focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 text-sm font-[470] tracking-[-0.1px]"
                   aria-label="Search"
                 />
                 <div className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none z-10 hidden sm:flex items-center">
-                  <Kbd className="h-5 px-1.5 text-[10px] text-[var(--text-tertiary)] flex items-center justify-center">
+                  <Kbd className="h-5 px-1.5 text-[10px] text-fg-subtle flex items-center justify-center">
                     /
                   </Kbd>
                 </div>
@@ -427,7 +427,7 @@ export function DashboardShell({
                   <Button
                     variant="secondary"
                     size="icon"
-                    className="hidden sm:flex h-9 w-9 rounded-md bg-[var(--bg-field-light)] hover:bg-[var(--bg-field-hover)]"
+                    className="hidden sm:flex h-9 w-9 rounded-md bg-bg-input hover:bg-bg-hover transition-none"
                     aria-label="Options"
                   >
                     <IconDots className="h-4 w-4" />
@@ -435,7 +435,7 @@ export function DashboardShell({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
                   <div className="px-2 py-2">
-                    <p className="text-xs font-medium text-[var(--overlay-text-secondary)]">
+                    <p className="text-xs font-medium text-fg-on-overlay-muted">
                       Sort by
                     </p>
                   </div>
@@ -445,7 +445,7 @@ export function DashboardShell({
                         e.preventDefault();
                         handleSortChange("date");
                       }}
-                      className={`cursor-pointer rounded-xl ${sortBy === "date" ? "bg-[rgba(255,255,255,0.1)]" : ""}`}
+                      className={`cursor-pointer rounded-xl ${sortBy === "date" ? "bg-btn-overlay-hover" : ""}`}
                     >
                       {sortBy === "date" ? (
                         <IconCircleCheckFilled className="w-5 h-5 text-white" />
@@ -466,7 +466,7 @@ export function DashboardShell({
                         e.preventDefault();
                         handleSortChange("title");
                       }}
-                      className={`cursor-pointer rounded-xl ${sortBy === "title" ? "bg-[rgba(255,255,255,0.1)]" : ""}`}
+                      className={`cursor-pointer rounded-xl ${sortBy === "title" ? "bg-btn-overlay-hover" : ""}`}
                     >
                       {sortBy === "title" ? (
                         <IconCircleCheckFilled className="w-5 h-5 text-white" />
@@ -491,12 +491,12 @@ export function DashboardShell({
 
         {/* Column Headers */}
         <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 md:px-8">
-          <div className="grid grid-cols-[1fr_80px] sm:grid-cols-[1fr_120px] md:grid-cols-[1fr_150px] gap-1 items-center text-xs font-medium text-[var(--text-tertiary)] select-none pt-2 pb-3">
+          <div className="grid grid-cols-[1fr_80px] sm:grid-cols-[1fr_120px] md:grid-cols-[1fr_150px] gap-1 items-center text-xs font-medium text-fg-subtle select-none pt-2 pb-3">
             <div>Title</div>
             <div className="text-right">Created</div>
           </div>
           {/* Divider line */}
-          <div className="-mx-6 border-b border-[var(--border-tertiary)]" />
+          <div className="-mx-6 border-b border-border-muted" />
         </div>
       </div>
 
@@ -509,7 +509,7 @@ export function DashboardShell({
 
       {/* Bottom fade mask */}
       <div
-        className="fixed bottom-0 left-0 right-0 h-24 z-10 pointer-events-none bg-gradient-to-t from-[var(--bg-main-container)] to-transparent"
+        className="fixed bottom-0 left-0 right-0 h-24 z-10 pointer-events-none bg-gradient-to-t from-bg to-transparent"
       />
 
       {/* Dock - Selection Toolbar Only */}

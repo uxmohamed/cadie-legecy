@@ -335,7 +335,7 @@ export function ArchivedDock({
                       className="rounded-full bg-[var(--overlay-hover)] hover:bg-white/25 text-[var(--overlay-text-primary)] shrink-0 transition-colors px-4 h-[50px] gap-2"
                     >
                       {isTrashSelected ? (
-                        <IconTrashFilled className="h-[18px] w-[18px] text-[var(--accent-red-primary)]" />
+                        <IconTrashFilled className="h-[18px] w-[18px] text-[var(--destructive)]" />
                       ) : (
                         <IconCapsuleHorizontalFilled className="h-[18px] w-[18px] text-[var(--overlay-text-secondary)]" />
                       )}
@@ -382,7 +382,7 @@ export function ArchivedDock({
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <IconTrashFilled className="h-3 w-3 text-[var(--accent-red-primary)]" />
+                      <IconTrashFilled className="h-3 w-3 text-[var(--destructive)]" />
                       <span>Trash</span>
                     </div>
                     {isTrashSelected ? (

@@ -92,14 +92,14 @@ export function KeyboardShortcuts() {
                 `} />
                 
                 {/* Key Label */}
-                <span className="relative z-10 text-[22px] font-semibold text-[var(--text-primary)]">
+                <span className="relative z-10 text-[22px] font-semibold text-fg">
                   {key}
                 </span>
               </div>
               
               {/* Plus sign between keys */}
               {index < currentShortcut.keys.length - 1 && (
-                <span className="text-2xl text-[var(--text-tertiary)] font-light">+</span>
+                <span className="text-2xl text-fg-subtle font-light">+</span>
               )}
             </div>
           ))}
@@ -111,7 +111,7 @@ export function KeyboardShortcuts() {
           transition-all duration-300
           ${showText ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}
         `}>
-          <span className="text-base font-medium text-[var(--text-primary)]">
+          <span className="text-base font-medium text-fg">
             {currentShortcut.action}
           </span>
         </div>

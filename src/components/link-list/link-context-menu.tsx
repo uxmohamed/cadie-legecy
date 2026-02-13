@@ -81,7 +81,7 @@ export function LinkContextMenu({
             <>
               {onBatchRestore && <MenuSeparator />}
               <MenuItem
-                className="text-[var(--accent-red-primary)] focus:text-[var(--accent-red-primary)]"
+                className="text-[var(--destructive)] focus:text-[var(--destructive)]"
                 onClick={onBatchPermanentDelete}
               >
                 <IconTrash className="h-4 w-4" />
@@ -115,7 +115,7 @@ export function LinkContextMenu({
         )}
         {((allUnpinned || hasMixed) && onBatchPin || (allPinned || hasMixed) && onBatchUnpin) && <MenuSeparator />}
         <MenuItem
-          className="text-[var(--accent-red-primary)] focus:text-[var(--accent-red-primary)]"
+          className="text-[var(--destructive)] focus:text-[var(--destructive)]"
           onClick={onBatchDelete}
         >
           <IconTrash className="mr-2 h-4 w-4" />
@@ -154,7 +154,7 @@ export function LinkContextMenu({
           <>
             <MenuSeparator />
             <MenuItem
-              className="text-[var(--accent-red-primary)] focus:text-[var(--accent-red-primary)]"
+              className="text-[var(--destructive)] focus:text-[var(--destructive)]"
               onClick={() => onPermanentDelete(link.id)}
             >
               <IconTrash className="mr-2 h-4 w-4" />
@@ -239,7 +239,7 @@ export function LinkContextMenu({
 
       <MenuSeparator />
       <MenuItem
-        className="text-[var(--accent-red-primary)] focus:text-[var(--accent-red-primary)] justify-between"
+        className="text-[var(--destructive)] focus:text-[var(--destructive)] justify-between"
         onClick={() => onDelete?.(link.id)}
       >
         <div className="flex items-center gap-4">

@@ -59,12 +59,12 @@ export function Sidebar({
   };
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r border-[var(--border-primary)] bg-[var(--bg-l2-solid)]">
-      <div className="flex h-14 items-center justify-between border-b border-[var(--border-primary)] px-4">
-        <div className="flex h-7 w-7 items-center justify-center text-base font-medium text-[var(--text-primary)]">
+    <aside className="flex h-screen w-64 flex-col border-r border-border bg-bg-surface">
+      <div className="flex h-14 items-center justify-between border-b border-border px-4">
+        <div className="flex h-7 w-7 items-center justify-center text-base font-medium text-fg">
           M
         </div>
-        <span className="text-[10px] text-[var(--text-tertiary)] bg-[var(--bg-l1-solid)] px-1.5 py-0.5 rounded border border-[var(--border-secondary)]">
+        <span className="text-[10px] text-fg-subtle bg-bg-muted px-1.5 py-0.5 rounded border border-border-muted">
           <kbd className="font-sans font-medium">[</kbd>
         </span>
       </div>
@@ -80,8 +80,8 @@ export function Sidebar({
           className={cn(
             "w-full justify-start gap-2 h-auto px-2 py-1.5 text-sm font-normal",
             selectedSpaceId === null
-              ? "bg-[var(--bg-field-hover)] text-[var(--text-primary)]"
-              : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)] hover:text-[var(--text-primary)]",
+              ? "bg-bg-hover text-fg"
+              : "text-fg-muted hover:bg-bg-hover hover:text-fg",
           )}
         >
           <span className="text-xs">All</span>
@@ -97,14 +97,14 @@ export function Sidebar({
           className={cn(
             "w-full justify-start gap-2 h-auto px-2 py-1.5 text-sm font-normal",
             selectedSpaceId === "trash"
-              ? "bg-[var(--bg-field-hover)] text-[var(--text-primary)]"
-              : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)] hover:text-[var(--text-primary)]",
+              ? "bg-bg-hover text-fg"
+              : "text-fg-muted hover:bg-bg-hover hover:text-fg",
           )}
         >
           <span className="text-xs">Trash</span>
         </Button>
 
-        <div className="my-2 h-px bg-[var(--border-primary)]" />
+        <div className="my-2 h-px bg-border" />
 
         {spaces.map((space, index) => {
           const isSelected = selectedSpaceId === space.id;
@@ -122,8 +122,8 @@ export function Sidebar({
               className={cn(
                 "w-full justify-between gap-2 h-auto px-2 py-1.5 text-sm font-normal",
                 isSelected
-                  ? "bg-[var(--bg-selected)] text-[var(--text-primary)]"
-                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-field-hover)] hover:text-[var(--text-primary)]",
+                  ? "bg-bg-selected text-fg"
+                  : "text-fg-muted hover:bg-bg-hover hover:text-fg",
               )}
             >
               <div className="flex items-center gap-2">
@@ -151,7 +151,7 @@ export function Sidebar({
                     />
                   </svg>
                 )}
-                <span className="text-xs text-[var(--text-tertiary)]">
+                <span className="text-xs text-fg-subtle">
                   {space.link_count}
                 </span>
               </div>

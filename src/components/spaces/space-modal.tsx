@@ -99,7 +99,7 @@ export function SpaceModal({
           <div className="space-y-2">
             <label
               htmlFor="space-name"
-              className="text-sm font-[470] text-[var(--text-primary)]"
+              className="text-sm font-[470] text-fg"
             >
               Name
             </label>
@@ -115,7 +115,7 @@ export function SpaceModal({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-[470] text-[var(--text-primary)]">
+            <label className="text-sm font-[470] text-fg">
               Color
             </label>
             <ColorPicker selectedColor={color} onColorSelect={setColor} />
@@ -128,7 +128,7 @@ export function SpaceModal({
               variant="ghost"
               onClick={handleDelete}
               disabled={isDeleting || isSaving}
-              className="mr-auto text-[var(--accent-red-primary)] hover:text-[var(--accent-red-primary)] hover:bg-[var(--accent-red-primary)]/10"
+              className="mr-auto text-destructive hover:text-destructive hover:bg-destructive-muted"
             >
               <IconTrash className="mr-2 h-4 w-4" />
               Delete

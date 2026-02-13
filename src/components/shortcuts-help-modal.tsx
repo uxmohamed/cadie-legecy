@@ -88,7 +88,7 @@ export function ShortcutsHelpModal() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
           {Object.entries(groupedShortcuts).map(([category, items]) => (
             <div key={category}>
-              <h3 className="font-semibold text-[var(--text-primary)] mb-3">{category}</h3>
+              <h3 className="font-semibold text-fg mb-3">{category}</h3>
               <div className="space-y-2">
                 {items.map((shortcut) => {
                   const formattedKeys = formatKey(shortcut.key);
@@ -97,12 +97,12 @@ export function ShortcutsHelpModal() {
                       key={shortcut.key + shortcut.description}
                       className="flex items-center justify-between text-sm"
                     >
-                      <span className="text-[var(--text-secondary)]">{shortcut.description}</span>
+                      <span className="text-fg-muted">{shortcut.description}</span>
                       <div className="flex gap-1">
                         {formattedKeys.map((k, index) => (
                           <Kbd
                             key={`${k}-${index}`}
-                            className="pointer-events-none h-5 px-1.5 text-[10px] uppercase bg-[var(--bg-l1-solid)] text-[var(--text-tertiary)]"
+                            className="pointer-events-none h-5 px-1.5 text-[10px] uppercase bg-bg-surface text-fg-subtle"
                           >
                             {k}
                           </Kbd>

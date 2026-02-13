@@ -134,7 +134,7 @@ export function SettingsExtensions() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <IconLoader2 className="h-6 w-6 animate-spin text-[var(--icon-secondary)]" />
+        <IconLoader2 className="h-6 w-6 animate-spin text-fg-muted" />
       </div>
     );
   }
@@ -143,13 +143,13 @@ export function SettingsExtensions() {
     <div className="space-y-6">
       {tokens.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="rounded-full bg-[var(--bg-field)] p-4 mb-4">
-            <IconPlugConnected className="h-8 w-8 text-[var(--icon-secondary)]" />
+          <div className="rounded-full bg-bg-muted p-4 mb-4">
+            <IconPlugConnected className="h-8 w-8 text-fg-muted" />
           </div>
-          <h3 className="text-sm font-medium text-[var(--text-primary)] mb-1">
+          <h3 className="text-sm font-medium text-fg mb-1">
             No Extensions Connected
           </h3>
-          <p className="text-sm text-[var(--text-secondary)] max-w-[280px]">
+          <p className="text-sm text-fg-muted max-w-[280px]">
             Install the Cadie browser extension and connect it to start saving links with one click.
           </p>
         </div>
@@ -158,15 +158,15 @@ export function SettingsExtensions() {
           {tokens.map((token) => (
             <div
               key={token.id}
-              className="flex items-center justify-between rounded-lg border border-[var(--border-primary)] bg-[var(--bg-field)] p-4"
+              className="flex items-center justify-between rounded-lg border border-border bg-bg-muted p-4"
             >
               <div className="flex items-center gap-3">
                 <ChromeLogo className="h-8 w-8" />
                 <div>
-                  <p className="text-sm font-medium text-[var(--text-primary)]">
+                  <p className="text-sm font-medium text-fg">
                     Chrome Extension
                   </p>
-                  <p className="text-xs text-[var(--text-tertiary)]">
+                  <p className="text-xs text-fg-subtle">
                     Connected {formatDate(token.created_at)}
                     {token.last_used_at && ` • Last used ${formatDate(token.last_used_at)}`}
                   </p>
@@ -177,7 +177,7 @@ export function SettingsExtensions() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-[var(--text-secondary)] hover:text-[var(--cadie-red)] hover:bg-[var(--cadie-red)]/10"
+                    className="text-fg-muted hover:text-destructive hover:bg-destructive-muted"
                     disabled={disconnectingId === token.id}
                   >
                     {disconnectingId === token.id ? (

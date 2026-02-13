@@ -750,7 +750,7 @@ export function LinkList({
                       style={{ transform: `translateY(${virtualRow.start}px)` }}
                     >
                       <div
-                        className={`mb-4 mt-4 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
+                        className={`mb-4 mt-4 text-xs font-semibold text-fg-muted uppercase tracking-wider select-none transition-opacity duration-200 ${
                           isAddingItem || effectiveEditingLinkId
                             ? "opacity-20"
                             : "opacity-100"
@@ -773,7 +773,7 @@ export function LinkList({
                       style={{ transform: `translateY(${virtualRow.start}px)` }}
                     >
                       <div
-                        className={`mb-4 mt-8 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none transition-opacity duration-200 ${
+                        className={`mb-4 mt-8 text-xs font-semibold text-fg-muted uppercase tracking-wider select-none transition-opacity duration-200 ${
                           isAddingItem || effectiveEditingLinkId
                             ? "opacity-20"
                             : "opacity-100"
@@ -928,6 +928,15 @@ export function LinkList({
             setSelectedLink(null);
           }
         }}
+        onCopy={onCopy}
+        onPin={!isTrashView ? onPin : undefined}
+        onUnpin={!isTrashView ? onUnpin : undefined}
+        onDelete={!isTrashView ? onDelete : undefined}
+        onRename={!isTrashView ? handleRename : undefined}
+        spaces={spaces}
+        linkSpaces={selectedLink ? linkSpacesMap.get(selectedLink.id) || [] : []}
+        onAddToSpace={onAddToSpace}
+        onRemoveFromSpace={onRemoveFromSpace}
       />
 
       <AlertDialog
@@ -972,24 +981,24 @@ export function LinkList({
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
                     <div
-                      className="h-5 w-5 flex-shrink-0 rounded-full border border-[var(--border-secondary)]"
+                      className="h-5 w-5 flex-shrink-0 rounded-full border border-border-muted"
                       style={{
                         backgroundColor: colorChangeDialog.currentColorValue,
                       }}
                     />
-                    <span className="text-sm font-[470] text-[var(--text-primary)]">
+                    <span className="text-sm font-[470] text-fg">
                       Current
                     </span>
                   </div>
-                  <span className="text-[var(--text-tertiary)]">→</span>
+                  <span className="text-fg-subtle">→</span>
                   <div className="flex items-center gap-2">
                     <div
-                      className="h-5 w-5 flex-shrink-0 rounded-full border border-[var(--border-secondary)]"
+                      className="h-5 w-5 flex-shrink-0 rounded-full border border-border-muted"
                       style={{
                         backgroundColor: colorChangeDialog.newColorValue,
                       }}
                     />
-                    <span className="text-sm font-[470] text-[var(--text-primary)]">
+                    <span className="text-sm font-[470] text-fg">
                       {colorChangeDialog.newTitle}
                     </span>
                   </div>

@@ -135,9 +135,9 @@ export default function ExtensionAuthorizePage() {
 
   // Minimal loading state
   return (
-    <div className="min-h-screen bg-[var(--bg-l0-solid)] flex items-center justify-center">
+    <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center">
       <div className="text-center">
-        <div className="w-12 h-12 border-4 border-[var(--text-primary)] border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <div className="w-12 h-12 border-4 border-[var(--fg)] border-t-transparent rounded-full animate-spin mx-auto"></div>
       </div>
     </div>
   );

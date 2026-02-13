@@ -15,7 +15,7 @@ export function AuthNavigation() {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <div className="text-sm text-[var(--text-tertiary)]">
+      <div className="text-sm text-fg-subtle">
         Step 0 of 3 (Auth)
       </div>
       <div className="flex items-center gap-3">

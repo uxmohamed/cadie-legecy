@@ -1,0 +1,140 @@
+"use client";
+
+import * as React from "react";
+import type { Link } from "@/features/links/types";
+import { detectEmbedType, getYouTubeEmbedUrl } from "@/lib/embed-utils";
+import { Favicon } from "@/components/ui/favicon";
+import { IconWorld, IconBrandX } from "@tabler/icons-react";
+import { Button } from "@/components/ui/button";
+
+interface PreviewPanelProps {
+  link: Link;
+}
+
+/**
+ * YouTube embed preview with responsive iframe
+ */
+function YouTubePreview({ videoId }: { videoId: string }) {
+  return (
+    <div className="w-full h-full bg-black flex items-center justify-center">
+      <iframe
+        src={getYouTubeEmbedUrl(videoId)}
+        title="YouTube video player"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        className="w-full h-full"
+      />
+    </div>
+  );
+}
+
+/**
+ * Twitter/X preview - shows OG image with overlay button
+ * Privacy-friendly approach - no external scripts
+ */
+function TwitterPreview({ link }: { link: Link }) {
+  return (
+    <div className="w-full h-full relative bg-bg-surface">
+      {link.og_image_url ? (
+        <img
+          src={link.og_image_url}
+          alt={link.title}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center bg-[#000000]">
+          <IconBrandX className="h-20 w-20 text-white" />
+        </div>
+      )}
+      {/* Overlay button */}
+      <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity">
+        <Button
+          variant="secondary"
+          size="sm"
+          className="bg-white/90 hover:bg-white text-black shadow-lg"
+          onClick={() => window.open(link.url, "_blank", "noopener,noreferrer")}
+        >
+          <IconBrandX className="h-4 w-4 mr-1.5" />
+          View on X
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Color swatch preview with full panel coverage
+ */
+function ColorPreview({ colorValue }: { colorValue: string }) {
+  return (
+    <div className="w-full h-full flex flex-col items-center justify-center relative">
+      <div
+        className="absolute inset-0"
+        style={{ backgroundColor: colorValue }}
+      />
+      <div className="relative z-10 px-4 py-2 rounded-lg bg-black/20 backdrop-blur-sm">
+        <code className="text-white font-mono text-lg font-medium drop-shadow-sm">
+          {colorValue}
+        </code>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * OG Image preview with object-cover
+ */
+function ImagePreview({ link }: { link: Link }) {
+  return (
+    <div className="w-full h-full bg-bg-surface">
+      <img
+        src={link.og_image_url!}
+        alt={link.title}
+        className="w-full h-full object-cover"
+      />
+    </div>
+  );
+}
+
+/**
+ * Fallback preview with centered scaled favicon
+ */
+function FaviconPreview({ link }: { link: Link }) {
+  return (
+    <div className="w-full h-full flex items-center justify-center bg-bg-surface">
+      {link.domain ? (
+        <div className="p-8 rounded-2xl bg-bg">
+          <Favicon
+            url={link.favicon_url || ""}
+            domain={link.domain}
+            className="h-20 w-20"
+          />
+        </div>
+      ) : (
+        <IconWorld className="h-20 w-20 text-fg-subtle" />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Preview panel component that renders the appropriate preview
+ * based on the link's content type and URL patterns
+ */
+export function PreviewPanel({ link }: PreviewPanelProps) {
+  const embedInfo = detectEmbedType(link);
+
+  switch (embedInfo.type) {
+    case "youtube":
+      return <YouTubePreview videoId={embedInfo.embedId!} />;
+    case "twitter":
+      return <TwitterPreview link={link} />;
+    case "color":
+      return <ColorPreview colorValue={link.color_value || "#000000"} />;
+    case "image":
+      return <ImagePreview link={link} />;
+    case "favicon":
+    default:
+      return <FaviconPreview link={link} />;
+  }
+}

@@ -155,7 +155,7 @@ export function OnboardingFlow({ user, onComplete }: OnboardingFlowProps) {
   }, [complete, onComplete, profileData, user]);
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--bg-l0-solid)] px-4 py-12 pb-32">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-bg px-4 py-12 pb-32">
       {/* LayoutGroup for logo shared layout animation */}
       <LayoutGroup>
         {/* Logo at top - animates to center during completion */}
@@ -167,7 +167,7 @@ export function OnboardingFlow({ user, onComplete }: OnboardingFlowProps) {
             >
               <Logo 
                 variant={isDarkMode ? "white" : "neutral-200"} 
-                className="h-6 w-auto [&_path]:fill-[var(--text-tertiary)] dark:[&_path]:fill-[var(--text-secondary)]" 
+                className="h-6 w-auto [&_path]:fill-fg-subtle dark:[&_path]:fill-fg-muted" 
               />
             </motion.div>
           </div>
@@ -193,9 +193,9 @@ export function OnboardingFlow({ user, onComplete }: OnboardingFlowProps) {
             style={{
               backgroundColor: isDarkMode
                 ? 'color-mix(in oklab, oklch(1 0 0) 20%, oklch(0 0 0) 80%)'
-                : 'var(--bg-l2-solid)',
+                : 'var(--bg-elevated)',
               boxShadow: isDarkMode
-                ? '0 2px 2px 0 rgba(0, 0, 0, 0.2), 0 4px 4px 0 rgba(0, 0, 0, 0.15), 0 2px 24px 0 rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border-primary)'
+                ? '0 2px 2px 0 rgba(0, 0, 0, 0.2), 0 4px 4px 0 rgba(0, 0, 0, 0.15), 0 2px 24px 0 rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border)'
                 : '0 2px 2px 0 rgba(0, 0, 0, 0.01), 0 4px 4px 0 rgba(0, 0, 0, 0.01), 0 2px 24px 0 rgba(0, 0, 0, 0.03), 0 0 0 1px #E5E5E5',
             }}
             transition={layoutTransition}

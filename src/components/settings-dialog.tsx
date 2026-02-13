@@ -85,7 +85,7 @@ export function SettingsDialog({ user, open, onOpenChange, onProfileUpdate }: Se
           </Sidebar>
           <main className="flex h-full md:h-[620px] flex-1 flex-col overflow-hidden min-w-0">
             {/* Mobile navigation */}
-            <header className="flex h-12 shrink-0 items-center border-b border-[var(--border-primary)] md:hidden">
+            <header className="flex h-12 shrink-0 items-center border-b border-border md:hidden">
               <nav className="no-scrollbar flex overflow-x-auto pl-4 pr-12 gap-2">
                 {navItems.map((item) => (
                   <button
@@ -93,8 +93,8 @@ export function SettingsDialog({ user, open, onOpenChange, onProfileUpdate }: Se
                     onClick={() => setActiveSection(item.id)}
                     className={`flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors ${
                       activeSection === item.id
-                        ? "bg-[var(--bg-field)] text-[var(--text-primary)]"
-                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                        ? "bg-bg-muted text-fg"
+                        : "text-fg-muted hover:text-fg"
                     }`}
                   >
                     <item.icon className="h-6 w-6" />
@@ -105,7 +105,7 @@ export function SettingsDialog({ user, open, onOpenChange, onProfileUpdate }: Se
             </header>
             {/* Content area */}
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden p-6 min-w-0">
-              <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+              <h2 className="text-lg font-semibold text-fg">
                 {navItems.find((item) => item.id === activeSection)?.name}
               </h2>
               {activeSection === "profile" && <SettingsProfile user={user} onProfileUpdate={onProfileUpdate} />}

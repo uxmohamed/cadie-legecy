@@ -20,7 +20,7 @@ function PlaceholderIcon({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "h-5 w-5 flex-shrink-0 rounded-[3px] bg-[var(--grey-200)] dark:bg-[var(--grey-800)]",
+        "h-5 w-5 flex-shrink-0 rounded-[3px] bg-bg-muted dark:bg-bg-surface",
         className
       )}
     />
@@ -107,7 +107,7 @@ export function InlineAddItem({
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Enter a link or color..."
-              className="w-full bg-transparent text-sm leading-4 text-[var(--text-primary)] font-[470] placeholder:text-[var(--text-tertiary)] outline-none"
+              className="w-full bg-transparent text-sm leading-4 text-fg font-[470] placeholder:text-fg-subtle outline-none"
               autoComplete="off"
               autoFocus
             />
@@ -117,7 +117,7 @@ export function InlineAddItem({
         {/* Right side: Enter icon - disabled when empty */}
         <div className="relative flex items-center justify-end">
           <IconCornerDownLeft 
-            className={`h-4 w-4 transition-opacity ${hasContent ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-disabled)] opacity-40'}`}
+            className={`h-4 w-4 transition-opacity ${hasContent ? 'text-fg-subtle' : 'text-fg-disabled opacity-40'}`}
           />
         </div>
       </form>

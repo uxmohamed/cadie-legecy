@@ -175,9 +175,9 @@ export function AuthForm() {
         style={{
           backgroundColor: isDarkMode 
             ? 'color-mix(in oklab, oklch(1 0 0) 20%, oklch(0 0 0) 80%)'
-            : 'var(--bg-l2-solid)',
+            : 'var(--bg-elevated)',
           boxShadow: isDarkMode 
-            ? '0 2px 2px 0 rgba(0, 0, 0, 0.2), 0 4px 4px 0 rgba(0, 0, 0, 0.15), 0 2px 24px 0 rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border-primary)'
+            ? '0 2px 2px 0 rgba(0, 0, 0, 0.2), 0 4px 4px 0 rgba(0, 0, 0, 0.15), 0 2px 24px 0 rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border)'
             : '0 2px 2px 0 rgba(0, 0, 0, 0.01), 0 4px 4px 0 rgba(0, 0, 0, 0.01), 0 2px 24px 0 rgba(0, 0, 0, 0.03), 0 0 0 1px #E5E5E5',
         }}
         transition={layoutTransition}
@@ -195,19 +195,19 @@ export function AuthForm() {
                 {/* Success Screen */}
                 <div className="flex flex-col gap-[24px] items-center w-full">
                   {/* Email Icon */}
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--bg-emphasis)]">
-                    <IconMail className="h-8 w-8 text-[var(--text-primary)]" />
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-bg-emphasis">
+                    <IconMail className="h-8 w-8 text-fg" />
                   </div>
                   
                   <div className="flex flex-col gap-[24px] items-center">
-                    <h1 className="text-[18px] font-semibold leading-[32px] text-[var(--text-primary)] text-center">
+                    <h1 className="text-[18px] font-semibold leading-[32px] text-fg text-center">
                       Check your email
                     </h1>
                     <div className="flex flex-col gap-0 items-center">
-                      <p className="text-[16px] font-medium leading-[32px] text-[var(--text-secondary)] text-center">
+                      <p className="text-[16px] font-medium leading-[32px] text-fg-muted text-center">
                         We&apos;ve sent a magic link to
                       </p>
-                      <p className="text-[16px] font-medium leading-[32px] text-[var(--text-primary)] text-center">
+                      <p className="text-[16px] font-medium leading-[32px] text-fg text-center">
                         {sentToEmail}
                       </p>
                     </div>
@@ -221,7 +221,7 @@ export function AuthForm() {
                     variant="secondary"
                     className="w-full p-3 rounded-[12px] flex items-center gap-2"
                   >
-                    <IconArrowLeft className="h-5 w-5 text-[var(--text-primary)]" />
+                    <IconArrowLeft className="h-5 w-5 text-fg" />
                     <span className="font-medium text-[14px] leading-[24px]">
                       Back to sign in
                     </span>
@@ -232,10 +232,10 @@ export function AuthForm() {
               <>
                 {/* Main Auth Options */}
                 <div className="flex flex-col gap-[2px] items-center w-full">
-                  <h1 className="text-[18px] font-semibold leading-[32px] text-[var(--text-primary)] text-center">
+                  <h1 className="text-[18px] font-semibold leading-[32px] text-fg text-center">
                     Welcome to Cadie
                   </h1>
-                  <p className="text-[16px] font-medium leading-[32px] text-[var(--grey-400)] text-center">
+                  <p className="text-[16px] font-medium leading-[32px] text-fg-muted text-center">
                     Log in or sign up to get started.
                   </p>
                 </div>
@@ -301,13 +301,13 @@ export function AuthForm() {
                 </div>
                 
                 {/* Terms & Conditions Text */}
-                <p className="font-normal leading-[16px] text-[12px] text-[var(--text-tertiary)] text-center w-full">
+                <p className="font-normal leading-[16px] text-[12px] text-fg-subtle text-center w-full">
                   <span>By continuing, you acknowledge that you understand and agree to the </span>
-                  <Link href="/terms" className="underline text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
+                  <Link href="/terms" className="underline text-fg-subtle hover:text-fg transition-colors">
                     Terms & Conditions
                   </Link>
                   <span> and </span>
-                  <Link href="/privacy" className="underline text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
+                  <Link href="/privacy" className="underline text-fg-subtle hover:text-fg transition-colors">
                     Privacy Policy
                   </Link>.
                 </p>
@@ -316,10 +316,10 @@ export function AuthForm() {
               <>
                 {/* Email Form */}
                 <div className="flex flex-col gap-[2px] items-center w-full">
-                  <h1 className="text-[18px] font-semibold leading-[32px] text-[var(--text-primary)] text-center">
+                  <h1 className="text-[18px] font-semibold leading-[32px] text-fg text-center">
                     Continue with Email
                   </h1>
-                  <p className="text-[16px] font-medium leading-[32px] text-[var(--grey-400)] text-center">
+                  <p className="text-[16px] font-medium leading-[32px] text-fg-muted text-center">
                     We&apos;ll send you a magic link to sign in.
                   </p>
                 </div>
@@ -340,11 +340,11 @@ export function AuthForm() {
                           required
                           disabled={loading}
                           autoFocus
-                          className="w-full px-4 py-4 bg-[var(--bg-field-default)] border border-transparent text-[var(--text-primary)] text-[14px] font-medium rounded-[12px] outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#2783de] placeholder:text-[var(--text-tertiary)] disabled:opacity-50"
+                          className="w-full px-4 py-4 bg-bg-input border border-transparent text-fg text-[14px] font-medium rounded-[12px] outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#2783de] placeholder:text-fg-subtle disabled:opacity-50"
                         />
                       </div>
                       {error && (
-                        <p className="text-sm text-[var(--accent-red-primary)]">
+                        <p className="text-sm text-destructive">
                           {error}
                         </p>
                       )}
@@ -406,13 +406,13 @@ export function AuthForm() {
                 </div>
                 
                 {/* Terms & Conditions Text */}
-                <p className="font-normal leading-[16px] text-[12px] text-[var(--text-tertiary)] text-center w-full">
+                <p className="font-normal leading-[16px] text-[12px] text-fg-subtle text-center w-full">
                   <span>By continuing, you acknowledge that you understand and agree to the </span>
-                  <Link href="/terms" className="underline text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
+                  <Link href="/terms" className="underline text-fg-subtle hover:text-fg transition-colors">
                     Terms & Conditions
                   </Link>
                   <span> and </span>
-                  <Link href="/privacy" className="underline text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
+                  <Link href="/privacy" className="underline text-fg-subtle hover:text-fg transition-colors">
                     Privacy Policy
                   </Link>.
                 </p>

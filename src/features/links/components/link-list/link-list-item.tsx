@@ -89,8 +89,8 @@ export function LinkListItem({
         isSelected
           ? "bg-[var(--bg-selected)]"
           : isFocused
-          ? "bg-[var(--bg-field-hover)]"
-          : "hover:bg-[var(--bg-field-hover)]"
+          ? "bg-[var(--bg-hover)]"
+          : "hover:bg-[var(--bg-hover)]"
       )}
     >
       <a
@@ -105,23 +105,23 @@ export function LinkListItem({
       >
         {isColor ? (
           <div
-            className="h-5 w-5 flex-shrink-0 rounded-full border border-[var(--border-secondary)]"
+            className="h-5 w-5 flex-shrink-0 rounded-full border border-[var(--border-muted)]"
             style={{ backgroundColor: link.color_value || link.title }}
           />
         ) : (
           <Favicon url={link.favicon_url || ""} domain={link.domain} />
         )}
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[15px] text-[var(--text-primary)]">
+          <div className="truncate text-[15px] text-[var(--fg)]">
             {link.title || link.url}
           </div>
-          <div className="truncate text-sm text-[var(--text-tertiary)]">
+          <div className="truncate text-sm text-[var(--fg-subtle)]">
             {link.domain}
           </div>
         </div>
       </a>
       <div className="flex items-center gap-2">
-        <div className="text-sm text-[var(--text-tertiary)]">
+        <div className="text-sm text-[var(--fg-subtle)]">
           {formatDate(new Date(link.created_at))}
         </div>
         <div
@@ -141,7 +141,7 @@ export function LinkListItem({
                 e.stopPropagation();
                 onUnpin?.(link.id);
               }}
-              className="h-8 w-8 hover:bg-[var(--bg-field-hover)]"
+              className="h-8 w-8 hover:bg-[var(--bg-hover)]"
               title="Unpin"
             >
               <PinOff className="h-4 w-4" />

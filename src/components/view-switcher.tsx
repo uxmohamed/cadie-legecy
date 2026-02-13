@@ -93,23 +93,23 @@ export function ViewSwitcher({
         <PopoverTrigger asChild>
           <button
             aria-label="Switch view"
-            className="group/trigger relative flex items-center gap-2 h-auto px-2 py-1.5 -ml-2 rounded-lg bg-transparent text-[var(--text-primary)] transition-colors cursor-pointer min-w-0"
+            className="group/trigger relative flex items-center gap-2 h-auto px-2 py-1.5 -ml-2 rounded-lg bg-transparent text-fg cursor-pointer min-w-0"
             style={{
               '--hover-bg': isTrashSelected 
-                ? 'var(--accent-red-primary)' 
-                : selectedSpace?.color || 'var(--text-secondary)'
+                ? 'var(--destructive)' 
+                : selectedSpace?.color || 'var(--fg-muted)'
             } as React.CSSProperties}
           >
-            <span className="absolute inset-0 rounded-lg opacity-0 group-hover/trigger:opacity-10 transition-opacity" style={{ backgroundColor: 'var(--hover-bg)' }} />
+            <span className="absolute inset-0 rounded-lg opacity-0 group-hover/trigger:opacity-10" style={{ backgroundColor: 'var(--hover-bg)' }} />
             {isTrashSelected ? (
-              <IconTrashFilled className="h-4 w-4 text-[var(--accent-red-primary)] shrink-0 relative" />
+              <IconTrashFilled className="h-4 w-4 text-destructive shrink-0 relative" />
             ) : (
               <IconCapsuleHorizontalFilled 
                 className="h-4 w-4 shrink-0 relative" 
-                style={{ color: selectedSpace?.color || "var(--text-secondary)" }}
+                style={{ color: selectedSpace?.color || "var(--fg-muted)" }}
               />
             )}
-            <span className="not-italic text-lg sm:text-[22px] font-[570] leading-tight sm:leading-[32px] tracking-[-0.16px] text-[var(--text-primary)] hover:text-[var(--text-primary)] overflow-hidden text-ellipsis whitespace-nowrap min-w-0 relative">
+            <span className="not-italic text-lg sm:text-[22px] font-[570] leading-tight sm:leading-[32px] tracking-[-0.16px] text-fg hover:text-fg overflow-hidden text-ellipsis whitespace-nowrap min-w-0 relative">
               {title}
             </span>
             <ChevronUpDown className="w-3.5 h-3.5 shrink-0 relative" />
@@ -128,7 +128,7 @@ export function ViewSwitcher({
           >
             <button
               onClick={() => handleViewChange(null)}
-              className={`group relative flex w-full cursor-pointer select-none items-center justify-between rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] gap-2 min-w-0 ${
+              className={`group relative flex w-full cursor-pointer select-none items-center justify-between rounded-xl px-3 py-2.5 text-sm font-[470] outline-none text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] gap-2 min-w-0 ${
                 isAllItemsSelected ? "bg-[var(--bg-selected)]" : ""
               }`}
             >
@@ -166,7 +166,7 @@ export function ViewSwitcher({
                   return (
                     <div
                       key={space.id}
-                      className={`group relative flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-[470] transition-colors gap-2 min-w-0 ${
+                      className={`group relative flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-[470] gap-2 min-w-0 ${
                         isSelected ? "bg-[var(--bg-selected)]" : "hover:bg-[rgba(255,255,255,0.06)]"
                       }`}
                     >
@@ -190,10 +190,10 @@ export function ViewSwitcher({
                         </div>
                         {isSelected ? (
                           <>
-                            <IconCircleCheckFilled className="h-5 w-5 text-white shrink-0 group-hover:opacity-0 transition-opacity" />
+                            <IconCircleCheckFilled className="h-5 w-5 text-white shrink-0 group-hover:opacity-0" />
                             {(onEditSpace || onDeleteSpace) && (
                               <Menu modal={false}>
-                                <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100">
                                   <MenuTrigger
                                     className="shrink-0 h-6 w-6 flex items-center justify-center rounded-md hover:bg-[rgba(255,255,255,0.1)] outline-none p-1"
                                     onClick={(e) => {
@@ -225,7 +225,7 @@ export function ViewSwitcher({
                                   {onDeleteSpace && (
                                     <MenuItem
                                       onClick={(e) => handleDeleteClick(space, e)}
-                                      className="text-[var(--accent-red-primary)]"
+                                      className="text-destructive"
                                     >
                                       <IconTrashFilled className="h-4 w-4" />
                                       Remove
@@ -237,12 +237,12 @@ export function ViewSwitcher({
                           </>
                         ) : (
                           <>
-                            <Kbd className="h-5 px-1.5 text-[10px] bg-[rgba(255,255,255,0.1)] text-[var(--overlay-text-secondary)] shrink-0 group-hover:opacity-0 transition-opacity">
+                            <Kbd className="h-5 px-1.5 text-[10px] bg-[rgba(255,255,255,0.1)] text-[var(--overlay-text-secondary)] shrink-0 group-hover:opacity-0">
                               {shortcutKey}
                             </Kbd>
                             {(onEditSpace || onDeleteSpace) && (
                               <Menu modal={false}>
-                                <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100">
                                   <MenuTrigger
                                     className="shrink-0 h-6 w-6 flex items-center justify-center rounded-md hover:bg-[rgba(255,255,255,0.1)] outline-none p-1"
                                     onClick={(e) => {
@@ -274,7 +274,7 @@ export function ViewSwitcher({
                                   {onDeleteSpace && (
                                     <MenuItem
                                       onClick={(e) => handleDeleteClick(space, e)}
-                                      className="text-[var(--accent-red-primary)]"
+                                      className="text-destructive"
                                     >
                                       <IconTrashFilled className="h-4 w-4" />
                                       Remove
@@ -298,12 +298,12 @@ export function ViewSwitcher({
             <MenuSeparator />
             <button
               onClick={() => handleViewChange("trash")}
-              className={`group relative flex w-full cursor-pointer select-none items-center justify-between rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] gap-2 min-w-0 ${
+              className={`group relative flex w-full cursor-pointer select-none items-center justify-between rounded-xl px-3 py-2.5 text-sm font-[470] outline-none text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] gap-2 min-w-0 ${
                 isTrashSelected ? "bg-[var(--bg-selected)]" : ""
               }`}
             >
               <div className="flex items-center gap-4 min-w-0 flex-1">
-                <IconTrashFilled className="h-4 w-4 text-[var(--accent-red-primary)] shrink-0" />
+                <IconTrashFilled className="h-4 w-4 text-destructive shrink-0" />
                 <span className="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">Trash</span>
               </div>
               {isTrashSelected ? (
@@ -322,7 +322,7 @@ export function ViewSwitcher({
                   onCreateSpace();
                   setViewPopoverOpen(false);
                 }}
-                className="relative flex w-full cursor-pointer select-none items-center justify-start rounded-xl px-3 py-2.5 text-sm font-[470] outline-none transition-colors text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] gap-2 min-w-0"
+                className="relative flex w-full cursor-pointer select-none items-center justify-start rounded-xl px-3 py-2.5 text-sm font-[470] outline-none text-[var(--overlay-text-primary)] hover:bg-[rgba(255,255,255,0.06)] gap-2 min-w-0"
               >
                 <div className="flex items-center gap-4 min-w-0 flex-1">
                   <IconPlus className="h-4 w-4 shrink-0" />
@@ -340,7 +340,7 @@ export function ViewSwitcher({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete space?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "<span className="inline-block max-w-[200px] truncate align-bottom font-medium text-[var(--text-primary)]">{spaceToDelete?.name}</span>"? This will remove all links from this space.
+              Are you sure you want to delete "<span className="inline-block max-w-[200px] truncate align-bottom font-medium text-fg">{spaceToDelete?.name}</span>"? This will remove all links from this space.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

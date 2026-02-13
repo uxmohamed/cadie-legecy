@@ -151,16 +151,16 @@ export function LinkList({
 
   return (
     <div className="w-full" ref={containerRef}>
-      <div className="sticky top-[104px] z-10 grid grid-cols-[1fr_auto_auto] gap-4 bg-[var(--bg-l0-solid)] py-4 text-xs font-medium text-[var(--text-tertiary)] relative select-none">
+      <div className="sticky top-[104px] z-10 grid grid-cols-[1fr_auto_auto] gap-4 bg-[var(--bg)] py-4 text-xs font-medium text-[var(--fg-subtle)] relative select-none">
         <div>Title</div>
         <div>Created at</div>
         <div className="w-10"></div>
-        <div className="absolute -bottom-4 left-0 right-0 h-4 bg-gradient-to-b from-[var(--bg-l0-solid)] to-transparent pointer-events-none" />
+        <div className="absolute -bottom-4 left-0 right-0 h-4 bg-gradient-to-b from-[var(--bg)] to-transparent pointer-events-none" />
       </div>
       <div className="space-y-0.5 py-4 relative">
         {pinnedLinks.length > 0 && (
           <>
-            <div className="mb-4 mt-4 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none">
+            <div className="mb-4 mt-4 text-xs font-semibold text-[var(--fg-muted)] uppercase tracking-wider select-none">
               Pinned
             </div>
             {pinnedLinks.map((link, index) => (
@@ -197,7 +197,7 @@ export function LinkList({
         {unpinnedLinks.length > 0 && (
           <>
             {pinnedLinks.length > 0 && (
-              <div className="mb-4 mt-8 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider select-none">
+              <div className="mb-4 mt-8 text-xs font-semibold text-[var(--fg-muted)] uppercase tracking-wider select-none">
                 All Links
               </div>
             )}

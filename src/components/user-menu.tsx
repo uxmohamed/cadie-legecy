@@ -198,14 +198,14 @@ export function UserMenu({ user }: UserMenuProps) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="h-9 w-9 rounded-full p-0 hover:bg-[var(--bg-field-hover)]"
+            className="h-9 w-9 rounded-full p-0 hover:bg-[var(--bg-hover)]"
           >
             <Avatar className="h-9 w-9">
               <AvatarImage 
                 src={userAvatar} 
                 alt={user.email} 
               />
-              <AvatarFallback className="bg-[var(--bg-inverse)] text-[var(--text-inverse)]">
+              <AvatarFallback className="bg-[var(--bg-inverse)] text-[var(--fg-inverse)]">
                 {userName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || "U"}
               </AvatarFallback>
             </Avatar>

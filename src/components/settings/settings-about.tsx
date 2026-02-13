@@ -14,13 +14,13 @@ export function SettingsAbout() {
         <LogoIcon className="h-12 w-12" />
         <div>
           <h3 className="text-lg font-semibold tracking-tight">Cadie</h3>
-          <p className="text-sm text-[var(--text-secondary)]">Version 1.0.0-beta</p>
+          <p className="text-sm text-fg-muted">Version 1.0.0-beta</p>
         </div>
       </div>
 
       {/* Legal */}
       <div className="space-y-4">
-        <h3 className="text-sm font-medium text-[var(--text-primary)]">Legal</h3>
+        <h3 className="text-sm font-medium text-fg">Legal</h3>
         <div className="flex flex-wrap items-center gap-2 text-sm">
           {[
             { label: "Terms and Conditions", href: "/terms" },
@@ -29,12 +29,12 @@ export function SettingsAbout() {
             <React.Fragment key={item.href}>
               <a
                 href={item.href}
-                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                className="text-fg-muted hover:text-fg transition-colors"
               >
                 {item.label}
               </a>
               {index < array.length - 1 && (
-                <span className="text-[var(--text-tertiary)]">·</span>
+                <span className="text-fg-subtle">·</span>
               )}
             </React.Fragment>
           ))}
@@ -45,16 +45,16 @@ export function SettingsAbout() {
 
       {/* Social & Feedback */}
       <div className="space-y-4">
-        <h3 className="text-sm font-medium text-[var(--text-primary)]">Connect</h3>
+        <h3 className="text-sm font-medium text-fg">Connect</h3>
         <div className="grid gap-3">
-          <div className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-field)] p-4">
+          <div className="rounded-xl border border-border bg-bg-muted p-4">
             <div className="mb-3 flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-black text-white">
                 <IconBrandX className="h-5 w-5" />
               </div>
               <div>
                 <h4 className="text-sm font-medium">Follow us on X</h4>
-                <p className="text-xs text-[var(--text-secondary)]">Get the latest updates and features</p>
+                <p className="text-xs text-fg-muted">Get the latest updates and features</p>
               </div>
             </div>
             <Button variant="secondary" size="sm" className="w-full gap-2" asChild>
@@ -65,14 +65,14 @@ export function SettingsAbout() {
             </Button>
           </div>
 
-          <div className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-field)] p-4">
+          <div className="rounded-xl border border-border bg-bg-muted p-4">
             <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-blue-primary)]">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
                 <IconMail className="h-5 w-5 text-white" />
               </div>
               <div>
                 <h4 className="text-sm font-medium">Share Feedback</h4>
-                <p className="text-xs text-[var(--text-secondary)]">Found a bug or have an idea?</p>
+                <p className="text-xs text-fg-muted">Found a bug or have an idea?</p>
               </div>
             </div>
             <Button variant="secondary" size="sm" className="w-full justify-between" asChild>

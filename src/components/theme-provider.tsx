@@ -43,7 +43,6 @@ export function ThemeProvider({
   // Apply theme to document
   React.useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('light', 'dark');
 
     let effectiveTheme: 'light' | 'dark';
 
@@ -56,7 +55,6 @@ export function ThemeProvider({
     }
 
     root.setAttribute('data-theme', effectiveTheme);
-    root.classList.add(effectiveTheme);
   }, [theme]);
 
   // Listen for system theme changes
@@ -68,8 +66,6 @@ export function ThemeProvider({
       const root = document.documentElement;
       const effectiveTheme = mediaQuery.matches ? 'dark' : 'light';
       root.setAttribute('data-theme', effectiveTheme);
-      root.classList.remove('light', 'dark');
-      root.classList.add(effectiveTheme);
     };
 
     mediaQuery.addEventListener('change', handleChange);

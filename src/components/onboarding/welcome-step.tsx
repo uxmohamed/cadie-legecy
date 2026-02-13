@@ -40,10 +40,10 @@ export function WelcomeStep({ user, onComplete, isLoading = false }: WelcomeStep
     <>
       {/* Header Section */}
       <div className="flex flex-col gap-[2px] items-center w-full">
-        <h1 className="text-[18px] font-semibold leading-[32px] text-[var(--text-primary)] text-center">
+        <h1 className="text-[18px] font-semibold leading-[32px] text-fg text-center">
           Customize your Account
         </h1>
-        <p className="text-[16px] font-medium leading-[32px] text-[var(--grey-400)] text-center">
+        <p className="text-[16px] font-medium leading-[32px] text-fg-muted text-center">
           Give your account a profile picture and name
         </p>
       </div>
@@ -61,7 +61,7 @@ export function WelcomeStep({ user, onComplete, isLoading = false }: WelcomeStep
       {/* Form Section */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-[32px] items-start w-full">
         <div className="flex flex-col gap-[12px] w-full">
-          <label htmlFor="displayName" className="text-[14px] font-medium text-[var(--text-tertiary)]">
+          <label htmlFor="displayName" className="text-[14px] font-medium text-fg-subtle">
             Your name
           </label>
           <div className="w-full">
@@ -74,11 +74,11 @@ export function WelcomeStep({ user, onComplete, isLoading = false }: WelcomeStep
               required
               disabled={isLoading}
               autoFocus
-              className="w-full px-4 py-4 bg-[var(--bg-field-default)] border border-transparent text-[var(--text-primary)] text-[14px] font-medium rounded-[12px] outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#2783de] placeholder:text-[var(--text-tertiary)] disabled:opacity-50 text-left"
+              className="w-full px-4 py-4 bg-bg-input border border-transparent text-fg text-[14px] font-medium rounded-[12px] outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#2783de] placeholder:text-fg-subtle disabled:opacity-50 text-left"
             />
           </div>
           {error && (
-            <p className="text-sm text-[var(--accent-red-primary)] text-center w-full">
+            <p className="text-sm text-destructive text-center w-full">
               {error}
             </p>
           )}

@@ -154,10 +154,10 @@ export function LinkListItem({
           isEditing
             ? "bg-[var(--grey-50)]"
             : isSelected
-            ? "bg-[var(--bg-field-hover)]"
+            ? "bg-bg-hover"
             : isFocused
-            ? "bg-[var(--bg-field-hover)]"
-            : "hover:bg-[var(--bg-cell-hover)]"
+            ? "bg-bg-hover"
+            : "hover:bg-bg-hover"
         )}
       >
         <a
@@ -172,7 +172,7 @@ export function LinkListItem({
         >
           {isColor ? (
             <div
-              className="h-5 w-5 flex-shrink-0 rounded-full border border-[var(--border-secondary)]"
+              className="h-5 w-5 flex-shrink-0 rounded-full border border-border-muted"
               style={{ backgroundColor: link.color_value || link.title }}
             />
           ) : (
@@ -186,18 +186,18 @@ export function LinkListItem({
                 value={editValue}
                 onChange={(e) => onEditChange?.(e.target.value)}
                 onKeyDown={handleEditKeyDown}
-                className="w-full bg-transparent text-sm leading-4 text-[var(--text-primary)] font-[470] placeholder:text-[var(--text-tertiary)] outline-none"
+                className="w-full bg-transparent text-sm leading-4 text-fg font-[470] placeholder:text-fg-subtle outline-none"
                 autoComplete="off"
               />
             ) : (
               <div className="flex items-center gap-2">
-                <div className="truncate text-sm leading-4 text-[var(--text-primary)] font-[470]">
+                <div className="truncate text-sm leading-4 text-fg font-[470]">
                   {link.title || link.url}
                 </div>
                 {!isColor && (
                   <div
                     className={cn(
-                      "hidden sm:block truncate text-sm leading-4 text-[var(--text-tertiary)] font-[470]",
+                      "hidden sm:block truncate text-sm leading-4 text-fg-subtle font-[470]",
                       isSelected || isFocused
                         ? "opacity-100"
                         : "opacity-0 group-hover:opacity-100"
@@ -213,12 +213,12 @@ export function LinkListItem({
         <div className="relative flex items-center justify-end">
           {isEditing ? (
             <IconCornerDownLeft 
-              className={`h-4 w-4 ${editValue?.trim() ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-disabled)] opacity-40'}`}
+              className={`h-4 w-4 ${editValue?.trim() ? 'text-fg-subtle' : 'text-[var(--fg-disabled)] opacity-40'}`}
             />
           ) : (
             <>
               <div className={cn(
-                "text-[11px] sm:text-[13px] text-[var(--text-tertiary)] font-[470] truncate text-right transition-opacity tabular-nums",
+                "text-[11px] sm:text-[13px] text-fg-subtle font-[470] truncate text-right transition-opacity tabular-nums",
                 isPinned && (isFocused || isSelected) && "opacity-0",
                 isPinned && "group-hover:opacity-0"
               )}>
@@ -241,7 +241,7 @@ export function LinkListItem({
                   e.stopPropagation();
                   onUnpin?.(link.id);
                 }}
-                className="h-8 w-8 hover:bg-[var(--bg-l2-solid)]"
+                className="h-8 w-8 hover:bg-bg-surface"
                 title="Unpin"
               >
                 <IconPinnedOff className="h-4 w-4" />

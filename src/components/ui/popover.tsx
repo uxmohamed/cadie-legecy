@@ -25,7 +25,7 @@ const PopoverPopup = React.forwardRef<
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          "overlay-blur z-50 w-72 rounded-[20px] border-[var(--overlay-border)] bg-[var(--overlay-bg)] p-4 text-[var(--overlay-text-primary)] shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+          "overlay-blur z-50 w-72 rounded-[20px] border-border-overlay bg-bg-overlay p-4 text-fg-on-overlay shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
           tooltipStyle &&
             "w-fit text-balance rounded-[18px] text-xs shadow-black/5 shadow-md",
           className,
@@ -59,7 +59,7 @@ const PopoverDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("text-[var(--overlay-text-secondary)] text-sm", className)}
+    className={cn("text-fg-on-overlay-muted text-sm", className)}
     data-slot="popover-description"
     {...props}
   />
