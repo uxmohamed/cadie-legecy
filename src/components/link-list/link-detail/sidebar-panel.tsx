@@ -110,7 +110,7 @@ export function SidebarPanel({
            <Button
             variant="outline"
             size="icon-lg"
-            className="border-border bg-white dark:bg-bg-surface text-fg-muted hover:text-fg"
+            className="border-border bg-bg-surface text-fg-muted hover:text-fg"
             onClick={onCopy}
             title="Copy URL"
            >
@@ -122,7 +122,7 @@ export function SidebarPanel({
               <Button 
                 variant="outline" 
                 size="icon-lg"
-                className="border-border bg-white dark:bg-bg-surface text-fg-muted hover:text-fg"
+                className="border-border bg-bg-surface text-fg-muted hover:text-fg"
               >
                 <IconDots className="w-4 h-4" />
               </Button>

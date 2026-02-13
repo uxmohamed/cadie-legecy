@@ -1,11 +1,14 @@
 "use client";
 
 import * as React from "react";
+import { useRef, useState, useEffect } from "react";
 import type { Link } from "@/features/links/types";
 import { detectEmbedType, getYouTubeEmbedUrl } from "@/lib/embed-utils";
 import { Favicon } from "@/components/ui/favicon";
 import { IconWorld, IconBrandX } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { useTheme } from "@/components/theme-provider";
 
 interface PreviewPanelProps {
   link: Link;
@@ -29,10 +32,9 @@ function YouTubePreview({ videoId }: { videoId: string }) {
 }
 
 /**
- * Twitter/X preview - shows OG image with overlay button
- * Privacy-friendly approach - no external scripts
+ * Fallback Twitter preview - OG image with overlay button
  */
-function TwitterPreview({ link }: { link: Link }) {
+function FallbackTwitterPreview({ link }: { link: Link }) {
   return (
     <div className="w-full h-full relative bg-bg-surface flex items-center justify-center">
       {link.og_image_url ? (
@@ -46,7 +48,6 @@ function TwitterPreview({ link }: { link: Link }) {
           <IconBrandX className="h-20 w-20 text-white" />
         </div>
       )}
-      {/* Overlay button */}
       <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity">
         <Button
           variant="secondary"
@@ -58,6 +59,109 @@ function TwitterPreview({ link }: { link: Link }) {
           View on X
         </Button>
       </div>
+    </div>
+  );
+}
+
+declare global {
+  interface Window {
+    twttr?: {
+      widgets: {
+        createTweet: (
+          tweetId: string,
+          container: HTMLElement,
+          options?: Record<string, unknown>
+        ) => Promise<HTMLElement | undefined>;
+      };
+    };
+  }
+}
+
+function loadTwitterWidgets(): Promise<void> {
+  if (window.twttr) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://platform.twitter.com/widgets.js";
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Failed to load Twitter widgets"));
+    document.head.appendChild(script);
+  });
+}
+
+function useEffectiveTheme(): "light" | "dark" {
+  const { theme } = useTheme();
+  const [effective, setEffective] = useState<"light" | "dark">("dark");
+
+  useEffect(() => {
+    if (theme !== "system") {
+      setEffective(theme);
+      return;
+    }
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    setEffective(mq.matches ? "dark" : "light");
+    const handler = (e: MediaQueryListEvent) => setEffective(e.matches ? "dark" : "light");
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, [theme]);
+
+  return effective;
+}
+
+/**
+ * Twitter/X embedded tweet preview
+ */
+function TwitterPreview({ tweetId, link }: { tweetId: string; link: Link }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const effectiveTheme = useEffectiveTheme();
+
+  useEffect(() => {
+    let cancelled = false;
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Clear previous embed when tweetId or theme changes
+    container.innerHTML = "";
+    setLoading(true);
+    setError(false);
+
+    async function embedTweet() {
+      try {
+        await loadTwitterWidgets();
+        if (cancelled || !container) return;
+        const el = await window.twttr!.widgets.createTweet(tweetId, container, {
+          conversation: "none",
+          dnt: true,
+          theme: effectiveTheme,
+          width: 550,
+        });
+        if (cancelled) return;
+        if (!el) {
+          setError(true);
+        }
+      } catch {
+        if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    embedTweet();
+    return () => { cancelled = true; };
+  }, [tweetId, effectiveTheme]);
+
+  if (error) return <FallbackTwitterPreview link={link} />;
+
+  return (
+    <div className="w-full h-full overflow-auto flex items-center justify-center bg-bg-surface relative p-4">
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Spinner />
+        </div>
+      )}
+      <div ref={containerRef} className="w-full max-w-[550px]" />
     </div>
   );
 }
@@ -128,7 +232,7 @@ export function PreviewPanel({ link }: PreviewPanelProps) {
     case "youtube":
       return <YouTubePreview videoId={embedInfo.embedId!} />;
     case "twitter":
-      return <TwitterPreview link={link} />;
+      return <TwitterPreview tweetId={embedInfo.embedId!} link={link} />;
     case "color":
       return <ColorPreview colorValue={link.color_value || "#000000"} />;
     case "image":

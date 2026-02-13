@@ -103,7 +103,7 @@ export function LinkDetailDialog({
       <DialogPortal>
         <DialogOverlay />
         <DialogPrimitive.Content
-          className="fixed left-[50%] top-[50%] z-50 flex flex-col w-[95vw] h-[95vh] translate-x-[-50%] translate-y-[-50%] gap-0 border border-border bg-[#FAFAFA] dark:bg-[#09090b] p-0 shadow-2xl transition-[scale,opacity,translate] duration-200 ease-in-out will-change-transform data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:rounded-2xl overflow-hidden"
+          className="fixed left-[50%] top-[50%] z-50 flex flex-col w-[95vw] h-[95vh] translate-x-[-50%] translate-y-[-50%] gap-0 border border-border bg-bg p-0 shadow-2xl transition-[scale,opacity,translate] duration-200 ease-in-out will-change-transform data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:rounded-2xl overflow-hidden"
         >
           {/* Accessible title - visually hidden */}
           <DialogPrimitive.Title className="sr-only">
@@ -112,14 +112,14 @@ export function LinkDetailDialog({
 
           <div className="flex flex-col md:flex-row h-full min-h-0">
             {/* Left Panel: Browser Preview */}
-            <div className="flex-1 flex flex-col p-6 min-h-0 min-w-0 bg-[#F4F4F5] dark:bg-[#18181b]">
+            <div className="flex-1 flex flex-col p-6 min-h-0 min-w-0 bg-bg-muted">
               
               {/* Browser Window Frame */}
-              <div className="flex-1 flex flex-col bg-white dark:bg-black rounded-lg border border-border overflow-hidden shadow-sm relative">
+              <div className="flex-1 flex flex-col bg-bg-surface rounded-lg border border-border overflow-hidden shadow-sm relative">
                 <BrowserAddressBar link={link} />
                 
                 {/* Content Container with Spacing as requested */}
-                <div className="flex-1 p-4 md:p-8 overflow-hidden flex items-center justify-center bg-white dark:bg-black">
+                <div className="flex-1 p-4 md:p-8 overflow-hidden flex items-center justify-center bg-bg-surface">
                    <div className="w-full h-full relative flex items-center justify-center">
                       <PreviewPanel link={link} />
                    </div>
@@ -128,7 +128,7 @@ export function LinkDetailDialog({
             </div>
 
             {/* Right Panel: Sidebar */}
-            <div className="w-full md:w-[320px] lg:w-[400px] flex-shrink-0 flex flex-col h-[40%] md:h-full border-t md:border-t-0 md:border-l border-border bg-white dark:bg-bg-surface relative">
+            <div className="w-full md:w-[320px] lg:w-[400px] flex-shrink-0 flex flex-col h-[40%] md:h-full border-t md:border-t-0 md:border-l border-border bg-bg-elevated relative">
               <div className="flex-1 overflow-y-auto min-h-0 p-6 md:p-8 md:pt-14">
                 <SidebarPanel link={link} />
               </div>
@@ -174,7 +174,7 @@ function BrowserAddressBar({ link }: { link: Link }) {
   const isColor = link.content_type === "color";
   
   return (
-    <div className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-black border-b border-border w-full">
+    <div className="flex items-center gap-3 px-4 py-3 bg-bg-surface border-b border-border w-full">
       {/* URL Content */}
       <div className="flex-1 flex items-center gap-2 text-xs text-fg-muted overflow-hidden pl-1 bg-bg-muted/50 rounded-md px-2 py-1.5">
          {!isColor && link.domain && (
