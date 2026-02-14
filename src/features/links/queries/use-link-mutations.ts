@@ -166,6 +166,36 @@ function addLinksToCache(
 }
 
 /**
+ * Atomically swap temporary links for real server-returned links.
+ * Performs remove + add in a SINGLE setQueryData call to avoid
+ * the flash caused by two separate re-renders.
+ */
+function swapLinksInCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  filters: LinkFilters,
+  tempIds: string[],
+  realLinks: Link[]
+) {
+  const tempIdSet = new Set(tempIds);
+  updateLinksCache(queryClient, filters, (old) => {
+    if (!old) {
+      return realLinks.length > 0
+        ? { links: sortLinks(realLinks), total: realLinks.length }
+        : old;
+    }
+    // Remove temp IDs and add real links in one pass
+    const withoutTemps = old.links.filter((link) => !tempIdSet.has(link.id));
+    const existingIds = new Set(withoutTemps.map((l) => l.id));
+    const newLinks = realLinks.filter((l) => !existingIds.has(l.id));
+    const removedCount = old.links.length - withoutTemps.length;
+    return {
+      links: sortLinks([...newLinks, ...withoutTemps]),
+      total: old.total - removedCount + newLinks.length,
+    };
+  });
+}
+
+/**
  * Get a link from any cache (checks both all and trash)
  */
 function getLinkFromAnyCache(
@@ -278,12 +308,6 @@ export function useLinkMutations(filters: LinkFilters) {
     onSuccess: () => {
       toast.success("Link moved to trash");
     },
-    onSettled: () => {
-      // Delayed invalidation as fallback - gives realtime a chance first
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.links.all, refetchType: "active" });
-      }, 2000);
-    },
   });
 
   /**
@@ -336,11 +360,6 @@ export function useLinkMutations(filters: LinkFilters) {
     onSuccess: () => {
       toast.success("Link restored");
     },
-    onSettled: () => {
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.links.all, refetchType: "active" });
-      }, 2000);
-    },
   });
 
   /**
@@ -389,11 +408,6 @@ export function useLinkMutations(filters: LinkFilters) {
     onSuccess: () => {
       toast.success("Link permanently deleted");
     },
-    onSettled: () => {
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.links.all, refetchType: "active" });
-      }, 2000);
-    },
   });
 
   /**
@@ -415,8 +429,11 @@ export function useLinkMutations(filters: LinkFilters) {
     onMutate: async ({ id, updates }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.links.all });
       const previousData = queryClient.getQueryData<LinksResponse>(queryKeys.links.list(filters));
+      const previousAll = isCustomFilter(filters)
+        ? queryClient.getQueryData<LinksResponse>(queryKeys.links.list(ALL_FILTERS))
+        : undefined;
 
-      updateLinksCache(queryClient, filters, (old) => {
+      const updater = (old: LinksResponse | undefined) => {
         if (!old) return old;
         return {
           ...old,
@@ -424,20 +441,23 @@ export function useLinkMutations(filters: LinkFilters) {
             link.id === id ? { ...link, ...updates } : link
           ),
         };
-      });
+      };
 
-      return { previousData };
+      updateLinksCache(queryClient, filters, updater);
+      if (isCustomFilter(filters)) {
+        updateLinksCache(queryClient, ALL_FILTERS, updater);
+      }
+
+      return { previousData, previousAll };
     },
     onError: (err, vars, context) => {
       if (context?.previousData) {
         queryClient.setQueryData(queryKeys.links.list(filters), context.previousData);
       }
+      if (context?.previousAll && isCustomFilter(filters)) {
+        queryClient.setQueryData(queryKeys.links.list(ALL_FILTERS), context.previousAll);
+      }
       toast.error(err instanceof Error ? err.message : "Failed to update link");
-    },
-    onSettled: () => {
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.links.all, refetchType: "active" });
-      }, 2000);
     },
   });
 
@@ -459,8 +479,11 @@ export function useLinkMutations(filters: LinkFilters) {
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.links.all });
       const previousData = queryClient.getQueryData<LinksResponse>(queryKeys.links.list(filters));
+      const previousAll = isCustomFilter(filters)
+        ? queryClient.getQueryData<LinksResponse>(queryKeys.links.list(ALL_FILTERS))
+        : undefined;
 
-      updateLinksCache(queryClient, filters, (old) => {
+      const updater = (old: LinksResponse | undefined) => {
         if (!old) return old;
         return {
           ...old,
@@ -468,23 +491,26 @@ export function useLinkMutations(filters: LinkFilters) {
             link.id === id ? { ...link, is_pinned: true } : link
           ),
         };
-      });
+      };
 
-      return { previousData };
+      updateLinksCache(queryClient, filters, updater);
+      if (isCustomFilter(filters)) {
+        updateLinksCache(queryClient, ALL_FILTERS, updater);
+      }
+
+      return { previousData, previousAll };
     },
     onError: (err, id, context) => {
       if (context?.previousData) {
         queryClient.setQueryData(queryKeys.links.list(filters), context.previousData);
       }
+      if (context?.previousAll && isCustomFilter(filters)) {
+        queryClient.setQueryData(queryKeys.links.list(ALL_FILTERS), context.previousAll);
+      }
       toast.error("Failed to pin link");
     },
     onSuccess: () => {
       toast.success("Link pinned");
-    },
-    onSettled: () => {
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.links.all, refetchType: "active" });
-      }, 2000);
     },
   });
 
@@ -506,8 +532,11 @@ export function useLinkMutations(filters: LinkFilters) {
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.links.all });
       const previousData = queryClient.getQueryData<LinksResponse>(queryKeys.links.list(filters));
+      const previousAll = isCustomFilter(filters)
+        ? queryClient.getQueryData<LinksResponse>(queryKeys.links.list(ALL_FILTERS))
+        : undefined;
 
-      updateLinksCache(queryClient, filters, (old) => {
+      const updater = (old: LinksResponse | undefined) => {
         if (!old) return old;
         return {
           ...old,
@@ -515,23 +544,26 @@ export function useLinkMutations(filters: LinkFilters) {
             link.id === id ? { ...link, is_pinned: false } : link
           ),
         };
-      });
+      };
 
-      return { previousData };
+      updateLinksCache(queryClient, filters, updater);
+      if (isCustomFilter(filters)) {
+        updateLinksCache(queryClient, ALL_FILTERS, updater);
+      }
+
+      return { previousData, previousAll };
     },
     onError: (err, id, context) => {
       if (context?.previousData) {
         queryClient.setQueryData(queryKeys.links.list(filters), context.previousData);
       }
+      if (context?.previousAll && isCustomFilter(filters)) {
+        queryClient.setQueryData(queryKeys.links.list(ALL_FILTERS), context.previousAll);
+      }
       toast.error("Failed to unpin link");
     },
     onSuccess: () => {
       toast.success("Link unpinned");
-    },
-    onSettled: () => {
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.links.all, refetchType: "active" });
-      }, 2000);
     },
   });
 
@@ -593,11 +625,6 @@ export function useLinkMutations(filters: LinkFilters) {
     onSuccess: (ids) => {
       toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} moved to trash`);
     },
-    onSettled: () => {
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.links.all, refetchType: "active" });
-      }, 2000);
-    },
   });
 
   /**
@@ -646,11 +673,6 @@ export function useLinkMutations(filters: LinkFilters) {
     },
     onSuccess: (ids) => {
       toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} restored`);
-    },
-    onSettled: () => {
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.links.all, refetchType: "active" });
-      }, 2000);
     },
   });
 
@@ -704,11 +726,6 @@ export function useLinkMutations(filters: LinkFilters) {
     onSuccess: (ids) => {
       toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} permanently deleted`);
     },
-    onSettled: () => {
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.links.all, refetchType: "active" });
-      }, 2000);
-    },
   });
 
   /**
@@ -729,8 +746,11 @@ export function useLinkMutations(filters: LinkFilters) {
     onMutate: async (ids) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.links.all });
       const previousData = queryClient.getQueryData<LinksResponse>(queryKeys.links.list(filters));
+      const previousAll = isCustomFilter(filters)
+        ? queryClient.getQueryData<LinksResponse>(queryKeys.links.list(ALL_FILTERS))
+        : undefined;
 
-      updateLinksCache(queryClient, filters, (old) => {
+      const updater = (old: LinksResponse | undefined) => {
         if (!old) return old;
         const idsSet = new Set(ids);
         return {
@@ -739,23 +759,26 @@ export function useLinkMutations(filters: LinkFilters) {
             idsSet.has(link.id) ? { ...link, is_pinned: true } : link
           ),
         };
-      });
+      };
 
-      return { previousData };
+      updateLinksCache(queryClient, filters, updater);
+      if (isCustomFilter(filters)) {
+        updateLinksCache(queryClient, ALL_FILTERS, updater);
+      }
+
+      return { previousData, previousAll };
     },
     onError: (err, ids, context) => {
       if (context?.previousData) {
         queryClient.setQueryData(queryKeys.links.list(filters), context.previousData);
       }
+      if (context?.previousAll && isCustomFilter(filters)) {
+        queryClient.setQueryData(queryKeys.links.list(ALL_FILTERS), context.previousAll);
+      }
       toast.error("Failed to pin links");
     },
     onSuccess: (ids) => {
       toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} pinned`);
-    },
-    onSettled: () => {
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.links.all, refetchType: "active" });
-      }, 2000);
     },
   });
 
@@ -777,8 +800,11 @@ export function useLinkMutations(filters: LinkFilters) {
     onMutate: async (ids) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.links.all });
       const previousData = queryClient.getQueryData<LinksResponse>(queryKeys.links.list(filters));
+      const previousAll = isCustomFilter(filters)
+        ? queryClient.getQueryData<LinksResponse>(queryKeys.links.list(ALL_FILTERS))
+        : undefined;
 
-      updateLinksCache(queryClient, filters, (old) => {
+      const updater = (old: LinksResponse | undefined) => {
         if (!old) return old;
         const idsSet = new Set(ids);
         return {
@@ -787,23 +813,26 @@ export function useLinkMutations(filters: LinkFilters) {
             idsSet.has(link.id) ? { ...link, is_pinned: false } : link
           ),
         };
-      });
+      };
 
-      return { previousData };
+      updateLinksCache(queryClient, filters, updater);
+      if (isCustomFilter(filters)) {
+        updateLinksCache(queryClient, ALL_FILTERS, updater);
+      }
+
+      return { previousData, previousAll };
     },
     onError: (err, ids, context) => {
       if (context?.previousData) {
         queryClient.setQueryData(queryKeys.links.list(filters), context.previousData);
       }
+      if (context?.previousAll && isCustomFilter(filters)) {
+        queryClient.setQueryData(queryKeys.links.list(ALL_FILTERS), context.previousAll);
+      }
       toast.error("Failed to unpin links");
     },
     onSuccess: (ids) => {
       toast.success(`${ids.length} ${ids.length === 1 ? "link" : "links"} unpinned`);
-    },
-    onSettled: () => {
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.links.all, refetchType: "active" });
-      }, 2000);
     },
   });
 
@@ -927,17 +956,11 @@ export function useLinkMutations(filters: LinkFilters) {
       const successCount = count - restored;
       const duplicateCount = data.duplicates ?? 0;
 
-      // Swap optimistic links (temp IDs) with real server-returned links
+      // Atomically swap temp links for real links (single setQueryData = no flash)
       if (context?.tempIds) {
-        removeLinksFromCache(queryClient, ALL_FILTERS, context.tempIds);
+        swapLinksInCache(queryClient, ALL_FILTERS, context.tempIds, createdLinks);
         if (isCustomFilter(filters)) {
-          removeLinksFromCache(queryClient, filters, context.tempIds);
-        }
-      }
-      if (createdLinks.length > 0) {
-        addLinksToCache(queryClient, ALL_FILTERS, createdLinks);
-        if (isCustomFilter(filters)) {
-          addLinksToCache(queryClient, filters, createdLinks);
+          swapLinksInCache(queryClient, filters, context.tempIds, createdLinks);
         }
       }
 
@@ -1121,11 +1144,9 @@ export function useLinkMutations(filters: LinkFilters) {
     },
     onSuccess: (data, _files, context) => {
       const createdLinks = data.links ?? [];
+      // Atomically swap temp links for real links (single setQueryData = no flash)
       if (context?.tempIds) {
-        removeLinksFromCache(queryClient, ALL_FILTERS, context.tempIds);
-      }
-      if (createdLinks.length > 0) {
-        addLinksToCache(queryClient, ALL_FILTERS, createdLinks);
+        swapLinksInCache(queryClient, ALL_FILTERS, context.tempIds, createdLinks);
       }
       const count = createdLinks.length;
       toast.success(`${count} ${count === 1 ? "image" : "images"} saved`);
@@ -1138,7 +1159,13 @@ export function useLinkMutations(filters: LinkFilters) {
     },
     onSettled: () => {
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.links.all, refetchType: "active" });
+        const current = queryClient.getQueryData<LinksResponse>(queryKeys.links.list(ALL_FILTERS));
+        const hasPending = current?.links.some(
+          (l) => l.fetch_status === "pending" || l.fetch_status === "fetching"
+        );
+        if (hasPending) {
+          queryClient.invalidateQueries({ queryKey: queryKeys.links.all, refetchType: "active" });
+        }
       }, 3000);
     },
   });

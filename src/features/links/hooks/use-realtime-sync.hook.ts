@@ -56,9 +56,13 @@ function handleInsert(
     if (!old) return { links: [link], total: 1 };
 
     // Check if link already exists (dedup)
-    const exists = old.links.some((l) => l.id === link.id);
-    if (exists) {
-      // Update existing link instead (re-sort in case pinned status changed)
+    const existing = old.links.find((l) => l.id === link.id);
+    if (existing) {
+      // If data is identical, skip update to avoid unnecessary re-render
+      if (existing.updated_at === link.updated_at) {
+        return old;
+      }
+      // Data actually changed — update and re-sort
       return {
         links: sortLinks(old.links.map((l) => (l.id === link.id ? link : l))),
         total: old.total,
@@ -106,10 +110,15 @@ function handleUpdate(
       };
     });
   } else {
-    // Update in same view (re-sort in case pinned status changed)
+    // Update in same view — but only if data actually changed
     const queryKey = queryKeys.links.list(newClassification.filters);
     queryClient.setQueryData<LinksResponse>(queryKey, (old) => {
       if (!old) return old;
+      const existing = old.links.find((l) => l.id === newLink.id);
+      // If data is identical, skip update to avoid unnecessary re-render
+      if (existing && existing.updated_at === newLink.updated_at) {
+        return old;
+      }
       return {
         ...old,
         links: sortLinks(old.links.map((l) => (l.id === newLink.id ? newLink : l))),
