@@ -79,6 +79,9 @@ export interface UpdateLinkDTO {
     favicon_url?: string | null;
     og_image_url?: string | null;
     description?: string | null;
+    content_text?: string | null;
+    ai_tags?: string[] | null;
+    ai_key_themes?: Record<string, unknown> | null;
     is_pinned?: boolean;
     is_archived?: boolean;
     is_deleted?: boolean;
@@ -199,4 +202,3 @@ export interface BatchEnrichmentResult {
     failed: number;
     results: Map<string, ExtractedMetadata | { error: string; fetch_status: FetchStatus }>;
 }
-

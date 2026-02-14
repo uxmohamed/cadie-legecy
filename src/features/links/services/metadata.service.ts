@@ -1,7 +1,6 @@
 import type { LinkMetadata, ExtractedMetadata, BatchMetadataOptions, FetchStatus } from "../types/link.types";
 import { extractMetadata } from "@/lib/metadata";
 import { log } from "@/lib/logger";
-import { createInternalHeaders } from "@/lib/internal-auth";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -134,7 +133,7 @@ export class MetadataService {
             if (metadata.fetch_status === "success") {
                 const supabase = await createClient();
                 
-                await supabase
+                const { error } = await supabase
                     .from("links")
                     .update({
                         title: metadata.title,
@@ -144,11 +143,14 @@ export class MetadataService {
                         site_name: metadata.site_name,
                         fetch_status: "success",
                         fetched_at: metadata.fetched_at,
-                        content_text: metadata.content_text,
                     })
                     .eq("id", linkId);
-                    
-                log.info(`[EnrichLink] Successfully updated metadata for ${linkId}`);
+
+                if (error) {
+                    log.error(`[EnrichLink] Failed to update metadata for ${linkId}`, error);
+                } else {
+                    log.info(`[EnrichLink] Successfully updated metadata for ${linkId}`);
+                }
             } else {
                 // Update with failure status but preserve url as title if needed
                 const supabase = await createClient();
@@ -240,7 +242,6 @@ export class MetadataService {
                         fetched_at: metadata.fetched_at,
                         etag: metadata.etag,
                         last_modified: metadata.last_modified,
-                        content_text: metadata.content_text,
                     })
                     .eq("id", link.id);
 

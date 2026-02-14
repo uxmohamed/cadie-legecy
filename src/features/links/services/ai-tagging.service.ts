@@ -31,6 +31,11 @@ interface TaggingResult {
   description?: string;
 }
 
+interface PreparedImageData {
+  mimeType: string;
+  dataUrl: string;
+}
+
 const IMAGE_SYSTEM_PROMPT = `You are an expert visual content curator and digital librarian. Your goal is to analyze images and categorize them with high precision.
 Given an image, generate:
 
@@ -72,11 +77,18 @@ function validateAndClean(raw: unknown): TaggingResult | null {
   const obj = raw as Record<string, unknown>;
 
   // Validate tags
-  if (!Array.isArray(obj.tags)) return null;
-  const tags = obj.tags
+  const rawTags = Array.isArray(obj.tags)
+    ? obj.tags
+    : typeof obj.tags === "string"
+      ? obj.tags.split(/[,\n]/)
+      : [];
+  if (rawTags.length === 0) return null;
+
+  const tags = rawTags
     .filter((t): t is string => typeof t === "string" && t.trim().length > 0)
     .map((t) => t.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, ""))
-    .filter((t) => t.length > 0 && t.split(/\s+/).length <= 2);
+    .map((t) => t.replace(/\s+/g, "-"))
+    .filter((t) => t.length > 0 && t.split("-").length <= 3);
 
   // Dedupe and limit to 10
   const uniqueTags = [...new Set(tags)].slice(0, 10);
@@ -96,16 +108,19 @@ function validateAndClean(raw: unknown): TaggingResult | null {
  * Uses Gemini as primary, OpenAI as fallback.
  */
 export class AITaggingService {
-  private readonly TIMEOUT_MS = 5000;
+  private readonly TIMEOUT_MS = 10000;
   private readonly MAX_RETRIES = 2;
+  private readonly MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
   /**
    * Generate tags and category for a link.
-   * Returns null if all providers fail (best-effort).
+   * Returns deterministic fallback tags if all providers fail.
    */
   async generateTags(context: TaggingContext): Promise<TaggingResult | null> {
     const userPrompt = buildUserPrompt(context);
-    if (!userPrompt.trim()) return null;
+    if (!userPrompt.trim()) {
+      return this.fallbackFromContext(context);
+    }
 
     // Try Gemini first
     const geminiResult = await this.tryGemini(userPrompt);
@@ -116,7 +131,7 @@ export class AITaggingService {
     if (openaiResult) return openaiResult;
 
     log.warn("[AI Tagging] All providers failed", { context });
-    return null;
+    return this.fallbackFromContext(context);
   }
 
   private async tryGemini(userPrompt: string): Promise<TaggingResult | null> {
@@ -211,38 +226,87 @@ export class AITaggingService {
    */
   async generateTagsFromImage(imageUrl: string): Promise<TaggingResult | null> {
     if (!imageUrl) return null;
+    const preparedImage = await this.prepareImageForVision(imageUrl);
 
     // Try Gemini vision first
-    const geminiResult = await this.tryGeminiVision(imageUrl);
+    const geminiResult = await this.tryGeminiVision(imageUrl, preparedImage);
     if (geminiResult) return geminiResult;
 
     // Fallback to OpenAI vision
-    const openaiResult = await this.tryOpenAIVision(imageUrl);
+    const openaiResult = await this.tryOpenAIVision(imageUrl, preparedImage);
     if (openaiResult) return openaiResult;
 
     log.warn("[AI Vision Tagging] All providers failed", { imageUrl });
-    return null;
+    return this.fallbackFromImageUrl(imageUrl);
   }
 
-  private async tryGeminiVision(imageUrl: string): Promise<TaggingResult | null> {
+  private async prepareImageForVision(imageUrl: string): Promise<PreparedImageData | null> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+    try {
+      const imageResponse = await fetch(imageUrl, { signal: controller.signal });
+      if (!imageResponse.ok) {
+        log.warn("[AI Vision Tagging] Failed to fetch image for preprocessing", {
+          imageUrl,
+          status: imageResponse.status,
+        });
+        return null;
+      }
+
+      const contentLength = Number(imageResponse.headers.get("content-length") || "0");
+      if (contentLength > this.MAX_IMAGE_BYTES) {
+        log.warn("[AI Vision Tagging] Image too large for inline vision payload", {
+          imageUrl,
+          contentLength,
+          maxBytes: this.MAX_IMAGE_BYTES,
+        });
+        return null;
+      }
+
+      const imageBuffer = await imageResponse.arrayBuffer();
+      if (imageBuffer.byteLength > this.MAX_IMAGE_BYTES) {
+        log.warn("[AI Vision Tagging] Downloaded image exceeds inline payload limit", {
+          imageUrl,
+          bytes: imageBuffer.byteLength,
+          maxBytes: this.MAX_IMAGE_BYTES,
+        });
+        return null;
+      }
+
+      const mimeType = imageResponse.headers.get("content-type") || "image/jpeg";
+      const base64Data = Buffer.from(imageBuffer).toString("base64");
+      return {
+        mimeType,
+        dataUrl: `data:${mimeType};base64,${base64Data}`,
+      };
+    } catch (error) {
+      log.warn("[AI Vision Tagging] Failed to prepare image payload", {
+        imageUrl,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  private async tryGeminiVision(
+    imageUrl: string,
+    preparedImage: PreparedImageData | null
+  ): Promise<TaggingResult | null> {
     const apiKey = process.env.GOOGLE_AI_API_KEY;
     if (!apiKey) {
       log.warn("[AI Vision Tagging] GOOGLE_AI_API_KEY not set, skipping Gemini");
       return null;
     }
 
+    if (!preparedImage) {
+      return null;
+    }
+
     for (let attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
       try {
-        // Fetch image and convert to base64 (Gemini SDK requires inline data)
-        const imageResponse = await fetch(imageUrl);
-        if (!imageResponse.ok) {
-          log.warn("[AI Vision Tagging] Failed to fetch image", { imageUrl, status: imageResponse.status });
-          return null;
-        }
-        const imageBuffer = await imageResponse.arrayBuffer();
-        const base64Data = Buffer.from(imageBuffer).toString("base64");
-        const mimeType = imageResponse.headers.get("content-type") || "image/jpeg";
-
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
           model: "gemini-2.0-flash",
@@ -256,7 +320,12 @@ export class AITaggingService {
         const result = await Promise.race([
           model.generateContent([
             IMAGE_SYSTEM_PROMPT,
-            { inlineData: { mimeType, data: base64Data } },
+            {
+              inlineData: {
+                mimeType: preparedImage.mimeType,
+                data: preparedImage.dataUrl.split(",")[1] || "",
+              },
+            },
           ]),
           this.visionTimeout(),
         ]);
@@ -283,7 +352,10 @@ export class AITaggingService {
     return null;
   }
 
-  private async tryOpenAIVision(imageUrl: string): Promise<TaggingResult | null> {
+  private async tryOpenAIVision(
+    imageUrl: string,
+    preparedImage: PreparedImageData | null
+  ): Promise<TaggingResult | null> {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       log.warn("[AI Vision Tagging] OPENAI_API_KEY not set, skipping OpenAI");
@@ -301,7 +373,13 @@ export class AITaggingService {
               {
                 role: "user",
                 content: [
-                  { type: "image_url", image_url: { url: imageUrl, detail: "low" } },
+                  {
+                    type: "image_url",
+                    image_url: {
+                      url: preparedImage?.dataUrl || imageUrl,
+                      detail: "low",
+                    },
+                  },
                   { type: "text", text: "Analyze this image." },
                 ],
               },
@@ -340,7 +418,88 @@ export class AITaggingService {
 
   private visionTimeout(): Promise<never> {
     return new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("AI vision request timed out")), 15000)
+      setTimeout(() => reject(new Error("AI vision request timed out")), 22000)
     );
+  }
+
+  private fallbackFromContext(context: TaggingContext): TaggingResult {
+    const pieces = [
+      context.title,
+      context.site_name,
+      context.domain?.replace(/\./g, " "),
+      context.description?.slice(0, 240),
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    const tags = this.extractFallbackTags(pieces, 6);
+    return {
+      tags: tags.length > 0 ? tags : ["web-link"],
+      category: "other",
+    };
+  }
+
+  private fallbackFromImageUrl(imageUrl: string): TaggingResult {
+    let fileName = "uploaded image";
+
+    try {
+      const url = new URL(imageUrl);
+      const pathPart = url.pathname.split("/").pop() || "";
+      fileName = decodeURIComponent(pathPart || fileName)
+        .replace(/\.[a-zA-Z0-9]+$/, "")
+        .replace(/[_-]+/g, " ")
+        .trim() || fileName;
+    } catch {
+      // Keep default fallback
+    }
+
+    const tags = this.extractFallbackTags(fileName, 6);
+    const titleText = fileName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 8)
+      .join(" ");
+    const description = titleText
+      ? `Image item: ${titleText}.`
+      : "Image item saved to library.";
+
+    return {
+      tags: tags.length > 0 ? tags : ["image-item"],
+      category: "other",
+      description,
+    };
+  }
+
+  private extractFallbackTags(text: string, limit: number): string[] {
+    const stopWords = new Set([
+      "the",
+      "and",
+      "for",
+      "with",
+      "from",
+      "this",
+      "that",
+      "your",
+      "into",
+      "http",
+      "https",
+      "www",
+      "com",
+      "net",
+      "org",
+      "image",
+      "photo",
+      "file",
+    ]);
+
+    const tokens = text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, " ")
+      .split(/\s+/)
+      .map((token) => token.trim())
+      .filter((token) => token.length >= 3 && !stopWords.has(token));
+
+    const deduped = [...new Set(tokens)].slice(0, limit);
+    return deduped;
   }
 }

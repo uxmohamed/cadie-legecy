@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     // Fetch link data
     const { data: link, error: fetchError } = await supabase
       .from("links")
-      .select("url, content_type, ai_tags")
+      .select("url, og_image_url, content_type, ai_tags")
       .eq("id", linkId)
       .eq("user_id", userId)
       .single();
@@ -75,10 +75,20 @@ export async function POST(request: NextRequest) {
 
     // Generate tags from image
     const taggingService = new AITaggingService();
-    const result = await taggingService.generateTagsFromImage(link.url);
+    const result = await taggingService.generateTagsFromImage(
+      link.og_image_url || link.url
+    );
 
     if (!result) {
       log.warn("[AI Vision Tags Job] Tagging returned null", { linkId });
+      await supabase
+        .from("links")
+        .update({
+          fetch_status: "failed",
+          fetched_at: new Date().toISOString(),
+        })
+        .eq("id", linkId)
+        .eq("user_id", userId);
       return NextResponse.json({ success: true, noResult: true });
     }
 
@@ -86,6 +96,8 @@ export async function POST(request: NextRequest) {
     const updateData: Record<string, unknown> = {
       ai_tags: result.tags,
       ai_key_themes: { category: result.category },
+      fetch_status: "success",
+      fetched_at: new Date().toISOString(),
     };
 
     if (result.description) {

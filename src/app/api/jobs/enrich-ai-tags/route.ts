@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     // Fetch link data
     const { data: link, error: fetchError } = await supabase
       .from("links")
-      .select("title, description, domain, site_name, content_type, ai_tags, content_text")
+      .select("title, description, domain, site_name, content_type, ai_tags")
       .eq("id", linkId)
       .eq("user_id", userId)
       .single();
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       description: link.description,
       domain: link.domain,
       site_name: link.site_name,
-      content: link.content_text,
+      content: null,
     });
 
     if (!result) {
