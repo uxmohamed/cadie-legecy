@@ -76,6 +76,7 @@ describe("AITaggingService", () => {
 
     expect(result).not.toBeNull();
     expect(result?.tags).toContain("machine-learning-model");
+    expect((result?.tags || []).length).toBeGreaterThanOrEqual(8);
     expect(result?.category).toBe("article");
   });
 
@@ -146,7 +147,54 @@ describe("AITaggingService", () => {
     expect(imagePart?.image_url?.url.startsWith("data:image/png;base64,")).toBe(
       true
     );
-    expect(result?.title).toBe("Minimal cat portrait");
+    expect(result?.title).toBe("Minimal Cat Portrait");
     expect((result?.title || "").split(/\s+/).filter(Boolean).length).toBeLessThanOrEqual(5);
+    expect((result?.tags || []).length).toBeGreaterThanOrEqual(8);
+  });
+
+  it("normalizes lowercase vision title/description with proper capitalization and punctuation", async () => {
+    process.env.GOOGLE_AI_API_KEY = "";
+    process.env.OPENAI_API_KEY = "test-openai-key";
+
+    const imageBytes = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      headers: {
+        get: (name: string) => {
+          if (name === "content-type") return "image/png";
+          if (name === "content-length") return String(imageBytes.byteLength);
+          return null;
+        },
+      },
+      arrayBuffer: async () => imageBytes.buffer,
+    }) as unknown as typeof fetch;
+
+    mockOpenAICreate.mockResolvedValueOnce({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              tags: ["football", "standings"],
+              category: "reference",
+              title: "an image displaying football league standings in arabic",
+              description: "shows teams scores and rankings in arabic text",
+            }),
+          },
+        },
+      ],
+    });
+
+    const service = new AITaggingService();
+    const result = await service.generateTagsFromImage(
+      "https://example.com/uploads/league-table.png"
+    );
+
+    expect(result).not.toBeNull();
+    expect(result?.title).toBe("Football League Standings in Arabic");
+    expect(result?.title?.charAt(0)).toMatch(/[A-Z]/);
+    expect(result?.description?.charAt(0)).toMatch(/[A-Z]/);
+    expect(result?.description?.trim().endsWith(".")).toBe(true);
+    expect((result?.description?.match(/[.!?]/g) || []).length).toBeGreaterThanOrEqual(2);
+    expect((result?.tags || []).length).toBeGreaterThanOrEqual(8);
   });
 });

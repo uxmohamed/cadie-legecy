@@ -37,29 +37,63 @@ interface PreparedImageData {
   dataUrl: string;
 }
 
+const MIN_TAG_COUNT = 8;
+const MAX_TAG_COUNT = 12;
+
+const MINOR_TITLE_WORDS = new Set([
+  "a",
+  "an",
+  "the",
+  "and",
+  "but",
+  "or",
+  "nor",
+  "for",
+  "so",
+  "yet",
+  "at",
+  "by",
+  "in",
+  "of",
+  "on",
+  "to",
+  "up",
+  "as",
+  "per",
+  "via",
+  "with",
+  "from",
+  "into",
+  "over",
+  "under",
+]);
+
 const IMAGE_SYSTEM_PROMPT = `You are an expert visual content curator and digital librarian. Your goal is to analyze images and categorize them with high precision.
 Given an image, generate:
 
-1. 5-10 high-quality, specific tags describing the image content.
+1. 8-12 high-quality, specific tags describing the image content.
    - Rules: lowercase, 1-3 words max, no special characters (use hyphens for spaces).
    - Strategy: Mix broad topics (e.g. "landscape", "portrait") with specific subjects (e.g. "golden-gate-bridge", "sunset") and style descriptors (e.g. "minimalist", "aerial-view").
    - Avoid generic tags like "image", "photo", "picture" unless necessary.
 2. Exactly 1 category from this list: article, tool, video, portfolio, documentation, social-media, shopping, news, reference, other.
 3. A short title with 3-5 words maximum.
-   - Must be concise and scannable.
+   - Must be concise and scannable, not a full sentence.
+   - Use title case: capitalize major words, keep short connector words lowercase unless first or last.
+   - The first character must be uppercase.
    - No full-sentence titles.
    - No trailing punctuation.
-4. A detailed description in 2-3 sentences, around 35-60 words total.
+4. A detailed description in 3 sentences, around 45-80 words total.
    - The description should read like a useful summary for a saved media library.
+   - Every sentence should start with a capital letter and end with punctuation.
    - Avoid repeating the title verbatim as the first sentence.
 
 Respond ONLY with valid JSON in this exact format:
-{"tags": ["tag1", "tag2", "tag3"], "category": "other", "title": "short sample title", "description": "A fuller 2-3 sentence description of the image."}`;
+{"tags": ["tag1", "tag2", "tag3"], "category": "other", "title": "short sample title", "description": "A fuller 3-sentence description of the image."}`;
 
-const SYSTEM_PROMPT = `You are an expert content curator and digital librarian. Your goal is to deeply anaylze web content and categorize it with high precision.
+const SYSTEM_PROMPT = `You are an expert content curator and digital librarian. Your goal is to deeply analyze web content and categorize it with high precision.
 Given metadata and a content preview of a link, generate:
 
-1. 5-10 high-quality, specific tags.
+1. 8-12 high-quality, specific tags.
    - Rules: lowercase, 1-3 words max, no special characters (use hyphens for spaces).
    - Strategy: Mix broad topics (e.g. "artificial-intelligence") with specific entities (e.g. "openai", "sam-altman") and niche concepts (e.g. "prompt-engineering").
    - Avoid generic tags like "tech", "website", "article" unless necessary.
@@ -97,8 +131,8 @@ function validateAndClean(raw: unknown): TaggingResult | null {
     .map((t) => t.replace(/\s+/g, "-"))
     .filter((t) => t.length > 0 && t.split("-").length <= 3);
 
-  // Dedupe and limit to 10
-  const uniqueTags = [...new Set(tags)].slice(0, 10);
+  // Dedupe and limit to MAX_TAG_COUNT
+  const uniqueTags = [...new Set(tags)].slice(0, MAX_TAG_COUNT);
   if (uniqueTags.length === 0) return null;
 
   // Validate category
@@ -108,6 +142,76 @@ function validateAndClean(raw: unknown): TaggingResult | null {
   }
 
   return { tags: uniqueTags, category };
+}
+
+function capitalizeFirstAlpha(text: string): string {
+  const alphaIndex = text.search(/[a-zA-Z]/);
+  if (alphaIndex === -1) return text;
+  return `${text.slice(0, alphaIndex)}${text.charAt(alphaIndex).toUpperCase()}${text.slice(alphaIndex + 1)}`;
+}
+
+function formatTitleToken(token: string): string {
+  if (!token) return token;
+  if (/^[A-Z0-9]{2,}$/.test(token)) return token;
+  return `${token.charAt(0).toUpperCase()}${token.slice(1).toLowerCase()}`;
+}
+
+function toTitleCase(text: string): string {
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return text;
+
+  return words
+    .map((word, index) => {
+      const isFirst = index === 0;
+      const isLast = index === words.length - 1;
+
+      return word
+        .split("-")
+        .map((segment, segmentIndex, segments) => {
+          const lowerSegment = segment.toLowerCase();
+          const isSegmentFirst = isFirst && segmentIndex === 0;
+          const isSegmentLast = isLast && segmentIndex === segments.length - 1;
+
+          if (!isSegmentFirst && !isSegmentLast && MINOR_TITLE_WORDS.has(lowerSegment)) {
+            return lowerSegment;
+          }
+
+          return formatTitleToken(segment);
+        })
+        .join("-");
+    })
+    .join(" ");
+}
+
+function sentenceCount(text: string): number {
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean).length;
+}
+
+function normalizeSentencePunctuation(text: string): string {
+  const compactText = text.replace(/\s+/g, " ").trim();
+  if (!compactText) return "";
+
+  const rawSentences = compactText
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+
+  if (rawSentences.length === 0) {
+    return "";
+  }
+
+  return rawSentences
+    .map((sentence) => {
+      const capitalized = capitalizeFirstAlpha(sentence);
+      if (/[.!?]$/.test(capitalized)) {
+        return capitalized;
+      }
+      return `${capitalized}.`;
+    })
+    .join(" ");
 }
 
 function normalizeImageTitle(
@@ -125,39 +229,47 @@ function normalizeImageTitle(
     .replace(/^(an?|the)\s+/i, "")
     .replace(/^image\s+(of|showing|displaying)\s+/i, "")
     .replace(/^a\s+photo\s+of\s+/i, "")
-    .replace(/[.,!?;:]/g, " ")
+    .replace(/[.,!?;:()[\]{}]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
   if (!title) return undefined;
 
   const shortTitle = title.split(" ").slice(0, 5).join(" ").trim();
-  return shortTitle || undefined;
+  if (!shortTitle) return undefined;
+
+  const normalizedTitle = toTitleCase(shortTitle);
+  return capitalizeFirstAlpha(normalizedTitle);
 }
 
 function normalizeImageDescription(rawDescription: unknown, title?: string): string | undefined {
   if (typeof rawDescription !== "string") return undefined;
 
-  let description = rawDescription
-    .replace(/\s+/g, " ")
-    .trim();
+  let description = normalizeSentencePunctuation(rawDescription);
 
   if (!description) return undefined;
 
   if (title) {
     const lowerTitle = title.toLowerCase();
     if (description.toLowerCase() === lowerTitle) {
-      description = `This image highlights ${title.toLowerCase()} with clear visual detail and context for quick reference in your collection.`;
+      description = `This image highlights ${title} with clear visual detail and context for quick reference in your collection.`;
     }
   }
 
-  const wordCount = description.split(/\s+/).filter(Boolean).length;
-  if (wordCount < 22) {
+  if (sentenceCount(description) < 2) {
     description = `${description} It captures the main visual elements and context in a way that is useful for search and quick recall.`;
   }
 
+  const wordCount = description.split(/\s+/).filter(Boolean).length;
+  if (wordCount < 34) {
+    description = `${description} The framing, subjects, and style are clear enough to identify this saved image quickly.`;
+  }
+
+  description = normalizeSentencePunctuation(description);
+
   if (description.length > 500) {
     description = description.slice(0, 500).trim();
+    description = normalizeSentencePunctuation(description);
   }
 
   return description;
@@ -178,20 +290,40 @@ export class AITaggingService {
    */
   async generateTags(context: TaggingContext): Promise<TaggingResult | null> {
     const userPrompt = buildUserPrompt(context);
+    const fallbackTagContext = [
+      context.title,
+      context.description,
+      context.site_name,
+      context.domain,
+      context.content?.slice(0, 400),
+    ]
+      .filter(Boolean)
+      .join(" ");
+
     if (!userPrompt.trim()) {
-      return this.fallbackFromContext(context);
+      return this.ensureTagCoverage(
+        this.fallbackFromContext(context),
+        fallbackTagContext
+      );
     }
 
     // Try Gemini first
     const geminiResult = await this.tryGemini(userPrompt);
-    if (geminiResult) return geminiResult;
+    if (geminiResult) {
+      return this.ensureTagCoverage(geminiResult, fallbackTagContext);
+    }
 
     // Fallback to OpenAI
     const openaiResult = await this.tryOpenAI(userPrompt);
-    if (openaiResult) return openaiResult;
+    if (openaiResult) {
+      return this.ensureTagCoverage(openaiResult, fallbackTagContext);
+    }
 
     log.warn("[AI Tagging] All providers failed", { context });
-    return this.fallbackFromContext(context);
+    return this.ensureTagCoverage(
+      this.fallbackFromContext(context),
+      fallbackTagContext
+    );
   }
 
   private async tryGemini(userPrompt: string): Promise<TaggingResult | null> {
@@ -287,17 +419,25 @@ export class AITaggingService {
   async generateTagsFromImage(imageUrl: string): Promise<TaggingResult | null> {
     if (!imageUrl) return null;
     const preparedImage = await this.prepareImageForVision(imageUrl);
+    const fallbackTagContext = this.deriveImageLabel(imageUrl);
 
     // Try Gemini vision first
     const geminiResult = await this.tryGeminiVision(imageUrl, preparedImage);
-    if (geminiResult) return geminiResult;
+    if (geminiResult) {
+      return this.ensureTagCoverage(geminiResult, fallbackTagContext);
+    }
 
     // Fallback to OpenAI vision
     const openaiResult = await this.tryOpenAIVision(imageUrl, preparedImage);
-    if (openaiResult) return openaiResult;
+    if (openaiResult) {
+      return this.ensureTagCoverage(openaiResult, fallbackTagContext);
+    }
 
     log.warn("[AI Vision Tagging] All providers failed", { imageUrl });
-    return this.fallbackFromImageUrl(imageUrl);
+    return this.ensureTagCoverage(
+      this.fallbackFromImageUrl(imageUrl),
+      fallbackTagContext
+    );
   }
 
   private async prepareImageForVision(imageUrl: string): Promise<PreparedImageData | null> {
@@ -494,14 +634,14 @@ export class AITaggingService {
       .filter(Boolean)
       .join(" ");
 
-    const tags = this.extractFallbackTags(pieces, 6);
+    const tags = this.extractFallbackTags(pieces, MIN_TAG_COUNT);
     return {
       tags: tags.length > 0 ? tags : ["web-link"],
       category: "other",
     };
   }
 
-  private fallbackFromImageUrl(imageUrl: string): TaggingResult {
+  private deriveImageLabel(imageUrl: string): string {
     let fileName = "uploaded image";
 
     try {
@@ -512,24 +652,73 @@ export class AITaggingService {
         .replace(/[_-]+/g, " ")
         .trim() || fileName;
     } catch {
-      // Keep default fallback
+      // Keep default fallback label
     }
 
-    const tags = this.extractFallbackTags(fileName, 6);
-    const titleText = fileName
+    return fileName;
+  }
+
+  private fallbackFromImageUrl(imageUrl: string): TaggingResult {
+    const fileName = this.deriveImageLabel(imageUrl);
+
+    const tags = this.extractFallbackTags(fileName, MIN_TAG_COUNT);
+    const titleText = toTitleCase(fileName
       .split(/\s+/)
       .filter(Boolean)
       .slice(0, 5)
-      .join(" ");
+      .join(" "));
     const description = titleText
-      ? `This image shows ${titleText.toLowerCase()} with clear visual context. It is stored as a quick visual reference for later search and recall.`
+      ? `This image shows ${titleText} with clear visual context. It is stored as a quick visual reference for later search and recall.`
       : "Image item saved to library.";
 
     return {
       tags: tags.length > 0 ? tags : ["image-item"],
       category: "other",
-      title: titleText || "Saved image",
+      title: titleText || "Saved Image",
       description: normalizeImageDescription(description, titleText),
+    };
+  }
+
+  private ensureTagCoverage(result: TaggingResult, fallbackText: string): TaggingResult {
+    const normalizedExisting = result.tags
+      .filter((tag) => typeof tag === "string")
+      .map((tag) => tag.toLowerCase().trim())
+      .filter((tag) => tag.length > 0);
+
+    const supplementalTags = this.extractFallbackTags(fallbackText, MAX_TAG_COUNT);
+    const merged = [...new Set([...normalizedExisting, ...supplementalTags])]
+      .slice(0, MAX_TAG_COUNT);
+
+    if (merged.length >= MIN_TAG_COUNT) {
+      return {
+        ...result,
+        tags: merged,
+      };
+    }
+
+    const padded = [...merged];
+    const defaultTags = [
+      "web-link",
+      "saved-item",
+      "reference",
+      "bookmark",
+      "knowledge-base",
+      "resource",
+      "reading-list",
+      "discovery",
+    ];
+    while (padded.length < MIN_TAG_COUNT) {
+      const fallbackTag = defaultTags[padded.length] || `topic-${padded.length + 1}`;
+      if (!padded.includes(fallbackTag)) {
+        padded.push(fallbackTag);
+      } else {
+        padded.push(`topic-${padded.length + 1}`);
+      }
+    }
+
+    return {
+      ...result,
+      tags: padded.slice(0, MAX_TAG_COUNT),
     };
   }
 
