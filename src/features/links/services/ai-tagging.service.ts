@@ -22,6 +22,7 @@ interface TaggingContext {
   description?: string | null;
   domain?: string | null;
   site_name?: string | null;
+  content?: string | null;
 }
 
 interface TaggingResult {
@@ -29,12 +30,17 @@ interface TaggingResult {
   category: Category;
 }
 
-const SYSTEM_PROMPT = `You are a link categorization assistant. Given metadata about a web link, generate:
-1. 5-10 descriptive topic tags (lowercase, 1-2 words each, no special characters)
-2. Exactly 1 category from this list: article, tool, video, portfolio, documentation, social-media, shopping, news, reference, other
+const SYSTEM_PROMPT = `You are an expert content curator and digital librarian. Your goal is to deeply anaylze web content and categorize it with high precision.
+Given metadata and a content preview of a link, generate:
+
+1. 5-10 high-quality, specific tags.
+   - Rules: lowercase, 1-3 words max, no special characters (use hyphens for spaces).
+   - Strategy: Mix broad topics (e.g. "artificial-intelligence") with specific entities (e.g. "openai", "sam-altman") and niche concepts (e.g. "prompt-engineering").
+   - Avoid generic tags like "tech", "website", "article" unless necessary.
+2. Exactly 1 category from this list: article, tool, video, portfolio, documentation, social-media, shopping, news, reference, other.
 
 Respond ONLY with valid JSON in this exact format:
-{"tags": ["tag1", "tag2", "tag3", "tag4", "tag5", "tag6"], "category": "article"}`;
+{"tags": ["tag1", "tag2", "tag3"], "category": "article"}`;
 
 function buildUserPrompt(context: TaggingContext): string {
   const parts: string[] = [];
@@ -42,6 +48,7 @@ function buildUserPrompt(context: TaggingContext): string {
   if (context.description) parts.push(`Description: ${context.description}`);
   if (context.domain) parts.push(`Domain: ${context.domain}`);
   if (context.site_name) parts.push(`Site: ${context.site_name}`);
+  if (context.content) parts.push(`Content Preview:\n${context.content.substring(0, 2000)}`);
   return parts.join("\n");
 }
 

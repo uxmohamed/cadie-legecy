@@ -543,6 +543,7 @@ export async function extractMetadata(url: string, timeoutMs: number = DEFAULT_T
             fetched_at: fetchedAt,
             etag,
             last_modified: lastModified,
+            content_text: visibleText.substring(0, 5000), // Truncate to reasonable length for AI context
         };
     } catch (error) {
         clearTimeout(timeoutId);

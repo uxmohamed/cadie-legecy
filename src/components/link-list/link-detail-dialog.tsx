@@ -126,7 +126,19 @@ export function LinkDetailDialog({
             {/* Right Panel: Sidebar */}
             <div className="w-full md:w-[320px] lg:w-[400px] flex-shrink-0 flex flex-col h-[40%] md:h-full border-t md:border-t-0 md:border-l border-border bg-bg-elevated relative">
               <div className="flex-1 overflow-y-auto min-h-0 p-6 md:p-8 md:pt-14">
-                <SidebarPanel link={link} />
+                <SidebarPanel 
+                  link={link}
+                  onOpen={handleOpen}
+                  onCopy={() => onCopy?.(link.url, isColor)}
+                  onPin={() => onPin?.(link.id)}
+                  onUnpin={() => onUnpin?.(link.id)}
+                  onRename={() => onRename?.(link)}
+                  onDelete={() => onDelete?.(link.id)}
+                  spaces={spaces}
+                  linkSpaces={linkSpaces}
+                  onAddToSpace={(spaceId) => onAddToSpace?.(link.id, spaceId)}
+                  onRemoveFromSpace={(spaceId) => onRemoveFromSpace?.(link.id, spaceId)}
+                />
               </div>
             </div>
           </div>

@@ -144,6 +144,7 @@ export class MetadataService {
                         site_name: metadata.site_name,
                         fetch_status: "success",
                         fetched_at: metadata.fetched_at,
+                        content_text: metadata.content_text,
                     })
                     .eq("id", linkId);
                     
@@ -239,6 +240,7 @@ export class MetadataService {
                         fetched_at: metadata.fetched_at,
                         etag: metadata.etag,
                         last_modified: metadata.last_modified,
+                        content_text: metadata.content_text,
                     })
                     .eq("id", link.id);
 

@@ -16,6 +16,7 @@ export interface Link {
     title: string;
     domain: string;
     content_type: ContentType;
+    content_text: string | null;
     color_value: string | null;
     favicon_url: string | null;
     og_image_url: string | null;
@@ -171,6 +172,7 @@ export interface ExtractedMetadata {
     language?: string;
     word_count?: number;
     reading_time_minutes?: number;
+    content_text?: string;
 
     // System info
     status_code?: number;
