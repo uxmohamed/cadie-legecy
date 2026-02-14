@@ -190,31 +190,40 @@ export class MetadataService {
 
         // Fetch metadata for all URLs
         const urls = urlLinks.map(link => link.url);
-        const metadataMap = await this.fetchBatchMetadata(urls, { concurrency: 5, timeout: 5000 });
-
-        // Update each link with fetched metadata
-        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
         
+        // Use higher concurrency for background jobs
+        const metadataMap = await this.fetchBatchMetadata(urls, { concurrency: 10, timeout: 8000 });
+        
+        // Initializing Supabase client for direct updates
+        const supabase = await createClient();
+
         for (const link of urlLinks) {
             const metadata = metadataMap.get(link.url);
             if (!metadata || metadata.fetch_status !== "success") {
                 failed++;
+                // Still update failed status
+                if (metadata) {
+                     await supabase
+                        .from("links")
+                        .update({
+                            fetch_status: metadata.fetch_status,
+                            fetched_at: metadata.fetched_at,
+                        })
+                        .eq("id", link.id);
+                }
                 continue;
             }
 
             try {
-                // Update the link in the database via API
-                // SECURITY: Use cryptographically signed internal token
-                const headers = await createInternalHeaders({ linkId: link.id, action: 'batch-enrich' });
-                
-                const response = await fetch(`${baseUrl}/api/links/${link.id}`, {
-                    method: 'PUT',
-                    headers,
-                    body: JSON.stringify({
+                // Update the link in the database DIRECTLY (In-Process)
+                // This bypasses internal API network issues
+                const { error } = await supabase
+                    .from("links")
+                    .update({
                         title: metadata.title,
-                        favicon_url: metadata.favicon_url,
-                        og_image_url: metadata.preview_image_url,
                         description: metadata.description,
+                        og_image_url: metadata.preview_image_url,
+                        favicon_url: metadata.favicon_url,
                         site_name: metadata.site_name,
                         final_url: metadata.final_url,
                         canonical_url: metadata.canonical_url,
@@ -226,16 +235,17 @@ export class MetadataService {
                         word_count: metadata.word_count,
                         reading_time_minutes: metadata.reading_time_minutes,
                         status_code: metadata.status_code,
-                        fetch_status: metadata.fetch_status,
+                        fetch_status: "success",
                         fetched_at: metadata.fetched_at,
                         etag: metadata.etag,
                         last_modified: metadata.last_modified,
-                    }),
-                });
+                    })
+                    .eq("id", link.id);
 
-                if (response.ok) {
+                if (!error) {
                     successful++;
                 } else {
+                    log.error(`Failed to update link ${link.id} in DB`, error);
                     failed++;
                 }
             } catch (error) {
