@@ -6,6 +6,7 @@ import { SupabaseLinkRepository } from "@/features/links/repositories";
 import { authenticateRequest } from "@/lib/auth-middleware";
 import type { CreateLinkDTO } from "@/features/links/types";
 import { isAppError, toAppError, ErrorCode, AppError } from "@/lib/errors";
+import { resolveColorMetadata } from "@/lib/canonicalize";
 
 /**
  * Handler for POST /api/links
@@ -92,10 +93,22 @@ export class CreateLinkHandler {
             
             if (validatedData) {
                 // If title not provided, use domain as placeholder
-                const title = validatedData.title || this.extractDomainFromUrl(validatedData.url);
+                let title = validatedData.title || this.extractDomainFromUrl(validatedData.url);
+                let url = validatedData.url;
+                let colorValue = validatedData.color_value ?? null;
+
+                if (validatedData.content_type === "color") {
+                    const colorMetadata = resolveColorMetadata(validatedData.color_value || validatedData.url);
+                    title = validatedData.title || colorMetadata.colorName;
+                    url = colorMetadata.colorCode;
+                    colorValue = colorMetadata.colorCode;
+                }
+
                 createLinkDTO = {
                     ...validatedData,
+                    url,
                     title,
+                    color_value: colorValue,
                 };
             } else {
                 // Old validation (for backward compatibility)
@@ -124,13 +137,22 @@ export class CreateLinkHandler {
                 }
 
                 // Use provided title or extract domain as placeholder
-                const finalTitle = title || this.extractDomainFromUrl(url);
+                let finalTitle = title || this.extractDomainFromUrl(url);
+                let finalUrl = url;
+                let finalColorValue = color_value || null;
+
+                if (content_type === "color") {
+                    const colorMetadata = resolveColorMetadata(color_value || url);
+                    finalTitle = title || colorMetadata.colorName;
+                    finalUrl = colorMetadata.colorCode;
+                    finalColorValue = colorMetadata.colorCode;
+                }
 
                 createLinkDTO = {
-                    url,
+                    url: finalUrl,
                     title: finalTitle,
                     content_type,
-                    color_value: color_value || null,
+                    color_value: finalColorValue,
                     favicon_url: favicon_url || null,
                     og_image_url: og_image_url || null,
                     description: description || null,

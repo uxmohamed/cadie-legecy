@@ -195,18 +195,24 @@ describe('detectContentType', () => {
   });
 
   describe('named colors', () => {
-    const namedColors = [
-      'red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink',
-      'black', 'white', 'gray', 'grey', 'brown', 'cyan', 'magenta',
-      'lime', 'navy', 'maroon', 'olive', 'teal', 'aqua', 'silver', 'gold'
+    const namedColorsToHex: Array<[string, string]> = [
+      ['red', '#ff0000'],
+      ['blue', '#0000ff'],
+      ['green', '#008000'],
+      ['gray', '#808080'],
+      ['grey', '#808080'],
+      ['aqua', '#00ffff'],
+      ['gold', '#ffd700'],
+      ['light blue', '#add8e6'],
+      ['rebeccapurple', '#663399'],
     ];
 
-    namedColors.forEach(color => {
+    namedColorsToHex.forEach(([color, hex]) => {
       it(`detects named color: ${color}`, () => {
         const result = detectContentType(color);
         expect(result).not.toBeNull();
         expect(result!.type).toBe('color');
-        expect(result!.value).toBe(color);
+        expect(result!.value).toBe(hex);
       });
     });
 
@@ -214,14 +220,14 @@ describe('detectContentType', () => {
       const result = detectContentType('RED');
       expect(result).not.toBeNull();
       expect(result!.type).toBe('color');
-      expect(result!.value).toBe('red');
+      expect(result!.value).toBe('#ff0000');
     });
 
     it('detects mixed case named colors', () => {
       const result = detectContentType('Red');
       expect(result).not.toBeNull();
       expect(result!.type).toBe('color');
-      expect(result!.value).toBe('red');
+      expect(result!.value).toBe('#ff0000');
     });
   });
 
@@ -440,6 +446,18 @@ describe('detectMultipleContentTypes', () => {
     expect(result.every(r => r.type === 'color')).toBe(true);
   });
 
+  it('treats a single spaced color name as one item', () => {
+    const result = detectMultipleContentTypes('light blue');
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({ type: 'color', value: '#add8e6' });
+  });
+
+  it('treats a single oklch value as one item', () => {
+    const result = detectMultipleContentTypes('oklch(0.7 0.15 180)');
+    expect(result).toHaveLength(1);
+    expect(result[0].type).toBe('color');
+  });
+
   it('handles newline-separated URLs (paste scenario)', () => {
     const input = `https://google.com
 https://github.com
@@ -539,11 +557,10 @@ https://stackoverflow.com/questions/12345`;
     const input = `oklch(0.7 0.15 180)
 oklch(0.5 0.2 240)`;
     const result = detectMultipleContentTypes(input);
-    // The current implementation splits by whitespace including spaces inside the color notation
-    // This results in 6 parts: ['oklch(0.7', '0.15', '180)', 'oklch(0.5', '0.2', '240)']
-    // Now that invalid content is filtered out, these parts return empty array
+    // Newline-delimited multiple oklch values are still unsupported in batch mode
+    // because internal spaces conflict with generic whitespace splitting.
     expect(result).toHaveLength(0);
-    // For proper oklch batch input, use newline separation or single values via detectContentType
+    // Single oklch values are supported (see test above).
   });
 
   it('handles single oklch color via detectContentType', () => {

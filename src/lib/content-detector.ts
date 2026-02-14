@@ -1,3 +1,4 @@
+import { getNamedColorHex, isNamedColor } from "@/lib/canonicalize";
 export type ContentType = "url" | "color" | "image";
 
 export interface DetectedContent {
@@ -45,31 +46,6 @@ const LCH_COLOR_PATTERN =
 // color() function with various color spaces
 const COLOR_FUNCTION_PATTERN =
   /^color\((srgb|srgb-linear|display-p3|a98-rgb|prophoto-rgb|rec2020|xyz|xyz-d50|xyz-d65)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?\)$/i;
-
-const NAMED_COLORS = new Set([
-  "red",
-  "blue",
-  "green",
-  "yellow",
-  "orange",
-  "purple",
-  "pink",
-  "black",
-  "white",
-  "gray",
-  "grey",
-  "brown",
-  "cyan",
-  "magenta",
-  "lime",
-  "navy",
-  "maroon",
-  "olive",
-  "teal",
-  "aqua",
-  "silver",
-  "gold",
-]);
 
 /**
  * Common valid TLDs for domain validation
@@ -209,8 +185,11 @@ export function detectContentType(input: string): DetectedContent | null {
   }
 
   // Check for named colors
-  if (NAMED_COLORS.has(trimmed.toLowerCase())) {
-    return { type: "color", value: trimmed.toLowerCase() };
+  if (isNamedColor(trimmed)) {
+    const colorHex = getNamedColorHex(trimmed);
+    if (colorHex) {
+      return { type: "color", value: colorHex };
+    }
   }
 
   // Check for image URL before generic URL
@@ -298,7 +277,19 @@ export function splitMultipleContent(input: string): string[] {
  * Returns an array of detected content items (filters out invalid content)
  */
 export function detectMultipleContentTypes(input: string): DetectedContent[] {
-  const items = splitMultipleContent(input);
+  const trimmedInput = input.trim();
+  if (!trimmedInput) {
+    return [];
+  }
+
+  // Try full-input detection first so single values containing spaces
+  // (e.g. "light blue" or "oklch(0.7 0.15 180)") are preserved.
+  const singleItem = detectContentType(trimmedInput);
+  if (singleItem && singleItem.type === "color") {
+    return [singleItem];
+  }
+
+  const items = splitMultipleContent(trimmedInput);
   
   if (items.length === 0) {
     return [];

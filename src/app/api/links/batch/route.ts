@@ -8,6 +8,7 @@ import { rateLimitLinks, getIdentifier, getRateLimitHeaders } from "@/lib/rate-l
 import { validateRequestBody } from "@/lib/validation/validate";
 import { batchActionSchema } from "@/lib/validation/link.schemas";
 import { withRetry, supabaseRetryPredicate } from "@/lib/retry";
+import { resolveColorMetadata } from "@/lib/canonicalize";
 
 /**
  * Maximum number of items per batch operation
@@ -274,14 +275,20 @@ export async function POST(request: NextRequest) {
           const ct = link.content_type || "url";
           const isImage = ct === "image";
           const isColor = ct === "color";
+          const colorMetadata = isColor
+            ? resolveColorMetadata(link.color_value || link.url)
+            : null;
+          const normalizedColorCode = colorMetadata?.colorCode || (link.color_value || link.url);
+          const normalizedColorName = colorMetadata?.colorName || link.title || "Custom Color";
+          const normalizedUrl = isColor ? normalizedColorCode : link.url;
           return {
             user_id: user.id,
-            url: link.url,
-            clean_url: isColor || isImage ? link.url : canonicalizeUrl(link.url),
-            title: link.title || link.url,
+            url: normalizedUrl,
+            clean_url: isColor || isImage ? normalizedUrl : canonicalizeUrl(link.url),
+            title: isColor ? normalizedColorName : (link.title || link.url),
             content_type: ct,
             favicon_url: link.favicon_url || null,
-            color_value: link.color_value || null,
+            color_value: isColor ? normalizedColorCode : (link.color_value || null),
             og_image_url: isImage ? link.url : null,
             domain: isColor ? "color" : isImage ? "image" : extractDomain(link.url),
             is_deleted: false,

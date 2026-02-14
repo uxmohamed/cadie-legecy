@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { Link, LinkFilters } from "@/features/links/types";
 import type { DetectedContent } from "@/lib/content-detector";
+import { canonicalizeColor, resolveColorMetadata } from "@/lib/canonicalize";
 import { queryKeys } from "@/lib/query/keys";
 
 /**
@@ -26,6 +27,19 @@ function getImageNameFromUrl(url: string): string {
   } catch {
     return "Image";
   }
+}
+
+/**
+ * Build a consistent color payload for persistence and display:
+ * - `colorCode` is the canonical stored code (hex when available)
+ * - `colorName` is a human-readable label used as title
+ */
+function buildColorPayload(value: string): { colorCode: string; colorName: string } {
+  const normalizedCode = canonicalizeColor(value);
+  const metadata = resolveColorMetadata(value);
+  const colorCode = metadata.colorCode || normalizedCode || value.trim();
+  const colorName = metadata.colorName || "Custom Color";
+  return { colorCode, colorName };
 }
 
 /**
@@ -813,13 +827,26 @@ export function useLinkMutations(filters: LinkFilters) {
    */
   const addLinksMutation = useMutation({
     mutationFn: async (items: DetectedContent[]) => {
-      const linksToAdd = items.map(({ value, type }) => ({
-        url: value,
-        title: type === "image" ? getImageNameFromUrl(value) : value,
-        content_type: type,
-        color_value: type === "color" ? value : undefined,
-        og_image_url: type === "image" ? value : undefined,
-      }));
+      const linksToAdd = items.map(({ value, type }) => {
+        if (type === "color") {
+          const { colorCode, colorName } = buildColorPayload(value);
+          return {
+            url: colorCode,
+            title: colorName,
+            content_type: type,
+            color_value: colorCode,
+            og_image_url: undefined,
+          };
+        }
+
+        return {
+          url: value,
+          title: type === "image" ? getImageNameFromUrl(value) : value,
+          content_type: type,
+          color_value: undefined,
+          og_image_url: type === "image" ? value : undefined,
+        };
+      });
 
       const response = await fetch("/api/links/batch", {
         method: "POST",
@@ -853,6 +880,8 @@ export function useLinkMutations(filters: LinkFilters) {
 
         const isColor = type === "color";
         const isImage = type === "image";
+        const colorPayload = isColor ? buildColorPayload(value) : null;
+        const normalizedValue = colorPayload ? colorPayload.colorCode : value;
         let domain = "";
         if (isColor) {
           domain = "color";
@@ -860,21 +889,25 @@ export function useLinkMutations(filters: LinkFilters) {
           domain = "image";
         } else {
           try {
-            domain = new URL(value).hostname.replace(/^www\./, "");
+            domain = new URL(normalizedValue).hostname.replace(/^www\./, "");
           } catch {
-            domain = value;
+            domain = normalizedValue;
           }
         }
 
         return {
           id: tempId,
           user_id: "",
-          url: value,
-          clean_url: value,
-          title: isImage ? getImageNameFromUrl(value) : value,
+          url: normalizedValue,
+          clean_url: normalizedValue,
+          title: isColor
+            ? colorPayload!.colorName
+            : isImage
+            ? getImageNameFromUrl(value)
+            : value,
           domain,
           content_type: type,
-          color_value: isColor ? value : null,
+          color_value: isColor ? colorPayload!.colorCode : null,
           content_text: null,
           favicon_url: null,
           og_image_url: isImage ? value : null,

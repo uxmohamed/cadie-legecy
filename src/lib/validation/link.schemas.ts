@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isNamedColor } from "@/lib/canonicalize";
 
 // Color validation patterns matching content-detector.ts
 const HEX_COLOR_PATTERN = /^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
@@ -19,12 +20,6 @@ const LAB_COLOR_PATTERN = /^lab\(([\d.]+%?)\s+([\d.-]+)\s+([\d.-]+)(?:\s*\/\s*([
 const LCH_COLOR_PATTERN = /^lch\(([\d.]+%?)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+%?))?\)$/i;
 const COLOR_FUNCTION_PATTERN = /^color\((srgb|srgb-linear|display-p3|a98-rgb|prophoto-rgb|rec2020|xyz|xyz-d50|xyz-d65)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?\)$/i;
 
-const NAMED_COLORS = new Set([
-  "red", "blue", "green", "yellow", "orange", "purple", "pink", "black",
-  "white", "gray", "grey", "brown", "cyan", "magenta", "lime", "navy",
-  "maroon", "olive", "teal", "aqua", "silver", "gold",
-]);
-
 /**
  * Validates if a string is a valid color in any supported format
  */
@@ -41,7 +36,7 @@ function isValidColorValue(value: string): boolean {
   if (LAB_COLOR_PATTERN.test(trimmed)) return true;
   if (LCH_COLOR_PATTERN.test(trimmed)) return true;
   if (COLOR_FUNCTION_PATTERN.test(trimmed)) return true;
-  if (NAMED_COLORS.has(trimmed.toLowerCase())) return true;
+  if (isNamedColor(trimmed)) return true;
   
   return false;
 }

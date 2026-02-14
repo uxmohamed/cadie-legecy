@@ -60,13 +60,22 @@ export function InlineAddItem({
   // Handle key events
   const handleKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (hasContent) {
+          onSubmit();
+        }
+        return;
+      }
+
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
         onCancel();
       }
     },
-    [onCancel]
+    [hasContent, onCancel, onSubmit]
   );
 
   // Handle click outside - always cancel
@@ -121,6 +130,11 @@ export function InlineAddItem({
             className={`h-4 w-4 transition-opacity ${hasContent ? 'text-fg-subtle' : 'text-fg-disabled opacity-40'}`}
           />
         </div>
+
+        {/* Explicit submit target keeps keyboard submit behavior consistent across browsers */}
+        <button type="submit" className="sr-only" tabIndex={-1} aria-hidden="true">
+          Submit
+        </button>
       </form>
     </div>
   );

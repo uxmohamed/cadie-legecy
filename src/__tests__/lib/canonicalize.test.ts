@@ -7,6 +7,9 @@ import {
   canonicalizeUrl,
   canonicalizeColor,
   canonicalizeContent,
+  getExactColorName,
+  getNearestColorName,
+  resolveColorMetadata,
 } from '@/lib/canonicalize';
 
 // =============================================================================
@@ -323,6 +326,26 @@ describe('canonicalizeColor', () => {
     it('handles empty string', () => {
       expect(canonicalizeColor('')).toBe('');
     });
+  });
+});
+
+describe('color metadata helpers', () => {
+  it('gets exact named color from hex', () => {
+    expect(getExactColorName('#ff0000')).toBe('Red');
+  });
+
+  it('gets nearest named color for unknown hex', () => {
+    const nearest = getNearestColorName('#f4552a');
+    expect(nearest).not.toBeNull();
+    expect(nearest!.name.length).toBeGreaterThan(0);
+    expect(nearest!.hex).toMatch(/^#[0-9a-f]{6}$/);
+  });
+
+  it('resolves metadata for named input to code + name', () => {
+    const metadata = resolveColorMetadata('light blue');
+    expect(metadata.colorCode).toBe('#add8e6');
+    expect(metadata.colorName).toBe('Light Blue');
+    expect(metadata.source).toBe('named');
   });
 });
 
