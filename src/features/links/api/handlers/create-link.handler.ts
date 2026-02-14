@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LinkService } from "@/features/links/services";
-import { MetadataService } from "@/features/links/services";
-import { DuplicateDetectionService } from "@/features/links/services";
 import { SupabaseLinkRepository } from "@/features/links/repositories";
 import { authenticateRequest } from "@/lib/auth-middleware";
 import type { CreateLinkDTO } from "@/features/links/types";
-import { isAppError, toAppError, ErrorCode, AppError } from "@/lib/errors";
+import { toAppError, ErrorCode, AppError } from "@/lib/errors";
 import { resolveColorMetadata } from "@/lib/canonicalize";
+import { enqueueMetadataEnrichment, enqueueAITagging, enqueueAIVisionTagging } from "@/lib/job-queue";
 
 /**
  * Handler for POST /api/links
@@ -17,13 +16,7 @@ export class CreateLinkHandler {
 
     constructor() {
         const repository = new SupabaseLinkRepository();
-        const metadataService = new MetadataService();
-        const duplicateDetectionService = new DuplicateDetectionService();
-        this.linkService = new LinkService(
-            repository,
-            metadataService,
-            duplicateDetectionService
-        );
+        this.linkService = new LinkService(repository);
     }
 
     private async validateLink(url: string, title: string): Promise<void> {
@@ -71,10 +64,42 @@ export class CreateLinkHandler {
         }
     }
 
-    async handle(request: NextRequest, validatedData?: CreateLinkDTO): Promise<NextResponse> {
+    private async enqueueEnrichmentJobs(userId: string, link: { id: string; url: string; content_type?: string }): Promise<void> {
+        const contentType = link.content_type || "url";
+
+        if (contentType === "color") {
+            return;
+        }
+
+        if (contentType === "image") {
+            await enqueueAIVisionTagging({
+                linkId: link.id,
+                userId,
+            });
+            return;
+        }
+
+        await Promise.allSettled([
+            enqueueMetadataEnrichment({
+                linkId: link.id,
+                url: link.url,
+                userId,
+            }),
+            enqueueAITagging({
+                linkId: link.id,
+                userId,
+            }),
+        ]);
+    }
+
+    async handle(
+        request: NextRequest,
+        validatedData?: CreateLinkDTO,
+        authenticatedUserId?: string
+    ): Promise<NextResponse> {
         try {
             // Authenticate
-            const userId = await authenticateRequest(request);
+            const userId = authenticatedUserId || await authenticateRequest(request);
             if (!userId) {
                 return NextResponse.json(
                     {
@@ -170,6 +195,10 @@ export class CreateLinkHandler {
                 userId,
                 createLinkDTO
             );
+
+            if (!isDuplicate) {
+                await this.enqueueEnrichmentJobs(userId, link);
+            }
 
             return NextResponse.json(
                 { link, duplicate: isDuplicate, restored: isRestored },

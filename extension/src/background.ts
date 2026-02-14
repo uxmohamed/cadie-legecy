@@ -3,7 +3,7 @@
  * Handles context menus, keyboard shortcuts, and saving links
  */
 
-import { saveLink, fetchSpaces, addLinkToSpace, fetchLinkSpaces } from "./lib/api-client";
+import { saveLink, fetchSpaces, addLinkToSpace, removeLinkFromSpace, fetchLinkSpaces } from "./lib/api-client";
 import { getApiToken, getPendingUrl, setPendingUrl, clearPendingUrl } from "./lib/storage";
 
 // Track saves in progress to prevent duplicates
@@ -76,6 +76,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Handle addLinkToSpace request from content script
   if (request.action === "addLinkToSpace") {
     addLinkToSpace(request.spaceId, request.linkId).then(response => {
+      sendResponse(response);
+    });
+    return true;
+  }
+
+  // Handle removeLinkFromSpace request from content script
+  if (request.action === "removeLinkFromSpace") {
+    removeLinkFromSpace(request.spaceId, request.linkId).then(response => {
       sendResponse(response);
     });
     return true;
@@ -215,6 +223,10 @@ async function saveWithRetry(tabId: number, url: string, maxRetries: number): Pr
 
       // Other error - store for potential retry
       lastError = response.error || "Failed to save";
+
+      if (!response.retryable) {
+        break;
+      }
 
     } catch (error) {
       lastError = error instanceof Error ? error.message : "Failed to save";

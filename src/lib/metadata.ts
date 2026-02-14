@@ -14,8 +14,7 @@ import {
     estimateReadingTime, 
     extractLanguage, 
     extractThemeColor,
-    extractSiteName,
-    isLoginPage
+    extractSiteName
 } from "./content-analyzer";
 import { validateUrlSafety } from "./url-validator";
 
@@ -40,6 +39,15 @@ interface ExtractionContext {
     url: string;
     baseUrl: string;
     domain: string;
+}
+
+interface ProviderMetadata {
+    title?: string;
+    description?: string;
+    site_name?: string;
+    preview_image_url?: string;
+    canonical_url?: string;
+    content_text?: string;
 }
 
 // =============================================================================
@@ -292,6 +300,256 @@ function extractPreviewImage(ctx: ExtractionContext, jsonLd: any): string | unde
 }
 
 // =============================================================================
+// Provider-Specific Extraction
+// =============================================================================
+
+function trimWithEllipsis(value: string | undefined, maxLength: number): string | undefined {
+    const cleaned = cleanText(value);
+    if (!cleaned) return undefined;
+    if (cleaned.length <= maxLength) return cleaned;
+    return `${cleaned.substring(0, maxLength - 3).trimEnd()}...`;
+}
+
+function normalizeHostname(hostname: string): string {
+    return hostname.toLowerCase().replace(/^www\./, "").replace(/^mobile\./, "").replace(/^m\./, "");
+}
+
+function isTwitterStatusUrl(rawUrl: string): boolean {
+    try {
+        const parsed = new URL(rawUrl);
+        const hostname = normalizeHostname(parsed.hostname);
+        if (hostname !== "twitter.com" && hostname !== "x.com") {
+            return false;
+        }
+        return /\/[^/]+\/status\/\d+/i.test(parsed.pathname);
+    } catch {
+        return false;
+    }
+}
+
+function extractYouTubeId(rawUrl: string): string | null {
+    try {
+        const parsed = new URL(rawUrl);
+        const hostname = normalizeHostname(parsed.hostname);
+
+        if (hostname === "youtube.com") {
+            const fromSearch = parsed.searchParams.get("v");
+            if (fromSearch && /^[a-zA-Z0-9_-]{11}$/.test(fromSearch)) {
+                return fromSearch;
+            }
+
+            const pathMatch = parsed.pathname.match(/^\/(embed|shorts|v)\/([a-zA-Z0-9_-]{11})/i);
+            if (pathMatch) {
+                return pathMatch[2];
+            }
+        }
+
+        if (hostname === "youtu.be") {
+            const shortMatch = parsed.pathname.match(/^\/([a-zA-Z0-9_-]{11})/);
+            if (shortMatch) {
+                return shortMatch[1];
+            }
+        }
+
+        return null;
+    } catch {
+        return null;
+    }
+}
+
+function isGenericTitle(title: string | undefined, domain: string): boolean {
+    const normalizedTitle = cleanText(title).toLowerCase();
+    if (!normalizedTitle) return true;
+
+    const normalizedDomain = domain.toLowerCase().replace(/^www\./, "");
+    const rootDomain = normalizedDomain.split(".")[0] || normalizedDomain;
+    const genericTitles = new Set([
+        normalizedDomain,
+        rootDomain,
+        "homepage",
+        "home",
+        "x",
+        "x.com",
+        "twitter",
+        "twitter.com",
+        "youtube",
+        "youtube.com",
+    ]);
+
+    if (genericTitles.has(normalizedTitle)) {
+        return true;
+    }
+
+    if (
+        normalizedTitle.includes("formerly twitter") ||
+        normalizedTitle.includes("it's what's happening") ||
+        normalizedTitle.includes("it’s what’s happening")
+    ) {
+        return true;
+    }
+
+    if (normalizedTitle.startsWith("youtube") && normalizedTitle.split(/\s+/).length <= 3) {
+        return true;
+    }
+
+    return false;
+}
+
+function extractTweetTextFromOEmbedHtml(html: string): string | undefined {
+    if (!html) return undefined;
+
+    try {
+        const $ = cheerio.load(html);
+        const paragraphText = $("p").first().text();
+        const fallbackText = cleanText($.text());
+        const rawText = cleanText(paragraphText) || fallbackText;
+
+        const withoutShortLinks = rawText
+            .replace(/\bhttps?:\/\/\S+/gi, " ")
+            .replace(/\b(?:pic\.twitter\.com|t\.co)\/\S+/gi, " ");
+
+        return cleanText(withoutShortLinks) || undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+async function fetchJsonWithTimeout(url: string, timeoutMs: number): Promise<any | null> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+        const response = await fetch(url, {
+            headers: {
+                "Accept": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+            },
+            signal: controller.signal,
+        });
+
+        if (!response.ok) {
+            return null;
+        }
+
+        return await response.json();
+    } catch {
+        return null;
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+async function fetchTwitterOEmbedMetadata(url: string, timeoutMs: number): Promise<ProviderMetadata | null> {
+    if (!isTwitterStatusUrl(url)) {
+        return null;
+    }
+
+    const endpoint = `https://publish.twitter.com/oembed?omit_script=true&dnt=true&url=${encodeURIComponent(url)}`;
+    const payload = await fetchJsonWithTimeout(endpoint, timeoutMs);
+
+    if (!payload || typeof payload !== "object") {
+        return null;
+    }
+
+    const tweetText = extractTweetTextFromOEmbedHtml(
+        typeof payload.html === "string" ? payload.html : ""
+    );
+
+    if (!tweetText) {
+        return null;
+    }
+
+    const title = trimWithEllipsis(tweetText, MAX_TITLE_LENGTH);
+    const description = trimWithEllipsis(tweetText, MAX_DESCRIPTION_LENGTH);
+    const authorName = cleanText(
+        typeof payload.author_name === "string" ? payload.author_name : ""
+    );
+    const siteName = cleanText(
+        typeof payload.provider_name === "string" ? payload.provider_name : "X"
+    );
+    const canonicalUrl = typeof payload.url === "string"
+        ? normalizeUrl(payload.url)
+        : normalizeUrl(url);
+
+    const contentText = cleanText(
+        [authorName ? `Author: ${authorName}` : "", tweetText]
+            .filter(Boolean)
+            .join("\n")
+    );
+
+    return {
+        title,
+        description,
+        site_name: siteName || "X",
+        canonical_url: canonicalUrl,
+        content_text: contentText || undefined,
+    };
+}
+
+async function fetchYouTubeOEmbedMetadata(url: string, timeoutMs: number): Promise<ProviderMetadata | null> {
+    const videoId = extractYouTubeId(url);
+    if (!videoId) {
+        return null;
+    }
+
+    const canonicalVideoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    const endpoint = `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(canonicalVideoUrl)}`;
+    const payload = await fetchJsonWithTimeout(endpoint, timeoutMs);
+
+    if (!payload || typeof payload !== "object") {
+        return null;
+    }
+
+    const title = trimWithEllipsis(
+        typeof payload.title === "string" ? payload.title : "",
+        MAX_TITLE_LENGTH
+    );
+
+    if (!title) {
+        return null;
+    }
+
+    const authorName = cleanText(
+        typeof payload.author_name === "string" ? payload.author_name : ""
+    );
+    const providerName = cleanText(
+        typeof payload.provider_name === "string" ? payload.provider_name : "YouTube"
+    );
+    const thumbnail = typeof payload.thumbnail_url === "string" ? payload.thumbnail_url : undefined;
+    const description = trimWithEllipsis(
+        authorName ? `Video by ${authorName} on YouTube.` : "Video on YouTube.",
+        MAX_DESCRIPTION_LENGTH
+    );
+    const contentText = cleanText(
+        [title, authorName ? `Channel: ${authorName}` : ""].filter(Boolean).join("\n")
+    );
+
+    return {
+        title,
+        description,
+        site_name: providerName || "YouTube",
+        preview_image_url: thumbnail,
+        canonical_url: canonicalVideoUrl,
+        content_text: contentText || undefined,
+    };
+}
+
+async function fetchProviderMetadata(url: string, timeoutMs: number): Promise<ProviderMetadata | null> {
+    // Keep provider fallbacks fast so they do not delay regular metadata extraction.
+    const providerTimeout = Math.max(1200, Math.min(timeoutMs, 4000));
+
+    if (isTwitterStatusUrl(url)) {
+        return fetchTwitterOEmbedMetadata(url, providerTimeout);
+    }
+
+    if (extractYouTubeId(url)) {
+        return fetchYouTubeOEmbedMetadata(url, providerTimeout);
+    }
+
+    return null;
+}
+
+// =============================================================================
 // Helper Functions
 // =============================================================================
 
@@ -333,7 +591,7 @@ function extractCanonical(ctx: ExtractionContext): string | undefined {
  * Collect all favicon variants from the page
  */
 function extractFavicons(ctx: ExtractionContext): FaviconVariant[] {
-    const { $, baseUrl, domain } = ctx;
+    const { $, baseUrl } = ctx;
     const variants: FaviconVariant[] = [];
     
     // Collect from various link elements
@@ -437,6 +695,7 @@ export async function extractMetadata(url: string, timeoutMs: number = DEFAULT_T
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    const providerMetadataPromise = fetchProviderMetadata(url, timeoutMs);
     
     try {
         const response = await fetch(url, {
@@ -455,8 +714,30 @@ export async function extractMetadata(url: string, timeoutMs: number = DEFAULT_T
         const finalUrl = response.url !== url ? response.url : undefined;
         const etag = response.headers.get("etag") || undefined;
         const lastModified = response.headers.get("last-modified") || undefined;
+        const providerMetadata = await providerMetadataPromise;
+
+        const buildProviderFallback = (provider: ProviderMetadata): ExtractedMetadata => ({
+            domain,
+            protocol,
+            title: provider.title || domain,
+            description: provider.description,
+            site_name: provider.site_name,
+            canonical_url: provider.canonical_url,
+            preview_image_url: provider.preview_image_url,
+            favicon_url: getClearbitFallback(domain),
+            status_code: statusCode,
+            fetch_status: "success",
+            fetched_at: fetchedAt,
+            etag,
+            last_modified: lastModified,
+            content_text: provider.content_text,
+        });
         
         if (!response.ok) {
+            if (providerMetadata?.title) {
+                return buildProviderFallback(providerMetadata);
+            }
+
             return {
                 domain,
                 protocol,
@@ -473,6 +754,10 @@ export async function extractMetadata(url: string, timeoutMs: number = DEFAULT_T
         
         // Check if we can parse HTML
         if (!$("html").length && !$("head").length && !$("body").length) {
+            if (providerMetadata?.title) {
+                return buildProviderFallback(providerMetadata);
+            }
+
             return {
                 domain,
                 protocol,
@@ -496,7 +781,7 @@ export async function extractMetadata(url: string, timeoutMs: number = DEFAULT_T
         const jsonLd = extractJsonLd(ctx);
         
         // Extract all fields
-        const title = extractTitle(ctx, jsonLd);
+        const extractedTitle = extractTitle(ctx, jsonLd);
         const description = extractDescription(ctx, jsonLd);
         const siteName = extractSiteName($) || jsonLd?.publisher?.name;
         const canonical = extractCanonical(ctx);
@@ -506,28 +791,43 @@ export async function extractMetadata(url: string, timeoutMs: number = DEFAULT_T
         const imageDimensions = extractImageDimensions(ctx);
         const language = extractLanguage($) || jsonLd?.inLanguage;
         const themeColor = extractThemeColor($);
+
+        const title = providerMetadata?.title && isGenericTitle(extractedTitle, domain)
+            ? providerMetadata.title
+            : extractedTitle;
+        const finalDescription = description || providerMetadata?.description;
+        const finalSiteName = providerMetadata?.site_name || siteName;
+        const finalCanonical = canonical || providerMetadata?.canonical_url;
+        const finalPreviewImage = previewImage || providerMetadata?.preview_image_url;
         
         // Content analysis
         const visibleText = extractVisibleText($);
-        const wordCount = countWords(visibleText);
+        const mergedContentText = cleanText(
+            [providerMetadata?.content_text, visibleText].filter(Boolean).join("\n\n")
+        );
+        const finalContentText = mergedContentText
+            ? mergedContentText.substring(0, 5000)
+            : undefined;
+        const textForMetrics = providerMetadata?.content_text || visibleText;
+        const wordCount = countWords(textForMetrics);
         const readingTime = estimateReadingTime(wordCount);
         
         return {
             // URL-level data
             final_url: finalUrl,
-            canonical_url: canonical,
+            canonical_url: finalCanonical,
             domain,
             protocol,
             
             // Identity/labeling
             title,
-            site_name: siteName,
-            description,
+            site_name: finalSiteName,
+            description: finalDescription,
             
             // Visual identity
             favicon_url: faviconUrl,
             favicon_variants: faviconVariants.length > 0 ? faviconVariants : undefined,
-            preview_image_url: previewImage,
+            preview_image_url: finalPreviewImage,
             preview_image_width: imageDimensions.width,
             preview_image_height: imageDimensions.height,
             theme_color: themeColor,
@@ -543,10 +843,11 @@ export async function extractMetadata(url: string, timeoutMs: number = DEFAULT_T
             fetched_at: fetchedAt,
             etag,
             last_modified: lastModified,
-            content_text: visibleText.substring(0, 5000), // Truncate to reasonable length for AI context
+            content_text: finalContentText,
         };
     } catch (error) {
         clearTimeout(timeoutId);
+        const providerMetadata = await providerMetadataPromise;
         
         const fetchStatus = getFetchStatusFromError(error);
         
@@ -555,6 +856,22 @@ export async function extractMetadata(url: string, timeoutMs: number = DEFAULT_T
             console.error("Metadata extraction timeout for:", url);
         } else {
             console.error("Error extracting metadata:", error);
+        }
+
+        if (providerMetadata?.title) {
+            return {
+                domain,
+                protocol,
+                title: providerMetadata.title,
+                description: providerMetadata.description,
+                site_name: providerMetadata.site_name,
+                canonical_url: providerMetadata.canonical_url,
+                preview_image_url: providerMetadata.preview_image_url,
+                favicon_url: getClearbitFallback(domain),
+                fetch_status: "success",
+                fetched_at: fetchedAt,
+                content_text: providerMetadata.content_text,
+            };
         }
         
         // Return fallback metadata

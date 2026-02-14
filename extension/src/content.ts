@@ -85,6 +85,18 @@ async function addLinkToSpaceViaBackground(spaceId: string, linkId: string): Pro
   });
 }
 
+async function removeLinkFromSpaceViaBackground(spaceId: string, linkId: string): Promise<{ success: boolean; error?: string }> {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ action: "removeLinkFromSpace", spaceId, linkId }, (response) => {
+      if (chrome.runtime.lastError) {
+        resolve({ success: false, error: chrome.runtime.lastError.message });
+      } else {
+        resolve(response || { success: false, error: "No response" });
+      }
+    });
+  });
+}
+
 // Fetch link spaces via background script
 async function fetchLinkSpacesViaBackground(linkId: string): Promise<LinkSpacesResponse> {
   return new Promise((resolve) => {
@@ -463,9 +475,15 @@ function renderSpaceList(container: HTMLElement, spaces: Space[]) {
       const wasSelected = selectedSpaces.has(space.id);
 
       if (wasSelected) {
-        selectedSpaces.delete(space.id);
-        item.classList.remove("cadie-selected");
-        checkContainer.innerHTML = "";
+        item.classList.add("cadie-loading");
+        const response = await removeLinkFromSpaceViaBackground(space.id, currentLinkId);
+        item.classList.remove("cadie-loading");
+
+        if (response.success) {
+          selectedSpaces.delete(space.id);
+          item.classList.remove("cadie-selected");
+          checkContainer.innerHTML = "";
+        }
       } else {
         item.classList.add("cadie-loading");
         const response = await addLinkToSpaceViaBackground(space.id, currentLinkId);

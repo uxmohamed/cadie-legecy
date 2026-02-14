@@ -14,6 +14,8 @@ export interface SaveLinkResponse {
   error?: string;
   duplicate?: boolean;
   authFailed?: boolean;
+  retryable?: boolean;
+  statusCode?: number;
   linkId?: string; // The ID of the saved/existing link
 }
 
@@ -30,6 +32,46 @@ export interface SpacesResponse {
   spaces?: Space[];
 }
 
+const REQUEST_TIMEOUT_MS = 12000;
+const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
+
+function isRetryableStatus(status: number): boolean {
+  return RETRYABLE_STATUS_CODES.has(status);
+}
+
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+  timeoutMs: number = REQUEST_TIMEOUT_MS
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function parseApiError(response: Response): Promise<string> {
+  try {
+    const errorData = await response.json();
+    return String(
+      errorData?.error?.message ||
+      errorData?.error ||
+      errorData?.details?.[0]?.message ||
+      response.statusText ||
+      `Error ${response.status}`
+    );
+  } catch {
+    return response.statusText || `Error ${response.status}`;
+  }
+}
+
 /**
  * Save a link to Cadie
  */
@@ -42,7 +84,7 @@ export async function saveLink(request: SaveLinkRequest): Promise<SaveLinkRespon
       return { success: false, error: "Not connected. Please connect in settings." };
     }
 
-    const response = await fetch(`${cadieUrl}/api/links`, {
+    const response = await fetchWithTimeout(`${cadieUrl}/api/links`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -57,16 +99,19 @@ export async function saveLink(request: SaveLinkRequest): Promise<SaveLinkRespon
         return {
           success: false,
           error: "Auth failed. Redirecting to connect...",
-          authFailed: true
+          authFailed: true,
+          retryable: false,
+          statusCode: response.status,
         };
       }
-      try {
-        const errorData = await response.json();
-        const errorMsg = errorData?.error?.message || errorData?.error || errorData?.details?.[0]?.message || `Error ${response.status}`;
-        return { success: false, error: String(errorMsg) };
-      } catch {
-        return { success: false, error: `Error ${response.status}` };
-      }
+
+      const errorMsg = await parseApiError(response);
+      return {
+        success: false,
+        error: errorMsg,
+        retryable: isRetryableStatus(response.status),
+        statusCode: response.status,
+      };
     }
 
     const data = await response.json();
@@ -76,7 +121,15 @@ export async function saveLink(request: SaveLinkRequest): Promise<SaveLinkRespon
       linkId: data.link?.id
     };
   } catch (error) {
-    return { success: false, error: "Network error" };
+    if (error instanceof DOMException && error.name === "AbortError") {
+      return {
+        success: false,
+        error: "Request timed out",
+        retryable: true,
+      };
+    }
+
+    return { success: false, error: "Network error", retryable: true };
   }
 }
 
@@ -92,7 +145,7 @@ export async function fetchSpaces(): Promise<SpacesResponse> {
       return { success: false, error: "Not connected" };
     }
 
-    const response = await fetch(`${cadieUrl}/api/spaces`, {
+    const response = await fetchWithTimeout(`${cadieUrl}/api/spaces`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -100,12 +153,16 @@ export async function fetchSpaces(): Promise<SpacesResponse> {
     });
 
     if (!response.ok) {
-      return { success: false, error: `Error ${response.status}` };
+      const errorMsg = await parseApiError(response);
+      return { success: false, error: errorMsg };
     }
 
     const data = await response.json();
     return { success: true, spaces: data.spaces || [] };
   } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      return { success: false, error: "Request timed out" };
+    }
     return { success: false, error: "Network error" };
   }
 }
@@ -122,7 +179,7 @@ export async function addLinkToSpace(spaceId: string, linkId: string): Promise<{
       return { success: false, error: "Not connected" };
     }
 
-    const response = await fetch(`${cadieUrl}/api/spaces/${spaceId}/links`, {
+    const response = await fetchWithTimeout(`${cadieUrl}/api/spaces/${spaceId}/links`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -132,11 +189,15 @@ export async function addLinkToSpace(spaceId: string, linkId: string): Promise<{
     });
 
     if (!response.ok) {
-      return { success: false, error: `Error ${response.status}` };
+      const errorMsg = await parseApiError(response);
+      return { success: false, error: errorMsg };
     }
 
     return { success: true };
   } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      return { success: false, error: "Request timed out" };
+    }
     return { success: false, error: "Network error" };
   }
 }
@@ -153,7 +214,7 @@ export async function removeLinkFromSpace(spaceId: string, linkId: string): Prom
       return { success: false, error: "Not connected" };
     }
 
-    const response = await fetch(`${cadieUrl}/api/spaces/${spaceId}/links`, {
+    const response = await fetchWithTimeout(`${cadieUrl}/api/spaces/${spaceId}/links`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
@@ -163,11 +224,15 @@ export async function removeLinkFromSpace(spaceId: string, linkId: string): Prom
     });
 
     if (!response.ok) {
-      return { success: false, error: `Error ${response.status}` };
+      const errorMsg = await parseApiError(response);
+      return { success: false, error: errorMsg };
     }
 
     return { success: true };
   } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      return { success: false, error: "Request timed out" };
+    }
     return { success: false, error: "Network error" };
   }
 }
@@ -190,7 +255,7 @@ export async function fetchLinkSpaces(linkId: string): Promise<LinkSpacesRespons
       return { success: false, error: "Not connected" };
     }
 
-    const response = await fetch(`${cadieUrl}/api/links/${linkId}/spaces`, {
+    const response = await fetchWithTimeout(`${cadieUrl}/api/links/${linkId}/spaces`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -198,12 +263,16 @@ export async function fetchLinkSpaces(linkId: string): Promise<LinkSpacesRespons
     });
 
     if (!response.ok) {
-      return { success: false, error: `Error ${response.status}` };
+      const errorMsg = await parseApiError(response);
+      return { success: false, error: errorMsg };
     }
 
     const data = await response.json();
     return { success: true, space_ids: data.space_ids || [] };
   } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      return { success: false, error: "Request timed out" };
+    }
     return { success: false, error: "Network error" };
   }
 }

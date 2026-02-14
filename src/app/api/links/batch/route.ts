@@ -106,6 +106,7 @@ async function enrichUrlLinksWithAI(
         description: link.description,
         domain: link.domain || extractDomain(link.url),
         site_name: link.site_name || null,
+        url: link.url,
         content: link.content_text || null,
       });
 

@@ -20,13 +20,18 @@
   "content_scripts": [
     {
       "matches": [
-        "https://cadie.app/*"
+        "https://cadie.app/*",
+        "https://www.cadie.app/*"
       ],
       "js": ["content.js"],
       "run_at": "document_end"
     },
     {
       "matches": ["<all_urls>"],
+      "exclude_matches": [
+        "https://cadie.app/*",
+        "https://www.cadie.app/*"
+      ],
       "js": ["content.js"],
       "css": ["content.css"],
       "run_at": "document_end"

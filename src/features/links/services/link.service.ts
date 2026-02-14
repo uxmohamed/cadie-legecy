@@ -1,8 +1,5 @@
 import type { ILinkRepository } from "../repositories/link.repository.interface";
 import type { Link, CreateLinkDTO, UpdateLinkDTO, LinkFilters } from "../types/link.types";
-import { MetadataService } from "./metadata.service";
-import { DuplicateDetectionService } from "./duplicate-detection.service";
-import { AITaggingService } from "./ai-tagging.service";
 
 /**
  * Service for managing link operations
@@ -10,15 +7,7 @@ import { AITaggingService } from "./ai-tagging.service";
  * Following Dependency Inversion Principle - depends on ILinkRepository interface
  */
 export class LinkService {
-    private aiTaggingService: AITaggingService;
-
-    constructor(
-        private linkRepository: ILinkRepository,
-        private metadataService: MetadataService,
-        private duplicateDetectionService: DuplicateDetectionService
-    ) {
-        this.aiTaggingService = new AITaggingService();
-    }
+    constructor(private linkRepository: ILinkRepository) {}
 
     /**
      * Get all links for a user with optional filters
@@ -38,7 +27,7 @@ export class LinkService {
      * Create a new link
      * Returns existing link if duplicate is detected
      * Auto-restores from trash if the URL was previously trashed
-     * Fetches metadata synchronously for immediate display
+     * Metadata/AI enrichment is intentionally asynchronous
      */
     async createLink(userId: string, data: CreateLinkDTO): Promise<{ link: Link; isDuplicate: boolean; isRestored: boolean }> {
         // Check for existing link including trashed ones
@@ -54,17 +43,7 @@ export class LinkService {
                     is_archived: false,
                     deleted_at: null,
                 });
-
-                // Fetch and update metadata synchronously for restored links
-                if (data.content_type === "url" || !data.content_type) {
-                    await this.metadataService.enrichLink(restoredLink.id, restoredLink.url);
-                    const refreshed = await this.linkRepository.findById(restoredLink.id, userId);
-                    const enriched = await this.enrichLinkAI(refreshed || restoredLink, userId);
-                    return { link: enriched, isDuplicate: false, isRestored: true };
-                }
-
-                const enriched = await this.enrichLinkAI(restoredLink, userId);
-                return { link: enriched, isDuplicate: false, isRestored: true };
+                return { link: restoredLink, isDuplicate: false, isRestored: true };
             }
 
             // Link exists and is not in trash - it's a duplicate
@@ -73,68 +52,7 @@ export class LinkService {
 
         // Create new link
         const link = await this.linkRepository.create(userId, data);
-
-        // Fetch and update metadata synchronously for URLs
-        // This ensures the link has complete metadata before being returned
-        if (data.content_type === "url" || !data.content_type) {
-            await this.metadataService.enrichLink(link.id, link.url);
-            const refreshed = await this.linkRepository.findById(link.id, userId);
-            const enriched = await this.enrichLinkAI(refreshed || link, userId);
-            return { link: enriched, isDuplicate: false, isRestored: false };
-        }
-
-        const enriched = await this.enrichLinkAI(link, userId);
-        return { link: enriched, isDuplicate: false, isRestored: false };
-    }
-
-    private async enrichLinkAI(link: Link, userId: string): Promise<Link> {
-        try {
-            if (link.content_type === "color") {
-                return link;
-            }
-
-            if (link.content_type === "image") {
-                const result = await this.aiTaggingService.generateTagsFromImage(link.og_image_url || link.url);
-                if (!result) {
-                    return this.linkRepository.update(link.id, userId, {
-                        fetch_status: "failed",
-                        fetched_at: new Date().toISOString(),
-                    });
-                }
-
-                return this.linkRepository.update(link.id, userId, {
-                    ai_tags: result.tags,
-                    ai_key_themes: { category: result.category },
-                    title: result.title || (result.description ? result.description.split(/\s+/).slice(0, 5).join(" ") : link.title),
-                    description: result.description || link.description,
-                    fetch_status: "success",
-                    fetched_at: new Date().toISOString(),
-                });
-            }
-
-            if (link.ai_tags && link.ai_tags.length > 0) {
-                return link;
-            }
-
-            const result = await this.aiTaggingService.generateTags({
-                title: link.title,
-                description: link.description,
-                domain: link.domain,
-                site_name: link.site_name,
-                content: link.content_text,
-            });
-
-            if (!result) {
-                return link;
-            }
-
-            return this.linkRepository.update(link.id, userId, {
-                ai_tags: result.tags,
-                ai_key_themes: { category: result.category },
-            });
-        } catch {
-            return link;
-        }
+        return { link, isDuplicate: false, isRestored: false };
     }
 
     /**
