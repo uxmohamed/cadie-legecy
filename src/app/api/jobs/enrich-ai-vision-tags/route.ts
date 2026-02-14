@@ -102,8 +102,11 @@ export async function POST(request: NextRequest) {
 
     if (result.description) {
       updateData.description = result.description;
-      // Always update image titles with AI description (filenames aren't useful)
-      updateData.title = result.description.slice(0, 100);
+    }
+    if (result.title) {
+      updateData.title = result.title;
+    } else if (result.description) {
+      updateData.title = result.description.split(/\s+/).slice(0, 5).join(" ");
     }
 
     const { error: updateError } = await supabase

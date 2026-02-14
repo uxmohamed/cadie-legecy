@@ -105,7 +105,7 @@ export class LinkService {
                 return this.linkRepository.update(link.id, userId, {
                     ai_tags: result.tags,
                     ai_key_themes: { category: result.category },
-                    title: result.description ? result.description.slice(0, 100) : link.title,
+                    title: result.title || (result.description ? result.description.split(/\s+/).slice(0, 5).join(" ") : link.title),
                     description: result.description || link.description,
                     fetch_status: "success",
                     fetched_at: new Date().toISOString(),

@@ -90,7 +90,9 @@ describe("AITaggingService", () => {
 
     expect(result).not.toBeNull();
     expect(result?.tags.length).toBeGreaterThan(0);
-    expect(result?.description).toContain("Image item");
+    expect((result?.description || "").split(/\s+/).filter(Boolean).length).toBeGreaterThanOrEqual(18);
+    expect(result?.title).toBeDefined();
+    expect((result?.title || "").split(/\s+/).filter(Boolean).length).toBeLessThanOrEqual(5);
   });
 
   it("uses inline data URL for OpenAI vision when image fetch succeeds", async () => {
@@ -117,6 +119,7 @@ describe("AITaggingService", () => {
             content: JSON.stringify({
               tags: ["design", "branding"],
               category: "other",
+              title: "Minimal cat portrait",
               description: "A minimal logo treatment.",
             }),
           },
@@ -143,5 +146,7 @@ describe("AITaggingService", () => {
     expect(imagePart?.image_url?.url.startsWith("data:image/png;base64,")).toBe(
       true
     );
+    expect(result?.title).toBe("Minimal cat portrait");
+    expect((result?.title || "").split(/\s+/).filter(Boolean).length).toBeLessThanOrEqual(5);
   });
 });

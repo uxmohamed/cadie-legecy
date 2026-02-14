@@ -164,7 +164,11 @@ async function enrichImageLinksWithAI(
 
       if (result.description) {
         updateData.description = result.description;
-        updateData.title = result.description.slice(0, 100);
+      }
+      if (result.title) {
+        updateData.title = result.title;
+      } else if (result.description) {
+        updateData.title = result.description.split(/\s+/).slice(0, 5).join(" ");
       }
 
       if (!link.og_image_url) {

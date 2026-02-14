@@ -28,6 +28,7 @@ interface TaggingContext {
 interface TaggingResult {
   tags: string[];
   category: Category;
+  title?: string;
   description?: string;
 }
 
@@ -44,10 +45,16 @@ Given an image, generate:
    - Strategy: Mix broad topics (e.g. "landscape", "portrait") with specific subjects (e.g. "golden-gate-bridge", "sunset") and style descriptors (e.g. "minimalist", "aerial-view").
    - Avoid generic tags like "image", "photo", "picture" unless necessary.
 2. Exactly 1 category from this list: article, tool, video, portfolio, documentation, social-media, shopping, news, reference, other.
-3. A brief 1-2 sentence description of the image.
+3. A short title with 3-5 words maximum.
+   - Must be concise and scannable.
+   - No full-sentence titles.
+   - No trailing punctuation.
+4. A detailed description in 2-3 sentences, around 35-60 words total.
+   - The description should read like a useful summary for a saved media library.
+   - Avoid repeating the title verbatim as the first sentence.
 
 Respond ONLY with valid JSON in this exact format:
-{"tags": ["tag1", "tag2", "tag3"], "category": "other", "description": "A brief description of the image."}`;
+{"tags": ["tag1", "tag2", "tag3"], "category": "other", "title": "short sample title", "description": "A fuller 2-3 sentence description of the image."}`;
 
 const SYSTEM_PROMPT = `You are an expert content curator and digital librarian. Your goal is to deeply anaylze web content and categorize it with high precision.
 Given metadata and a content preview of a link, generate:
@@ -101,6 +108,59 @@ function validateAndClean(raw: unknown): TaggingResult | null {
   }
 
   return { tags: uniqueTags, category };
+}
+
+function normalizeImageTitle(
+  rawTitle: unknown,
+  fallbackDescription?: string
+): string | undefined {
+  let title = typeof rawTitle === "string" ? rawTitle : "";
+
+  if (!title && fallbackDescription) {
+    const firstSentence = fallbackDescription.split(/[.!?]/)[0] || fallbackDescription;
+    title = firstSentence;
+  }
+
+  title = title
+    .replace(/^(an?|the)\s+/i, "")
+    .replace(/^image\s+(of|showing|displaying)\s+/i, "")
+    .replace(/^a\s+photo\s+of\s+/i, "")
+    .replace(/[.,!?;:]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!title) return undefined;
+
+  const shortTitle = title.split(" ").slice(0, 5).join(" ").trim();
+  return shortTitle || undefined;
+}
+
+function normalizeImageDescription(rawDescription: unknown, title?: string): string | undefined {
+  if (typeof rawDescription !== "string") return undefined;
+
+  let description = rawDescription
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!description) return undefined;
+
+  if (title) {
+    const lowerTitle = title.toLowerCase();
+    if (description.toLowerCase() === lowerTitle) {
+      description = `This image highlights ${title.toLowerCase()} with clear visual detail and context for quick reference in your collection.`;
+    }
+  }
+
+  const wordCount = description.split(/\s+/).filter(Boolean).length;
+  if (wordCount < 22) {
+    description = `${description} It captures the main visual elements and context in a way that is useful for search and quick recall.`;
+  }
+
+  if (description.length > 500) {
+    description = description.slice(0, 500).trim();
+  }
+
+  return description;
 }
 
 /**
@@ -335,7 +395,8 @@ export class AITaggingService {
         const parsed = JSON.parse(text);
         const validated = validateAndClean(parsed);
         if (validated) {
-          validated.description = typeof parsed.description === "string" ? parsed.description.slice(0, 500) : undefined;
+          validated.title = normalizeImageTitle(parsed.title, parsed.description);
+          validated.description = normalizeImageDescription(parsed.description, validated.title);
           return validated;
         }
       } catch (error: unknown) {
@@ -398,7 +459,8 @@ export class AITaggingService {
         const parsed = JSON.parse(text);
         const validated = validateAndClean(parsed);
         if (validated) {
-          validated.description = typeof parsed.description === "string" ? parsed.description.slice(0, 500) : undefined;
+          validated.title = normalizeImageTitle(parsed.title, parsed.description);
+          validated.description = normalizeImageDescription(parsed.description, validated.title);
           return validated;
         }
       } catch (error) {
@@ -457,16 +519,17 @@ export class AITaggingService {
     const titleText = fileName
       .split(/\s+/)
       .filter(Boolean)
-      .slice(0, 8)
+      .slice(0, 5)
       .join(" ");
     const description = titleText
-      ? `Image item: ${titleText}.`
+      ? `This image shows ${titleText.toLowerCase()} with clear visual context. It is stored as a quick visual reference for later search and recall.`
       : "Image item saved to library.";
 
     return {
       tags: tags.length > 0 ? tags : ["image-item"],
       category: "other",
-      description,
+      title: titleText || "Saved image",
+      description: normalizeImageDescription(description, titleText),
     };
   }
 
