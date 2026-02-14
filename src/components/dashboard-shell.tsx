@@ -418,11 +418,11 @@ export function DashboardShell({
       dragCounterRef.current = 0;
       setIsDraggingFiles(false);
 
-      const files = Array.from(e.dataTransfer?.files || []).filter((f) =>
+      const firstImage = Array.from(e.dataTransfer?.files || []).find((f) =>
         f.type.startsWith("image/")
       );
-      if (files.length > 0) {
-        onUploadImages(files);
+      if (firstImage) {
+        onUploadImages([firstImage]);
       }
     };
 

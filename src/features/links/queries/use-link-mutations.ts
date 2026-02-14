@@ -996,11 +996,39 @@ export function useLinkMutations(filters: LinkFilters) {
    */
   const addImageFilesMutation = useMutation({
     mutationFn: async (files: File[]) => {
-      const { uploadImage } = await import("@/features/links/services/image-upload.service");
+      const {
+        uploadImage,
+        validateImageFile,
+        getUserImageCount,
+        MAX_FILES_PER_UPLOAD,
+        MAX_IMAGES_PER_USER,
+      } = await import("@/features/links/services/image-upload.service");
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
+
+      // Enforce batch size limit
+      if (files.length > MAX_FILES_PER_UPLOAD) {
+        throw new Error(`Too many files. Maximum is ${MAX_FILES_PER_UPLOAD} per upload`);
+      }
+
+      // Validate all files before uploading any
+      for (const file of files) {
+        const error = validateImageFile(file);
+        if (error) throw new Error(error);
+      }
+
+      // Check user quota
+      const currentCount = await getUserImageCount(user.id);
+      if (currentCount + files.length > MAX_IMAGES_PER_USER) {
+        const remaining = Math.max(0, MAX_IMAGES_PER_USER - currentCount);
+        throw new Error(
+          remaining === 0
+            ? `Image limit reached (${MAX_IMAGES_PER_USER}). Delete some images to upload more`
+            : `Can only upload ${remaining} more image${remaining === 1 ? "" : "s"} (limit: ${MAX_IMAGES_PER_USER})`
+        );
+      }
 
       // Upload files and collect URLs + names
       const uploadedItems: { url: string; name: string }[] = [];

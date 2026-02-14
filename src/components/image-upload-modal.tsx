@@ -8,7 +8,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { IconUpload, IconPhoto, IconX, IconLoader2 } from "@tabler/icons-react";
+import { IconUpload, IconPhoto, IconX, IconLoader2, IconAlertTriangle } from "@tabler/icons-react";
+import { toast } from "sonner";
 
 interface ImageUploadModalProps {
   open: boolean;
@@ -19,6 +20,13 @@ interface ImageUploadModalProps {
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml", "image/avif"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILES = 1;
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
 
 export function ImageUploadModal({
   open,
@@ -27,8 +35,11 @@ export function ImageUploadModal({
   isUploading = false,
 }: ImageUploadModalProps) {
   const [dragOver, setDragOver] = React.useState(false);
-  const [previewFiles, setPreviewFiles] = React.useState<{ file: File; preview: string }[]>([]);
+  const [previewFiles, setPreviewFiles] = React.useState<{ file: File; preview: string; error?: string }[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const validFiles = previewFiles.filter((f) => !f.error);
+  const hasErrors = previewFiles.some((f) => f.error);
 
   // Cleanup previews on unmount
   React.useEffect(() => {
@@ -47,13 +58,21 @@ export function ImageUploadModal({
   }, [open]);
 
   const addFiles = React.useCallback((files: FileList | File[]) => {
-    const validFiles: { file: File; preview: string }[] = [];
-    for (const file of Array.from(files)) {
-      if (!ACCEPTED_TYPES.includes(file.type)) continue;
-      if (file.size > MAX_FILE_SIZE) continue;
-      validFiles.push({ file, preview: URL.createObjectURL(file) });
-    }
-    setPreviewFiles((prev) => [...prev, ...validFiles]);
+    const file = Array.from(files)[0];
+    if (!file) return;
+
+    setPreviewFiles((prev) => {
+      // Revoke old preview
+      prev.forEach((f) => URL.revokeObjectURL(f.preview));
+
+      let error: string | undefined;
+      if (!ACCEPTED_TYPES.includes(file.type)) {
+        error = "Unsupported format";
+      } else if (file.size > MAX_FILE_SIZE) {
+        error = `Too large (${formatSize(file.size)})`;
+      }
+      return [{ file, preview: URL.createObjectURL(file), error }];
+    });
   }, []);
 
   const removeFile = React.useCallback((index: number) => {
@@ -92,17 +111,16 @@ export function ImageUploadModal({
       if (e.target.files && e.target.files.length > 0) {
         addFiles(e.target.files);
       }
-      // Reset input so same file can be selected again
       e.target.value = "";
     },
     [addFiles]
   );
 
   const handleUpload = React.useCallback(() => {
-    if (previewFiles.length === 0) return;
-    onUploadFiles(previewFiles.map((f) => f.file));
+    if (validFiles.length === 0) return;
+    onUploadFiles(validFiles.map((f) => f.file));
     onOpenChange(false);
-  }, [previewFiles, onUploadFiles, onOpenChange]);
+  }, [validFiles, onUploadFiles, onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -131,41 +149,54 @@ export function ImageUploadModal({
               Drop images here or click to browse
             </p>
             <p className="text-xs text-fg-subtle mt-1">
-              JPEG, PNG, GIF, WebP, SVG, AVIF. Max 5MB each.
+              JPEG, PNG, GIF, WebP, SVG, AVIF &middot; Max 5MB
             </p>
           </div>
           <input
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            multiple
             onChange={handleFileSelect}
             className="hidden"
           />
         </div>
 
         {/* Preview thumbnails */}
-        {previewFiles.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {previewFiles.map((item, i) => (
-              <div key={i} className="relative group h-16 w-16 rounded-lg overflow-hidden border border-border-muted">
-                <img
-                  src={item.preview}
-                  alt={item.file.name}
-                  className="h-full w-full object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeFile(i);
-                  }}
-                  className="absolute top-0.5 right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <IconX className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
+        {previewFiles.length > 0 && previewFiles[0] && (
+          <div className="mt-2">
+            <div
+              className={`relative group rounded-xl overflow-hidden border ${
+                previewFiles[0].error ? "border-destructive/50" : "border-border-muted"
+              }`}
+            >
+              <img
+                src={previewFiles[0].preview}
+                alt={previewFiles[0].file.name}
+                className={`w-full max-h-48 object-cover ${previewFiles[0].error ? "opacity-40" : ""}`}
+              />
+              {previewFiles[0].error && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="flex items-center gap-1.5 bg-destructive/80 text-white px-3 py-1.5 rounded-lg">
+                    <IconAlertTriangle className="h-4 w-4" />
+                    <span className="text-xs font-medium">{previewFiles[0].error}</span>
+                  </div>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeFile(0);
+                }}
+                className="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <IconX className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <div className="flex items-center justify-between mt-1.5">
+              <span className="text-xs text-fg-subtle truncate max-w-[70%]">{previewFiles[0].file.name}</span>
+              <span className="text-xs text-fg-subtle">{formatSize(previewFiles[0].file.size)}</span>
+            </div>
           </div>
         )}
 
@@ -176,7 +207,7 @@ export function ImageUploadModal({
           </Button>
           <Button
             onClick={handleUpload}
-            disabled={previewFiles.length === 0 || isUploading}
+            disabled={validFiles.length === 0 || isUploading}
           >
             {isUploading ? (
               <>
@@ -186,7 +217,7 @@ export function ImageUploadModal({
             ) : (
               <>
                 <IconPhoto className="h-4 w-4 mr-1.5" />
-                Upload {previewFiles.length > 0 ? `(${previewFiles.length})` : ""}
+                Upload
               </>
             )}
           </Button>

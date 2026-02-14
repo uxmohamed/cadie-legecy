@@ -90,16 +90,8 @@ export async function POST(request: NextRequest) {
 
     if (result.description) {
       updateData.description = result.description;
-      // Also use description as title if the title is still the raw URL
-      const { data: currentLink } = await supabase
-        .from("links")
-        .select("title, url")
-        .eq("id", linkId)
-        .single();
-
-      if (currentLink && currentLink.title === currentLink.url) {
-        updateData.title = result.description.slice(0, 100);
-      }
+      // Always update image titles with AI description (filenames aren't useful)
+      updateData.title = result.description.slice(0, 100);
     }
 
     const { error: updateError } = await supabase

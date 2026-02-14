@@ -233,6 +233,16 @@ export class AITaggingService {
 
     for (let attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
       try {
+        // Fetch image and convert to base64 (Gemini SDK requires inline data)
+        const imageResponse = await fetch(imageUrl);
+        if (!imageResponse.ok) {
+          log.warn("[AI Vision Tagging] Failed to fetch image", { imageUrl, status: imageResponse.status });
+          return null;
+        }
+        const imageBuffer = await imageResponse.arrayBuffer();
+        const base64Data = Buffer.from(imageBuffer).toString("base64");
+        const mimeType = imageResponse.headers.get("content-type") || "image/jpeg";
+
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
           model: "gemini-2.0-flash",
@@ -246,9 +256,9 @@ export class AITaggingService {
         const result = await Promise.race([
           model.generateContent([
             IMAGE_SYSTEM_PROMPT,
-            { inlineData: { mimeType: "image/jpeg", data: "" }, fileData: { mimeType: "image/jpeg", fileUri: imageUrl } },
-          ].filter(Boolean) as any),
-          this.timeout(),
+            { inlineData: { mimeType, data: base64Data } },
+          ]),
+          this.visionTimeout(),
         ]);
 
         if (!result) return null;
@@ -300,7 +310,7 @@ export class AITaggingService {
             temperature: 0.3,
             max_tokens: 300,
           }),
-          this.timeout(),
+          this.visionTimeout(),
         ]);
 
         if (!result) return null;
@@ -325,6 +335,12 @@ export class AITaggingService {
   private timeout(): Promise<never> {
     return new Promise((_, reject) =>
       setTimeout(() => reject(new Error("AI request timed out")), this.TIMEOUT_MS)
+    );
+  }
+
+  private visionTimeout(): Promise<never> {
+    return new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("AI vision request timed out")), 15000)
     );
   }
 }
