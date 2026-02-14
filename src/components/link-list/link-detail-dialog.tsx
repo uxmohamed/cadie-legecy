@@ -136,8 +136,8 @@ export function LinkDetailDialog({
                   onDelete={() => onDelete?.(link.id)}
                   spaces={spaces}
                   linkSpaces={linkSpaces}
-                  onAddToSpace={(spaceId) => onAddToSpace?.(link.id, spaceId)}
-                  onRemoveFromSpace={(spaceId) => onRemoveFromSpace?.(link.id, spaceId)}
+                  onAddToSpace={async (spaceId) => { if (onAddToSpace) await onAddToSpace(link.id, spaceId); }}
+                  onRemoveFromSpace={async (spaceId) => { if (onRemoveFromSpace) await onRemoveFromSpace(link.id, spaceId); }}
                 />
               </div>
             </div>
