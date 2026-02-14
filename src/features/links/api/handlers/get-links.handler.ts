@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LinkService } from "@/features/links/services";
-import { MetadataService } from "@/features/links/services";
-import { DuplicateDetectionService } from "@/features/links/services";
 import { SupabaseLinkRepository } from "@/features/links/repositories";
 import { authenticateRequest } from "@/lib/auth-middleware";
 import { toAppError, ErrorCode } from "@/lib/errors";
@@ -15,13 +13,7 @@ export class GetLinksHandler {
 
     constructor() {
         const repository = new SupabaseLinkRepository();
-        const metadataService = new MetadataService();
-        const duplicateDetectionService = new DuplicateDetectionService();
-        this.linkService = new LinkService(
-            repository,
-            metadataService,
-            duplicateDetectionService
-        );
+        this.linkService = new LinkService(repository);
     }
 
     async handle(request: NextRequest): Promise<NextResponse> {

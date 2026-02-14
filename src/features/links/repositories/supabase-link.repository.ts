@@ -199,6 +199,8 @@ export class SupabaseLinkRepository implements ILinkRepository {
                 is_pinned: false,
                 is_archived: false,
                 is_deleted: false,
+                fetch_status: contentType === "color" ? "success" : "pending",
+                fetched_at: contentType === "color" ? new Date().toISOString() : null,
             })
             .select()
             .single();

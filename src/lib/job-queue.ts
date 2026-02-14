@@ -1,9 +1,16 @@
 import { Client } from "@upstash/qstash";
 
-// Initialize QStash client
-const qstash = new Client({
-  token: process.env.QSTASH_TOKEN!,
-});
+const qstashToken = process.env.QSTASH_TOKEN;
+const qstash = qstashToken ? new Client({ token: qstashToken }) : null;
+
+function getQStashClient(): Client | null {
+  if (!qstash) {
+    console.warn("[QStash] QSTASH_TOKEN is missing, skipping enqueue");
+    return null;
+  }
+
+  return qstash;
+}
 
 /**
  * Job payload for metadata enrichment
@@ -24,13 +31,16 @@ export interface EnrichMetadataJob {
  * @returns Promise that resolves when job is enqueued (not when executed)
  */
 export async function enqueueMetadataEnrichment(job: EnrichMetadataJob): Promise<void> {
+  const client = getQStashClient();
+  if (!client) return;
+
   // Determine the base URL for the callback
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL 
     || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
     || "http://localhost:3000";
   
   try {
-    await qstash.publishJSON({
+    await client.publishJSON({
       url: `${baseUrl}/api/jobs/enrich-metadata`,
       body: job,
       retries: 3, // Retry up to 3 times on failure
@@ -67,12 +77,15 @@ export interface EnrichAITagsJob {
  * Uses a 5s delay to let metadata settle first.
  */
 export async function enqueueAITagging(job: EnrichAITagsJob): Promise<void> {
+  const client = getQStashClient();
+  if (!client) return;
+
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
     || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
     || "http://localhost:3000";
 
   try {
-    await qstash.publishJSON({
+    await client.publishJSON({
       url: `${baseUrl}/api/jobs/enrich-ai-tags`,
       body: job,
       retries: 3,
@@ -105,12 +118,15 @@ export interface EnrichAIVisionTagsJob {
  * Uses a 2s delay to let the upload settle.
  */
 export async function enqueueAIVisionTagging(job: EnrichAIVisionTagsJob): Promise<void> {
+  const client = getQStashClient();
+  if (!client) return;
+
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
     || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
     || "http://localhost:3000";
 
   try {
-    await qstash.publishJSON({
+    await client.publishJSON({
       url: `${baseUrl}/api/jobs/enrich-ai-vision-tags`,
       body: job,
       retries: 3,

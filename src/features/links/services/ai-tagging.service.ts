@@ -22,6 +22,7 @@ interface TaggingContext {
   description?: string | null;
   domain?: string | null;
   site_name?: string | null;
+  url?: string | null;
   content?: string | null;
 }
 
@@ -108,6 +109,7 @@ function buildUserPrompt(context: TaggingContext): string {
   if (context.description) parts.push(`Description: ${context.description}`);
   if (context.domain) parts.push(`Domain: ${context.domain}`);
   if (context.site_name) parts.push(`Site: ${context.site_name}`);
+  if (context.url) parts.push(`URL: ${context.url}`);
   if (context.content) parts.push(`Content Preview:\n${context.content.substring(0, 2000)}`);
   return parts.join("\n");
 }
@@ -295,6 +297,7 @@ export class AITaggingService {
       context.description,
       context.site_name,
       context.domain,
+      context.url,
       context.content?.slice(0, 400),
     ]
       .filter(Boolean)
@@ -629,6 +632,7 @@ export class AITaggingService {
       context.title,
       context.site_name,
       context.domain?.replace(/\./g, " "),
+      context.url,
       context.description?.slice(0, 240),
     ]
       .filter(Boolean)

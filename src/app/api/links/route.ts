@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     color_value: validatedData.color_value ?? null,
   };
   
-  const response = await createLinkHandler.handle(request, dto);
+  const response = await createLinkHandler.handle(request, dto, userId || undefined);
   
   // Add rate limit headers to response
   const headers = getRateLimitHeaders(limit, remaining, reset);
@@ -107,4 +107,3 @@ export async function POST(request: NextRequest) {
   
   return response;
 }
-
