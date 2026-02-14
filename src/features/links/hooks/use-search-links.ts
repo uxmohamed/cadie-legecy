@@ -1,56 +1,96 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
+import Fuse, { type IFuseOptions, type Expression, type FuseOptionKeyObject } from "fuse.js";
 import type { Link } from "../types/link.types";
 import type { Space } from "@/types";
 
 /**
- * Build a searchable text blob for a link.
- * Joins all relevant fields into one lowercase string for fast substring matching.
+ * A searchable wrapper around Link that flattens arrays and resolves
+ * space names so Fuse.js can index every field uniformly.
  */
-function buildSearchableText(
-  link: Link,
-  spaceNames: string[]
-): string {
-  const parts: string[] = [
-    link.title,
-    link.url,
-    link.domain,
-    link.description ?? "",
-    link.site_name ?? "",
-    link.ai_summary ?? "",
-    link.color_value ?? "",
-    link.content_type,
-  ];
-
-  // AI tags
-  if (link.ai_tags && link.ai_tags.length > 0) {
-    parts.push(link.ai_tags.join(" "));
-  }
-
-  // AI people
-  if (link.ai_people && link.ai_people.length > 0) {
-    parts.push(link.ai_people.join(" "));
-  }
-
-  // Space names
-  if (spaceNames.length > 0) {
-    parts.push(spaceNames.join(" "));
-  }
-
-  return parts.join(" ").toLowerCase();
+interface SearchableLink {
+  /** Original link — returned in results */
+  _link: Link;
+  title: string;
+  url: string;
+  domain: string;
+  description: string;
+  site_name: string;
+  ai_summary: string;
+  ai_tags: string;
+  ai_people: string;
+  color_value: string;
+  content_type: string;
+  spaces: string;
 }
 
 /**
- * Client-side instant search across all link fields.
+ * Fuse.js options tuned for a bookmark manager:
  *
- * Supports multi-word queries: every word must match somewhere in the
- * link's searchable text (AND logic). This lets users type
- * "design figma" to find links that mention both words anywhere.
+ * - **threshold 0.35** — forgiving enough for typos ("desgn" → "design")
+ *   but tight enough to avoid noisy results.
+ * - **ignoreLocation** — matches anywhere in the string, not just near the start.
+ * - **keys with weights** — title and tags are boosted so a match there
+ *   ranks higher than one buried in a URL or description.
+ * - **useExtendedSearch** — enables AND (`space separated`), exact (`'term`),
+ *   prefix (`^term`), suffix (`term$`), inverse (`!term`) operators.
+ */
+const FUSE_OPTIONS: IFuseOptions<SearchableLink> = {
+  threshold: 0.35,
+  ignoreLocation: true,
+  useExtendedSearch: true,
+  findAllMatches: true,
+  keys: [
+    { name: "title", weight: 3 },
+    { name: "ai_tags", weight: 2.5 },
+    { name: "spaces", weight: 2 },
+    { name: "domain", weight: 1.5 },
+    { name: "url", weight: 1 },
+    { name: "description", weight: 1 },
+    { name: "site_name", weight: 1 },
+    { name: "ai_summary", weight: 0.8 },
+    { name: "ai_people", weight: 0.8 },
+    { name: "color_value", weight: 0.5 },
+    { name: "content_type", weight: 0.3 },
+  ],
+};
+
+/**
+ * Build a flat, searchable record from a Link plus its resolved space names.
+ */
+function toSearchable(
+  link: Link,
+  spaceNames: string[]
+): SearchableLink {
+  return {
+    _link: link,
+    title: link.title ?? "",
+    url: link.url ?? "",
+    domain: link.domain ?? "",
+    description: link.description ?? "",
+    site_name: link.site_name ?? "",
+    ai_summary: link.ai_summary ?? "",
+    ai_tags: link.ai_tags?.join(" ") ?? "",
+    ai_people: link.ai_people?.join(" ") ?? "",
+    color_value: link.color_value ?? "",
+    content_type: link.content_type ?? "",
+    spaces: spaceNames.join(" "),
+  };
+}
+
+/**
+ * Client-side fuzzy search across all link fields, powered by Fuse.js.
  *
- * Searched fields:
- * - title, url, domain, description, site_name
- * - ai_summary, ai_tags, ai_people
- * - color_value, content_type
- * - space names (via linkSpacesMap)
+ * Features:
+ * - **Typo tolerance** — "desgn" matches "design", "gogle" matches "google"
+ * - **Relevance ranking** — results sorted by match quality; title/tag
+ *   matches rank higher than URL/description matches
+ * - **Multi-word AND** — "react hooks" finds links matching both words
+ * - **Instant** — runs in-memory with a pre-built index; no network calls
+ *
+ * Searched fields (by priority):
+ * 1. title  2. ai_tags  3. spaces  4. domain
+ * 5. url  6. description  7. site_name  8. ai_summary
+ * 9. ai_people  10. color_value  11. content_type
  */
 export function useSearchLinks(
   links: Link[],
@@ -58,35 +98,65 @@ export function useSearchLinks(
   spaces?: Space[],
   linkSpacesMap?: Map<string, string[]>
 ): Link[] {
-  return useMemo(() => {
-    const trimmed = searchQuery.trim();
-    if (!trimmed) return links;
-
-    // Split into individual search terms (AND logic)
-    const terms = trimmed.toLowerCase().split(/\s+/).filter(Boolean);
-    if (terms.length === 0) return links;
-
-    // Pre-build a spaceId→name lookup for efficiency
-    const spaceNameById = new Map<string, string>();
+  // Pre-build spaceId → name lookup
+  const spaceNameById = useMemo(() => {
+    const map = new Map<string, string>();
     if (spaces) {
       for (const space of spaces) {
-        spaceNameById.set(space.id, space.name.toLowerCase());
+        map.set(space.id, space.name);
       }
     }
+    return map;
+  }, [spaces]);
 
-    return links.filter((link) => {
-      // Resolve space names for this link
+  // Build searchable records — recalculated when data changes
+  const searchableLinks = useMemo(() => {
+    return links.map((link) => {
       const spaceIds = linkSpacesMap?.get(link.id);
-      const spaceNames = spaceIds
+      const names = spaceIds
         ? spaceIds
             .map((id) => spaceNameById.get(id))
             .filter((n): n is string => n !== undefined)
         : [];
-
-      const text = buildSearchableText(link, spaceNames);
-
-      // Every term must appear somewhere in the text
-      return terms.every((term) => text.includes(term));
+      return toSearchable(link, names);
     });
-  }, [links, searchQuery, spaces, linkSpacesMap]);
+  }, [links, linkSpacesMap, spaceNameById]);
+
+  // Build Fuse index — only rebuilt when the dataset changes, NOT on every keystroke
+  const fuseRef = useRef<Fuse<SearchableLink> | null>(null);
+  const fuseDataRef = useRef<SearchableLink[]>([]);
+
+  const fuse = useMemo(() => {
+    fuseDataRef.current = searchableLinks;
+    fuseRef.current = new Fuse(searchableLinks, FUSE_OPTIONS);
+    return fuseRef.current;
+  }, [searchableLinks]);
+
+  // Run the search — this is the only part that runs per keystroke
+  return useMemo(() => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return links;
+
+    // For multi-word queries, use Fuse extended search AND operator
+    // "react hooks" → search for items matching both "react" AND "hooks"
+    const terms = trimmed.split(/\s+/).filter(Boolean);
+    let query: string | Expression;
+
+    if (terms.length === 1) {
+      query = terms[0];
+    } else {
+      // AND logic: every term must match somewhere
+      const keyNames = (FUSE_OPTIONS.keys as FuseOptionKeyObject<SearchableLink>[])!.map(
+        (k) => k.name as string
+      );
+      query = {
+        $and: terms.map((term) => ({
+          $or: keyNames.map((name) => ({ [name]: term })),
+        })),
+      };
+    }
+
+    const results = fuse.search(query);
+    return results.map((r) => r.item._link);
+  }, [fuse, searchQuery, links]);
 }
