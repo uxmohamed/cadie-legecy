@@ -256,11 +256,11 @@ function getAddressBarData(link: Link): {
 
   if (kind === "image") {
     const host = getHostname(link.url);
-    const fileName = getFileName(link.url);
+    const imageTitle = link.title?.trim();
     return {
       kind,
-      label: host || "Image",
-      value: fileName || (link.title !== link.url ? link.title : "Image asset"),
+      label: "Image",
+      value: imageTitle && imageTitle !== link.url ? imageTitle : "Image asset",
       openUrl: link.url,
       faviconDomain: host,
     };
@@ -287,17 +287,6 @@ function getHostname(value: string | null | undefined): string | null {
   if (!value) return null;
   try {
     return new URL(value).hostname.replace(/^www\./, "");
-  } catch {
-    return null;
-  }
-}
-
-function getFileName(value: string): string | null {
-  try {
-    const pathname = new URL(value).pathname;
-    const segments = pathname.split("/").filter(Boolean);
-    if (segments.length === 0) return null;
-    return decodeURIComponent(segments[segments.length - 1]);
   } catch {
     return null;
   }

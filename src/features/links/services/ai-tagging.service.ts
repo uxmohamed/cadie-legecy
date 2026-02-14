@@ -642,20 +642,25 @@ export class AITaggingService {
   }
 
   private deriveImageLabel(imageUrl: string): string {
-    let fileName = "uploaded image";
+    const fallback = "uploaded image";
 
     try {
       const url = new URL(imageUrl);
       const pathPart = url.pathname.split("/").pop() || "";
-      fileName = decodeURIComponent(pathPart || fileName)
+      const cleaned = decodeURIComponent(pathPart || fallback)
         .replace(/\.[a-zA-Z0-9]+$/, "")
         .replace(/[_-]+/g, " ")
-        .trim() || fileName;
-    } catch {
-      // Keep default fallback label
-    }
+        .trim() || fallback;
 
-    return fileName;
+      // If the filename is mostly UUIDs/timestamps/hex (no meaningful words), discard it
+      const words = cleaned.split(/\s+/);
+      const meaningfulWords = words.filter((word) => !this.isLikelyMachineToken(word));
+      if (meaningfulWords.length === 0) return fallback;
+
+      return meaningfulWords.join(" ");
+    } catch {
+      return fallback;
+    }
   }
 
   private fallbackFromImageUrl(imageUrl: string): TaggingResult {
@@ -742,6 +747,11 @@ export class AITaggingService {
       "image",
       "photo",
       "file",
+      "storage",
+      "object",
+      "public",
+      "images",
+      "supabase",
     ]);
 
     const tokens = text
@@ -749,9 +759,43 @@ export class AITaggingService {
       .replace(/[^a-z0-9\s-]/g, " ")
       .split(/\s+/)
       .map((token) => token.trim())
-      .filter((token) => token.length >= 3 && !stopWords.has(token));
+      .filter((token) => {
+        if (token.length < 3) return false;
+        if (stopWords.has(token)) return false;
+        if (this.isLikelyMachineToken(token)) return false;
+        return true;
+      });
 
     const deduped = [...new Set(tokens)].slice(0, limit);
     return deduped;
+  }
+
+  private isLikelyMachineToken(token: string): boolean {
+    const lower = token.toLowerCase();
+
+    // Numeric IDs and timestamps
+    if (/^\d{6,}$/.test(lower)) return true;
+
+    // Canonical UUID format
+    if (
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        lower
+      )
+    ) {
+      return true;
+    }
+
+    // Hyphenated UUID-like fragments
+    if (
+      lower.includes("-") &&
+      /^(?=.*\d)(?=.*[a-f])[0-9a-f-]{8,}$/i.test(lower)
+    ) {
+      return true;
+    }
+
+    // Hex-like chunks that include both letters and digits (e.g. 5c13e2ba, d741)
+    if (/^(?=.*\d)(?=.*[a-f])[0-9a-f]{4,}$/i.test(lower)) return true;
+
+    return false;
   }
 }
