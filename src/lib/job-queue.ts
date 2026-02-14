@@ -34,7 +34,7 @@ export async function enqueueMetadataEnrichment(job: EnrichMetadataJob): Promise
       url: `${baseUrl}/api/jobs/enrich-metadata`,
       body: job,
       retries: 3, // Retry up to 3 times on failure
-      delay: 2, // 2 second delay before first execution
+      delay: 0, // Start immediately for instant UI
     });
   } catch (error) {
     // Log but don't throw - metadata enrichment is best-effort
@@ -76,7 +76,7 @@ export async function enqueueAITagging(job: EnrichAITagsJob): Promise<void> {
       url: `${baseUrl}/api/jobs/enrich-ai-tags`,
       body: job,
       retries: 3,
-      delay: 5, // 5 second delay to let metadata settle
+      delay: 10, // 10 second delay to let metadata settle
     });
   } catch (error) {
     console.error("[QStash] Failed to enqueue AI tagging:", error);

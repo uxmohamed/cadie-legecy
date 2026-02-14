@@ -71,6 +71,7 @@ export function LinkListItem({
   onEditCancel,
 }: LinkListItemProps) {
   const isColor = link.content_type === "color";
+  const isMetadataLoading = !isColor && (link.fetch_status === "pending" || link.fetch_status === "fetching");
   const containerRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -192,7 +193,10 @@ export function LinkListItem({
               />
             ) : (
               <div className="flex items-center gap-2">
-                <div className="truncate text-sm leading-4 text-fg font-[470]">
+                <div className={cn(
+                  "truncate text-sm leading-4 font-[470] transition-colors duration-500",
+                  isMetadataLoading ? "text-fg-subtle" : "text-fg"
+                )}>
                   {link.title || link.url}
                 </div>
                 {!isColor && (

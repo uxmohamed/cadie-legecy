@@ -811,35 +811,110 @@ export function useLinkMutations(filters: LinkFilters) {
 
       return response.json() as Promise<{ links?: Link[]; count?: number; restored?: number; duplicates?: number }>;
     },
-    onMutate: (items) => {
-      // Show loading toast immediately
-      const loadingToastId = toast.loading(
-        items.length === 1 ? "Adding..." : `Adding ${items.length} items...`
-      );
-      return { loadingToastId };
-    },
-    onSuccess: (data, items, context) => {
-      // Dismiss loading toast
-      if (context?.loadingToastId) {
-        toast.dismiss(context.loadingToastId);
+    onMutate: async (items) => {
+      // Cancel outgoing queries to prevent overwrites
+      await queryClient.cancelQueries({ queryKey: queryKeys.links.all });
+
+      // Snapshot current cache for rollback
+      const previousAll = queryClient.getQueryData<LinksResponse>(queryKeys.links.list(ALL_FILTERS));
+      const previousCurrent = isCustomFilter(filters)
+        ? queryClient.getQueryData<LinksResponse>(queryKeys.links.list(filters))
+        : undefined;
+
+      // Generate optimistic Link objects
+      const now = new Date().toISOString();
+      const tempIds: string[] = [];
+      const optimisticLinks: Link[] = items.map(({ value, type }) => {
+        const tempId = crypto.randomUUID();
+        tempIds.push(tempId);
+
+        const isColor = type === "color";
+        let domain = "";
+        if (!isColor) {
+          try {
+            domain = new URL(value).hostname.replace(/^www\./, "");
+          } catch {
+            domain = value;
+          }
+        }
+
+        return {
+          id: tempId,
+          user_id: "",
+          url: value,
+          clean_url: value,
+          title: value,
+          domain: isColor ? "color" : domain,
+          content_type: type,
+          color_value: isColor ? value : null,
+          favicon_url: null,
+          og_image_url: null,
+          description: null,
+          ai_summary: null,
+          ai_tags: null,
+          ai_key_themes: null,
+          ai_quotes: null,
+          ai_facts: null,
+          ai_people: null,
+          is_pinned: false,
+          is_archived: false,
+          is_deleted: false,
+          deleted_at: null,
+          is_favorite: false,
+          read_at: null,
+          sort_order: 0,
+          created_at: now,
+          updated_at: now,
+          final_url: null,
+          canonical_url: null,
+          site_name: null,
+          favicon_variants: null,
+          preview_image_width: null,
+          preview_image_height: null,
+          theme_color: null,
+          language: null,
+          word_count: null,
+          reading_time_minutes: null,
+          status_code: null,
+          fetch_status: "pending" as const,
+          fetched_at: null,
+          etag: null,
+          last_modified: null,
+        };
+      });
+
+      // Add optimistic links to cache immediately
+      addLinksToCache(queryClient, ALL_FILTERS, optimisticLinks);
+      if (isCustomFilter(filters)) {
+        addLinksToCache(queryClient, filters, optimisticLinks);
       }
 
+      return { tempIds, previousAll, previousCurrent };
+    },
+    onSuccess: (data, items, context) => {
       const createdLinks = data.links ?? [];
       const count = data.count ?? createdLinks.length;
       const restored = data.restored ?? 0;
       const successCount = count - restored;
-      // Use duplicates from API response (server-side detection)
       const duplicateCount = data.duplicates ?? 0;
 
-      // Update ALL cache with new links (they're not in trash)
+      // Swap optimistic links (temp IDs) with real server-returned links
+      if (context?.tempIds) {
+        removeLinksFromCache(queryClient, ALL_FILTERS, context.tempIds);
+        if (isCustomFilter(filters)) {
+          removeLinksFromCache(queryClient, filters, context.tempIds);
+        }
+      }
       if (createdLinks.length > 0) {
         addLinksToCache(queryClient, ALL_FILTERS, createdLinks);
+        if (isCustomFilter(filters)) {
+          addLinksToCache(queryClient, filters, createdLinks);
+        }
       }
 
       // Show appropriate toast
       if (items.length === 1) {
         if (duplicateCount === 1) {
-          // Single item was a duplicate
           toast.info(items[0].type === "color" ? "Color already in your list" : "Link already in your list");
         } else if (restored === 1) {
           toast.success(items[0].type === "color" ? "Color restored from trash" : "Link restored from trash");
@@ -857,16 +932,29 @@ export function useLinkMutations(filters: LinkFilters) {
       }
     },
     onError: (err, _items, context) => {
-      // Dismiss loading toast
-      if (context?.loadingToastId) {
-        toast.dismiss(context.loadingToastId);
+      // Rollback: restore previous cache snapshot
+      if (context?.previousAll) {
+        queryClient.setQueryData(queryKeys.links.list(ALL_FILTERS), context.previousAll);
+      }
+      if (context?.previousCurrent && isCustomFilter(filters)) {
+        queryClient.setQueryData(queryKeys.links.list(filters), context.previousCurrent);
       }
       toast.error(err instanceof Error ? err.message : "Failed to save");
     },
     onSettled: () => {
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.links.all, refetchType: "active" });
-      }, 2000);
+      // Staggered fallback invalidation — safety net for realtime gaps
+      const delays = [5000, 10000, 15000, 25000];
+      delays.forEach((delay) => {
+        setTimeout(() => {
+          const current = queryClient.getQueryData<LinksResponse>(queryKeys.links.list(ALL_FILTERS));
+          const hasPending = current?.links.some(
+            (l) => l.fetch_status === "pending" || l.fetch_status === "fetching"
+          );
+          if (hasPending) {
+            queryClient.invalidateQueries({ queryKey: queryKeys.links.all, refetchType: "active" });
+          }
+        }, delay);
+      });
     },
   });
 
