@@ -180,6 +180,30 @@ const CSS_NAMED_COLORS: Record<string, string> = {
   yellowgreen: "#9acd32",
 };
 
+const DESCRIPTIVE_COLOR_ALIASES: Record<string, string> = {
+  "egyptian blue": "#1034a6",
+  "sunset orange": "#fd5e53",
+  "midnight teal": "#004953",
+  "powder rose": "#f4c2c2",
+  "storm gray": "#71797e",
+  "charcoal gray": "#36454f",
+  "sage green": "#9caf88",
+  "seafoam green": "#9fe2bf",
+  "dusty lavender": "#b8a9c9",
+  "burnt sienna": "#e97451",
+  "amber gold": "#ffbf00",
+  "ocean blue": "#4f42b5",
+  "royal purple": "#7851a9",
+  "ruby red": "#9b111e",
+  "forest moss": "#4f7942",
+  "desert sand": "#edc9af",
+};
+
+const ALL_NAMED_COLORS: Record<string, string> = {
+  ...DESCRIPTIVE_COLOR_ALIASES,
+  ...CSS_NAMED_COLORS,
+};
+
 const COLOR_NAME_TOKENS = [
   "lightgoldenrod",
   "mediumaquamarine",
@@ -297,7 +321,7 @@ const COLOR_NAME_LOOKUP = new Map<string, string>();
 const HEX_TO_PREFERRED_NAME = new Map<string, string>();
 const NAMED_COLOR_LAB_ENTRIES: NamedColorLab[] = [];
 
-for (const [name, hex] of Object.entries(CSS_NAMED_COLORS)) {
+for (const [name, hex] of Object.entries(ALL_NAMED_COLORS)) {
   COLOR_NAME_LOOKUP.set(normalizeColorNameKey(name), name);
   if (isHexColor(hex) && !HEX_TO_PREFERRED_NAME.has(hex)) {
     HEX_TO_PREFERRED_NAME.set(hex, name);
@@ -323,10 +347,19 @@ export function isNamedColor(value: string): boolean {
 export function getNamedColorHex(value: string): string | null {
   const canonicalName = COLOR_NAME_LOOKUP.get(normalizeColorNameKey(value));
   if (!canonicalName) return null;
-  return CSS_NAMED_COLORS[canonicalName] || null;
+  return ALL_NAMED_COLORS[canonicalName] || null;
 }
 
 export function humanizeColorName(value: string): string {
+  if (/[\s_-]+/.test(value)) {
+    return value
+      .trim()
+      .split(/[\s_-]+/)
+      .filter(Boolean)
+      .map((word) => word[0].toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+  }
+
   const normalized = normalizeColorNameKey(value);
   if (!normalized) return "Custom Color";
 
@@ -419,7 +452,7 @@ export function resolveColorMetadata(value: string): ColorMetadata {
       const confidence = Math.max(0.45, 1 - nearest.distance / 40);
       return {
         colorCode: canonical,
-        colorName: nearest.name,
+        colorName: getDescriptiveShadeName(canonical, nearest.name),
         source: "nearest",
         confidence,
       };
@@ -432,6 +465,20 @@ export function resolveColorMetadata(value: string): ColorMetadata {
     source: "custom",
     confidence: 0.4,
   };
+}
+
+function getDescriptiveShadeName(colorHex: string, baseName: string): string {
+  const rgb = hexToRgb(colorHex);
+  if (!rgb) return baseName;
+
+  const { s, l } = rgbToHsl(rgb);
+  const tone = l > 82 ? "Pale" : l < 22 ? "Deep" : s < 20 ? "Muted" : s > 70 ? "Vivid" : "Soft";
+
+  if (baseName.toLowerCase().includes(tone.toLowerCase())) {
+    return baseName;
+  }
+
+  return `${tone} ${baseName}`;
 }
 
 /**
@@ -580,6 +627,41 @@ function rgbToLab(rgb: RgbColor): LabColor {
     l: 116 * fy - 16,
     a: 500 * (fx - fy),
     b: 200 * (fy - fz),
+  };
+}
+
+function rgbToHsl(rgb: RgbColor): { h: number; s: number; l: number } {
+  const r = rgb.r / 255;
+  const g = rgb.g / 255;
+  const b = rgb.b / 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+
+  let h = 0;
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+
+  if (d !== 0) {
+    switch (max) {
+      case r:
+        h = ((g - b) / d) % 6;
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      default:
+        h = (r - g) / d + 4;
+    }
+    h *= 60;
+    if (h < 0) h += 360;
+  }
+
+  return {
+    h,
+    s: s * 100,
+    l: l * 100,
   };
 }
 

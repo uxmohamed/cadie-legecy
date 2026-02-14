@@ -204,6 +204,8 @@ describe('detectContentType', () => {
       ['aqua', '#00ffff'],
       ['gold', '#ffd700'],
       ['light blue', '#add8e6'],
+      ['egyptian blue', '#1034a6'],
+      ['sunset orange', '#fd5e53'],
       ['rebeccapurple', '#663399'],
     ];
 

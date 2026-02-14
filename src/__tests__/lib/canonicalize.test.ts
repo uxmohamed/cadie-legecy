@@ -341,10 +341,23 @@ describe('color metadata helpers', () => {
     expect(nearest!.hex).toMatch(/^#[0-9a-f]{6}$/);
   });
 
+  it('returns descriptive shade names for nearest colors', () => {
+    const metadata = resolveColorMetadata('#f4552a');
+    expect(metadata.source).toBe('nearest');
+    expect(metadata.colorName).toMatch(/^(Pale|Deep|Muted|Vivid|Soft) /);
+  });
+
   it('resolves metadata for named input to code + name', () => {
     const metadata = resolveColorMetadata('light blue');
     expect(metadata.colorCode).toBe('#add8e6');
     expect(metadata.colorName).toBe('Light Blue');
+    expect(metadata.source).toBe('named');
+  });
+
+  it('resolves descriptive named aliases', () => {
+    const metadata = resolveColorMetadata('egyptian blue');
+    expect(metadata.colorCode).toBe('#1034a6');
+    expect(metadata.colorName).toBe('Egyptian Blue');
     expect(metadata.source).toBe('named');
   });
 });
