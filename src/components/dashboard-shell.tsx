@@ -466,29 +466,33 @@ export function DashboardShell({
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               {/* Add Button */}
               {!isTrashView && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={onToggleAddMode}
-                  disabled={isAddingItem}
-                  className={`h-9 w-9 rounded-md border-[var(--border-primary)] bg-[var(--bg-control-btn)] text-[var(--fg)] hover:bg-[var(--bg-field-hover)] focus-visible:ring-[var(--border-primary)] shadow-[0_0_0_1px_rgba(31,34,37,0.09)_inset,0_2px_8px_-2px_rgba(0,0,0,0.04),0_2px_4px_-2px_rgba(0,0,0,0.04)] transition-none ${isAddingItem ? "bg-[var(--bg-field-hover)] pointer-events-none" : ""}`}
-                  aria-label="Add item"
-                >
-                  <IconPlus className="h-4 w-4" />
-                </Button>
-              )}
-
-              {/* Image Upload Button */}
-              {!isTrashView && onOpenUploadModal && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={onOpenUploadModal}
-                  className="h-9 w-9 rounded-md border-[var(--border-primary)] bg-[var(--bg-control-btn)] text-[var(--fg)] hover:bg-[var(--bg-field-hover)] focus-visible:ring-[var(--border-primary)] shadow-[0_0_0_1px_rgba(31,34,37,0.09)_inset,0_2px_8px_-2px_rgba(0,0,0,0.04),0_2px_4px_-2px_rgba(0,0,0,0.04)] transition-none"
-                  aria-label="Upload images"
-                >
-                  <IconPhoto className="h-4 w-4" />
-                </Button>
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9 rounded-md border-[var(--border-primary)] bg-[var(--bg-control-btn)] text-[var(--fg)] hover:bg-[var(--bg-field-hover)] focus-visible:ring-[var(--border-primary)] shadow-[0_0_0_1px_rgba(31,34,37,0.09)_inset,0_2px_8px_-2px_rgba(0,0,0,0.04),0_2px_4px_-2px_rgba(0,0,0,0.04)] transition-none"
+                      aria-label="Add menu"
+                    >
+                      <IconPlus className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-44">
+                    <DropdownMenuItem
+                      onSelect={() => onToggleAddMode()}
+                      disabled={isAddingItem}
+                    >
+                      <IconPlus className="h-4 w-4 text-fg-on-overlay-muted" />
+                      Add item
+                    </DropdownMenuItem>
+                    {onOpenUploadModal && (
+                      <DropdownMenuItem onSelect={() => onOpenUploadModal()}>
+                        <IconPhoto className="h-4 w-4 text-fg-on-overlay-muted" />
+                        Upload images
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
 
               {/* Vertical Divider */}
