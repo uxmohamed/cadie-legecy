@@ -190,17 +190,45 @@ export async function POST(request: NextRequest) {
               userId: user.id,
             }));
 
-            // In development, run directly to avoid QStash localhost issues
-            if (process.env.NODE_ENV === "development") {
+            // HYBRID APPROACH:
+            // For small batches (typical user action), run metadata fetch synchronously/eagerly
+            // to guarantee results without relying on external queues (QStash) which can be flaky.
+            // For large batches, offload to background queue to prevent timeouts.
+            if (urlLinks.length <= 5) {
               const metadataService = new MetadataService();
-              // Fire and forget, but directly
-              metadataJobs.forEach(job => {
-                metadataService.enrichLink(job.linkId, job.url).catch(err => {
-                  console.error("[Dev] Metadata enrichment failed:", err);
-                });
-              });
+              
+              // Run in parallel and wait for settled (don't block on one failure)
+              // This ensures metadata is ready (or attempted) before request completes
+              await Promise.allSettled(
+                urlLinks.map(link => 
+                  metadataService.enrichLink(link.id, link.url).catch(err => {
+                    console.error(`[Batch] Metadata enrichment failed for ${link.url}:`, err);
+                  })
+                )
+              );
+
+              // CRITICAL Step for "Dev-Like" Experience:
+              // Re-fetch the links we just enriched so we return the FULL metadata (Title, Description, etc.)
+              // to the client immediately. This avoids the 5-second polling delay in the UI.
+              const updatedIds = urlLinks.map(l => l.id);
+              const { data: freshLinks } = await supabase
+                .from("links")
+                .select()
+                .in("id", updatedIds);
+              
+              if (freshLinks && freshLinks.length > 0) {
+                 const freshMap = new Map(freshLinks.map(l => [l.id, l]));
+                 // Update the result object so the response contains the new data
+                 // We use 'any' cast because result structure is inferred but flexible
+                 if (result.data && Array.isArray(result.data.links)) {
+                     result.data.links = result.data.links.map((l: any) => freshMap.get(l.id) || l);
+                 }
+              }
             } else {
-              enqueueBatchMetadataEnrichment(metadataJobs).catch(() => {});
+              // Large batch: use background queue
+              enqueueBatchMetadataEnrichment(metadataJobs).catch(err => {
+                console.error("[Batch] Failed to enqueue metadata jobs:", err);
+              });
             }
 
             // Enqueue AI tagging jobs
