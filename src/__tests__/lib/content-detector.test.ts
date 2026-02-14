@@ -9,6 +9,7 @@ import {
   splitMultipleContent,
   isValidUrl,
 } from '@/lib/content-detector';
+import { getNearestColorName } from '@/lib/canonicalize';
 
 // =============================================================================
 // detectContentType Tests
@@ -228,6 +229,32 @@ describe('detectContentType', () => {
       expect(result).not.toBeNull();
       expect(result!.type).toBe('color');
       expect(result!.value).toBe('#ff0000');
+    });
+
+    it('infers multi-word descriptive color names from base color families', () => {
+      const result = detectContentType('egyptian blue');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
+      expect(result!.value).toMatch(/^#[0-9a-f]{6}$/i);
+
+      const nearest = getNearestColorName(result!.value);
+      expect(nearest).not.toBeNull();
+      expect(nearest!.name.toLowerCase()).toContain('blue');
+    });
+
+    it('infers a deterministic variant for descriptive names with a base color', () => {
+      const a = detectContentType('sunset orange');
+      const b = detectContentType('sunset orange');
+      const base = detectContentType('orange');
+
+      expect(a).not.toBeNull();
+      expect(b).not.toBeNull();
+      expect(base).not.toBeNull();
+
+      expect(a!.type).toBe('color');
+      expect(a!.value).toBe(b!.value);
+      expect(a!.value).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(a!.value).not.toBe(base!.value);
     });
   });
 
