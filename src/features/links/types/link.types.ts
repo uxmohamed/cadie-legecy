@@ -21,6 +21,7 @@ export interface Link {
     favicon_url: string | null;
     og_image_url: string | null;
     description: string | null;
+    notes?: string | null;
     ai_summary: string | null;
     ai_tags: string[] | null;
     ai_key_themes: Record<string, unknown> | null;
@@ -79,6 +80,7 @@ export interface UpdateLinkDTO {
     favicon_url?: string | null;
     og_image_url?: string | null;
     description?: string | null;
+    notes?: string | null;
     content_text?: string | null;
     ai_tags?: string[] | null;
     ai_key_themes?: Record<string, unknown> | null;

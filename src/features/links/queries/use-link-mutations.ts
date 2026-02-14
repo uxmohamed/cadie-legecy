@@ -1148,7 +1148,7 @@ export function useLinkMutations(filters: LinkFilters) {
     deleteLink: deleteMutation.mutate,
     restoreLink: restoreMutation.mutate,
     permanentDeleteLink: permanentDeleteMutation.mutate,
-    updateLink: (id: string, updates: Partial<Link>) => updateMutation.mutate({ id, updates }),
+    updateLink: (id: string, updates: Partial<Link>) => updateMutation.mutateAsync({ id, updates }),
     pinLink: pinMutation.mutate,
     unpinLink: unpinMutation.mutate,
 
