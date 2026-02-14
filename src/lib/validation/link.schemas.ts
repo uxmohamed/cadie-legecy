@@ -92,6 +92,8 @@ export const updateLinkSchema = z.object({
   is_pinned: z.boolean().optional(),
   is_archived: z.boolean().optional(),
   description: z.string().max(1000, "Description too long").optional().nullable(),
+  notes: z.string().max(5000, "Notes too long").optional().nullable(),
+  ai_tags: z.array(z.string().min(1).max(64)).max(20, "Too many tags").optional().nullable(),
 });
 
 /**

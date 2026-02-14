@@ -175,13 +175,25 @@ function TwitterPreview({ tweetId, link }: { tweetId: string; link: Link }) {
  */
 function ColorPreview({ colorValue }: { colorValue: string }) {
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center relative">
+    <div className="w-full h-full relative rounded-sm overflow-hidden border border-black/5">
+      <div
+        className="absolute inset-0 opacity-40"
+        style={{
+          backgroundImage:
+            "linear-gradient(45deg, rgba(0,0,0,0.12) 25%, transparent 25%), linear-gradient(-45deg, rgba(0,0,0,0.12) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(0,0,0,0.12) 75%), linear-gradient(-45deg, transparent 75%, rgba(0,0,0,0.12) 75%)",
+          backgroundSize: "24px 24px",
+          backgroundPosition: "0 0, 0 12px, 12px -12px, -12px 0px",
+        }}
+      />
       <div
         className="absolute inset-0"
-        style={{ backgroundColor: colorValue }}
+        style={{ background: colorValue }}
       />
-      <div className="relative z-10 px-4 py-2 rounded-lg bg-black/20 backdrop-blur-sm">
-        <code className="text-white font-mono text-lg font-medium drop-shadow-sm">
+      <div className="absolute left-4 bottom-4 z-10 px-3 py-2 rounded-lg bg-black/35 backdrop-blur-md border border-white/25">
+        <p className="text-[10px] uppercase tracking-wide text-white/80 mb-0.5">
+          Color
+        </p>
+        <code className="text-white font-mono text-sm md:text-base font-semibold drop-shadow-sm">
           {colorValue}
         </code>
       </div>
@@ -195,11 +207,11 @@ function ColorPreview({ colorValue }: { colorValue: string }) {
 function ImagePreview({ link }: { link: Link }) {
   const imageSrc = link.content_type === "image" ? link.url : link.og_image_url!;
   return (
-    <div className="w-full h-full bg-transparent flex items-center justify-center">
+    <div className="w-full h-full bg-bg-muted/30 flex items-center justify-center rounded-sm overflow-hidden">
       <img
         src={imageSrc}
         alt={link.title}
-        className="w-full h-full object-contain rounded-sm"
+        className="w-full h-full object-contain"
       />
     </div>
   );
@@ -247,4 +259,3 @@ export function PreviewPanel({ link }: PreviewPanelProps) {
       return <FaviconPreview link={link} />;
   }
 }
-

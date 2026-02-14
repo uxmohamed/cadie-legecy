@@ -106,14 +106,21 @@ export function DashboardContent({
     onImageUploadReady?.(addImageFiles);
   }, [onImageUploadReady, addImageFiles]);
 
+  // Stable key that only changes when the set of link IDs changes
+  // (not when link data like titles/descriptions are updated)
+  const linkIdsKey = React.useMemo(() => {
+    if (allLinks.length === 0) return "";
+    return allLinks.map(l => l.id).sort().join(",");
+  }, [allLinks]);
+
   // Fetch link-space mappings using the FULL link set (not the filtered one)
   // so that space-name search works correctly for all links
   React.useEffect(() => {
-    if (!user || allLinks.length === 0) return;
+    if (!user || linkIdsKey === "") return;
 
     const fetchLinkSpaces = async () => {
       const supabase = createClient();
-      const linkIds = allLinks.map(l => l.id);
+      const linkIds = linkIdsKey.split(",");
 
       const { data } = await supabase
         .from("link_spaces")
@@ -131,7 +138,7 @@ export function DashboardContent({
     };
 
     fetchLinkSpaces();
-  }, [user, allLinks]);
+  }, [user, linkIdsKey]);
 
   const handleAddToSpace = React.useCallback(async (linkId: string, spaceId: string) => {
     await addLinksToSpace(spaceId, [linkId]);
@@ -229,7 +236,7 @@ export function DashboardContent({
   }, [permanentDeleteLink]);
 
   const handleUpdateLink = React.useCallback(async (id: string, updates: Partial<Link>) => {
-    updateLink(id, updates);
+    await updateLink(id, updates);
   }, [updateLink]);
 
   const handlePinLink = React.useCallback(async (id: string) => {
