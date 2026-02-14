@@ -60,22 +60,66 @@ const IGNORE_DESCRIPTION_PATTERNS = [
 ];
 
 // =============================================================================
+// JSON-LD Extraction
+// =============================================================================
+
+function extractJsonLd(ctx: ExtractionContext): any | null {
+    const { $ } = ctx;
+    let data: any = null;
+
+    $('script[type="application/ld+json"]').each((_, el) => {
+        try {
+            const json = JSON.parse($(el).html() || "{}");
+            // Prefer specific types if multiple scripts exist
+            // Priority: Article > NewsArticle > BlogPosting > Product > WebPage
+            const types = ["Article", "NewsArticle", "BlogPosting", "Product", "WebPage"];
+            
+            // Handle array of objects or single object
+            const items = Array.isArray(json) ? json : [json];
+            
+            for (const item of items) {
+                // If we already found a high-priority type, stick with it unless this one is better
+                if (data) {
+                    const currentPriority = types.indexOf(data["@type"]);
+                    const newPriority = types.indexOf(item["@type"]);
+                    if (newPriority !== -1 && (currentPriority === -1 || newPriority < currentPriority)) {
+                        data = item;
+                    }
+                } else {
+                    data = item;
+                }
+            }
+        } catch (e) {
+            // Ignore parse errors
+        }
+    });
+
+    return data;
+}
+
+// =============================================================================
 // Individual Extractors
 // =============================================================================
 
 /**
  * Extract title with priority order:
- * 1. og:title
- * 2. twitter:title
- * 3. <title> element (cleaned of site suffix)
- * 4. First <h1>
- * 5. hostname fallback
+ * 1. JSON-LD (headline/name)
+ * 2. og:title
+ * 3. twitter:title
+ * 4. <title> element (cleaned of site suffix)
+ * 5. First <h1>
+ * 6. hostname fallback
  */
-function extractTitle(ctx: ExtractionContext): string {
+function extractTitle(ctx: ExtractionContext, jsonLd: any): string {
     const { $, domain } = ctx;
     
+    // Priority 0: JSON-LD
+    let title = jsonLd?.headline || jsonLd?.name;
+
     // Priority 1: OpenGraph title
-    let title = $('meta[property="og:title"]').attr("content");
+    if (!title) {
+        title = $('meta[property="og:title"]').attr("content");
+    }
     
     // Priority 2: Twitter title
     if (!title) {
@@ -85,12 +129,19 @@ function extractTitle(ctx: ExtractionContext): string {
     // Priority 3: <title> element
     if (!title) {
         title = $("title").text();
-        
-        // Clean up common site suffix patterns like " | Site Name" or " - Site Name"
-        if (title) {
-            title = title
-                .replace(/\s*[\|\-\–\—]\s*[^|\-\–\—]+$/, "")
-                .trim();
+    }
+
+    // Clean up common site suffix patterns like " | Site Name" or " - Site Name"
+    if (title) {
+        // Try to find site name to remove it specifically
+        const siteName = $('meta[property="og:site_name"]').attr("content") || domain;
+        if (siteName && title.includes(siteName)) {
+            // Remove site name from end if present with separator
+            const regex = new RegExp(`\\s*[\\|\\-\\–\\—]\\s*${escapeRegExp(siteName)}$`, "i");
+            title = title.replace(regex, "");
+        } else {
+            // Generic removal of last segment if it looks like a site name
+            title = title.replace(/\s*[\|\-\–\—]\s*[^|\-\–\—]+$/, "").trim();
         }
     }
     
@@ -117,16 +168,22 @@ function extractTitle(ctx: ExtractionContext): string {
 
 /**
  * Extract description with priority order:
- * 1. og:description
- * 2. twitter:description
- * 3. meta[name="description"]
- * 4. First meaningful <p> in body
+ * 1. JSON-LD (description)
+ * 2. og:description
+ * 3. twitter:description
+ * 4. meta[name="description"]
+ * 5. First meaningful <p> in body
  */
-function extractDescription(ctx: ExtractionContext): string | undefined {
+function extractDescription(ctx: ExtractionContext, jsonLd: any): string | undefined {
     const { $ } = ctx;
     
+    // Priority 0: JSON-LD
+    let description = jsonLd?.description;
+
     // Priority 1: OpenGraph description
-    let description = $('meta[property="og:description"]').attr("content");
+    if (!description) {
+        description = $('meta[property="og:description"]').attr("content");
+    }
     
     // Priority 2: Twitter description
     if (!description) {
@@ -140,11 +197,11 @@ function extractDescription(ctx: ExtractionContext): string | undefined {
     
     // Priority 4: First meaningful paragraph
     if (!description) {
-        const paragraphs = $("article p, main p, .content p, p").slice(0, 5);
+        const paragraphs = $("article p, main p, .content p, p").slice(0, 10); // Look deeper
         for (let i = 0; i < paragraphs.length; i++) {
             const text = $(paragraphs[i]).text().trim();
-            // Skip very short paragraphs or those that are just links
-            if (text.length > 50 && !text.match(/^https?:\/\//)) {
+            // Skip very short paragraphs or those that are just links or nav items
+            if (text.length > 50 && !text.match(/^https?:\/\//) && !$(paragraphs[i]).closest("nav, footer, .menu").length) {
                 description = text;
                 break;
             }
@@ -169,6 +226,83 @@ function extractDescription(ctx: ExtractionContext): string | undefined {
     }
     
     return description || undefined;
+}
+
+/**
+ * Extract preview image with priority order:
+ * 1. JSON-LD (image)
+ * 2. og:image
+ * 3. twitter:image
+ * 4. link[rel="image_src"]
+ * 5. Largest valid image in body
+ */
+function extractPreviewImage(ctx: ExtractionContext, jsonLd: any): string | undefined {
+    const { $, baseUrl } = ctx;
+    
+    // Priority 0: JSON-LD
+    let imageUrl = jsonLd?.image?.url || (typeof jsonLd?.image === 'string' ? jsonLd.image : null);
+
+    // Priority 1: OpenGraph image
+    if (!imageUrl) {
+        imageUrl = $('meta[property="og:image"]').attr("content");
+    }
+    
+    // Priority 2: Twitter image
+    if (!imageUrl) {
+        imageUrl = $('meta[name="twitter:image"]').attr("content");
+        // Also check twitter:image:src
+        if (!imageUrl) {
+             imageUrl = $('meta[name="twitter:image:src"]').attr("content");
+        }
+    }
+
+    // Priority 3: link rel="image_src"
+    if (!imageUrl) {
+        imageUrl = $('link[rel="image_src"]').attr("href");
+    }
+    
+    // Body Fallback: Find largest image
+    if (!imageUrl) {
+        let maxScore = 0;
+        $('img').each((_, el) => {
+            const src = $(el).attr('src');
+            // Skip SVGs, data URLs, and small icons
+            if (!src || src.endsWith('.svg') || src.startsWith('data:') || $(el).closest('nav, footer').length) return;
+            
+            const width = parseInt($(el).attr('width') || '0', 10);
+            const height = parseInt($(el).attr('height') || '0', 10);
+            
+            // Simple scoring: area
+            const score = width * height;
+            
+            // Filter out small icons (likely social icons, logos)
+            if (width > 200 && height > 100 && score > maxScore) {
+                maxScore = score;
+                imageUrl = src;
+            }
+        });
+    }
+
+    if (!imageUrl) {
+        return undefined;
+    }
+    
+    // Resolve relative URLs
+    return resolveUrl(imageUrl, baseUrl);
+}
+
+// =============================================================================
+// Helper Functions
+// =============================================================================
+
+/**
+ * Clean text by trimming and collapsing whitespace
+ */
+function cleanText(text: string | undefined): string {
+    if (!text) return "";
+    return text
+        .replace(/\s+/g, " ")
+        .trim();
 }
 
 /**
@@ -239,36 +373,6 @@ function extractFavicons(ctx: ExtractionContext): FaviconVariant[] {
 }
 
 /**
- * Extract preview image with priority order:
- * 1. og:image
- * 2. twitter:image
- * 3. First decent <img> in content (if we want to implement this later)
- */
-function extractPreviewImage(ctx: ExtractionContext): string | undefined {
-    const { $, baseUrl } = ctx;
-    
-    // Priority 1: OpenGraph image
-    let imageUrl = $('meta[property="og:image"]').attr("content");
-    
-    // Priority 2: Twitter image
-    if (!imageUrl) {
-        imageUrl = $('meta[name="twitter:image"]').attr("content");
-    }
-    
-    // Priority 3: twitter:image:src (some sites use this)
-    if (!imageUrl) {
-        imageUrl = $('meta[name="twitter:image:src"]').attr("content");
-    }
-    
-    if (!imageUrl) {
-        return undefined;
-    }
-    
-    // Resolve relative URLs
-    return resolveUrl(imageUrl, baseUrl);
-}
-
-/**
  * Extract image dimensions from meta tags
  */
 function extractImageDimensions(ctx: ExtractionContext): { width?: number; height?: number } {
@@ -283,18 +387,8 @@ function extractImageDimensions(ctx: ExtractionContext): { width?: number; heigh
     };
 }
 
-// =============================================================================
-// Helper Functions
-// =============================================================================
-
-/**
- * Clean text by trimming and collapsing whitespace
- */
-function cleanText(text: string | undefined): string {
-    if (!text) return "";
-    return text
-        .replace(/\s+/g, " ")
-        .trim();
+function escapeRegExp(string: string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
 /**
@@ -347,9 +441,9 @@ export async function extractMetadata(url: string, timeoutMs: number = DEFAULT_T
     try {
         const response = await fetch(url, {
             headers: {
-                "User-Agent": "Mozilla/5.0 (compatible; CadieBot/1.0; +https://cadie.app)",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                "Accept-Language": "en-US,en;q=0.5",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9",
             },
             signal: controller.signal,
             redirect: "follow",
@@ -397,17 +491,20 @@ export async function extractMetadata(url: string, timeoutMs: number = DEFAULT_T
             baseUrl: finalUrl || url,
             domain,
         };
+
+        // Extract JSON-LD first
+        const jsonLd = extractJsonLd(ctx);
         
         // Extract all fields
-        const title = extractTitle(ctx);
-        const description = extractDescription(ctx);
-        const siteName = extractSiteName($);
+        const title = extractTitle(ctx, jsonLd);
+        const description = extractDescription(ctx, jsonLd);
+        const siteName = extractSiteName($) || jsonLd?.publisher?.name;
         const canonical = extractCanonical(ctx);
         const faviconVariants = extractFavicons(ctx);
         const faviconUrl = selectBestFavicon(faviconVariants, domain);
-        const previewImage = extractPreviewImage(ctx);
+        const previewImage = extractPreviewImage(ctx, jsonLd);
         const imageDimensions = extractImageDimensions(ctx);
-        const language = extractLanguage($);
+        const language = extractLanguage($) || jsonLd?.inLanguage;
         const themeColor = extractThemeColor($);
         
         // Content analysis

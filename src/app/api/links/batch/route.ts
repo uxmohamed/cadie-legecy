@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { canonicalizeUrl } from "@/lib/canonicalize";
 import { enqueueBatchMetadataEnrichment, enqueueBatchAITagging } from "@/lib/job-queue";
+import { MetadataService } from "@/features/links/services/metadata.service";
 import { rateLimitLinks, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 import { validateRequestBody } from "@/lib/validation/validate";
 import { batchActionSchema } from "@/lib/validation/link.schemas";
@@ -128,6 +129,7 @@ export async function POST(request: NextRequest) {
           is_deleted: false,
           is_archived: false,
           is_pinned: false,
+          fetch_status: "pending" as const,
         }));
 
         // Check for existing links (duplicates) - only check non-deleted links
@@ -187,7 +189,19 @@ export async function POST(request: NextRequest) {
               url: link.url,
               userId: user.id,
             }));
-            enqueueBatchMetadataEnrichment(metadataJobs).catch(() => {});
+
+            // In development, run directly to avoid QStash localhost issues
+            if (process.env.NODE_ENV === "development") {
+              const metadataService = new MetadataService();
+              // Fire and forget, but directly
+              metadataJobs.forEach(job => {
+                metadataService.enrichLinkInProcess(job.linkId, job.url).catch(err => {
+                  console.error("[Dev] Metadata enrichment failed:", err);
+                });
+              });
+            } else {
+              enqueueBatchMetadataEnrichment(metadataJobs).catch(() => {});
+            }
 
             // Enqueue AI tagging jobs
             const aiTagJobs = urlLinks.map((link) => ({

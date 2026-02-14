@@ -136,7 +136,8 @@ export function selectBestFavicon(
  */
 export function getClearbitFallback(domain: string): string {
     const cleanDomain = domain.replace(/^www\./, "").toLowerCase();
-    return `https://logo.clearbit.com/${cleanDomain}`;
+    // Use Google's favicon service for higher quality (128px)
+    return `https://www.google.com/s2/favicons?domain=${cleanDomain}&sz=128`;
 }
 
 /**

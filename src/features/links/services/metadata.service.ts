@@ -2,6 +2,7 @@ import type { LinkMetadata, ExtractedMetadata, BatchMetadataOptions, FetchStatus
 import { extractMetadata } from "@/lib/metadata";
 import { log } from "@/lib/logger";
 import { createInternalHeaders } from "@/lib/internal-auth";
+import { createClient } from "@/lib/supabase/server";
 
 /**
  * Default options for batch metadata fetching
@@ -160,6 +161,52 @@ export class MetadataService {
 
         // All retries exhausted - log and fail silently
         log.error(`Background metadata enrichment failed after ${this.MAX_RETRIES} attempts`, lastError, { linkId, url, maxRetries: this.MAX_RETRIES });
+    }
+
+    /**
+     * Enrich a link with metadata directly in-process (no API calls)
+     * Best for development environment or server-side processing where DB access is available
+     */
+    async enrichLinkInProcess(linkId: string, url: string): Promise<void> {
+        try {
+            log.info(`[In-Process] Starting metadata enrichment for ${linkId}`);
+            const metadata = await extractMetadata(url);
+            
+            if (metadata.fetch_status === "success") {
+                const supabase = await createClient();
+                
+                await supabase
+                    .from("links")
+                    .update({
+                        title: metadata.title,
+                        description: metadata.description,
+                        og_image_url: metadata.preview_image_url,
+                        favicon_url: metadata.favicon_url,
+                        site_name: metadata.site_name,
+                        fetch_status: "success",
+                        fetched_at: metadata.fetched_at,
+                        // Update content type if we found it's actually something specific (optional)
+                    })
+                    .eq("id", linkId);
+                    
+                log.info(`[In-Process] Successfully updated metadata for ${linkId}`);
+            } else {
+                // Update with failure status but preserve url as title if needed
+                const supabase = await createClient();
+                await supabase
+                    .from("links")
+                    .update({
+                         fetch_status: metadata.fetch_status,
+                         fetched_at: metadata.fetched_at,
+                         // fallback title is usually handled by UI if missing, but we can set it
+                    })
+                    .eq("id", linkId);
+
+                log.warn(`[In-Process] Metadata extraction completed with status ${metadata.fetch_status}`, { linkId });
+            }
+        } catch (error) {
+            log.error(`[In-Process] Metadata enrichment failed`, error);
+        }
     }
 
     /**

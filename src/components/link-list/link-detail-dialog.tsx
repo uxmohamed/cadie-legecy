@@ -59,26 +59,14 @@ export function LinkDetailDialog({
   hasNext,
   hasPrev,
 }: LinkDetailDialogProps) {
-  // ... existing handlers ...
-  if (!link) return null;
-
-  const isColor = link.content_type === "color";
-
-  // Action handlers (handleOpen, handleCopy, etc. remain the same)
-  const handleOpen = () => {
-    window.open(link.url, "_blank", "noopener,noreferrer");
-  };
-  
-  // ... (keep logic for handleOpen, handleCopy, etc.) ...
-  
-  // Keyboard Navigation
+  // Keyboard Navigation — must be before any early return to satisfy Rules of Hooks
   React.useEffect(() => {
-    if (!open) return;
+    if (!open || !link) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't trigger if user is typing in an input
       if (
-        e.target instanceof HTMLInputElement || 
+        e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
         e.target instanceof HTMLSelectElement
       ) {
@@ -96,7 +84,15 @@ export function LinkDetailDialog({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, hasNext, hasPrev, onNext, onPrev]);
+  }, [open, link, hasNext, hasPrev, onNext, onPrev]);
+
+  if (!link) return null;
+
+  const isColor = link.content_type === "color";
+
+  const handleOpen = () => {
+    window.open(link.url, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
