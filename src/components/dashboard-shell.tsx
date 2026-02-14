@@ -11,7 +11,7 @@ import type { Link } from "@/features/links/types";
 import type { Space } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCircleCheckFilled, IconLayoutList, IconLayoutGrid, IconPhoto, IconUpload } from "@tabler/icons-react";
+import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCircleCheckFilled, IconLayoutList, IconLayoutGrid, IconPhoto, IconUpload, IconPalette } from "@tabler/icons-react";
 import { Kbd } from "@/components/ui/kbd";
 import {
   DropdownMenu,
@@ -138,7 +138,7 @@ export function DashboardShell({
   React.useEffect(() => {
     registerShortcut({
       key: "c",
-      description: "Add new item",
+      description: "Add new link",
       category: "Global",
       action: () => {
         if (selectedCategoryId !== "trash") {
@@ -483,8 +483,14 @@ export function DashboardShell({
                       disabled={isAddingItem}
                     >
                       <IconPlus className="h-4 w-4 text-fg-on-overlay-muted" />
-                      Add item
+                      Add links
                     </DropdownMenuItem>
+                    {onCreateSpace && (
+                      <DropdownMenuItem onSelect={() => onCreateSpace()}>
+                        <IconPalette className="h-4 w-4 text-fg-on-overlay-muted" />
+                        Add color
+                      </DropdownMenuItem>
+                    )}
                     {onOpenUploadModal && (
                       <DropdownMenuItem onSelect={() => onOpenUploadModal()}>
                         <IconPhoto className="h-4 w-4 text-fg-on-overlay-muted" />
