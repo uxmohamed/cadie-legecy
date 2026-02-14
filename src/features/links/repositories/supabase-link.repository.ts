@@ -61,7 +61,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
             // Apply search filter
             if (searchQuery && searchQuery.trim()) {
                 const searchTerm = `%${searchQuery.trim()}%`;
-                query = query.or(`title.ilike."${searchTerm}",url.ilike."${searchTerm}",domain.ilike."${searchTerm}",description.ilike."${searchTerm}",color_value.ilike."${searchTerm}",ai_tags.cs.{"${searchQuery.trim().toLowerCase()}"}`);
+                query = query.or(`title.ilike."${searchTerm}",url.ilike."${searchTerm}",domain.ilike."${searchTerm}",description.ilike."${searchTerm}",site_name.ilike."${searchTerm}"`);
             }
 
             // Apply sorting
@@ -106,10 +106,10 @@ export class SupabaseLinkRepository implements ILinkRepository {
             query = query.eq("content_type", filters.content_type);
         }
 
-        // Apply search filter - search across title, url, domain, description, color_value
+// Apply search filter - search across title, url, domain, description, site_name
         if (searchQuery && searchQuery.trim()) {
             const searchTerm = `%${searchQuery.trim()}%`;
-            query = query.or(`title.ilike."${searchTerm}",url.ilike."${searchTerm}",domain.ilike."${searchTerm}",description.ilike."${searchTerm}",color_value.ilike."${searchTerm}",ai_tags.cs.{"${searchQuery.trim().toLowerCase()}"}`);
+            query = query.or(`title.ilike."${searchTerm}",url.ilike."${searchTerm}",domain.ilike."${searchTerm}",description.ilike."${searchTerm}",site_name.ilike."${searchTerm}"`);
         }
 
         // Apply sorting

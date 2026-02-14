@@ -6,9 +6,11 @@ import type { Link, LinkFilters } from "@/features/links/types";
 import { queryKeys } from "@/lib/query/keys";
 
 /**
- * Page size for pagination/infinite scroll
+ * Fetch all links for client-side search.
+ * A bookmark manager typically holds hundreds to low-thousands of items,
+ * so fetching everything and filtering in-memory is both fast and correct.
  */
-const PAGE_SIZE = 100;
+const PAGE_SIZE = 5000;
 
 /**
  * Response type from the links API
@@ -23,39 +25,34 @@ interface LinksResponse {
  */
 function buildQueryString(
   filters: LinkFilters,
-  searchQuery: string,
   offset: number,
   limit: number = PAGE_SIZE
 ): string {
   const params = new URLSearchParams();
-  
+
   if (filters.space_id) {
     params.append("space_id", filters.space_id);
   }
-  
+
   if (filters.is_deleted !== undefined) {
     params.append("is_deleted", String(filters.is_deleted));
   } else {
     params.append("is_deleted", "false");
   }
-  
+
   if (filters.is_archived !== undefined) {
     params.append("is_archived", String(filters.is_archived));
   } else if (filters.is_deleted === false || filters.is_deleted === undefined) {
     params.append("is_archived", "false");
   }
-  
+
   if (filters.is_pinned !== undefined) {
     params.append("is_pinned", String(filters.is_pinned));
   }
-  
-  if (searchQuery.trim()) {
-    params.append("q", searchQuery.trim());
-  }
-  
+
   params.append("limit", String(limit));
   params.append("offset", String(offset));
-  
+
   return `/api/links?${params.toString()}`;
 }
 
@@ -64,11 +61,10 @@ function buildQueryString(
  */
 async function fetchLinks(
   filters: LinkFilters,
-  searchQuery: string,
   offset: number = 0,
   limit: number = PAGE_SIZE
 ): Promise<LinksResponse> {
-  const url = buildQueryString(filters, searchQuery, offset, limit);
+  const url = buildQueryString(filters, offset, limit);
   const response = await fetch(url);
 
   if (!response.ok) {
@@ -91,7 +87,10 @@ async function fetchLinks(
 
 /**
  * Hook to fetch links using TanStack Query
- * 
+ *
+ * Search is handled client-side via useSearchLinks — this hook always
+ * fetches the full dataset for the given filters so filtering is instant.
+ *
  * Features:
  * - Automatic caching with IndexedDB persistence
  * - Background revalidation
@@ -100,7 +99,6 @@ async function fetchLinks(
  */
 export function useLinksQuery(
   filters: LinkFilters,
-  searchQuery: string = "",
   enabled: boolean = true,
   initialData?: LinksResponse
 ) {
@@ -117,7 +115,7 @@ export function useLinksQuery(
 
   const query = useQuery({
     queryKey: queryKeys.links.list(stableFilters),
-    queryFn: () => fetchLinks(stableFilters, searchQuery),
+    queryFn: () => fetchLinks(stableFilters),
     enabled,
     initialData,
     // Allow realtime to handle updates for 5 minutes before considering stale
@@ -143,7 +141,6 @@ export function useLinksQuery(
  */
 export function useLinksInfiniteQuery(
   filters: LinkFilters,
-  searchQuery: string = "",
   enabled: boolean = true,
   initialData?: LinksResponse
 ) {
@@ -156,8 +153,8 @@ export function useLinksInfiniteQuery(
   ]);
 
   const query = useInfiniteQuery({
-    queryKey: [...queryKeys.links.list(stableFilters), "infinite", searchQuery],
-    queryFn: ({ pageParam = 0 }) => fetchLinks(stableFilters, searchQuery, pageParam, PAGE_SIZE),
+    queryKey: [...queryKeys.links.list(stableFilters), "infinite"],
+    queryFn: ({ pageParam = 0 }) => fetchLinks(stableFilters, pageParam, PAGE_SIZE),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
       const loadedCount = allPages.reduce((acc, page) => acc + page.links.length, 0);

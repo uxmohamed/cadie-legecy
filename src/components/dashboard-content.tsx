@@ -4,6 +4,7 @@ import * as React from "react";
 import { LinkList } from "@/components/link-list";
 import { LinkListSkeleton } from "@/components/skeletons";
 import { useLinksQuery } from "@/features/links/queries/use-links-query";
+import { useSearchLinks } from "@/features/links/hooks/use-search-links";
 import { useLinkMutations, useCopyUrl } from "@/features/links/queries/use-link-mutations";
 import { useSpaces } from "@/features/spaces/queries";
 import type { User } from "@supabase/supabase-js";
@@ -66,23 +67,15 @@ export function DashboardContent({
     return { is_deleted: false, is_archived: false };
   }, [selectedCategoryId]);
 
-  // Debounce the search query to avoid too many API requests
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = React.useState(searchQuery);
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  // Use TanStack Query for links
+  // Fetch all links for the current filter (no server-side search)
   const {
-    links,
+    links: allLinks,
     isLoading,
     isFetching,
-  } = useLinksQuery(filters, debouncedSearchQuery, !!user);
+  } = useLinksQuery(filters, !!user);
+
+  // Client-side instant search — filters in memory, no network round-trip
+  const links = useSearchLinks(allLinks, searchQuery, spaces, linkSpacesMap);
 
   // Use mutations hook
   const {
@@ -104,14 +97,15 @@ export function DashboardContent({
   // Copy URL utility
   const { copyUrl } = useCopyUrl();
 
-  // Fetch link spaces for all links
+  // Fetch link-space mappings using the FULL link set (not the filtered one)
+  // so that space-name search works correctly for all links
   React.useEffect(() => {
-    if (!user || links.length === 0) return;
+    if (!user || allLinks.length === 0) return;
 
     const fetchLinkSpaces = async () => {
       const supabase = createClient();
-      const linkIds = links.map(l => l.id);
-      
+      const linkIds = allLinks.map(l => l.id);
+
       const { data } = await supabase
         .from("link_spaces")
         .select("link_id, space_id")
@@ -128,7 +122,7 @@ export function DashboardContent({
     };
 
     fetchLinkSpaces();
-  }, [user, links]);
+  }, [user, allLinks]);
 
   const handleAddToSpace = React.useCallback(async (linkId: string, spaceId: string) => {
     await addLinksToSpace(spaceId, [linkId]);
@@ -280,8 +274,8 @@ export function DashboardContent({
   // Show skeleton when:
   // 1. Initial load for this query key (isLoading)
   // 2. Filter changed to one with no cached data (fetching but empty)
-  // This prevents showing stale data from a different filter during navigation
-  const showSkeleton = isLoading || (isFetching && links.length === 0);
+  // Use allLinks (pre-search) so an empty search result doesn't trigger the skeleton
+  const showSkeleton = isLoading || (isFetching && allLinks.length === 0);
   if (showSkeleton) {
     return <LinkListSkeleton />;
   }
