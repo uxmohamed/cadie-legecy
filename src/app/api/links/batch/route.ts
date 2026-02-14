@@ -191,11 +191,11 @@ export async function POST(request: NextRequest) {
             }));
 
             // HYBRID APPROACH:
-            // For small/medium batches (up to 20 links, typical user action), run metadata fetch 
+            // For small/medium batches (up to 50 links, typical user action), run metadata fetch 
             // synchronously/eagerly to guarantee results without adhering to backoff/retry policies of queues.
             // This ensures "Same Experience as Dev" for most usage.
             // For larger bulk imports, offload to background queue to prevent timeouts.
-            if (urlLinks.length <= 20) {
+            if (urlLinks.length <= 50) {
               const metadataService = new MetadataService();
               
               // Run in parallel and wait for settled (don't block on one failure)
