@@ -134,76 +134,6 @@ async function enrichUrlLinksWithAI(
   return [...failedIds];
 }
 
-async function enrichImageLinksWithAI(
-  supabase: SupabaseServerClient,
-  userId: string,
-  links: CreatedLink[]
-): Promise<string[]> {
-  const taggingService = new AITaggingService();
-  const failedIds = new Set<string>();
-
-  await runWithConcurrency(links, AI_ENRICHMENT_CONCURRENCY, async (link) => {
-    const imageUrl = link.og_image_url || link.url;
-    if (!imageUrl) {
-      failedIds.add(link.id);
-      return;
-    }
-
-    try {
-      const result = await taggingService.generateTagsFromImage(imageUrl);
-      if (!result) {
-        failedIds.add(link.id);
-        return;
-      }
-
-      const updateData: Record<string, unknown> = {
-        ai_tags: result.tags,
-        ai_key_themes: { category: result.category },
-        fetch_status: "success",
-        fetched_at: new Date().toISOString(),
-      };
-
-      if (result.description) {
-        updateData.description = result.description;
-      }
-      if (result.title) {
-        updateData.title = result.title;
-      } else if (result.description) {
-        updateData.title = result.description.split(/\s+/).slice(0, 5).join(" ");
-      }
-
-      if (!link.og_image_url) {
-        updateData.og_image_url = imageUrl;
-      }
-
-      const { error } = await supabase
-        .from("links")
-        .update(updateData)
-        .eq("id", link.id)
-        .eq("user_id", userId);
-
-      if (error) {
-        failedIds.add(link.id);
-      }
-    } catch {
-      failedIds.add(link.id);
-    }
-  });
-
-  if (failedIds.size > 0) {
-    await supabase
-      .from("links")
-      .update({
-        fetch_status: "failed",
-        fetched_at: new Date().toISOString(),
-      })
-      .eq("user_id", userId)
-      .in("id", [...failedIds]);
-  }
-
-  return [...failedIds];
-}
-
 /**
  * POST /api/links/batch
  * Perform atomic batch operations on links
@@ -410,33 +340,11 @@ export async function POST(request: NextRequest) {
           );
 
           if (imageLinks.length > 0) {
-            if (imageLinks.length <= EAGER_ENRICHMENT_LIMIT) {
-              const failedImageIds = await enrichImageLinksWithAI(
-                supabase,
-                user.id,
-                imageLinks
-              );
-
-              if (failedImageIds.length > 0) {
-                const fallbackVisionJobs = failedImageIds.map((linkId) => ({
-                  linkId,
-                  userId: user.id,
-                }));
-                enqueueBatchAIVisionTagging(fallbackVisionJobs).catch(() => {});
-              }
-
-              const linksAfterImageAI = await refreshCreatedLinks(
-                supabase,
-                createdLinks
-              );
-              createdLinks = linksAfterImageAI;
-            } else {
-              const visionJobs = imageLinks.map((link) => ({
-                linkId: link.id,
-                userId: user.id,
-              }));
-              enqueueBatchAIVisionTagging(visionJobs).catch(() => {});
-            }
+            const visionJobs = imageLinks.map((link) => ({
+              linkId: link.id,
+              userId: user.id,
+            }));
+            enqueueBatchAIVisionTagging(visionJobs).catch(() => {});
           }
 
           result.data.links = createdLinks;
