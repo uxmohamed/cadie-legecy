@@ -79,7 +79,10 @@ export function SidebarPanel({
         {/* Added */}
         <div className="text-fg-subtle">Added</div>
         <div className="text-fg font-medium text-right">
-          {formatDate(new Date(link.created_at))} ago
+          {(() => {
+            const dateStr = formatDate(new Date(link.created_at));
+            return dateStr === 'now' ? 'Just now' : `${dateStr} ago`;
+          })()}
         </div>
         
         {/* By (Site Name/Domain) */}
