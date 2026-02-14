@@ -847,6 +847,7 @@ export function useLinkMutations(filters: LinkFilters) {
           domain: isColor ? "color" : domain,
           content_type: type,
           color_value: isColor ? value : null,
+          content_text: null,
           favicon_url: null,
           og_image_url: null,
           description: null,
