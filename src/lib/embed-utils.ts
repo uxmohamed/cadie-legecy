@@ -88,6 +88,11 @@ export function detectEmbedType(link: Link): EmbedInfo {
     return { type: "color" };
   }
 
+  // 1b. Image content type
+  if (link.content_type === "image") {
+    return { type: "image" };
+  }
+
   // 2. YouTube patterns
   const youtubeId = extractYouTubeId(link.url);
   if (youtubeId) {

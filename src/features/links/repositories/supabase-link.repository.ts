@@ -173,6 +173,8 @@ export class SupabaseLinkRepository implements ILinkRepository {
 
         if (contentType === "color") {
             domain = "color";
+        } else if (contentType === "image") {
+            domain = "image";
         } else {
             try {
                 domain = new URL(data.url).hostname.replace("www.", "");
@@ -186,13 +188,13 @@ export class SupabaseLinkRepository implements ILinkRepository {
             .insert({
                 user_id: userId,
                 url: data.url,
-                clean_url: contentType === "color" ? data.url : canonicalizeUrl(data.url),
+                clean_url: contentType === "color" || contentType === "image" ? data.url : canonicalizeUrl(data.url),
                 title: data.title,
                 domain,
                 content_type: contentType,
                 color_value: data.color_value || null,
                 favicon_url: data.favicon_url || null,
-                og_image_url: data.og_image_url || null,
+                og_image_url: data.og_image_url || (contentType === "image" ? data.url : null),
                 description: data.description || null,
                 is_pinned: false,
                 is_archived: false,

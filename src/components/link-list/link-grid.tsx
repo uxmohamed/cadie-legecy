@@ -5,7 +5,7 @@ import type { Link } from "@/features/links/types";
 import { Badge } from "@/components/ui/badge";
 import { Favicon } from "@/components/ui/favicon";
 import { formatDate } from "@/lib/utils";
-import { IconPinFilled } from "@tabler/icons-react";
+import { IconPinFilled, IconPhoto } from "@tabler/icons-react";
 
 interface LinkGridProps {
   pinnedLinks: Link[];
@@ -44,6 +44,7 @@ function LinkGridCard({
   onContextMenu,
 }: LinkGridCardProps) {
   const isColor = link.content_type === "color";
+  const isImage = link.content_type === "image";
 
   const renderThumbnail = () => {
     if (link.og_image_url) {
@@ -102,14 +103,23 @@ function LinkGridCard({
       <div className="px-3 py-2.5 space-y-1">
         {!isColor && (
           <div className="flex items-center gap-1.5">
-            <Favicon
-              url={link.favicon_url || ""}
-              domain={link.domain}
-              className="h-4 w-4"
-            />
-            <span className="text-xs text-fg-subtle truncate">
-              {link.domain}
-            </span>
+            {isImage ? (
+              <>
+                <IconPhoto className="h-4 w-4 text-fg-subtle" />
+                <span className="text-xs text-fg-subtle truncate">Image</span>
+              </>
+            ) : (
+              <>
+                <Favicon
+                  url={link.favicon_url || ""}
+                  domain={link.domain}
+                  className="h-4 w-4"
+                />
+                <span className="text-xs text-fg-subtle truncate">
+                  {link.domain}
+                </span>
+              </>
+            )}
           </div>
         )}
         <div className="text-sm font-medium text-fg line-clamp-2">

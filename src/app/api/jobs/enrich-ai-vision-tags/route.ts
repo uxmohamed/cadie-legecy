@@ -3,12 +3,12 @@ import { Receiver } from "@upstash/qstash";
 import { createClient } from "@supabase/supabase-js";
 import { AITaggingService } from "@/features/links/services/ai-tagging.service";
 import { log } from "@/lib/logger";
-import type { EnrichAITagsJob } from "@/lib/job-queue";
+import type { EnrichAIVisionTagsJob } from "@/lib/job-queue";
 
 /**
- * POST /api/jobs/enrich-ai-tags
+ * POST /api/jobs/enrich-ai-vision-tags
  *
- * Background job handler for AI tag generation.
+ * Background job handler for AI vision-based tag generation for image items.
  * Called by QStash with automatic retries.
  */
 export async function POST(request: NextRequest) {
@@ -23,24 +23,24 @@ export async function POST(request: NextRequest) {
     const body = await request.text();
 
     if (!signature) {
-      log.error("[AI Tags Job] Missing QStash signature");
+      log.error("[AI Vision Tags Job] Missing QStash signature");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     await receiver.verify({ signature, body });
 
-    const job: EnrichAITagsJob = JSON.parse(body);
+    const job: EnrichAIVisionTagsJob = JSON.parse(body);
     const { linkId, userId } = job;
 
     if (!linkId || !userId) {
-      log.error("[AI Tags Job] Invalid job payload", { job });
+      log.error("[AI Vision Tags Job] Invalid job payload", { job });
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    log.info("[AI Tags Job] Processing", { linkId });
+    log.info("[AI Vision Tags Job] Processing", { linkId });
 
     // Use admin client to bypass RLS
     const supabase = createClient(
@@ -51,55 +51,72 @@ export async function POST(request: NextRequest) {
     // Fetch link data
     const { data: link, error: fetchError } = await supabase
       .from("links")
-      .select("title, description, domain, site_name, content_type, ai_tags")
+      .select("url, og_image_url, content_type, ai_tags")
       .eq("id", linkId)
       .eq("user_id", userId)
       .single();
 
     if (fetchError || !link) {
-      log.error("[AI Tags Job] Link not found", { linkId, error: fetchError });
+      log.error("[AI Vision Tags Job] Link not found", { linkId, error: fetchError });
       return NextResponse.json({ error: "Link not found" }, { status: 404 });
     }
 
-    // Skip color and image items (images use the dedicated vision job)
-    if (link.content_type === "color" || link.content_type === "image") {
-      log.info("[AI Tags Job] Skipping non-URL item", { linkId, contentType: link.content_type });
+    // Only process image items
+    if (link.content_type !== "image") {
+      log.info("[AI Vision Tags Job] Skipping non-image item", { linkId });
       return NextResponse.json({ success: true, skipped: true });
     }
 
     // Skip if already tagged
     if (link.ai_tags && link.ai_tags.length > 0) {
-      log.info("[AI Tags Job] Already tagged, skipping", { linkId });
+      log.info("[AI Vision Tags Job] Already tagged, skipping", { linkId });
       return NextResponse.json({ success: true, skipped: true });
     }
 
-    // Generate tags
+    // Generate tags from image
     const taggingService = new AITaggingService();
-    const result = await taggingService.generateTags({
-      title: link.title,
-      description: link.description,
-      domain: link.domain,
-      site_name: link.site_name,
-      content: null,
-    });
+    const result = await taggingService.generateTagsFromImage(
+      link.og_image_url || link.url
+    );
 
     if (!result) {
-      log.warn("[AI Tags Job] Tagging returned null", { linkId });
+      log.warn("[AI Vision Tags Job] Tagging returned null", { linkId });
+      await supabase
+        .from("links")
+        .update({
+          fetch_status: "failed",
+          fetched_at: new Date().toISOString(),
+        })
+        .eq("id", linkId)
+        .eq("user_id", userId);
       return NextResponse.json({ success: true, noResult: true });
     }
 
-    // Update link with tags
+    // Update link with tags and description
+    const updateData: Record<string, unknown> = {
+      ai_tags: result.tags,
+      ai_key_themes: { category: result.category },
+      fetch_status: "success",
+      fetched_at: new Date().toISOString(),
+    };
+
+    if (result.description) {
+      updateData.description = result.description;
+    }
+    if (result.title) {
+      updateData.title = result.title;
+    } else if (result.description) {
+      updateData.title = result.description.split(/\s+/).slice(0, 5).join(" ");
+    }
+
     const { error: updateError } = await supabase
       .from("links")
-      .update({
-        ai_tags: result.tags,
-        ai_key_themes: { category: result.category },
-      })
+      .update(updateData)
       .eq("id", linkId)
       .eq("user_id", userId);
 
     if (updateError) {
-      log.error("[AI Tags Job] Failed to update link", {
+      log.error("[AI Vision Tags Job] Failed to update link", {
         linkId,
         error: updateError,
       });
@@ -109,10 +126,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    log.info("[AI Tags Job] Completed", {
+    log.info("[AI Vision Tags Job] Completed", {
       linkId,
       tags: result.tags,
       category: result.category,
+      hasDescription: !!result.description,
     });
 
     return NextResponse.json({
@@ -122,10 +140,10 @@ export async function POST(request: NextRequest) {
       category: result.category,
     });
   } catch (error) {
-    log.error("[AI Tags Job] Failed", { error });
+    log.error("[AI Vision Tags Job] Failed", { error });
     return NextResponse.json(
       {
-        error: "AI tagging failed",
+        error: "AI vision tagging failed",
         details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }

@@ -11,7 +11,7 @@ import type { Link } from "@/features/links/types";
 import type { Space } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCircleCheckFilled, IconLayoutList, IconLayoutGrid } from "@tabler/icons-react";
+import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCircleCheckFilled, IconLayoutList, IconLayoutGrid, IconPhoto, IconUpload } from "@tabler/icons-react";
 import { Kbd } from "@/components/ui/kbd";
 import {
   DropdownMenu,
@@ -49,6 +49,8 @@ interface DashboardShellProps {
   onCreateSpace?: () => void;
   onEditSpace?: (space: Space) => void;
   onDeleteSpace?: (spaceId: string) => void;
+  onUploadImages?: (files: File[]) => void;
+  onOpenUploadModal?: () => void;
 }
 
 export function DashboardShell({
@@ -78,6 +80,8 @@ export function DashboardShell({
   onCreateSpace,
   onEditSpace,
   onDeleteSpace,
+  onUploadImages,
+  onOpenUploadModal,
 }: DashboardShellProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -88,6 +92,8 @@ export function DashboardShell({
 
   const isTrashView = selectedCategoryId === "trash";
   const selectedSpace = spaces?.find(s => s.id === selectedCategoryId);
+  const [isDraggingFiles, setIsDraggingFiles] = React.useState(false);
+  const dragCounterRef = React.useRef(0);
 
   // Update URL immediately using history API (no navigation, instant URL update)
   const updateUrl = React.useCallback((value: string) => {
@@ -211,18 +217,49 @@ export function DashboardShell({
         if (!isInputFocused && selectedCategoryId !== "trash") {
           e.preventDefault();
 
-          // Read clipboard and open add mode with the content
-          navigator.clipboard
-            .readText()
-            .then((text) => {
-              if (text && text.trim()) {
-                onOpenAddMode(text.trim());
+          // Try reading clipboard items (supports images)
+          if (navigator.clipboard.read) {
+            navigator.clipboard.read().then((items) => {
+              for (const item of items) {
+                // Check for image types
+                const imageType = item.types.find((t) => t.startsWith("image/"));
+                if (imageType && onUploadImages) {
+                  item.getType(imageType).then((blob) => {
+                    const file = new File([blob], `pasted-image-${Date.now()}.${imageType.split("/")[1] || "png"}`, { type: imageType });
+                    onUploadImages([file]);
+                  });
+                  return;
+                }
               }
-            })
-            .catch((err) => {
-              // Permission denied or clipboard API not available - silently fail
-              console.debug("Clipboard read failed:", err);
+              // No image found, fall back to text
+              navigator.clipboard.readText().then((text) => {
+                if (text && text.trim()) {
+                  onOpenAddMode(text.trim());
+                }
+              }).catch(() => {});
+            }).catch(() => {
+              // Fallback to readText
+              navigator.clipboard.readText().then((text) => {
+                if (text && text.trim()) {
+                  onOpenAddMode(text.trim());
+                }
+              }).catch((err) => {
+                console.debug("Clipboard read failed:", err);
+              });
             });
+          } else {
+            // Fallback for browsers without clipboard.read()
+            navigator.clipboard
+              .readText()
+              .then((text) => {
+                if (text && text.trim()) {
+                  onOpenAddMode(text.trim());
+                }
+              })
+              .catch((err) => {
+                console.debug("Clipboard read failed:", err);
+              });
+          }
         }
         return;
       }
@@ -350,7 +387,57 @@ export function DashboardShell({
         clearTimeout(pendingShortcutTimeoutRef.current);
       }
     };
-  }, [registerShortcut, unregisterShortcut, selectedCategoryId, onOpenAddMode, onViewChange, viewMode, onViewModeChange, spaces, pendingShortcut]);
+  }, [registerShortcut, unregisterShortcut, selectedCategoryId, onOpenAddMode, onViewChange, viewMode, onViewModeChange, spaces, pendingShortcut, onUploadImages]);
+
+  // Global drag-and-drop for image files
+  React.useEffect(() => {
+    if (isTrashView || !onUploadImages) return;
+
+    const handleDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounterRef.current++;
+      if (e.dataTransfer?.types.includes("Files")) {
+        setIsDraggingFiles(true);
+      }
+    };
+
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounterRef.current--;
+      if (dragCounterRef.current === 0) {
+        setIsDraggingFiles(false);
+      }
+    };
+
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounterRef.current = 0;
+      setIsDraggingFiles(false);
+
+      const firstImage = Array.from(e.dataTransfer?.files || []).find((f) =>
+        f.type.startsWith("image/")
+      );
+      if (firstImage) {
+        onUploadImages([firstImage]);
+      }
+    };
+
+    window.addEventListener("dragenter", handleDragEnter);
+    window.addEventListener("dragleave", handleDragLeave);
+    window.addEventListener("dragover", handleDragOver);
+    window.addEventListener("drop", handleDrop);
+
+    return () => {
+      window.removeEventListener("dragenter", handleDragEnter);
+      window.removeEventListener("dragleave", handleDragLeave);
+      window.removeEventListener("dragover", handleDragOver);
+      window.removeEventListener("drop", handleDrop);
+    };
+  }, [isTrashView, onUploadImages]);
 
   return (
     <div className="min-h-screen bg-bg relative">
@@ -379,16 +466,33 @@ export function DashboardShell({
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               {/* Add Button */}
               {!isTrashView && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={onToggleAddMode}
-                  disabled={isAddingItem}
-                  className={`h-9 w-9 rounded-md border-[var(--border-primary)] bg-[var(--bg-control-btn)] text-[var(--fg)] hover:bg-[var(--bg-field-hover)] focus-visible:ring-[var(--border-primary)] shadow-[0_0_0_1px_rgba(31,34,37,0.09)_inset,0_2px_8px_-2px_rgba(0,0,0,0.04),0_2px_4px_-2px_rgba(0,0,0,0.04)] transition-none ${isAddingItem ? "bg-[var(--bg-field-hover)] pointer-events-none" : ""}`}
-                  aria-label="Add item"
-                >
-                  <IconPlus className="h-4 w-4" />
-                </Button>
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9 rounded-md border-[var(--border-primary)] bg-[var(--bg-control-btn)] text-[var(--fg)] hover:bg-[var(--bg-field-hover)] focus-visible:ring-[var(--border-primary)] shadow-[0_0_0_1px_rgba(31,34,37,0.09)_inset,0_2px_8px_-2px_rgba(0,0,0,0.04),0_2px_4px_-2px_rgba(0,0,0,0.04)] transition-none"
+                      aria-label="Add menu"
+                    >
+                      <IconPlus className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-44">
+                    <DropdownMenuItem
+                      onSelect={() => onToggleAddMode()}
+                      disabled={isAddingItem}
+                    >
+                      <IconPlus className="h-4 w-4 text-fg-on-overlay-muted" />
+                      Add item
+                    </DropdownMenuItem>
+                    {onOpenUploadModal && (
+                      <DropdownMenuItem onSelect={() => onOpenUploadModal()}>
+                        <IconPhoto className="h-4 w-4 text-fg-on-overlay-muted" />
+                        Upload images
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
 
               {/* Vertical Divider */}
@@ -567,6 +671,16 @@ export function DashboardShell({
         selectedLinks={selectedLinks}
         isTrashView={isTrashView}
       />
+
+      {/* Global drag-drop overlay */}
+      {isDraggingFiles && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg/80 backdrop-blur-sm pointer-events-none">
+          <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-accent bg-bg-surface px-12 py-10">
+            <IconUpload className="h-10 w-10 text-accent" />
+            <p className="text-base font-medium text-fg">Drop images to upload</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
-export type ContentType = "url" | "color";
+import { getNamedColorHex, isNamedColor } from "@/lib/canonicalize";
+export type ContentType = "url" | "color" | "image";
 
 export interface DetectedContent {
   type: ContentType;
@@ -45,31 +46,6 @@ const LCH_COLOR_PATTERN =
 // color() function with various color spaces
 const COLOR_FUNCTION_PATTERN =
   /^color\((srgb|srgb-linear|display-p3|a98-rgb|prophoto-rgb|rec2020|xyz|xyz-d50|xyz-d65)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?\)$/i;
-
-const NAMED_COLORS = new Set([
-  "red",
-  "blue",
-  "green",
-  "yellow",
-  "orange",
-  "purple",
-  "pink",
-  "black",
-  "white",
-  "gray",
-  "grey",
-  "brown",
-  "cyan",
-  "magenta",
-  "lime",
-  "navy",
-  "maroon",
-  "olive",
-  "teal",
-  "aqua",
-  "silver",
-  "gold",
-]);
 
 /**
  * Common valid TLDs for domain validation
@@ -140,6 +116,40 @@ function looksLikeValidDomain(input: string): boolean {
   return true;
 }
 
+/**
+ * Image file extension pattern
+ */
+const IMAGE_EXTENSION_PATTERN = /\.(jpg|jpeg|png|gif|webp|svg|avif|bmp|ico|tiff?)(\?.*)?$/i;
+
+/**
+ * Known image hosting domains
+ */
+const IMAGE_HOST_PATTERNS = [
+  /^images\.unsplash\.com$/,
+  /^i\.imgur\.com$/,
+  /^imgur\.com$/,
+  /\.supabase\.co\/storage\/v1\/object\/public\//,
+];
+
+/**
+ * Check if a URL points to an image
+ */
+export function isImageUrl(url: string): boolean {
+  // Check file extension
+  if (IMAGE_EXTENSION_PATTERN.test(url)) return true;
+
+  // Check known image hosts
+  try {
+    const urlObj = new URL(url.startsWith("http") ? url : `https://${url}`);
+    const fullUrl = urlObj.hostname + urlObj.pathname;
+    return IMAGE_HOST_PATTERNS.some(
+      (pattern) => pattern.test(urlObj.hostname) || pattern.test(fullUrl)
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function detectContentType(input: string): DetectedContent | null {
   const trimmed = input.trim();
 
@@ -175,8 +185,22 @@ export function detectContentType(input: string): DetectedContent | null {
   }
 
   // Check for named colors
-  if (NAMED_COLORS.has(trimmed.toLowerCase())) {
-    return { type: "color", value: trimmed.toLowerCase() };
+  if (isNamedColor(trimmed)) {
+    const colorHex = getNamedColorHex(trimmed);
+    if (colorHex) {
+      return { type: "color", value: colorHex };
+    }
+  }
+
+  // Check for image URL before generic URL
+  if (
+    (trimmed.startsWith("http://") ||
+      trimmed.startsWith("https://") ||
+      trimmed.startsWith("www.")) &&
+    isImageUrl(trimmed)
+  ) {
+    const normalizedUrl = normalizeUrl(trimmed);
+    return { type: "image", value: normalizedUrl };
   }
 
   // Check for URL - must match specific patterns, not just anything with a dot
@@ -192,6 +216,11 @@ export function detectContentType(input: string): DetectedContent | null {
   // Check if it looks like a domain (e.g., google.com, sub.domain.org)
   // Must have at least 2 parts separated by dot, with valid TLD
   if (looksLikeValidDomain(trimmed)) {
+    // Check if domain-style input is an image URL
+    if (isImageUrl(trimmed)) {
+      const normalizedUrl = normalizeUrl(trimmed);
+      return { type: "image", value: normalizedUrl };
+    }
     const normalizedUrl = normalizeUrl(trimmed);
     return { type: "url", value: normalizedUrl };
   }
@@ -248,7 +277,19 @@ export function splitMultipleContent(input: string): string[] {
  * Returns an array of detected content items (filters out invalid content)
  */
 export function detectMultipleContentTypes(input: string): DetectedContent[] {
-  const items = splitMultipleContent(input);
+  const trimmedInput = input.trim();
+  if (!trimmedInput) {
+    return [];
+  }
+
+  // Try full-input detection first so single values containing spaces
+  // (e.g. "light blue" or "oklch(0.7 0.15 180)") are preserved.
+  const singleItem = detectContentType(trimmedInput);
+  if (singleItem && singleItem.type === "color") {
+    return [singleItem];
+  }
+
+  const items = splitMultipleContent(trimmedInput);
   
   if (items.length === 0) {
     return [];

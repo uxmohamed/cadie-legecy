@@ -91,3 +91,41 @@ export async function enqueueBatchAITagging(jobs: EnrichAITagsJob[]): Promise<vo
     jobs.map(job => enqueueAITagging(job))
   );
 }
+
+/**
+ * Job payload for AI vision tag enrichment (for image items)
+ */
+export interface EnrichAIVisionTagsJob {
+  linkId: string;
+  userId: string;
+}
+
+/**
+ * Enqueue an AI vision tagging job for an image item.
+ * Uses a 2s delay to let the upload settle.
+ */
+export async function enqueueAIVisionTagging(job: EnrichAIVisionTagsJob): Promise<void> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+    || "http://localhost:3000";
+
+  try {
+    await qstash.publishJSON({
+      url: `${baseUrl}/api/jobs/enrich-ai-vision-tags`,
+      body: job,
+      retries: 3,
+      delay: 2,
+    });
+  } catch (error) {
+    console.error("[QStash] Failed to enqueue AI vision tagging:", error);
+  }
+}
+
+/**
+ * Enqueue multiple AI vision tagging jobs
+ */
+export async function enqueueBatchAIVisionTagging(jobs: EnrichAIVisionTagsJob[]): Promise<void> {
+  await Promise.allSettled(
+    jobs.map(job => enqueueAIVisionTagging(job))
+  );
+}

@@ -31,6 +31,7 @@ export function createMockLink(overrides: Partial<Link> = {}): Link {
     title: overrides.title || `Example Link ${id}`,
     domain,
     content_type: 'url',
+    content_text: null,
     color_value: null,
     favicon_url: null,
     og_image_url: null,
