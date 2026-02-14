@@ -36,6 +36,7 @@ interface DashboardContentProps {
   onSelectionChange: (count: number, links: Link[], clearSelection: () => void, batchHandlers: BatchHandlers) => void;
   searchQuery: string;
   viewMode?: "list" | "grid";
+  onImageUploadReady?: (handler: (files: File[]) => void) => void;
 }
 
 export function DashboardContent({
@@ -51,6 +52,7 @@ export function DashboardContent({
   onSelectionChange,
   searchQuery,
   viewMode = "list",
+  onImageUploadReady,
 }: DashboardContentProps) {
   const { spaces, addLinksToSpace, removeLinksFromSpace } = useSpaces(!!user);
   const [linkSpacesMap, setLinkSpacesMap] = React.useState<Map<string, string[]>>(new Map());
@@ -91,11 +93,18 @@ export function DashboardContent({
     batchPinLinks,
     batchUnpinLinks,
     addLinks,
+    addImageFiles,
     isAddingLinks,
+    isUploadingImages,
   } = useLinkMutations(filters);
 
   // Copy URL utility
   const { copyUrl } = useCopyUrl();
+
+  // Expose image upload handler to parent
+  React.useEffect(() => {
+    onImageUploadReady?.(addImageFiles);
+  }, [onImageUploadReady, addImageFiles]);
 
   // Fetch link-space mappings using the FULL link set (not the filtered one)
   // so that space-name search works correctly for all links

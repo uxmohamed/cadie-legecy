@@ -244,13 +244,16 @@ export function canonicalizeUrl(url: string): string {
  */
 export function canonicalizeContent(
   value: string,
-  type: "url" | "color" | "text"
+  type: "url" | "color" | "image" | "text"
 ): string {
   switch (type) {
     case "color":
       return canonicalizeColor(value);
     case "url":
       return canonicalizeUrl(value);
+    case "image":
+      // Images use their URL as-is for dedup
+      return value.trim();
     case "text":
       // For text, just normalize whitespace and case
       return value.trim().toLowerCase();

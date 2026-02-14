@@ -193,10 +193,11 @@ function ColorPreview({ colorValue }: { colorValue: string }) {
  * OG Image preview with object-contain
  */
 function ImagePreview({ link }: { link: Link }) {
+  const imageSrc = link.content_type === "image" ? link.url : link.og_image_url!;
   return (
     <div className="w-full h-full bg-transparent flex items-center justify-center">
       <img
-        src={link.og_image_url!}
+        src={imageSrc}
         alt={link.title}
         className="w-full h-full object-contain rounded-sm"
       />

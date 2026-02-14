@@ -71,7 +71,8 @@ export function LinkListItem({
   onEditCancel,
 }: LinkListItemProps) {
   const isColor = link.content_type === "color";
-  const isMetadataLoading = !isColor && (link.fetch_status === "pending" || link.fetch_status === "fetching");
+  const isImage = link.content_type === "image";
+  const isMetadataLoading = !isColor && !isImage && (link.fetch_status === "pending" || link.fetch_status === "fetching");
   const containerRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -163,9 +164,9 @@ export function LinkListItem({
       >
         <a
           ref={linkRef}
-          href={isColor ? "#" : link.url}
-          target={isColor ? undefined : "_blank"}
-          rel={isColor ? undefined : "noopener noreferrer nofollow"}
+          href={isColor || isImage ? "#" : link.url}
+          target={isColor || isImage ? undefined : "_blank"}
+          rel={isColor || isImage ? undefined : "noopener noreferrer nofollow"}
           onClick={(e) => e.preventDefault()}
           onFocus={() => onFocus(index)}
           className="flex min-w-0 items-center gap-3 focus-visible:outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring select-none"
@@ -175,6 +176,12 @@ export function LinkListItem({
             <div
               className="h-5 w-5 flex-shrink-0 rounded-full border border-border-muted"
               style={{ backgroundColor: link.color_value || link.title }}
+            />
+          ) : isImage ? (
+            <img
+              src={link.og_image_url || link.url}
+              alt=""
+              className="h-5 w-5 flex-shrink-0 rounded-[3px] object-cover"
             />
           ) : (
             <Favicon url={link.favicon_url || ""} domain={link.domain} className="h-5 w-5" />
@@ -199,7 +206,7 @@ export function LinkListItem({
                 )}>
                   {link.title || link.url}
                 </div>
-                {!isColor && (
+                {!isColor && !isImage && (
                   <div
                     className={cn(
                       "hidden sm:block truncate text-sm leading-4 text-fg-subtle font-[470]",

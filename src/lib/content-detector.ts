@@ -1,4 +1,4 @@
-export type ContentType = "url" | "color";
+export type ContentType = "url" | "color" | "image";
 
 export interface DetectedContent {
   type: ContentType;
@@ -140,6 +140,40 @@ function looksLikeValidDomain(input: string): boolean {
   return true;
 }
 
+/**
+ * Image file extension pattern
+ */
+const IMAGE_EXTENSION_PATTERN = /\.(jpg|jpeg|png|gif|webp|svg|avif|bmp|ico|tiff?)(\?.*)?$/i;
+
+/**
+ * Known image hosting domains
+ */
+const IMAGE_HOST_PATTERNS = [
+  /^images\.unsplash\.com$/,
+  /^i\.imgur\.com$/,
+  /^imgur\.com$/,
+  /\.supabase\.co\/storage\/v1\/object\/public\//,
+];
+
+/**
+ * Check if a URL points to an image
+ */
+export function isImageUrl(url: string): boolean {
+  // Check file extension
+  if (IMAGE_EXTENSION_PATTERN.test(url)) return true;
+
+  // Check known image hosts
+  try {
+    const urlObj = new URL(url.startsWith("http") ? url : `https://${url}`);
+    const fullUrl = urlObj.hostname + urlObj.pathname;
+    return IMAGE_HOST_PATTERNS.some(
+      (pattern) => pattern.test(urlObj.hostname) || pattern.test(fullUrl)
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function detectContentType(input: string): DetectedContent | null {
   const trimmed = input.trim();
 
@@ -179,6 +213,17 @@ export function detectContentType(input: string): DetectedContent | null {
     return { type: "color", value: trimmed.toLowerCase() };
   }
 
+  // Check for image URL before generic URL
+  if (
+    (trimmed.startsWith("http://") ||
+      trimmed.startsWith("https://") ||
+      trimmed.startsWith("www.")) &&
+    isImageUrl(trimmed)
+  ) {
+    const normalizedUrl = normalizeUrl(trimmed);
+    return { type: "image", value: normalizedUrl };
+  }
+
   // Check for URL - must match specific patterns, not just anything with a dot
   if (
     trimmed.startsWith("http://") ||
@@ -192,6 +237,11 @@ export function detectContentType(input: string): DetectedContent | null {
   // Check if it looks like a domain (e.g., google.com, sub.domain.org)
   // Must have at least 2 parts separated by dot, with valid TLD
   if (looksLikeValidDomain(trimmed)) {
+    // Check if domain-style input is an image URL
+    if (isImageUrl(trimmed)) {
+      const normalizedUrl = normalizeUrl(trimmed);
+      return { type: "image", value: normalizedUrl };
+    }
     const normalizedUrl = normalizeUrl(trimmed);
     return { type: "url", value: normalizedUrl };
   }

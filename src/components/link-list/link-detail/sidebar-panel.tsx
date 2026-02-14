@@ -59,6 +59,7 @@ export function SidebarPanel({
   onRemoveFromSpace
 }: SidebarPanelProps) {
   const isColor = link.content_type === "color";
+  const isImage = link.content_type === "image";
 
   return (
     <div className="flex flex-col h-full font-sans">
@@ -94,7 +95,7 @@ export function SidebarPanel({
         {/* Source */}
         <div className="text-fg-subtle">Source</div>
         <div className="text-fg font-bold text-right truncate">
-          {link.domain || "Direct Link"}
+          {isImage ? "Image" : link.domain || "Direct Link"}
         </div>
 
         {/* Category */}
@@ -128,7 +129,7 @@ export function SidebarPanel({
           className="flex-1 gap-2 bg-fg text-bg hover:bg-fg/90 shadow-sm h-9"
           onClick={onOpen}
         >
-          <span className="text-xs font-medium">Visit Website</span>
+          <span className="text-xs font-medium">{isImage ? "Open Image" : "Visit Website"}</span>
           <IconExternalLink className="w-3.5 h-3.5" />
         </Button>
 

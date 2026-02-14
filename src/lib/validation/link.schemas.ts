@@ -55,7 +55,7 @@ export const createLinkSchema = z.object({
   // Title is optional - if not provided, server uses domain as placeholder
   // and metadata enrichment will set the real title
   title: z.string().max(500, "Title too long").optional(),
-  content_type: z.enum(["url", "color"]).optional().default("url"),
+  content_type: z.enum(["url", "color", "image"]).optional().default("url"),
   color_value: z.string().max(100, "Color value too long").optional().nullable(),
   favicon_url: z.string().url("Invalid favicon URL").max(2000).optional().nullable(),
   og_image_url: z.string().url("Invalid image URL").max(2000).optional().nullable(),
@@ -65,6 +65,15 @@ export const createLinkSchema = z.object({
     // For color content type, validate that url/color_value is a valid color
     if (data.content_type === "color") {
       return isValidColorValue(data.url) || (data.color_value && isValidColorValue(data.color_value));
+    }
+    // For image content type, validate URL format
+    if (data.content_type === "image") {
+      try {
+        new URL(data.url);
+        return true;
+      } catch {
+        return false;
+      }
     }
     // For URL content type, validate URL format
     try {

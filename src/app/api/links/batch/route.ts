@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { canonicalizeUrl } from "@/lib/canonicalize";
-import { enqueueBatchMetadataEnrichment, enqueueBatchAITagging } from "@/lib/job-queue";
+import { enqueueBatchMetadataEnrichment, enqueueBatchAITagging, enqueueBatchAIVisionTagging } from "@/lib/job-queue";
 import { MetadataService } from "@/features/links/services/metadata.service";
 import { rateLimitLinks, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 import { validateRequestBody } from "@/lib/validation/validate";
@@ -117,20 +117,26 @@ export async function POST(request: NextRequest) {
     switch (action) {
       case "add":
         // Prepare links with clean_url for duplicate checking
-        const linksToCheck = links!.map((link) => ({
-          user_id: user.id,
-          url: link.url,
-          clean_url: link.content_type === "color" ? link.url : canonicalizeUrl(link.url),
-          title: link.title || link.url,
-          content_type: link.content_type || "url",
-          favicon_url: link.favicon_url || null,
-          color_value: (link as any).color_value || null,
-          domain: link.content_type === "color" ? "color" : extractDomain(link.url),
-          is_deleted: false,
-          is_archived: false,
-          is_pinned: false,
-          fetch_status: "pending" as const,
-        }));
+        const linksToCheck = links!.map((link) => {
+          const ct = link.content_type || "url";
+          const isImage = ct === "image";
+          const isColor = ct === "color";
+          return {
+            user_id: user.id,
+            url: link.url,
+            clean_url: isColor || isImage ? link.url : canonicalizeUrl(link.url),
+            title: link.title || link.url,
+            content_type: ct,
+            favicon_url: link.favicon_url || null,
+            color_value: (link as any).color_value || null,
+            og_image_url: isImage ? link.url : null,
+            domain: isColor ? "color" : isImage ? "image" : extractDomain(link.url),
+            is_deleted: false,
+            is_archived: false,
+            is_pinned: false,
+            fetch_status: "pending" as const,
+          };
+        });
 
         // Check for existing links (duplicates) - only check non-deleted links
         const cleanUrls = linksToCheck.map(l => l.clean_url);
@@ -238,6 +244,18 @@ export async function POST(request: NextRequest) {
               userId: user.id,
             }));
             enqueueBatchAITagging(aiTagJobs).catch(() => {});
+          }
+
+          // Enqueue AI vision tagging for image items
+          const imageLinks = (result.data.links as CreatedLink[]).filter(
+            (link) => link.content_type === "image"
+          );
+          if (imageLinks.length > 0) {
+            const visionJobs = imageLinks.map((link) => ({
+              linkId: link.id,
+              userId: user.id,
+            }));
+            enqueueBatchAIVisionTagging(visionJobs).catch(() => {});
           }
         }
         break;

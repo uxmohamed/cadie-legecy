@@ -106,11 +106,11 @@ export function InlineAddItem({
               value={value}
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Enter a link or color..."
+              placeholder="Enter a link, color, or image URL..."
               className="w-full bg-transparent text-sm leading-4 text-fg font-[470] placeholder:text-fg-subtle outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-sm"
               autoComplete="off"
               autoFocus
-              aria-label="Enter a link or color"
+              aria-label="Enter a link, color, or image URL"
             />
           </div>
         </div>

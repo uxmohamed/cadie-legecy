@@ -14,6 +14,10 @@ const SpaceModal = dynamic(
   () => import("@/components/spaces/space-modal").then((mod) => mod.SpaceModal),
   { ssr: false }
 );
+const ImageUploadModal = dynamic(
+  () => import("@/components/image-upload-modal").then((mod) => mod.ImageUploadModal),
+  { ssr: false }
+);
 import type { User } from "@supabase/supabase-js";
 import type { Link } from "@/features/links/types";
 import type { Space } from "@/types";
@@ -37,10 +41,15 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
     isTrashRoute ? "trash" : (initialView || spaceIdFromPath || null)
   );
   
-  const [viewMode, setViewMode] = React.useState<"list" | "grid">(() => {
-    if (typeof window === "undefined") return "list";
-    return (localStorage.getItem("cadie-view-mode") as "list" | "grid") || "list";
-  });
+  // Always start as "list" to match SSR, then sync from localStorage after hydration
+  const [viewMode, setViewMode] = React.useState<"list" | "grid">("list");
+
+  React.useEffect(() => {
+    const stored = localStorage.getItem("cadie-view-mode") as "list" | "grid" | null;
+    if (stored && stored !== "list") {
+      setViewMode(stored);
+    }
+  }, []);
   const [sortBy, setSortBy] = React.useState<"date" | "title">("date");
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("desc");
   const [isAddingItem, setIsAddingItem] = React.useState(false);
@@ -61,6 +70,8 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
   const { spaces, createSpace, updateSpace, deleteSpace } = useSpaces(!!user, initialSpaces);
   const [spaceModalOpen, setSpaceModalOpen] = React.useState(false);
   const [editingSpace, setEditingSpace] = React.useState<Space | null>(null);
+  const [imageUploadModalOpen, setImageUploadModalOpen] = React.useState(false);
+  const imageUploadHandlerRef = React.useRef<((files: File[]) => void) | null>(null);
   
   // Sync selectedCategoryId with URL path changes
   React.useEffect(() => {
@@ -171,6 +182,18 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
     router.push(targetPath);
   }, [router]);
   
+  const handleImageUploadReady = React.useCallback((handler: (files: File[]) => void) => {
+    imageUploadHandlerRef.current = handler;
+  }, []);
+
+  const handleUploadImages = React.useCallback((files: File[]) => {
+    imageUploadHandlerRef.current?.(files);
+  }, []);
+
+  const handleOpenUploadModal = React.useCallback(() => {
+    setImageUploadModalOpen(true);
+  }, []);
+
   const handleCreateSpace = React.useCallback(() => {
     setEditingSpace(null);
     setSpaceModalOpen(true);
@@ -209,6 +232,8 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
         onCreateSpace={handleCreateSpace}
         onEditSpace={handleEditSpace}
         onDeleteSpace={handleDeleteSpace}
+        onUploadImages={handleUploadImages}
+        onOpenUploadModal={handleOpenUploadModal}
       sortBy={sortBy}
       sortOrder={sortOrder}
       onSortChange={handleSortChange}
@@ -286,6 +311,7 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
           onSelectionChange={handleSelectionChange}
           searchQuery={searchQuery}
           viewMode={viewMode}
+          onImageUploadReady={handleImageUploadReady}
         />
       </Suspense>
     </DashboardShell>
@@ -296,6 +322,12 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
       space={editingSpace}
       onSave={handleSaveSpace}
       onDelete={editingSpace ? handleDeleteSpace : undefined}
+    />
+
+    <ImageUploadModal
+      open={imageUploadModalOpen}
+      onOpenChange={setImageUploadModalOpen}
+      onUploadFiles={handleUploadImages}
     />
     </>
   );

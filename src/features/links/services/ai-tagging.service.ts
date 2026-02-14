@@ -28,7 +28,21 @@ interface TaggingContext {
 interface TaggingResult {
   tags: string[];
   category: Category;
+  description?: string;
 }
+
+const IMAGE_SYSTEM_PROMPT = `You are an expert visual content curator and digital librarian. Your goal is to analyze images and categorize them with high precision.
+Given an image, generate:
+
+1. 5-10 high-quality, specific tags describing the image content.
+   - Rules: lowercase, 1-3 words max, no special characters (use hyphens for spaces).
+   - Strategy: Mix broad topics (e.g. "landscape", "portrait") with specific subjects (e.g. "golden-gate-bridge", "sunset") and style descriptors (e.g. "minimalist", "aerial-view").
+   - Avoid generic tags like "image", "photo", "picture" unless necessary.
+2. Exactly 1 category from this list: article, tool, video, portfolio, documentation, social-media, shopping, news, reference, other.
+3. A brief 1-2 sentence description of the image.
+
+Respond ONLY with valid JSON in this exact format:
+{"tags": ["tag1", "tag2", "tag3"], "category": "other", "description": "A brief description of the image."}`;
 
 const SYSTEM_PROMPT = `You are an expert content curator and digital librarian. Your goal is to deeply anaylze web content and categorize it with high precision.
 Given metadata and a content preview of a link, generate:
@@ -188,6 +202,123 @@ export class AITaggingService {
       }
     }
 
+    return null;
+  }
+
+  /**
+   * Generate tags, category, and description from an image URL using vision models.
+   * Uses Gemini 2.0 Flash as primary, OpenAI GPT-4o-mini as fallback.
+   */
+  async generateTagsFromImage(imageUrl: string): Promise<TaggingResult | null> {
+    if (!imageUrl) return null;
+
+    // Try Gemini vision first
+    const geminiResult = await this.tryGeminiVision(imageUrl);
+    if (geminiResult) return geminiResult;
+
+    // Fallback to OpenAI vision
+    const openaiResult = await this.tryOpenAIVision(imageUrl);
+    if (openaiResult) return openaiResult;
+
+    log.warn("[AI Vision Tagging] All providers failed", { imageUrl });
+    return null;
+  }
+
+  private async tryGeminiVision(imageUrl: string): Promise<TaggingResult | null> {
+    const apiKey = process.env.GOOGLE_AI_API_KEY;
+    if (!apiKey) {
+      log.warn("[AI Vision Tagging] GOOGLE_AI_API_KEY not set, skipping Gemini");
+      return null;
+    }
+
+    for (let attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
+      try {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({
+          model: "gemini-2.0-flash",
+          generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0.3,
+            maxOutputTokens: 300,
+          },
+        });
+
+        const result = await Promise.race([
+          model.generateContent([
+            IMAGE_SYSTEM_PROMPT,
+            { inlineData: { mimeType: "image/jpeg", data: "" }, fileData: { mimeType: "image/jpeg", fileUri: imageUrl } },
+          ].filter(Boolean) as any),
+          this.timeout(),
+        ]);
+
+        if (!result) return null;
+        const text = result.response.text();
+        const parsed = JSON.parse(text);
+        const validated = validateAndClean(parsed);
+        if (validated) {
+          validated.description = typeof parsed.description === "string" ? parsed.description.slice(0, 500) : undefined;
+          return validated;
+        }
+      } catch (error: unknown) {
+        const status = (error as { status?: number })?.status;
+        if (status === 429) {
+          log.warn("[AI Vision Tagging] Gemini rate limited, falling back");
+          return null;
+        }
+        log.warn(`[AI Vision Tagging] Gemini attempt ${attempt + 1} failed`, {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+    return null;
+  }
+
+  private async tryOpenAIVision(imageUrl: string): Promise<TaggingResult | null> {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      log.warn("[AI Vision Tagging] OPENAI_API_KEY not set, skipping OpenAI");
+      return null;
+    }
+
+    for (let attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
+      try {
+        const openai = new OpenAI({ apiKey });
+        const result = await Promise.race([
+          openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+              { role: "system", content: IMAGE_SYSTEM_PROMPT },
+              {
+                role: "user",
+                content: [
+                  { type: "image_url", image_url: { url: imageUrl, detail: "low" } },
+                  { type: "text", text: "Analyze this image." },
+                ],
+              },
+            ],
+            response_format: { type: "json_object" },
+            temperature: 0.3,
+            max_tokens: 300,
+          }),
+          this.timeout(),
+        ]);
+
+        if (!result) return null;
+        const text = result.choices[0]?.message?.content;
+        if (!text) continue;
+
+        const parsed = JSON.parse(text);
+        const validated = validateAndClean(parsed);
+        if (validated) {
+          validated.description = typeof parsed.description === "string" ? parsed.description.slice(0, 500) : undefined;
+          return validated;
+        }
+      } catch (error) {
+        log.warn(`[AI Vision Tagging] OpenAI attempt ${attempt + 1} failed`, {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
     return null;
   }
 

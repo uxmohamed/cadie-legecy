@@ -7,6 +7,28 @@ import type { DetectedContent } from "@/lib/content-detector";
 import { queryKeys } from "@/lib/query/keys";
 
 /**
+ * Extract a readable name from an image URL
+ * e.g. "https://example.com/path/my-photo.jpg" → "my-photo"
+ */
+function getImageNameFromUrl(url: string): string {
+  try {
+    const pathname = new URL(url).pathname;
+    const filename = pathname.split("/").pop() || "";
+    // Remove extension and timestamp prefixes (e.g. "1739523600000.png" → "Image")
+    const name = filename.replace(/\.[^/.]+$/, "");
+    // If name is just a number (timestamp), return generic name
+    if (!name || /^\d+$/.test(name)) return "Image";
+    // Clean up: replace dashes/underscores with spaces, title-case
+    return name
+      .replace(/[-_]/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+      .trim() || "Image";
+  } catch {
+    return "Image";
+  }
+}
+
+/**
  * Response type from the links API
  */
 interface LinksResponse {
@@ -793,9 +815,10 @@ export function useLinkMutations(filters: LinkFilters) {
     mutationFn: async (items: DetectedContent[]) => {
       const linksToAdd = items.map(({ value, type }) => ({
         url: value,
-        title: value,
+        title: type === "image" ? getImageNameFromUrl(value) : value,
         content_type: type,
         color_value: type === "color" ? value : undefined,
+        og_image_url: type === "image" ? value : undefined,
       }));
 
       const response = await fetch("/api/links/batch", {
@@ -829,8 +852,13 @@ export function useLinkMutations(filters: LinkFilters) {
         tempIds.push(tempId);
 
         const isColor = type === "color";
+        const isImage = type === "image";
         let domain = "";
-        if (!isColor) {
+        if (isColor) {
+          domain = "color";
+        } else if (isImage) {
+          domain = "image";
+        } else {
           try {
             domain = new URL(value).hostname.replace(/^www\./, "");
           } catch {
@@ -843,13 +871,13 @@ export function useLinkMutations(filters: LinkFilters) {
           user_id: "",
           url: value,
           clean_url: value,
-          title: value,
-          domain: isColor ? "color" : domain,
+          title: isImage ? getImageNameFromUrl(value) : value,
+          domain,
           content_type: type,
           color_value: isColor ? value : null,
           content_text: null,
           favicon_url: null,
-          og_image_url: null,
+          og_image_url: isImage ? value : null,
           description: null,
           ai_summary: null,
           ai_tags: null,
@@ -914,13 +942,17 @@ export function useLinkMutations(filters: LinkFilters) {
       }
 
       // Show appropriate toast
+      const itemLabel = (type: string) =>
+        type === "color" ? "Color" : type === "image" ? "Image" : "Link";
+
       if (items.length === 1) {
+        const label = itemLabel(items[0].type);
         if (duplicateCount === 1) {
-          toast.info(items[0].type === "color" ? "Color already in your list" : "Link already in your list");
+          toast.info(`${label} already in your list`);
         } else if (restored === 1) {
-          toast.success(items[0].type === "color" ? "Color restored from trash" : "Link restored from trash");
+          toast.success(`${label} restored from trash`);
         } else if (successCount === 1) {
-          toast.success(items[0].type === "color" ? "Color saved successfully" : "Link saved successfully");
+          toast.success(`${label} saved successfully`);
         }
       } else {
         const parts: string[] = [];
@@ -959,6 +991,130 @@ export function useLinkMutations(filters: LinkFilters) {
     },
   });
 
+  /**
+   * Upload image files and create image links
+   */
+  const addImageFilesMutation = useMutation({
+    mutationFn: async (files: File[]) => {
+      const { uploadImage } = await import("@/features/links/services/image-upload.service");
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Upload files and collect URLs + names
+      const uploadedItems: { url: string; name: string }[] = [];
+      for (const file of files) {
+        const url = await uploadImage(user.id, file);
+        // Use filename without extension as title
+        const name = file.name.replace(/\.[^/.]+$/, "");
+        uploadedItems.push({ url, name });
+      }
+
+      // Create links via batch API
+      const linksToAdd = uploadedItems.map(({ url, name }) => ({
+        url,
+        title: name,
+        content_type: "image",
+        og_image_url: url,
+      }));
+
+      const response = await fetch("/api/links/batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "add", links: linksToAdd }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error ?? "Failed to save images");
+      }
+
+      return response.json() as Promise<{ links?: Link[]; count?: number; duplicates?: number }>;
+    },
+    onMutate: async (files) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.links.all });
+      const previousAll = queryClient.getQueryData<LinksResponse>(queryKeys.links.list(ALL_FILTERS));
+
+      const now = new Date().toISOString();
+      const tempIds: string[] = [];
+      const optimisticLinks: Link[] = files.map((file) => {
+        const tempId = crypto.randomUUID();
+        tempIds.push(tempId);
+        const objectUrl = URL.createObjectURL(file);
+        return {
+          id: tempId,
+          user_id: "",
+          url: objectUrl,
+          clean_url: objectUrl,
+          title: file.name,
+          domain: "image",
+          content_type: "image" as const,
+          color_value: null,
+          content_text: null,
+          favicon_url: null,
+          og_image_url: objectUrl,
+          description: null,
+          ai_summary: null,
+          ai_tags: null,
+          ai_key_themes: null,
+          ai_quotes: null,
+          ai_facts: null,
+          ai_people: null,
+          is_pinned: false,
+          is_archived: false,
+          is_deleted: false,
+          deleted_at: null,
+          is_favorite: false,
+          read_at: null,
+          sort_order: 0,
+          created_at: now,
+          updated_at: now,
+          final_url: null,
+          canonical_url: null,
+          site_name: null,
+          favicon_variants: null,
+          preview_image_width: null,
+          preview_image_height: null,
+          theme_color: null,
+          language: null,
+          word_count: null,
+          reading_time_minutes: null,
+          status_code: null,
+          fetch_status: "pending" as const,
+          fetched_at: null,
+          etag: null,
+          last_modified: null,
+        };
+      });
+
+      addLinksToCache(queryClient, ALL_FILTERS, optimisticLinks);
+      return { tempIds, previousAll };
+    },
+    onSuccess: (data, _files, context) => {
+      const createdLinks = data.links ?? [];
+      if (context?.tempIds) {
+        removeLinksFromCache(queryClient, ALL_FILTERS, context.tempIds);
+      }
+      if (createdLinks.length > 0) {
+        addLinksToCache(queryClient, ALL_FILTERS, createdLinks);
+      }
+      const count = createdLinks.length;
+      toast.success(`${count} ${count === 1 ? "image" : "images"} saved`);
+    },
+    onError: (err, _files, context) => {
+      if (context?.previousAll) {
+        queryClient.setQueryData(queryKeys.links.list(ALL_FILTERS), context.previousAll);
+      }
+      toast.error(err instanceof Error ? err.message : "Failed to upload images");
+    },
+    onSettled: () => {
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.links.all, refetchType: "active" });
+      }, 3000);
+    },
+  });
+
   return {
     // Single mutations
     deleteLink: deleteMutation.mutate,
@@ -977,12 +1133,14 @@ export function useLinkMutations(filters: LinkFilters) {
 
     // Add links
     addLinks: addLinksMutation.mutate,
+    addImageFiles: addImageFilesMutation.mutate,
 
     // Loading states
     isDeleting: deleteMutation.isPending,
     isRestoring: restoreMutation.isPending,
     isUpdating: updateMutation.isPending,
     isAddingLinks: addLinksMutation.isPending,
+    isUploadingImages: addImageFilesMutation.isPending,
   };
 }
 
