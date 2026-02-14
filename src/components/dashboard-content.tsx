@@ -229,7 +229,7 @@ export function DashboardContent({
   }, [permanentDeleteLink]);
 
   const handleUpdateLink = React.useCallback(async (id: string, updates: Partial<Link>) => {
-    updateLink(id, updates);
+    await updateLink(id, updates);
   }, [updateLink]);
 
   const handlePinLink = React.useCallback(async (id: string) => {

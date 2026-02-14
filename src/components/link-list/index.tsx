@@ -955,6 +955,16 @@ export function LinkList({
         onUnpin={!isTrashView ? onUnpin : undefined}
         onDelete={!isTrashView ? onDelete : undefined}
         onRename={!isTrashView ? handleRename : undefined}
+        onUpdate={
+          !isTrashView
+            ? async (id, updates) => {
+                await onUpdate(id, updates);
+                setSelectedLink((prev) =>
+                  prev && prev.id === id ? { ...prev, ...updates } : prev
+                );
+              }
+            : undefined
+        }
         spaces={spaces}
         linkSpaces={selectedLink ? linkSpacesMap.get(selectedLink.id) || [] : []}
         onAddToSpace={onAddToSpace}

@@ -3,7 +3,6 @@
 import * as React from "react";
 import type { Link } from "@/features/links/types";
 import type { Space } from "@/types";
-import { toast } from "sonner";
 import {
   Dialog,
   DialogOverlay,
@@ -13,11 +12,12 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { 
   IconX, 
   IconChevronUp, 
-  IconChevronDown 
+  IconChevronDown,
+  IconExternalLink
 } from "@tabler/icons-react";
 import { PreviewPanel } from "./link-detail/preview-panel";
 import { SidebarPanel } from "./link-detail/sidebar-panel";
-import { IconExternalLink } from "@tabler/icons-react";
+import { cleanUrl } from "@/lib/utils";
 
 interface LinkDetailDialogProps {
   link: Link | null;
@@ -29,6 +29,7 @@ interface LinkDetailDialogProps {
   onUnpin?: (id: string) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   onRename?: (link: Link) => void;
+  onUpdate?: (id: string, updates: Partial<Link>) => Promise<void>;
   // Spaces
   spaces?: Space[];
   linkSpaces?: string[];
@@ -50,6 +51,7 @@ export function LinkDetailDialog({
   onUnpin,
   onDelete,
   onRename,
+  onUpdate,
   spaces = [],
   linkSpaces = [],
   onAddToSpace,
@@ -89,8 +91,10 @@ export function LinkDetailDialog({
   if (!link) return null;
 
   const isColor = link.content_type === "color";
+  const copyValue = isColor ? (link.color_value || link.url) : link.url;
 
   const handleOpen = () => {
+    if (isColor) return;
     window.open(link.url, "_blank", "noopener,noreferrer");
   };
 
@@ -129,11 +133,12 @@ export function LinkDetailDialog({
                 <SidebarPanel 
                   link={link}
                   onOpen={handleOpen}
-                  onCopy={() => onCopy?.(link.url, isColor)}
+                  onCopy={() => onCopy?.(copyValue, isColor)}
                   onPin={() => onPin?.(link.id)}
                   onUnpin={() => onUnpin?.(link.id)}
                   onRename={() => onRename?.(link)}
                   onDelete={() => onDelete?.(link.id)}
+                  onUpdate={(updates) => onUpdate?.(link.id, updates)}
                   spaces={spaces}
                   linkSpaces={linkSpaces}
                   onAddToSpace={async (spaceId) => { if (onAddToSpace) await onAddToSpace(link.id, spaceId); }}
@@ -179,25 +184,121 @@ export function LinkDetailDialog({
 }
 
 function BrowserAddressBar({ link }: { link: Link }) {
-  const isColor = link.content_type === "color";
+  const data = getAddressBarData(link);
+  const faviconDomain = data.faviconDomain;
   
   return (
     <div className="flex items-center gap-3 px-4 py-3 bg-bg-surface border-b border-border w-full">
-      {/* URL Content */}
       <div className="flex-1 flex items-center gap-2 text-xs text-fg-muted overflow-hidden pl-1 bg-bg-muted/50 rounded-md px-2 py-1.5">
-         {!isColor && link.domain && (
-            <img 
-              src={`https://www.google.com/s2/favicons?domain=${link.domain}&sz=32`}
-              alt=""
-              className="w-3.5 h-3.5 opacity-60"
-            />
-         )}
-         <span className="truncate flex-1 font-medium opacity-70">
-           {link.url}
-         </span>
+        {data.kind === "color" ? (
+          <span
+            className="w-3.5 h-3.5 rounded-full border border-white/70 shadow-[0_0_0_1px_rgba(0,0,0,0.14)] shrink-0"
+            style={{ backgroundColor: data.value }}
+          />
+        ) : faviconDomain ? (
+          <img 
+            src={`https://www.google.com/s2/favicons?domain=${faviconDomain}&sz=32`}
+            alt=""
+            className="w-3.5 h-3.5 opacity-60"
+          />
+        ) : (
+          <span className="w-3.5 h-3.5 rounded-full bg-bg-emphasis shrink-0" />
+        )}
+        <div className="min-w-0 flex-1 leading-tight">
+          <div className="truncate text-[10px] uppercase tracking-wide text-fg-subtle">
+            {data.label}
+          </div>
+          <div className="truncate font-medium text-fg/80">
+            {data.value}
+          </div>
+        </div>
       </div>
-      
-      <IconExternalLink className="w-3.5 h-3.5 text-fg-subtle opacity-50" />
+
+      {data.openUrl ? (
+        <button
+          type="button"
+          onClick={() => {
+            if (!data.openUrl) return;
+            window.open(data.openUrl, "_blank", "noopener,noreferrer");
+          }}
+          className="p-1 rounded-sm text-fg-subtle opacity-70 hover:opacity-100 hover:bg-bg-muted transition-colors"
+          aria-label="Open in new tab"
+        >
+          <IconExternalLink className="w-3.5 h-3.5" />
+        </button>
+      ) : (
+        <span className="text-[10px] font-medium uppercase tracking-wide text-fg-subtle bg-bg-muted rounded px-2 py-1">
+          color
+        </span>
+      )}
     </div>
   );
+}
+
+function getAddressBarData(link: Link): {
+  kind: "url" | "image" | "color";
+  label: string;
+  value: string;
+  openUrl: string | null;
+  faviconDomain: string | null;
+} {
+  const kind = link.content_type;
+
+  if (kind === "color") {
+    return {
+      kind,
+      label: "Color Value",
+      value: link.color_value || link.url || link.title,
+      openUrl: null,
+      faviconDomain: null,
+    };
+  }
+
+  if (kind === "image") {
+    const host = getHostname(link.url);
+    const fileName = getFileName(link.url);
+    return {
+      kind,
+      label: host || "Image",
+      value: fileName || (link.title !== link.url ? link.title : "Image asset"),
+      openUrl: link.url,
+      faviconDomain: host,
+    };
+  }
+
+  const resolvedUrl = link.final_url || link.canonical_url || link.url;
+  const domain = getDomain(link) || getHostname(resolvedUrl);
+  return {
+    kind: "url",
+    label: link.site_name || domain || "Website",
+    value: cleanUrl(resolvedUrl),
+    openUrl: resolvedUrl,
+    faviconDomain: domain,
+  };
+}
+
+function getDomain(link: Link): string | null {
+  if (!link.domain) return null;
+  if (link.domain === "color" || link.domain === "image") return null;
+  return link.domain;
+}
+
+function getHostname(value: string | null | undefined): string | null {
+  if (!value) return null;
+  try {
+    return new URL(value).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+function getFileName(value: string): string | null {
+  try {
+    const pathname = new URL(value).pathname;
+    const segments = pathname.split("/").filter(Boolean);
+    if (segments.length === 0) return null;
+    return decodeURIComponent(segments[segments.length - 1]);
+  } catch {
+    return null;
+  }
 }
