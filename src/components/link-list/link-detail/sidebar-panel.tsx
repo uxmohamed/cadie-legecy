@@ -68,7 +68,6 @@ export function SidebarPanel({
       : "Visit Website";
   const timeLabel = formatRelativeDate(link.created_at);
   const tldrText = getTldrText(link, sourceLabel, colorValue);
-  const imageFileName = isImage ? getFileName(link.url) : null;
   const imageDimensions =
     link.preview_image_width && link.preview_image_height
       ? `${link.preview_image_width} x ${link.preview_image_height}`
@@ -156,12 +155,6 @@ export function SidebarPanel({
         </h1>
         <div className="mt-2 flex items-center gap-1 text-xs text-fg-muted">
           <span>{timeLabel}</span>
-          {!isColor && (
-            <>
-              <span aria-hidden="true">·</span>
-              <span>@ {sourceLabel}</span>
-            </>
-          )}
         </div>
       </header>
 
@@ -170,7 +163,7 @@ export function SidebarPanel({
         {tldrText}
       </div>
 
-      {(isColor || isImage) && (
+      {(isColor || (isImage && imageDimensions)) && (
         <>
           <SectionTitle label="DETAILS" />
           <div className="mb-5 space-y-2">
@@ -197,31 +190,13 @@ export function SidebarPanel({
               </>
             )}
 
-            {isImage && (
-              <>
-                <div className="rounded-lg border border-border bg-bg-surface px-3 py-2 flex items-center justify-between gap-3">
-                  <span className="text-xs text-fg-subtle">Source</span>
-                  <span className="text-xs font-medium text-fg truncate">
-                    {sourceLabel}
-                  </span>
-                </div>
-                {imageFileName && (
-                  <div className="rounded-lg border border-border bg-bg-surface px-3 py-2 flex items-center justify-between gap-3">
-                    <span className="text-xs text-fg-subtle">File</span>
-                    <span className="text-xs font-medium text-fg truncate">
-                      {imageFileName}
-                    </span>
-                  </div>
-                )}
-                {imageDimensions && (
-                  <div className="rounded-lg border border-border bg-bg-surface px-3 py-2 flex items-center justify-between gap-3">
-                    <span className="text-xs text-fg-subtle">Dimensions</span>
-                    <span className="text-xs font-medium text-fg">
-                      {imageDimensions}
-                    </span>
-                  </div>
-                )}
-              </>
+            {isImage && imageDimensions && (
+              <div className="rounded-lg border border-border bg-bg-surface px-3 py-2 flex items-center justify-between gap-3">
+                <span className="text-xs text-fg-subtle">Dimensions</span>
+                <span className="text-xs font-medium text-fg">
+                  {imageDimensions}
+                </span>
+              </div>
             )}
           </div>
         </>
@@ -443,17 +418,6 @@ function getHostname(value: string | null | undefined): string | null {
   if (!value) return null;
   try {
     return new URL(value).hostname.replace(/^www\./, "");
-  } catch {
-    return null;
-  }
-}
-
-function getFileName(value: string): string | null {
-  try {
-    const pathname = new URL(value).pathname;
-    const segments = pathname.split("/").filter(Boolean);
-    if (segments.length === 0) return null;
-    return decodeURIComponent(segments[segments.length - 1]);
   } catch {
     return null;
   }
