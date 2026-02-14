@@ -339,38 +339,47 @@ function resolveDescriptiveColorName(value: string): string | null {
   if (!/^[a-z\s_-]+$/.test(normalized)) return null;
 
   const terms = normalized.split(/[\s_-]+/).filter(Boolean);
+  if (terms.length < 2 || terms.length > 6) return null;
 
-  if (terms.length < 2 || terms.length > 4) return null;
+  const colorTermIndexes = terms
+    .map((term, index) => ({
+      index,
+      hex: getNamedColorHex(term),
+    }))
+    .filter((entry) => entry.hex && isHexColor(entry.hex));
 
-  let baseHex: string | null = null;
-  for (let i = terms.length - 1; i >= 0; i -= 1) {
-    const termHex = getNamedColorHex(terms[i]);
-    if (termHex && isHexColor(termHex)) {
-      baseHex = termHex;
-      break;
-    }
-  }
-  if (!baseHex) return null;
+  if (colorTermIndexes.length === 0) return null;
 
-  const baseRgb = hexToRgb(baseHex);
+  const base = colorTermIndexes[colorTermIndexes.length - 1];
+  const baseRgb = hexToRgb(base.hex!);
   if (!baseRgb) return null;
 
+  const modifiers = terms.filter((_, index) => index !== base.index);
+  if (modifiers.length === 0) return null;
+
   const hsl = rgbToHsl(baseRgb);
+  const modifierHash = hashString(modifiers.join(" "));
 
-  for (const term of terms) {
-    if (["light", "pale", "soft", "pastel"].includes(term)) hsl.l += 16;
-    if (["dark", "deep", "midnight"].includes(term)) hsl.l -= 16;
-    if (["vivid", "bright", "neon"].includes(term)) hsl.s += 18;
-    if (["muted", "dusty", "smoky", "ash", "grey", "gray"].includes(term)) hsl.s -= 20;
-    if (["sunset", "warm", "amber", "golden"].includes(term)) hsl.h = (hsl.h + 4) % 360;
-    if (["ocean", "arctic", "cool"].includes(term)) hsl.h = (hsl.h + 350) % 360;
-  }
+  const modifierIntensity = Math.min(1, 0.35 + modifiers.length * 0.2);
+  const deltaH = ((modifierHash % 49) - 24) * modifierIntensity;
+  const deltaS = (((modifierHash >> 8) % 41) - 20) * modifierIntensity;
+  const deltaL = (((modifierHash >> 16) % 37) - 18) * modifierIntensity;
 
-  hsl.s = Math.max(0, Math.min(100, hsl.s));
-  hsl.l = Math.max(0, Math.min(100, hsl.l));
+  hsl.h = ((hsl.h + deltaH) % 360 + 360) % 360;
+  hsl.s = Math.max(8, Math.min(100, hsl.s + deltaS));
+  hsl.l = Math.max(6, Math.min(94, hsl.l + deltaL));
 
   const rgb = hslToRgb(hsl.h, hsl.s, hsl.l);
   return rgbToHex(rgb.r, rgb.g, rgb.b);
+}
+
+function hashString(value: string): number {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i += 1) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
 }
 
 export function humanizeColorName(value: string): string {

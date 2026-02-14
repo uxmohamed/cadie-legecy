@@ -242,15 +242,19 @@ describe('detectContentType', () => {
       expect(nearest!.name.toLowerCase()).toContain('blue');
     });
 
-    it('applies adjective hints to descriptive color names', () => {
-      const result = detectContentType('sunset orange');
-      expect(result).not.toBeNull();
-      expect(result!.type).toBe('color');
-      expect(result!.value).toMatch(/^#[0-9a-f]{6}$/i);
+    it('infers a deterministic variant for descriptive names with a base color', () => {
+      const a = detectContentType('sunset orange');
+      const b = detectContentType('sunset orange');
+      const base = detectContentType('orange');
 
-      const nearest = getNearestColorName(result!.value);
-      expect(nearest).not.toBeNull();
-      expect(nearest!.name.toLowerCase()).toMatch(/orange|gold|coral/);
+      expect(a).not.toBeNull();
+      expect(b).not.toBeNull();
+      expect(base).not.toBeNull();
+
+      expect(a!.type).toBe('color');
+      expect(a!.value).toBe(b!.value);
+      expect(a!.value).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(a!.value).not.toBe(base!.value);
     });
   });
 
