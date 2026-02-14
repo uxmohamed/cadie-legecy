@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
               const metadataService = new MetadataService();
               // Fire and forget, but directly
               metadataJobs.forEach(job => {
-                metadataService.enrichLinkInProcess(job.linkId, job.url).catch(err => {
+                metadataService.enrichLink(job.linkId, job.url).catch(err => {
                   console.error("[Dev] Metadata enrichment failed:", err);
                 });
               });

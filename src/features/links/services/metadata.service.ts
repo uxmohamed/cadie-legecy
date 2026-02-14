@@ -127,49 +127,8 @@ export class MetadataService {
             return;
         }
 
-        let lastError: Error | null = null;
-
-        for (let attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
-            try {
-                const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-
-                // SECURITY: Use cryptographically signed internal token instead of spoofable header
-                const headers = await createInternalHeaders({ linkId, action: 'enrich-metadata' });
-
-                const response = await fetch(`${baseUrl}/api/links/${linkId}/metadata`, {
-                    method: 'POST',
-                    headers,
-                });
-
-                if (response.ok) {
-                    return; // Success
-                }
-
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            } catch (error) {
-                lastError = error instanceof Error ? error : new Error(String(error));
-
-                // Don't retry on the last attempt
-                if (attempt < this.MAX_RETRIES - 1) {
-                    // Exponential backoff: 1s, 2s, 4s
-                    const backoffMs = this.INITIAL_BACKOFF_MS * Math.pow(2, attempt);
-                    log.warn(`Background enrichment attempt ${attempt + 1} failed, retrying in ${backoffMs}ms`, { linkId, url, attempt: attempt + 1, backoffMs });
-                    await this.sleep(backoffMs);
-                }
-            }
-        }
-
-        // All retries exhausted - log and fail silently
-        log.error(`Background metadata enrichment failed after ${this.MAX_RETRIES} attempts`, lastError, { linkId, url, maxRetries: this.MAX_RETRIES });
-    }
-
-    /**
-     * Enrich a link with metadata directly in-process (no API calls)
-     * Best for development environment or server-side processing where DB access is available
-     */
-    async enrichLinkInProcess(linkId: string, url: string): Promise<void> {
         try {
-            log.info(`[In-Process] Starting metadata enrichment for ${linkId}`);
+            log.info(`[EnrichLink] Starting metadata enrichment for ${linkId}`);
             const metadata = await extractMetadata(url);
             
             if (metadata.fetch_status === "success") {
@@ -185,11 +144,10 @@ export class MetadataService {
                         site_name: metadata.site_name,
                         fetch_status: "success",
                         fetched_at: metadata.fetched_at,
-                        // Update content type if we found it's actually something specific (optional)
                     })
                     .eq("id", linkId);
                     
-                log.info(`[In-Process] Successfully updated metadata for ${linkId}`);
+                log.info(`[EnrichLink] Successfully updated metadata for ${linkId}`);
             } else {
                 // Update with failure status but preserve url as title if needed
                 const supabase = await createClient();
@@ -198,16 +156,21 @@ export class MetadataService {
                     .update({
                          fetch_status: metadata.fetch_status,
                          fetched_at: metadata.fetched_at,
-                         // fallback title is usually handled by UI if missing, but we can set it
                     })
                     .eq("id", linkId);
 
-                log.warn(`[In-Process] Metadata extraction completed with status ${metadata.fetch_status}`, { linkId });
+                log.warn(`[EnrichLink] Metadata extraction completed with status ${metadata.fetch_status}`, { linkId });
             }
         } catch (error) {
-            log.error(`[In-Process] Metadata enrichment failed`, error);
+            log.error(`[EnrichLink] Metadata enrichment failed`, error);
         }
     }
+
+    /**
+     * Enrich a link with metadata directly in-process (no API calls)
+     * Best for development environment or server-side processing where DB access is available
+     */
+
 
     /**
      * Batch enrich multiple links with metadata
