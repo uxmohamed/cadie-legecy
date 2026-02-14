@@ -354,11 +354,16 @@ describe('color metadata helpers', () => {
     expect(metadata.source).toBe('named');
   });
 
-  it('resolves descriptive named aliases', () => {
+  it('resolves descriptive multi-word named colors without hardcoded aliases', () => {
     const metadata = resolveColorMetadata('egyptian blue');
-    expect(metadata.colorCode).toBe('#1034a6');
+    expect(metadata.colorCode).toMatch(/^#[0-9a-f]{6}$/);
     expect(metadata.colorName).toBe('Egyptian Blue');
     expect(metadata.source).toBe('named');
+    expect(metadata.confidence).toBeLessThan(1);
+
+    const nearest = getNearestColorName(metadata.colorCode);
+    expect(nearest).not.toBeNull();
+    expect(nearest!.name.toLowerCase()).toContain('blue');
   });
 });
 

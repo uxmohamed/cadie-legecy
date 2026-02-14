@@ -9,6 +9,7 @@ import {
   splitMultipleContent,
   isValidUrl,
 } from '@/lib/content-detector';
+import { getNearestColorName } from '@/lib/canonicalize';
 
 // =============================================================================
 // detectContentType Tests
@@ -204,8 +205,6 @@ describe('detectContentType', () => {
       ['aqua', '#00ffff'],
       ['gold', '#ffd700'],
       ['light blue', '#add8e6'],
-      ['egyptian blue', '#1034a6'],
-      ['sunset orange', '#fd5e53'],
       ['rebeccapurple', '#663399'],
     ];
 
@@ -230,6 +229,28 @@ describe('detectContentType', () => {
       expect(result).not.toBeNull();
       expect(result!.type).toBe('color');
       expect(result!.value).toBe('#ff0000');
+    });
+
+    it('infers multi-word descriptive color names from base color families', () => {
+      const result = detectContentType('egyptian blue');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
+      expect(result!.value).toMatch(/^#[0-9a-f]{6}$/i);
+
+      const nearest = getNearestColorName(result!.value);
+      expect(nearest).not.toBeNull();
+      expect(nearest!.name.toLowerCase()).toContain('blue');
+    });
+
+    it('applies adjective hints to descriptive color names', () => {
+      const result = detectContentType('sunset orange');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('color');
+      expect(result!.value).toMatch(/^#[0-9a-f]{6}$/i);
+
+      const nearest = getNearestColorName(result!.value);
+      expect(nearest).not.toBeNull();
+      expect(nearest!.name.toLowerCase()).toMatch(/orange|gold|coral/);
     });
   });
 
