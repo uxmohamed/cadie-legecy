@@ -85,6 +85,17 @@ function updateLinksCache(
 }
 
 /**
+ * Mark all link list queries as stale without triggering immediate refetches.
+ * This keeps inactive filtered views fresh when revisited after optimistic updates.
+ */
+function markLinkListsStale(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({
+    queryKey: queryKeys.links.all,
+    refetchType: "none",
+  });
+}
+
+/**
  * Remove a link from a cache by ID
  */
 function removeLinkFromCache(
@@ -459,6 +470,9 @@ export function useLinkMutations(filters: LinkFilters) {
       }
       toast.error(err instanceof Error ? err.message : "Failed to update link");
     },
+    onSettled: () => {
+      markLinkListsStale(queryClient);
+    },
   });
 
   /**
@@ -512,6 +526,9 @@ export function useLinkMutations(filters: LinkFilters) {
     onSuccess: () => {
       toast.success("Link pinned");
     },
+    onSettled: () => {
+      markLinkListsStale(queryClient);
+    },
   });
 
   /**
@@ -564,6 +581,9 @@ export function useLinkMutations(filters: LinkFilters) {
     },
     onSuccess: () => {
       toast.success("Link unpinned");
+    },
+    onSettled: () => {
+      markLinkListsStale(queryClient);
     },
   });
 
