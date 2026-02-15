@@ -87,6 +87,29 @@ function sortLinks(links: Link[]): Link[] {
   });
 }
 
+type AddToastTone = "success" | "info";
+
+function showAddResultToast(
+  tone: AddToastTone,
+  message: string,
+  description?: string
+) {
+  if (tone === "info") {
+    toast.info(message, { description });
+    return;
+  }
+
+  toast.success(message, { description });
+}
+
+function formatAutoForwardToast(spaceName: string, count: number): { message: string; description: string } {
+  const itemLabel = count === 1 ? "item" : "items";
+  return {
+    message: `Auto-sorted ${count} ${itemLabel}`,
+    description: `Sent to ${spaceName}.`,
+  };
+}
+
 /**
  * Helper to update links in cache optimistically
  */
@@ -1006,7 +1029,7 @@ export function useLinkMutations(filters: LinkFilters) {
       const createdLinks = data.links ?? [];
       const count = data.count ?? createdLinks.length;
       const restored = data.restored ?? 0;
-      const successCount = count - restored;
+      const successCount = Math.max(0, count - restored);
       const duplicateCount = data.duplicates ?? 0;
       const autoForwardedByLinkId = data.auto_forwarded_by_link_id ?? {};
 
@@ -1018,31 +1041,57 @@ export function useLinkMutations(filters: LinkFilters) {
         }
       }
 
-      // Show appropriate toast
       const itemLabel = (type: string) =>
         type === "color" ? "Color" : type === "image" ? "Image" : "Link";
 
       if (items.length === 1) {
         const label = itemLabel(items[0].type);
         if (duplicateCount === 1) {
-          toast.info(`${label} already in your list`);
+          showAddResultToast("info", `${label} is already here`, "No action needed — you’re all set.");
         } else if (restored === 1) {
-          toast.success(`${label} restored from trash`);
+          showAddResultToast("success", `${label} is back`, "We restored it from trash.");
         } else if (successCount === 1) {
-          toast.success(`${label} saved successfully`);
-          const forwardedSpace = createdLinks[0] ? autoForwardedByLinkId[createdLinks[0].id] : undefined;
-          if (forwardedSpace) {
-            toast.success(`Also sent to ${forwardedSpace}`);
-          }
+          showAddResultToast("success", `${label} saved`, "Nice — it’s now in your list.");
         }
       } else {
         const parts: string[] = [];
-        if (successCount > 0) parts.push(`${successCount} added`);
-        if (restored > 0) parts.push(`${restored} restored from trash`);
-        if (duplicateCount > 0) parts.push(`${duplicateCount} already in list`);
-        if (parts.length > 0) {
-          toast.success(parts.join(", "));
+        if (successCount > 0) {
+          parts.push(`${successCount} ${successCount === 1 ? "item" : "items"} saved`);
         }
+        if (restored > 0) {
+          parts.push(`${restored} ${restored === 1 ? "item" : "items"} restored`);
+        }
+        if (duplicateCount > 0) {
+          parts.push(`${duplicateCount} already saved`);
+        }
+
+        if (parts.length > 0) {
+          showAddResultToast("success", "All done", parts.join(" · "));
+        }
+      }
+
+      const forwardedCounts = new Map<string, number>();
+      createdLinks.forEach((link) => {
+        const spaceName = autoForwardedByLinkId[link.id];
+        if (!spaceName) return;
+
+        forwardedCounts.set(spaceName, (forwardedCounts.get(spaceName) ?? 0) + 1);
+      });
+
+      const forwardedEntries = [...forwardedCounts.entries()].sort((a, b) => b[1] - a[1]);
+      const MAX_FORWARDING_TOASTS = 3;
+      forwardedEntries.slice(0, MAX_FORWARDING_TOASTS).forEach(([spaceName, total]) => {
+        const { message, description } = formatAutoForwardToast(spaceName, total);
+        showAddResultToast("success", message, description);
+      });
+
+      if (forwardedEntries.length > MAX_FORWARDING_TOASTS) {
+        const overflowSpaces = forwardedEntries.length - MAX_FORWARDING_TOASTS;
+        showAddResultToast(
+          "info",
+          `Plus ${overflowSpaces} more ${overflowSpaces === 1 ? "space" : "spaces"}`,
+          "Open Spaces to review where everything landed."
+        );
       }
     },
     onError: (err, _items, context) => {
