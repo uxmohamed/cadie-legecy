@@ -177,6 +177,8 @@ export class SupabaseLinkRepository implements ILinkRepository {
             domain = "image";
         } else if (contentType === "document") {
             domain = "document";
+        } else if (contentType === "note") {
+            domain = "note";
         } else {
             try {
                 domain = new URL(data.url).hostname.replace("www.", "");
@@ -190,7 +192,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
             .insert({
                 user_id: userId,
                 url: data.url,
-                clean_url: contentType === "color" || contentType === "image" || contentType === "document" ? data.url : canonicalizeUrl(data.url),
+                clean_url: contentType === "color" || contentType === "image" || contentType === "document" || contentType === "note" ? data.url : canonicalizeUrl(data.url),
                 title: data.title,
                 domain,
                 content_type: contentType,
@@ -198,11 +200,13 @@ export class SupabaseLinkRepository implements ILinkRepository {
                 favicon_url: data.favicon_url || null,
                 og_image_url: data.og_image_url || (contentType === "image" ? data.url : null),
                 description: data.description || null,
+                notes: data.notes || null,
+                content_text: data.content_text || null,
                 is_pinned: false,
                 is_archived: false,
                 is_deleted: false,
-                fetch_status: contentType === "color" ? "success" : "pending",
-                fetched_at: contentType === "color" ? new Date().toISOString() : null,
+                fetch_status: contentType === "color" || contentType === "note" ? "success" : "pending",
+                fetched_at: contentType === "color" || contentType === "note" ? new Date().toISOString() : null,
             })
             .select()
             .single();

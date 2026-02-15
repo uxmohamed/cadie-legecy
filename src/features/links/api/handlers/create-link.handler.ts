@@ -70,7 +70,7 @@ export class CreateLinkHandler {
     private async enqueueEnrichmentJobs(userId: string, link: { id: string; url: string; content_type?: string }): Promise<void> {
         const contentType = link.content_type || "url";
 
-        if (contentType === "color") {
+        if (contentType === "color" || contentType === "note") {
             return;
         }
 
@@ -149,6 +149,8 @@ export class CreateLinkHandler {
                     favicon_url,
                     og_image_url,
                     description,
+                    notes,
+                    content_text,
                 } = body;
 
                 if (!url) {
@@ -184,6 +186,8 @@ export class CreateLinkHandler {
                     favicon_url: favicon_url || null,
                     og_image_url: og_image_url || null,
                     description: description || null,
+                    notes: notes || null,
+                    content_text: content_text || null,
                 };
             }
 

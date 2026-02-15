@@ -50,11 +50,13 @@ export const createLinkSchema = z.object({
   // Title is optional - if not provided, server uses domain as placeholder
   // and metadata enrichment will set the real title
   title: z.string().max(500, "Title too long").optional(),
-  content_type: z.enum(["url", "color", "image", "document"]).optional().default("url"),
+  content_type: z.enum(["url", "color", "image", "document", "note"]).optional().default("url"),
   color_value: z.string().max(100, "Color value too long").optional().nullable(),
   favicon_url: z.string().url("Invalid favicon URL").max(2000).optional().nullable(),
   og_image_url: z.string().url("Invalid image URL").max(2000).optional().nullable(),
   description: z.string().max(1000, "Description too long").optional().nullable(),
+  notes: z.string().max(20000, "Notes too long").optional().nullable(),
+  content_text: z.string().max(200000, "Content too long").optional().nullable(),
 }).refine(
   (data) => {
     // For color content type, validate that url/color_value is a valid color
@@ -79,6 +81,10 @@ export const createLinkSchema = z.object({
         return false;
       }
     }
+    // For note content type, allow placeholder URL and require title
+    if (data.content_type === "note") {
+      return data.title !== undefined && data.title.trim().length > 0;
+    }
     // For URL content type, validate URL format
     try {
       new URL(data.url);
@@ -101,7 +107,8 @@ export const updateLinkSchema = z.object({
   is_pinned: z.boolean().optional(),
   is_archived: z.boolean().optional(),
   description: z.string().max(1000, "Description too long").optional().nullable(),
-  notes: z.string().max(5000, "Notes too long").optional().nullable(),
+  notes: z.string().max(20000, "Notes too long").optional().nullable(),
+  content_text: z.string().max(200000, "Content too long").optional().nullable(),
   ai_tags: z.array(z.string().min(1).max(64)).max(20, "Too many tags").optional().nullable(),
 });
 

@@ -526,3 +526,16 @@ body {
     animation: none;
   }
 }
+
+.note-editor p.is-editor-empty:first-child::before {
+  color: var(--fg-subtle);
+  content: "Start typing your note...";
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.note-editor ul,
+.note-editor ol {
+  padding-left: 1.25rem;
+}
