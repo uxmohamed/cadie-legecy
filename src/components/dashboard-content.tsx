@@ -217,7 +217,19 @@ export function DashboardContent({
         toast.warning("Some invalid items were skipped");
       }
 
-      addLinks(validItems);
+      const uniqueItems = validItems.filter((item, index, array) => {
+        const normalizedValue = item.type === "url"
+          ? item.value.toLowerCase()
+          : item.value.trim().toLowerCase();
+        return array.findIndex((candidate) => {
+          const candidateValue = candidate.type === "url"
+            ? candidate.value.toLowerCase()
+            : candidate.value.trim().toLowerCase();
+          return candidate.type === item.type && candidateValue === normalizedValue;
+        }) === index;
+      });
+
+      addLinks(uniqueItems);
       onAddSubmit();
     }
   }, [addInputValue, isAddingLinks, addLinks, onAddSubmit]);
