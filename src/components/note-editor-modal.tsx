@@ -22,11 +22,13 @@ interface NoteEditorModalProps {
 export function NoteEditorModal({ open, onOpenChange, onSave }: NoteEditorModalProps) {
   const [title, setTitle] = React.useState("");
   const [isSaving, setIsSaving] = React.useState(false);
+  const [plainText, setPlainText] = React.useState("");
   const editorRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     if (!open) {
       setTitle("");
+      setPlainText("");
       if (editorRef.current) editorRef.current.innerHTML = "";
     }
   }, [open]);
@@ -44,7 +46,7 @@ export function NoteEditorModal({ open, onOpenChange, onSave }: NoteEditorModalP
   const getHtml = () => editorRef.current?.innerHTML || "";
   const getPlainText = () => editorRef.current?.innerText || "";
 
-  const canSave = title.trim().length > 0 && getPlainText().trim().length > 0 && !isSaving;
+  const canSave = title.trim().length > 0 && plainText.trim().length > 0 && !isSaving;
 
   const handleSave = async () => {
     if (!canSave) return;
@@ -86,6 +88,7 @@ export function NoteEditorModal({ open, onOpenChange, onSave }: NoteEditorModalP
             ref={editorRef}
             contentEditable
             suppressContentEditableWarning
+            onInput={() => setPlainText(getPlainText())}
             className="note-editor min-h-52 rounded-md border border-border bg-bg-surface p-3 text-sm outline-none"
           />
         </div>
