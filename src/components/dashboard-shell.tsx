@@ -96,6 +96,13 @@ export function DashboardShell({
   const uploadInputRef = React.useRef<HTMLInputElement>(null);
   const uploadDocumentInputRef = React.useRef<HTMLInputElement>(null);
 
+  React.useEffect(() => {
+    document.body.dataset.commandMenuOpen = isCommandMenuOpen ? "true" : "false";
+    return () => {
+      delete document.body.dataset.commandMenuOpen;
+    };
+  }, [isCommandMenuOpen]);
+
   const handleUploadInputChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files || []).filter((file) =>
@@ -274,6 +281,10 @@ export function DashboardShell({
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isCommandMenuOpen) {
+        return;
+      }
+
       // Handle Cmd+V / Ctrl+V for clipboard paste
       if ((e.metaKey || e.ctrlKey) && e.key === "v") {
         const target = e.target as HTMLElement;
@@ -419,7 +430,7 @@ export function DashboardShell({
         clearTimeout(pendingShortcutTimeoutRef.current);
       }
     };
-  }, [registerShortcut, unregisterShortcut, selectedCategoryId, onOpenAddMode, onViewChange, viewMode, onViewModeChange, spaces, pendingShortcut, onUploadImages]);
+  }, [registerShortcut, unregisterShortcut, selectedCategoryId, onOpenAddMode, onViewChange, viewMode, onViewModeChange, spaces, pendingShortcut, onUploadImages, isCommandMenuOpen]);
 
   // Global drag-and-drop for image files
   React.useEffect(() => {
@@ -739,12 +750,20 @@ export function DashboardShell({
         viewMode={viewMode}
         spaces={spaces}
         selectedCategoryId={selectedCategoryId}
+        onOpenAddMode={onOpenAddMode}
         onFocusSearch={() => searchInputRef.current?.focus()}
         onOpenAddMode={() => onOpenAddMode()}
         onViewChange={onViewChange}
         onViewModeChange={onViewModeChange}
         onSortChange={handleSortChange}
         onToggleHelp={toggleHelp}
+        onUploadImagesClick={onUploadImages ? () => uploadInputRef.current?.click() : undefined}
+        onUploadDocumentsClick={onUploadDocuments ? () => uploadDocumentInputRef.current?.click() : undefined}
+        searchQuery={searchQuery}
+        onSearchChange={(value) => {
+          onSearchChange(value);
+          updateUrl(value);
+        }}
       />
 
       <input
