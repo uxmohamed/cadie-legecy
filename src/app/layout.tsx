@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import localFont from "next/font/local";
 import { ToasterProvider } from "@/components/toaster-provider";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { PostHogPageView } from "@/components/posthog-pageview";
@@ -17,61 +16,68 @@ const inter = Inter({
   adjustFontFallback: true,
 });
 
-const customFont = localFont({
-  src: [
-    {
-      path: "./fonts/ce9ace6cc2f44efb-s.p.otf",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "./fonts/eb239f2fc2466938-s.p.otf",
-      weight: "600",
-      style: "normal",
-    },
-  ],
+const customFont = Inter({
+  subsets: ["latin"],
   variable: "--font-custom",
   display: "swap",
+  fallback: ["system-ui", "arial"],
+  preload: true,
+  adjustFontFallback: true,
 });
 
+// Force production URL for OG images - never use localhost
+const SITE_URL = "https://cadie.app";
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://caddy-ed0.pages.dev"),
-  title: "Caddy",
-  description: "Personal read-it-later app",
+  metadataBase: new URL(SITE_URL),
+  title: "Cadie",
+  description: "Your personal library for the internet",
   icons: {
     icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/icon.png", type: "image/png" },
+      { url: `${SITE_URL}/icon.svg`, type: "image/svg+xml" },
+      { url: `${SITE_URL}/icon.png`, type: "image/png" },
     ],
-    apple: "/icon.png",
-    shortcut: "/icon.png",
+    apple: `${SITE_URL}/icon.png`,
+    shortcut: `${SITE_URL}/icon.png`,
   },
   openGraph: {
-    title: "Caddy",
-    description: "Personal read-it-later app",
+    title: "Cadie",
+    description: "Your personal library for the internet",
     type: "website",
-    url: process.env.NEXT_PUBLIC_SITE_URL || "https://caddy-ed0.pages.dev",
+    url: SITE_URL,
+    siteName: "Cadie",
+    locale: "en_US",
     images: [
       {
-        url: "/og-image.png",
+        url: `${SITE_URL}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: "Caddy - Personal read-it-later app",
+        alt: "Cadie - Your personal library for the internet",
+        type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Caddy",
-    description: "Personal read-it-later app",
-    images: ["/og-image.png"],
+    title: "Cadie",
+    description: "Your personal library for the internet",
+    site: "@caaboray",
+    creator: "@caaboray",
+    images: [
+      {
+        url: `${SITE_URL}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "Cadie - Your personal library for the internet",
+      },
+    ],
   },
 };
 
 import { ShortcutProvider } from "@/components/shortcut-context";
 import { ShortcutsHelpModal } from "@/components/shortcuts-help-modal";
-
-// ... imports
+import { QueryProvider } from "@/lib/query";
+import { Agentation } from "agentation";
 
 export default function RootLayout({
   children,
@@ -80,18 +86,32 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="theme-color" content="#F6F4EE" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#1f1f1f" media="(prefers-color-scheme: dark)" />
+      </head>
       <body suppressHydrationWarning className={`${inter.variable} ${customFont.variable} antialiased`}>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-bg focus:text-fg">
+          Skip to content
+        </a>
         <ThemeProvider defaultTheme="system">
-          <Suspense fallback={null}>
-            <PostHogPageView />
-          </Suspense>
-          <ErrorBoundary>
-            <ShortcutProvider>
-              {children}
-              <ShortcutsHelpModal />
-            </ShortcutProvider>
-          </ErrorBoundary>
-          <ToasterProvider />
+          <QueryProvider>
+            <Suspense fallback={null}>
+              <PostHogPageView />
+            </Suspense>
+            <ErrorBoundary>
+              <ShortcutProvider>
+                <Suspense fallback={null}>
+                  <main id="main-content">
+                    {children}
+                  </main>
+                </Suspense>
+                <ShortcutsHelpModal />
+              </ShortcutProvider>
+            </ErrorBoundary>
+            <ToasterProvider />
+          </QueryProvider>
+          {process.env.NODE_ENV === "development" && <Agentation />}
         </ThemeProvider>
       </body>
     </html>

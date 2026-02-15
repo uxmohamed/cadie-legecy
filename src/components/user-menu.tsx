@@ -1,7 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { clearUIStore } from "@/features/links/store/ui-store";
+import { clearAllCaches } from "@/lib/query/auth-reset";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import { useShortcuts } from "@/components/shortcut-context";
@@ -13,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { Switch } from "@/components/ui/switch";
 import { getDefaultAvatar } from "@/lib/avatar";
+import { getUserProfile } from "@/hooks/use-onboarding";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,21 +24,49 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/menu";
+import dynamic from "next/dynamic";
+
+const SettingsDialog = dynamic(
+  () => import("@/components/settings-dialog").then((mod) => mod.SettingsDialog),
+  { ssr: false }
+);
 
 interface UserMenuProps {
   user: User;
 }
 
 export function UserMenu({ user }: UserMenuProps) {
+  const queryClient = useQueryClient();
   const [isSigningOut, setIsSigningOut] = React.useState(false);
   const [isOpen, setIsOpen] = React.useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
   const { toggleHelp } = useShortcuts();
   const { theme, setTheme } = useTheme();
   const menuRef = React.useRef<HTMLDivElement>(null);
+  
+  // Fetch profile from user_profiles table
+  const [profile, setProfile] = React.useState<{
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null>(null);
+  
+  const refetchProfile = React.useCallback(() => {
+    getUserProfile(user.id).then(setProfile);
+  }, [user.id]);
+  
+  React.useEffect(() => {
+    refetchProfile();
+  }, [refetchProfile]);
 
   const handleSignOut = React.useCallback(async () => {
     try {
       setIsSigningOut(true);
+      
+      // Clear all caches before signing out to prevent data leakage between accounts
+      // This clears: TanStack Query cache, IndexedDB persisted cache, and UI store
+      await clearAllCaches(queryClient);
+      clearUIStore();
+      
       const supabase = createClient();
       const { error } = await supabase.auth.signOut();
       
@@ -50,7 +82,7 @@ export function UserMenu({ user }: UserMenuProps) {
       console.error("Error signing out:", error);
       setIsSigningOut(false);
     }
-  }, []);
+  }, [queryClient]);
 
   // Handle looping keyboard navigation
   React.useEffect(() => {
@@ -116,11 +148,6 @@ export function UserMenu({ user }: UserMenuProps) {
   }, [isOpen]);
 
   React.useEffect(() => {
-    // We don't need to register Cmd+/ as it's already handled globally by the context provider
-    // but we do need to handle the keydown event for the specific combination if not handled there
-    // However, looking at the context, it seems ? is registered, but not Cmd+/ explicitly as a shortcut entry
-    // Let's register it for documentation purposes if nothing else, but the event listener below handles the actual logic
-    
     const handleKeyDown = (e: KeyboardEvent) => {
       // Shortcuts: Meta + /
       if ((e.metaKey || e.ctrlKey) && e.key === "/") {
@@ -135,7 +162,9 @@ export function UserMenu({ user }: UserMenuProps) {
     };
   }, [toggleHelp]);
 
-  const userName = user.user_metadata?.full_name || user.user_metadata?.name;
+  // Use profile data first, fall back to Google metadata
+  const userName = profile?.display_name || user.user_metadata?.full_name || user.user_metadata?.name;
+  const userAvatar = profile?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture || getDefaultAvatar(user.id);
 
   // Determine if dark mode is effectively active
   const [isDarkMode, setIsDarkMode] = React.useState(() => {
@@ -169,115 +198,130 @@ export function UserMenu({ user }: UserMenuProps) {
   }, [setTheme]);
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="h-9 w-9 rounded-full p-0 hover:bg-[var(--bg-field-hover)]"
-        >
-          <Avatar className="h-9 w-9">
-            <AvatarImage 
-              src={user.user_metadata?.avatar_url || user.user_metadata?.picture || getDefaultAvatar(user.id)} 
-              alt={user.email} 
-            />
-            <AvatarFallback className="bg-[var(--bg-inverse)] text-[var(--text-inverse)]">
-              {user.email?.charAt(0).toUpperCase() || "U"}
-            </AvatarFallback>
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent ref={menuRef} align="end" className="w-64">
-        <div className="px-2 py-3">
-          {userName ? (
-            <>
+    <>
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="h-9 w-9 rounded-full p-0 hover:bg-[var(--bg-hover)]"
+          >
+            <Avatar className="h-9 w-9">
+              <AvatarImage 
+                src={userAvatar} 
+                alt={user.email} 
+              />
+              <AvatarFallback className="bg-[var(--bg-inverse)] text-[var(--fg-inverse)]">
+                {userName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || "U"}
+              </AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent ref={menuRef} align="end" className="w-64">
+          <div className="px-2 py-3">
+            {userName ? (
+              <>
+                <p className="text-sm font-medium text-[var(--overlay-text-primary)] truncate">
+                  {userName}
+                </p>
+                <p className="text-xs text-[var(--overlay-text-secondary)] truncate mt-0.5">
+                  {user.email}
+                </p>
+              </>
+            ) : (
               <p className="text-sm font-medium text-[var(--overlay-text-primary)] truncate">
-                {userName}
-              </p>
-              <p className="text-xs text-[var(--overlay-text-secondary)] truncate mt-0.5">
                 {user.email}
               </p>
-            </>
-          ) : (
-            <p className="text-sm font-medium text-[var(--overlay-text-primary)] truncate">
-              {user.email}
-            </p>
-          )}
-        </div>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <a 
-            href="https://x.com/messages/compose?recipient_id=1649994120725778432" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="cursor-pointer w-full flex items-center group"
+            )}
+          </div>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <a 
+              href="https://x.com/messages/compose?recipient_id=1649994120725778432" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="cursor-pointer w-full flex items-center group"
+            >
+              <IconMessage className="h-4 w-4 text-[var(--icon-secondary)]" />
+              Beta Feedback
+              <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
+            </a>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onSelect={() => {
+              setIsOpen(false);
+              setIsSettingsOpen(true);
+            }}
           >
-            <IconMessage className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
-            Beta Feedback
-            <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
-          </a>
-        </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">
-          <IconSettings className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
-          Settings
-          <Kbd className="ml-auto">,</Kbd>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          className="cursor-pointer"
-          onSelect={(e) => {
-            e.preventDefault();
-            handleThemeToggle(!isDarkMode);
-          }}
-          onClick={(e) => {
-            e.preventDefault();
-            handleThemeToggle(!isDarkMode);
-          }}
-        >
-          <IconMoon className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
-          Dark mode
-          <Switch
-            checked={isDarkMode}
-            onCheckedChange={handleThemeToggle}
-            className="ml-auto"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/changelog" className="cursor-pointer w-full flex items-center group">
-            <IconShip className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
-            Changelog
-            <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a href="https://x.com/caddyapp_" target="_blank" rel="noopener noreferrer" className="cursor-pointer w-full flex items-center group">
-            <IconBrandX className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
-            Follow us on X
-            <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
-          </a>
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-          onSelect={(e) => {
-            e.preventDefault();
-            toggleHelp();
-          }}
-          className="cursor-pointer"
-        >
-          <IconKeyboard className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
-          Keyboard Shortcuts
-          <Kbd className="ml-auto">⌘/</Kbd>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={handleSignOut}
-          disabled={isSigningOut}
-          className="cursor-pointer"
-        >
-          <IconLogout className="mr-2 h-4 w-4 text-[var(--icon-secondary)]" />
-          {isSigningOut ? "Signing out..." : "Log out"}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+            <IconSettings className="h-4 w-4 text-[var(--icon-secondary)]" />
+            Settings
+            <Kbd className="ml-auto">,</Kbd>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem 
+            className="cursor-pointer"
+            onSelect={(e) => {
+              e.preventDefault();
+              handleThemeToggle(!isDarkMode);
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              handleThemeToggle(!isDarkMode);
+            }}
+          >
+            <IconMoon className="h-4 w-4 text-[var(--icon-secondary)]" />
+            Dark mode
+            <Switch
+              checked={isDarkMode}
+              onCheckedChange={handleThemeToggle}
+              className="ml-auto"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href="/changelog" className="cursor-pointer w-full flex items-center group">
+              <IconShip className="h-4 w-4 text-[var(--icon-secondary)]" />
+              Changelog
+              <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <a href="https://x.com/cadieapp_" target="_blank" rel="noopener noreferrer" className="cursor-pointer w-full flex items-center group">
+              <IconBrandX className="h-4 w-4 text-[var(--icon-secondary)]" />
+              Follow us on X
+              <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
+            </a>
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            onSelect={(e) => {
+              e.preventDefault();
+              toggleHelp();
+            }}
+            className="cursor-pointer"
+          >
+            <IconKeyboard className="h-4 w-4 text-[var(--icon-secondary)]" />
+            Keyboard Shortcuts
+            <Kbd className="ml-auto">⌘/</Kbd>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={handleSignOut}
+            disabled={isSigningOut}
+            className="cursor-pointer"
+          >
+            <IconLogout className="h-4 w-4 text-[var(--icon-secondary)]" />
+            {isSigningOut ? "Signing out..." : "Log out"}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <SettingsDialog
+        user={user}
+        open={isSettingsOpen}
+        onOpenChange={setIsSettingsOpen}
+        onProfileUpdate={refetchProfile}
+      />
+    </>
   );
 }

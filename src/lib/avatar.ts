@@ -15,21 +15,21 @@ export function getDefaultAvatar(userId: string): string {
     hash = hash & hash; // Convert to 32-bit integer
   }
   
-  // Get a number between 1-12 (we have 12 avatars)
-  const avatarNumber = Math.abs(hash % 12) + 1;
+  // Get a number between 1-10 (we have 10 avatars)
+  const avatarNumber = Math.abs(hash % 10) + 1;
   const paddedNumber = String(avatarNumber).padStart(2, "0");
   
   return `/avatars/avatar-pic-${paddedNumber}.webp`;
 }
 
 /**
- * Converts an avatar number (1-12) to an avatar path.
+ * Converts an avatar number (1-10) to an avatar path.
  * 
- * @param avatarNumber - The avatar number (1-12)
+ * @param avatarNumber - The avatar number (1-10)
  * @returns Path to the avatar image (e.g., "/avatars/avatar-pic-01.webp")
  */
 export function getAvatarPath(avatarNumber: number): string {
-  const clampedNumber = Math.max(1, Math.min(12, Math.round(avatarNumber)));
+  const clampedNumber = Math.max(1, Math.min(10, Math.round(avatarNumber)));
   const paddedNumber = String(clampedNumber).padStart(2, "0");
   return `/avatars/avatar-pic-${paddedNumber}.webp`;
 }

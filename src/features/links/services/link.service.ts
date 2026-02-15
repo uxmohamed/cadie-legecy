@@ -1,8 +1,5 @@
 import type { ILinkRepository } from "../repositories/link.repository.interface";
 import type { Link, CreateLinkDTO, UpdateLinkDTO, LinkFilters } from "../types/link.types";
-import { MetadataService } from "./metadata.service";
-import { DuplicateDetectionService } from "./duplicate-detection.service";
-import { log } from "@/lib/logger";
 
 /**
  * Service for managing link operations
@@ -10,17 +7,13 @@ import { log } from "@/lib/logger";
  * Following Dependency Inversion Principle - depends on ILinkRepository interface
  */
 export class LinkService {
-    constructor(
-        private linkRepository: ILinkRepository,
-        private metadataService: MetadataService,
-        private duplicateDetectionService: DuplicateDetectionService
-    ) { }
+    constructor(private linkRepository: ILinkRepository) {}
 
     /**
      * Get all links for a user with optional filters
      */
-    async getLinks(userId: string, filters?: LinkFilters): Promise<Link[]> {
-        return this.linkRepository.findAll(userId, filters);
+    async getLinks(userId: string, filters?: LinkFilters, limit?: number, offset?: number, searchQuery?: string): Promise<{ links: Link[], total: number }> {
+        return this.linkRepository.findAll(userId, filters, limit, offset, searchQuery);
     }
 
     /**
@@ -33,27 +26,33 @@ export class LinkService {
     /**
      * Create a new link
      * Returns existing link if duplicate is detected
+     * Auto-restores from trash if the URL was previously trashed
+     * Metadata/AI enrichment is intentionally asynchronous
      */
-    async createLink(userId: string, data: CreateLinkDTO): Promise<{ link: Link; isDuplicate: boolean }> {
-        // Check for duplicates using repository
-        const existingLink = await this.linkRepository.exists(userId, data.url);
+    async createLink(userId: string, data: CreateLinkDTO): Promise<{ link: Link; isDuplicate: boolean; isRestored: boolean }> {
+        // Check for existing link including trashed ones
+        const existingResult = await this.linkRepository.findByUrl(userId, data.url);
 
-        if (existingLink) {
-            return { link: existingLink, isDuplicate: true };
+        if (existingResult) {
+            const { link: existingLink, isInTrash } = existingResult;
+
+            if (isInTrash) {
+                // Auto-restore from trash
+                const restoredLink = await this.linkRepository.update(existingLink.id, userId, {
+                    is_deleted: false,
+                    is_archived: false,
+                    deleted_at: null,
+                });
+                return { link: restoredLink, isDuplicate: false, isRestored: true };
+            }
+
+            // Link exists and is not in trash - it's a duplicate
+            return { link: existingLink, isDuplicate: true, isRestored: false };
         }
 
-        // Create the link
+        // Create new link
         const link = await this.linkRepository.create(userId, data);
-
-        // Trigger background metadata enrichment for URLs
-        if (data.content_type === "url" || !data.content_type) {
-            // Fire and forget - don't wait for metadata
-            this.metadataService.enrichLink(link.id, data.url).catch(err => {
-                log.error('Background metadata enrichment failed', err, { linkId: link.id, url: data.url });
-            });
-        }
-
-        return { link, isDuplicate: false };
+        return { link, isDuplicate: false, isRestored: false };
     }
 
     /**

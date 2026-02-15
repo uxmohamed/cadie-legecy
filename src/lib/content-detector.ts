@@ -1,4 +1,5 @@
-export type ContentType = "url" | "color";
+import { getNamedColorHex, isNamedColor } from "@/lib/canonicalize";
+export type ContentType = "url" | "color" | "image";
 
 export interface DetectedContent {
   type: ContentType;
@@ -46,32 +47,110 @@ const LCH_COLOR_PATTERN =
 const COLOR_FUNCTION_PATTERN =
   /^color\((srgb|srgb-linear|display-p3|a98-rgb|prophoto-rgb|rec2020|xyz|xyz-d50|xyz-d65)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?\)$/i;
 
-const NAMED_COLORS = new Set([
-  "red",
-  "blue",
-  "green",
-  "yellow",
-  "orange",
-  "purple",
-  "pink",
-  "black",
-  "white",
-  "gray",
-  "grey",
-  "brown",
-  "cyan",
-  "magenta",
-  "lime",
-  "navy",
-  "maroon",
-  "olive",
-  "teal",
-  "aqua",
-  "silver",
-  "gold",
+/**
+ * Common valid TLDs for domain validation
+ */
+const COMMON_TLDS = new Set([
+  'com', 'org', 'net', 'edu', 'gov', 'io', 'co', 'uk', 'de', 'fr', 'es', 'it', 'nl', 'be',
+  'ru', 'au', 'ca', 'br', 'in', 'jp', 'cn', 'kr', 'mx', 'tv', 'app', 'dev', 'ai', 'me',
+  'info', 'biz', 'tech', 'xyz', 'online', 'site', 'blog', 'cloud', 'design', 'studio',
+  'store', 'shop', 'news', 'media', 'live', 'video', 'music', 'game', 'games', 'pro',
+  'eu', 'us', 'asia', 'africa', 'at', 'ch', 'pl', 'se', 'no', 'fi', 'dk', 'ie', 'nz',
+  'pt', 'cz', 'hu', 'ro', 'ua', 'za', 'sg', 'hk', 'tw', 'th', 'id', 'my', 'ph', 'vn'
 ]);
 
-export function detectContentType(input: string): DetectedContent {
+/**
+ * Check if a string looks like a valid domain name
+ * e.g., google.com, example.co.uk, sub.domain.org
+ * Also handles domain.com/path, domain.com?query, domain.com#hash
+ * Rejects single words with trailing dots like "it." or "changes."
+ */
+function looksLikeValidDomain(input: string): boolean {
+  // Remove trailing dots/periods (common in sentences)
+  let cleaned = input.replace(/\.+$/, '');
+  
+  // Extract just the domain part (before any path, query, or hash)
+  // This handles cases like "example.com/path" or "example.com?query"
+  const pathStart = cleaned.search(/[/?#]/);
+  if (pathStart !== -1) {
+    cleaned = cleaned.substring(0, pathStart);
+  }
+  
+  // Must contain at least one dot to be a domain
+  if (!cleaned.includes('.')) {
+    return false;
+  }
+  
+  // Split by dots
+  const parts = cleaned.split('.');
+  
+  // Need at least 2 parts (domain + TLD)
+  if (parts.length < 2) {
+    return false;
+  }
+  
+  // The last part should be a valid TLD (at least 2 chars, only letters)
+  const tld = parts[parts.length - 1].toLowerCase();
+  if (tld.length < 2 || !/^[a-z]+$/.test(tld)) {
+    return false;
+  }
+  
+  // Check if it's a known TLD or looks like a country code (2 letters)
+  if (!COMMON_TLDS.has(tld) && tld.length !== 2) {
+    return false;
+  }
+  
+  // The domain part should have at least 1 character
+  const domain = parts[parts.length - 2];
+  if (!domain || domain.length === 0) {
+    return false;
+  }
+  
+  // Domain parts should only contain alphanumeric and hyphens
+  for (const part of parts) {
+    if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/i.test(part)) {
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+/**
+ * Image file extension pattern
+ */
+const IMAGE_EXTENSION_PATTERN = /\.(jpg|jpeg|png|gif|webp|svg|avif|bmp|ico|tiff?)(\?.*)?$/i;
+
+/**
+ * Known image hosting domains
+ */
+const IMAGE_HOST_PATTERNS = [
+  /^images\.unsplash\.com$/,
+  /^i\.imgur\.com$/,
+  /^imgur\.com$/,
+  /\.supabase\.co\/storage\/v1\/object\/public\//,
+];
+
+/**
+ * Check if a URL points to an image
+ */
+export function isImageUrl(url: string): boolean {
+  // Check file extension
+  if (IMAGE_EXTENSION_PATTERN.test(url)) return true;
+
+  // Check known image hosts
+  try {
+    const urlObj = new URL(url.startsWith("http") ? url : `https://${url}`);
+    const fullUrl = urlObj.hostname + urlObj.pathname;
+    return IMAGE_HOST_PATTERNS.some(
+      (pattern) => pattern.test(urlObj.hostname) || pattern.test(fullUrl)
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function detectContentType(input: string): DetectedContent | null {
   const trimmed = input.trim();
 
   // Check for hex color (with or without #) - must check before URL
@@ -106,24 +185,48 @@ export function detectContentType(input: string): DetectedContent {
   }
 
   // Check for named colors
-  if (NAMED_COLORS.has(trimmed.toLowerCase())) {
-    return { type: "color", value: trimmed.toLowerCase() };
+  if (isNamedColor(trimmed)) {
+    const colorHex = getNamedColorHex(trimmed);
+    if (colorHex) {
+      return { type: "color", value: colorHex };
+    }
   }
 
-  // Check for URL or default to URL
+  // Check for image URL before generic URL
+  if (
+    (trimmed.startsWith("http://") ||
+      trimmed.startsWith("https://") ||
+      trimmed.startsWith("www.")) &&
+    isImageUrl(trimmed)
+  ) {
+    const normalizedUrl = normalizeUrl(trimmed);
+    return { type: "image", value: normalizedUrl };
+  }
+
+  // Check for URL - must match specific patterns, not just anything with a dot
   if (
     trimmed.startsWith("http://") ||
     trimmed.startsWith("https://") ||
-    trimmed.startsWith("www.") ||
-    URL_PATTERN.test(trimmed)
+    trimmed.startsWith("www.")
   ) {
     const normalizedUrl = normalizeUrl(trimmed);
     return { type: "url", value: normalizedUrl };
   }
 
-  // Default to URL for any other input
-  const normalizedUrl = normalizeUrl(trimmed);
-  return { type: "url", value: normalizedUrl };
+  // Check if it looks like a domain (e.g., google.com, sub.domain.org)
+  // Must have at least 2 parts separated by dot, with valid TLD
+  if (looksLikeValidDomain(trimmed)) {
+    // Check if domain-style input is an image URL
+    if (isImageUrl(trimmed)) {
+      const normalizedUrl = normalizeUrl(trimmed);
+      return { type: "image", value: normalizedUrl };
+    }
+    const normalizedUrl = normalizeUrl(trimmed);
+    return { type: "url", value: normalizedUrl };
+  }
+
+  // If nothing matched, return null - this is not valid content
+  return null;
 }
 
 function normalizeUrl(url: string): string {
@@ -171,21 +274,29 @@ export function splitMultipleContent(input: string): string[] {
 
 /**
  * Detects content types for multiple items
- * Returns an array of detected content items
+ * Returns an array of detected content items (filters out invalid content)
  */
 export function detectMultipleContentTypes(input: string): DetectedContent[] {
-  const items = splitMultipleContent(input);
+  const trimmedInput = input.trim();
+  if (!trimmedInput) {
+    return [];
+  }
+
+  // Try full-input detection first so single values containing spaces
+  // (e.g. "light blue" or "oklch(0.7 0.15 180)") are preserved.
+  const singleItem = detectContentType(trimmedInput);
+  if (singleItem && singleItem.type === "color") {
+    return [singleItem];
+  }
+
+  const items = splitMultipleContent(trimmedInput);
   
   if (items.length === 0) {
     return [];
   }
   
-  // If only one item, return single detection
-  if (items.length === 1) {
-    return [detectContentType(items[0])];
-  }
-  
-  // Detect type for each item
-  return items.map(item => detectContentType(item));
+  // Detect type for each item and filter out nulls (invalid content)
+  return items
+    .map(item => detectContentType(item))
+    .filter((result): result is DetectedContent => result !== null);
 }
-

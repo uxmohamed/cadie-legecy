@@ -1,0 +1,217 @@
+"use client";
+
+import * as React from "react";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+  AlertDialogClose,
+} from "@/components/ui/alert-dialog";
+import { IconLoader2, IconTrash, IconPlugConnected } from "@tabler/icons-react";
+import { toast } from "sonner";
+import { useTheme } from "@/components/theme-provider";
+
+interface ApiToken {
+  id: string;
+  name: string;
+  last_used_at: string | null;
+  created_at: string;
+}
+
+// Chrome logo SVG component
+function ChromeLogo({ className }: { className?: string }) {
+  const { theme } = useTheme();
+  
+  // Determine if dark mode is effectively active
+  const isDarkMode = React.useMemo(() => {
+    if (theme === 'dark') return true;
+    if (theme === 'system' && typeof window !== 'undefined') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  }, [theme]);
+  
+  return (
+    <svg className={className} viewBox="0 0 256 223" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="SVGHPFpg7JP" x1="0%" x2="100%" y1="50%" y2="50%">
+          <stop offset="0%" stopColor="#D93025"/>
+          <stop offset="100%" stopColor="#EA4335"/>
+        </linearGradient>
+        <linearGradient id="SVGOMJglc4y" x1="74.943%" x2="19.813%" y1="95.826%" y2="-4.161%">
+          <stop offset="0%" stopColor="#1E8E3E"/>
+          <stop offset="100%" stopColor="#34A853"/>
+        </linearGradient>
+        <linearGradient id="SVG7xeYgbFl" x1="59.898%" x2="21.416%" y1="-.134%" y2="99.86%">
+          <stop offset="0%" stopColor="#FBBC04"/>
+          <stop offset="100%" stopColor="#FCC934"/>
+        </linearGradient>
+        <path id="SVGxfiKEebH" d="M255.983 0H0v204.837c0 9.633 7.814 17.464 17.464 17.464h221.072c9.633 0 17.464-7.814 17.464-17.464z"/>
+      </defs>
+      <path fill={isDarkMode ? "#2A2A2A" : "#F1F3F4"} d="M255.983 0H0v204.837c0 9.633 7.814 17.464 17.464 17.464h221.072c9.633 0 17.464-7.814 17.464-17.464z"/>
+      <path fill={isDarkMode ? "#1F1F1F" : "#E8EAED"} d="M0 0h255.983v111.74H0z"/>
+      <path fill={isDarkMode ? "#3A3A3A" : "#FFF"} d="M157.076 47.727H98.907A11.63 11.63 0 0 1 87.27 36.09a11.63 11.63 0 0 1 11.637-11.637h58.169a11.63 11.63 0 0 1 11.637 11.637c0 6.417-5.204 11.637-11.637 11.637"/>
+      <mask id="SVGzv8eNeik" fill="#fff">
+        <use href="#SVGxfiKEebH"/>
+      </mask>
+      <g mask="url(#SVGzv8eNeik)">
+        <g transform="translate(17.455 94.293)">
+          <path fill="url(#SVGHPFpg7JP)" d="m14.812 55.255l15.241 46.498l32.638 36.427l47.845-82.908l95.724-.017C187.146 22.213 151.443 0 110.536 0s-76.61 22.213-95.724 55.255"/>
+          <path fill="url(#SVGOMJglc4y)" d="m110.52 221.105l32.637-36.443l15.224-46.482H62.674L14.812 55.255c-19.047 33.076-20.445 75.128.017 110.561c20.445 35.434 57.545 55.256 95.69 55.29"/>
+          <path fill="url(#SVG7xeYgbFl)" d="M206.26 55.272h-95.724l47.862 82.908l-47.862 82.925c38.162-.033 75.263-19.855 95.708-55.289c20.461-35.433 19.064-77.468.016-110.544"/>
+          <ellipse cx="110.536" cy="110.544" fill={isDarkMode ? "#2A2A2A" : "#F1F3F4"} rx="55.255" ry="55.272"/>
+          <ellipse cx="110.536" cy="110.544" fill="#1A73E8" rx="44.898" ry="44.915"/>
+        </g>
+      </g>
+      <path fill={isDarkMode ? "#3A3A3A" : "#BDC1C6"} d="M0 111.74h255.983v1.448H0zm0-1.465h255.983v1.448H0z" opacity=".1"/>
+    </svg>
+  );
+}
+
+export function SettingsExtensions() {
+  const [tokens, setTokens] = React.useState<ApiToken[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [disconnectingId, setDisconnectingId] = React.useState<string | null>(null);
+
+  // Load tokens on mount
+  React.useEffect(() => {
+    loadTokens();
+  }, []);
+
+  async function loadTokens() {
+    try {
+      const response = await fetch("/api/auth/tokens");
+      if (response.ok) {
+        interface TokensResponse {
+          tokens: ApiToken[];
+        }
+        const data = (await response.json()) as TokensResponse;
+        setTokens(data.tokens || []);
+      }
+    } catch (error) {
+      console.error("Failed to load tokens:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleDisconnect(tokenId: string) {
+    setDisconnectingId(tokenId);
+    try {
+      const response = await fetch(`/api/auth/tokens/${tokenId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setTokens((prev) => prev.filter((t) => t.id !== tokenId));
+        toast.success("Disconnected Chrome Extension");
+      } else {
+        toast.error("Failed to disconnect extension");
+      }
+    } catch (error) {
+      console.error("Failed to disconnect:", error);
+      toast.error("Failed to disconnect extension");
+    } finally {
+      setDisconnectingId(null);
+    }
+  }
+
+  function formatDate(dateString: string | null) {
+    if (!dateString) return "Never";
+    return new Date(dateString).toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <IconLoader2 className="h-6 w-6 animate-spin text-fg-muted" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {tokens.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="rounded-full bg-bg-muted p-4 mb-4">
+            <IconPlugConnected className="h-8 w-8 text-fg-muted" />
+          </div>
+          <h3 className="text-sm font-medium text-fg mb-1">
+            No Extensions Connected
+          </h3>
+          <p className="text-sm text-fg-muted max-w-[280px]">
+            Install the Cadie browser extension and connect it to start saving links with one click.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {tokens.map((token) => (
+            <div
+              key={token.id}
+              className="flex items-center justify-between rounded-lg border border-border bg-bg-muted p-4"
+            >
+              <div className="flex items-center gap-3">
+                <ChromeLogo className="h-8 w-8" />
+                <div>
+                  <p className="text-sm font-medium text-fg">
+                    Chrome Extension
+                  </p>
+                  <p className="text-xs text-fg-subtle">
+                    Connected {formatDate(token.created_at)}
+                    {token.last_used_at && ` • Last used ${formatDate(token.last_used_at)}`}
+                  </p>
+                </div>
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-fg-muted hover:text-destructive hover:bg-destructive-muted"
+                    disabled={disconnectingId === token.id}
+                    aria-label="Disconnect extension"
+                  >
+                    {disconnectingId === token.id ? (
+                      <IconLoader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <IconTrash className="h-4 w-4" />
+                    )}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Disconnect Extension</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to disconnect Chrome Extension? You&apos;ll need to reconnect it to continue saving links.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogClose asChild>
+                      <Button variant="outline">Cancel</Button>
+                    </AlertDialogClose>
+                    <Button
+                      variant="destructive"
+                      onClick={() => handleDisconnect(token.id)}
+                    >
+                      Disconnect
+                    </Button>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

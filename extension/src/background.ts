@@ -1,10 +1,10 @@
 /**
- * Background service worker for Caddy extension
- * Handles context menus, keyboard shortcuts, and notifications
+ * Background service worker for Cadie extension
+ * Handles context menus, keyboard shortcuts, and saving links
  */
 
-import { saveLink } from "./lib/api-client";
-import { getApiToken } from "./lib/storage";
+import { saveLink, fetchSpaces, addLinkToSpace, removeLinkFromSpace, fetchLinkSpaces } from "./lib/api-client";
+import { getApiToken, getPendingUrl, setPendingUrl, clearPendingUrl } from "./lib/storage";
 
 // Track saves in progress to prevent duplicates
 const savesInProgress = new Set<string>();
@@ -15,24 +15,31 @@ const savesInProgress = new Set<string>();
 
 // Install listener - Create context menu
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
-    id: "save-to-caddy",
-    title: "Save to Caddy",
-    contexts: ["page", "link", "selection"],
+  // Remove any existing context menus first to prevent duplicate ID errors
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: "save-to-cadie",
+      title: "Save to Cadie",
+      contexts: ["page", "link", "selection"],
+    });
   });
 });
 
 // Context menu click listener
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  if (info.menuItemId === "save-to-caddy" && tab?.id) {
-    await saveCurrentTab(tab.id);
+  if (info.menuItemId === "save-to-cadie" && tab?.id) {
+    // Use linkUrl if right-clicking a link, otherwise use pageUrl or tab.url
+    const urlToSave = info.linkUrl || info.pageUrl || tab.url;
+    if (urlToSave) {
+      await saveUrl(tab.id, urlToSave);
+    }
   }
 });
 
 // Extension icon/keyboard shortcut click listener - save page directly
 chrome.action.onClicked.addListener(async (tab) => {
-  if (tab?.id) {
-    await saveCurrentTab(tab.id);
+  if (tab?.id && tab.url) {
+    await saveUrl(tab.id, tab.url);
   }
 });
 
@@ -40,8 +47,8 @@ chrome.action.onClicked.addListener(async (tab) => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "saveCurrentTab") {
     chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-      if (tabs[0]?.id) {
-        await saveCurrentTab(tabs[0].id);
+      if (tabs[0]?.id && tabs[0].url) {
+        await saveUrl(tabs[0].id, tabs[0].url);
         sendResponse({ success: true });
       } else {
         sendResponse({ success: false, error: "No active tab" });
@@ -50,46 +57,78 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Keep message channel open for async response
   }
 
-  if (request.action === "showNotification") {
-    showNotification(request.title, request.message, request.type);
+  // Handle open auth page request from content script
+  if (request.action === "openAuthPage") {
+    const extensionId = chrome.runtime.id;
+    chrome.tabs.create({ url: `https://cadie.app/extension/authorize?extensionId=${extensionId}` });
     sendResponse({ success: true });
     return true;
   }
 
+  // Handle fetchSpaces request from content script (content scripts can't make cross-origin requests)
+  if (request.action === "fetchSpaces") {
+    fetchSpaces().then(response => {
+      sendResponse(response);
+    });
+    return true; // Keep message channel open for async response
+  }
+
+  // Handle addLinkToSpace request from content script
+  if (request.action === "addLinkToSpace") {
+    addLinkToSpace(request.spaceId, request.linkId).then(response => {
+      sendResponse(response);
+    });
+    return true;
+  }
+
+  // Handle removeLinkFromSpace request from content script
+  if (request.action === "removeLinkFromSpace") {
+    removeLinkFromSpace(request.spaceId, request.linkId).then(response => {
+      sendResponse(response);
+    });
+    return true;
+  }
+
+  // Handle fetchLinkSpaces request from content script
+  if (request.action === "fetchLinkSpaces") {
+    fetchLinkSpaces(request.linkId).then(response => {
+      sendResponse(response);
+    });
+    return true; // Keep message channel open for async response
+  }
+
   // Handle authorization success from content script
-  if (request.type === "CADDY_AUTH_SUCCESS" && request.data) {
-    const { token, email, url, caddyUrl, state } = request.data;
+  if (request.type === "CADIE_AUTH_SUCCESS" && request.data) {
+    const { token, email } = request.data;
 
-    // Use the provided URL, or try to get it from the sender tab
-    let caddyUrlToUse = url || caddyUrl;
+    // Always use production URL for the extension
+    const cadieUrlToUse = "https://cadie.app";
 
-    // If no URL provided, try to get it from the sender tab
-    if (!caddyUrlToUse && sender?.tab?.url) {
-      try {
-        const tabUrl = new URL(sender.tab.url);
-        caddyUrlToUse = `${tabUrl.protocol}//${tabUrl.host}`;
-      } catch (e) {
-        console.error("Error parsing sender URL:", e);
-      }
-    }
+    // Save API token to local storage (sensitive)
+    chrome.storage.local.set({ apiToken: token }, () => {
+      // Save non-sensitive settings to sync storage
+      chrome.storage.sync.set({
+        cadieUrl: cadieUrlToUse,
+        userEmail: email || "",
+      }, async () => {
+        // Notify any open options pages that auth completed
+        chrome.runtime.sendMessage({
+          type: "CADIE_AUTH_COMPLETE",
+          data: { cadieUrl: cadieUrlToUse },
+        }).catch(() => {
+          // Options page might not be listening, that's okay
+        });
 
-    // Fallback to production URL if we really can't determine the URL
-    if (!caddyUrlToUse) {
-      caddyUrlToUse = "https://caddy-ed0.pages.dev";
-    }
-
-    // Save settings directly to storage
-    chrome.storage.sync.set({
-      apiToken: token,
-      caddyUrl: caddyUrlToUse,
-      userEmail: email || "",
-    }, () => {
-      // Notify any open options pages that auth completed
-      chrome.runtime.sendMessage({
-        type: "CADDY_AUTH_COMPLETE",
-        data: { caddyUrl: caddyUrlToUse },
-      }).catch(() => {
-        // Options page might not be listening, that's okay
+        // Check for pending URL to save after auth
+        const pendingUrl = await getPendingUrl();
+        if (pendingUrl) {
+          await clearPendingUrl();
+          // Get active tab and save the pending URL
+          const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+          if (tab?.id) {
+            await saveUrl(tab.id, pendingUrl);
+          }
+        }
       });
     });
 
@@ -103,143 +142,122 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // ============================================================================
 
 /**
- * Save the current tab to Caddy
+ * Save a URL to Cadie
+ * Shows brief loading state, then actual result from API
+ * @param tabId - The tab ID to show overlays in
+ * @param url - The URL to save
  */
-async function saveCurrentTab(tabId: number): Promise<void> {
+async function saveUrl(tabId: number, url: string): Promise<void> {
+  // Create a unique key for this save operation
+  const saveKey = url;
+
+  // Check if we're already saving this URL
+  if (savesInProgress.has(saveKey)) {
+    return;
+  }
+
+  // Mark this URL as being saved
+  savesInProgress.add(saveKey);
+
   try {
-    // Check if token is configured
-    const token = await getApiToken();
-    if (!token) {
-      showNotification(
-        "Configuration Required",
-        "Please configure your API token in extension settings",
-        "error"
-      );
-      chrome.runtime.openOptionsPage();
-      return;
-    }
-
-    // Get tab information
-    const tab = await chrome.tabs.get(tabId);
-
-    // Create a unique key for this save operation
-    const saveKey = `${tab.url}`;
-
-    // Check if we're already saving this URL
-    if (savesInProgress.has(saveKey)) {
-      return;
-    }
-
-    // Mark this URL as being saved
-    savesInProgress.add(saveKey);
-
-    if (!tab.url || !tab.title) {
-      showOverlayInTab(tabId, "error", "Could not get page information");
-      return;
-    }
-
     // Don't save chrome:// or extension pages
     if (
-      tab.url.startsWith("chrome://") ||
-      tab.url.startsWith("chrome-extension://") ||
-      tab.url.startsWith("about:")
+      url.startsWith("chrome://") ||
+      url.startsWith("chrome-extension://") ||
+      url.startsWith("about:")
     ) {
-      showOverlayInTab(tabId, "error", "Cannot save internal browser pages");
+      showOverlayInTab(tabId, "error", "Cannot save browser pages");
       return;
     }
 
-    // Show loading overlay immediately (fast feedback)
+    // Check if token is configured and valid (should be 43+ characters)
+    const token = await getApiToken();
+
+    if (!token || token.length < 32) {
+      // Not connected - store the pending URL and show auth prompt overlay
+      await setPendingUrl(url);
+      showOverlayInTab(tabId, "auth-required");
+      return;
+    }
+
+    // Show loading state immediately
     showOverlayInTab(tabId, "loading");
 
-    // Save to Caddy
-    const response = await saveLink({
-      url: tab.url,
-      title: tab.title,
-      content_type: "url",
-    });
-
-    if (response.success) {
-      // Show success overlay - different message for duplicates
-      if (response.duplicate) {
-        showOverlayInTab(tabId, "duplicate");
-      } else {
-        showOverlayInTab(tabId, "success");
-      }
-    } else {
-      // Show error overlay
-      showOverlayInTab(tabId, "error", response.error || "Unknown error occurred");
-    }
-  } catch (error) {
-    console.error("Error saving tab:", error);
-    showOverlayInTab(
-      tabId,
-      "error",
-      error instanceof Error ? error.message : "Failed to save"
-    );
+    // Save to Cadie with retry logic - will update overlay with result
+    await saveWithRetry(tabId, url, 3);
   } finally {
-    // Always remove the save lock, even if there was an error
-    const tab = await chrome.tabs.get(tabId).catch(() => null);
-    if (tab?.url) {
-      const saveKey = `${tab.url}`;
-      savesInProgress.delete(saveKey);
-
-      // Auto-clear after 5 seconds as a safety measure
-      setTimeout(() => {
-        savesInProgress.delete(saveKey);
-      }, 5000);
-    }
+    // Remove the save lock
+    savesInProgress.delete(saveKey);
   }
 }
 
 /**
- * Show overlay in tab
+ * Save link with retry logic
+ * @param tabId - Tab ID for showing result overlay
+ * @param url - URL to save
+ * @param maxRetries - Maximum number of retry attempts
+ */
+async function saveWithRetry(tabId: number, url: string, maxRetries: number): Promise<void> {
+  let lastError: string | undefined;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await saveLink({ url });
+
+      if (response.success) {
+        // Show appropriate result with linkId for space assignment
+        if (response.duplicate) {
+          showOverlayInTab(tabId, "duplicate", undefined, response.linkId);
+        } else {
+          showOverlayInTab(tabId, "success", undefined, response.linkId);
+        }
+        return;
+      }
+
+      // Check if auth failed - show auth prompt
+      if (response.authFailed) {
+        await setPendingUrl(url);
+        showOverlayInTab(tabId, "auth-required");
+        return;
+      }
+
+      // Other error - store for potential retry
+      lastError = response.error || "Failed to save";
+
+      if (!response.retryable) {
+        break;
+      }
+
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : "Failed to save";
+    }
+
+    // Wait before retry (exponential backoff: 500ms, 1000ms, 2000ms)
+    if (attempt < maxRetries) {
+      await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, attempt - 1)));
+    }
+  }
+
+  // All retries failed - show error to user
+  console.error(`Failed to save URL after ${maxRetries} attempts:`, lastError);
+  showOverlayInTab(tabId, "error", lastError || "Failed to save");
+}
+
+/**
+ * Show overlay in tab (in-page notification, not OS notification)
  */
 function showOverlayInTab(
   tabId: number,
-  state: "loading" | "success" | "error" | "duplicate",
-  message?: string
+  state: "loading" | "success" | "error" | "duplicate" | "auth-required",
+  message?: string,
+  linkId?: string
 ): void {
   chrome.tabs.sendMessage(tabId, {
     action: "showSaveOverlay",
     state,
     message,
+    linkId,
   }).catch(() => {
-    // Content script might not be loaded, fall back to notification
-    if (state === "success") {
-      showNotification("Saved to Caddy! ✨", "Page saved successfully", "success");
-    } else if (state === "duplicate") {
-      showNotification("Already in Caddy!", "This page was already saved", "info");
-    } else if (state === "error") {
-      showNotification("Error", message || "Failed to save", "error");
-    }
+    // Content script not available on this page, silently ignore
   });
-}
-
-/**
- * Show a notification to the user
- */
-function showNotification(
-  title: string,
-  message: string,
-  type: "info" | "success" | "error" = "info"
-): string {
-  const iconUrl = chrome.runtime.getURL("icons/icon-48.png");
-  const notificationId = `caddy-${Date.now()}`;
-
-  chrome.notifications.create(notificationId, {
-    type: "basic",
-    iconUrl,
-    title,
-    message,
-    priority: 1,
-  });
-
-  // Auto-dismiss success/info notifications after 3 seconds
-  if (type !== "error") {
-    setTimeout(() => {
-      chrome.notifications.clear(notificationId);
-    }, 3000);
-  }
-
-  return notificationId;
 }

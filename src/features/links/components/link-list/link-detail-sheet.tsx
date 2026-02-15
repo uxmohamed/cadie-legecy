@@ -115,12 +115,12 @@ export function LinkDetailSheet({
         showCloseButton={false}
       >
         {/* Header with menu */}
-        <div className="sticky top-0 z-10 bg-[var(--bg-l2-solid)] border-b border-[var(--border-primary)] px-4 py-3 flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-[var(--bg-elevated)] border-b border-[var(--border)] px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon-sm"
-              className="h-7 w-7 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)]"
+              className="h-7 w-7 text-[var(--fg-muted)] hover:text-[var(--fg)] hover:bg-[var(--bg-hover)]"
             >
               <span className="text-xs">&gt;&gt;</span>
             </Button>
@@ -128,7 +128,7 @@ export function LinkDetailSheet({
           <div className="flex items-center gap-1">
             <Menu>
               <MenuTrigger
-                className="h-6 w-6 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)] flex items-center justify-center rounded-md"
+                className="h-6 w-6 text-[var(--fg-subtle)] hover:text-[var(--fg)] hover:bg-[var(--bg-hover)] flex items-center justify-center rounded-md"
               >
                 <MoreVertical className="h-3.5 w-3.5" />
               </MenuTrigger>
@@ -198,7 +198,7 @@ export function LinkDetailSheet({
                   <>
                     <MenuSeparator />
                     <MenuItem
-                      className="text-[var(--accent-red-primary)] focus:text-[var(--accent-red-primary)]"
+                      className="text-[var(--destructive)] focus:text-[var(--destructive)]"
                       onClick={() => {
                         if (confirm("Are you sure you want to delete this link?")) {
                           onDelete(link.id);
@@ -218,7 +218,7 @@ export function LinkDetailSheet({
               size="icon-xs"
               onClick={handlePrevious}
               disabled={!canGoPrevious}
-              className="h-6 w-6 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)] disabled:opacity-30 disabled:cursor-not-allowed"
+              className="h-6 w-6 text-[var(--fg-subtle)] hover:text-[var(--fg)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <ChevronUp className="h-3.5 w-3.5" />
             </Button>
@@ -227,7 +227,7 @@ export function LinkDetailSheet({
               size="icon-xs"
               onClick={handleNext}
               disabled={!canGoNext}
-              className="h-6 w-6 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)] disabled:opacity-30 disabled:cursor-not-allowed"
+              className="h-6 w-6 text-[var(--fg-subtle)] hover:text-[var(--fg)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <ChevronDown className="h-3.5 w-3.5" />
             </Button>
@@ -235,7 +235,7 @@ export function LinkDetailSheet({
               variant="ghost"
               size="icon-xs"
               onClick={() => onOpenChange(false)}
-              className="h-6 w-6 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)]"
+              className="h-6 w-6 text-[var(--fg-subtle)] hover:text-[var(--fg)] hover:bg-[var(--bg-hover)]"
             >
               <X className="h-3.5 w-3.5" />
             </Button>
@@ -245,7 +245,7 @@ export function LinkDetailSheet({
         <div className="px-4 py-6 space-y-6">
           {/* Large Image/Thumbnail */}
           {link.og_image_url ? (
-            <div className="w-full rounded-lg overflow-hidden bg-[var(--bg-l1-solid)] border border-[var(--border-primary)]">
+            <div className="w-full rounded-lg overflow-hidden bg-[var(--bg-surface)] border border-[var(--border)]">
               <img
                 src={link.og_image_url}
                 alt={link.title}
@@ -254,11 +254,11 @@ export function LinkDetailSheet({
             </div>
           ) : isColor && link.color_value ? (
             <div
-              className="w-full aspect-square rounded-lg border border-[var(--border-primary)]"
+              className="w-full aspect-square rounded-lg border border-[var(--border)]"
               style={{ backgroundColor: link.color_value }}
             />
           ) : (
-            <div className="w-full aspect-square rounded-lg bg-[var(--bg-l1-solid)] border border-[var(--border-primary)] flex items-center justify-center">
+            <div className="w-full aspect-square rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] flex items-center justify-center">
               {link.domain ? (
                 <div className="h-16 w-16">
                   <Favicon
@@ -268,45 +268,45 @@ export function LinkDetailSheet({
                   />
                 </div>
               ) : (
-                <Globe className="h-16 w-16 text-[var(--text-tertiary)]" />
+                <Globe className="h-16 w-16 text-[var(--fg-subtle)]" />
               )}
             </div>
           )}
 
           {/* Title and Domain */}
           <div>
-            <SheetTitle className="text-2xl font-bold text-[var(--text-primary)] mb-2">
+            <SheetTitle className="text-2xl font-bold text-[var(--fg)] mb-2">
               {link.title}
             </SheetTitle>
             {link.domain && !isColor && (
-              <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                <Globe className="h-4 w-4 text-[var(--text-tertiary)]" />
+              <div className="flex items-center gap-2 text-sm text-[var(--fg-muted)]">
+                <Globe className="h-4 w-4 text-[var(--fg-subtle)]" />
                 <span>{link.domain}</span>
               </div>
             )}
             {isColor && link.color_value && (
-              <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)] mt-2">
-                <Palette className="h-4 w-4 text-[var(--text-tertiary)]" />
+              <div className="flex items-center gap-2 text-sm text-[var(--fg-muted)] mt-2">
+                <Palette className="h-4 w-4 text-[var(--fg-subtle)]" />
                 <code className="font-mono text-sm">{link.color_value}</code>
               </div>
             )}
           </div>
 
           {/* Key Metadata Section */}
-          <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--text-secondary)]">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--fg-muted)]">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-[var(--text-tertiary)]" />
+              <Calendar className="h-4 w-4 text-[var(--fg-subtle)]" />
               <span>{formatDate(new Date(link.created_at))}</span>
             </div>
             {link.read_at && (
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />
+                <Clock className="h-4 w-4 text-[var(--fg-subtle)]" />
                 <span>Read {formatDate(new Date(link.read_at))}</span>
               </div>
             )}
             {isUrl && (
               <div className="flex items-center gap-2">
-                <ExternalLink className="h-4 w-4 text-[var(--text-tertiary)]" />
+                <ExternalLink className="h-4 w-4 text-[var(--fg-subtle)]" />
                 <span>URL Link</span>
               </div>
             )}
@@ -314,16 +314,16 @@ export function LinkDetailSheet({
 
           {/* Status Card (if pinned or archived) */}
           {(link.is_pinned || link.is_favorite) && (
-            <div className="bg-[var(--bg-l1-solid)] rounded-lg p-4 border border-[var(--border-primary)]">
+            <div className="bg-[var(--bg-surface)] rounded-lg p-4 border border-[var(--border)]">
               <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-full bg-[var(--accent-purple-secondary)]/20 flex items-center justify-center flex-shrink-0">
+                <div className="h-8 w-8 rounded-full bg-[var(--accent-muted)]/20 flex items-center justify-center flex-shrink-0">
                   <span className="text-xs">✓</span>
                 </div>
                 <div>
-                  <div className="font-semibold text-[var(--text-primary)] text-sm">
+                  <div className="font-semibold text-[var(--fg)] text-sm">
                     {link.is_pinned ? "Pinned" : "Favorited"}
                   </div>
-                  <div className="text-xs text-[var(--text-secondary)]">
+                  <div className="text-xs text-[var(--fg-muted)]">
                     {link.is_pinned
                       ? "This link is pinned to the top"
                       : "This link is in your favorites"}
@@ -336,8 +336,8 @@ export function LinkDetailSheet({
           {/* Description / About Section */}
           {link.description && (
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-[var(--text-primary)]">About</h3>
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+              <h3 className="text-sm font-semibold text-[var(--fg)]">About</h3>
+              <p className="text-sm text-[var(--fg-muted)] leading-relaxed">
                 {link.description}
               </p>
             </div>
@@ -348,8 +348,8 @@ export function LinkDetailSheet({
           {/* AI Summary */}
           {link.ai_summary && (
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-[var(--text-primary)]">AI Summary</h3>
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+              <h3 className="text-sm font-semibold text-[var(--fg)]">AI Summary</h3>
+              <p className="text-sm text-[var(--fg-muted)] leading-relaxed">
                 {link.ai_summary}
               </p>
             </div>
@@ -358,12 +358,12 @@ export function LinkDetailSheet({
           {/* AI Tags */}
           {link.ai_tags && link.ai_tags.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-[var(--text-primary)]">Tags</h3>
+              <h3 className="text-sm font-semibold text-[var(--fg)]">Tags</h3>
               <div className="flex flex-wrap gap-2">
                 {link.ai_tags.map((tag, index) => (
                   <span
                     key={index}
-                    className="px-2.5 py-1 text-xs font-medium bg-[var(--accent-blue-secondary)]/20 text-[var(--accent-blue-primary)] rounded-md"
+                    className="px-2.5 py-1 text-xs font-medium bg-[var(--accent-hover)]/20 text-[var(--accent)] rounded-md"
                   >
                     {tag}
                   </span>
@@ -375,12 +375,12 @@ export function LinkDetailSheet({
           {/* URL Link */}
           {isUrl && link.url && (
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-[var(--text-primary)]">URL</h3>
+              <h3 className="text-sm font-semibold text-[var(--fg)]">URL</h3>
               <a
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block text-sm text-[var(--accent-blue-primary)] hover:text-[var(--accent-blue-secondary)] hover:underline break-all"
+                className="block text-sm text-[var(--accent)] hover:text-[var(--accent-hover)] hover:underline break-all"
               >
                 {link.url}
               </a>

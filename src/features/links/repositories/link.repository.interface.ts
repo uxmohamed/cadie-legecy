@@ -8,7 +8,7 @@ export interface ILinkRepository {
     /**
      * Find all links for a user with optional filters
      */
-    findAll(userId: string, filters?: LinkFilters): Promise<Link[]>;
+    findAll(userId: string, filters?: LinkFilters, limit?: number, offset?: number, searchQuery?: string): Promise<{ links: Link[], total: number }>;
 
     /**
      * Find a single link by ID
@@ -34,4 +34,10 @@ export interface ILinkRepository {
      * Check if a link exists for a user
      */
     exists(userId: string, url: string): Promise<Link | null>;
+
+    /**
+     * Find a link by URL, including trashed links
+     * Returns the link and whether it's currently in trash
+     */
+    findByUrl(userId: string, url: string): Promise<{ link: Link; isInTrash: boolean } | null>;
 }

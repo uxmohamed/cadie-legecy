@@ -11,7 +11,6 @@ export function useSelection({ displayLinks }: UseSelectionOptions) {
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [isDragging, setIsDragging] = React.useState(false);
   const [dragStartIndex, setDragStartIndex] = React.useState<number | null>(null);
-  const [dragCurrentIndex, setDragCurrentIndex] = React.useState<number | null>(null);
   const [lastSelectedIndex, setLastSelectedIndex] = React.useState<number | null>(null);
 
   const mouseDownPos = React.useRef<{ x: number; y: number } | null>(null);
@@ -54,7 +53,6 @@ export function useSelection({ displayLinks }: UseSelectionOptions) {
       if (isDragging) {
         setIsDragging(false);
         setDragStartIndex(null);
-        setDragCurrentIndex(null);
         setTimeout(() => {
           wasDraggingRef.current = false;
         }, 0);
@@ -68,8 +66,9 @@ export function useSelection({ displayLinks }: UseSelectionOptions) {
       if (
         selectedIds.size > 0 &&
         !target.closest(".group") &&
-        !target.closest(".fixed.bottom-8") &&
-        !target.closest('[role="menu"]')
+        !target.closest(".fixed.bottom-6") &&
+        !target.closest('[role="menu"]') &&
+        !target.closest("nav")
       ) {
         setSelectedIds(new Set());
       }
@@ -99,7 +98,6 @@ export function useSelection({ displayLinks }: UseSelectionOptions) {
 
     mouseDownPos.current = { x: e.clientX, y: e.clientY };
     setDragStartIndex(index);
-    setDragCurrentIndex(index);
 
     if (!e.shiftKey && !e.metaKey && !e.ctrlKey) {
       shouldOpenRef.current = true;
@@ -107,13 +105,13 @@ export function useSelection({ displayLinks }: UseSelectionOptions) {
       shouldOpenRef.current = false;
     }
 
-    if (e.shiftKey || e.metaKey) {
+    if (e.shiftKey || e.metaKey || e.ctrlKey) {
       if (e.shiftKey) {
         if (lastSelectedIndex !== null) {
           const start = Math.min(lastSelectedIndex, index);
           const end = Math.max(lastSelectedIndex, index);
           const newSet = new Set(selectedIds);
-          if (!e.metaKey) newSet.clear();
+          if (!e.metaKey && !e.ctrlKey) newSet.clear();
           for (let i = start; i <= end; i++) {
             newSet.add(displayLinks[i].id);
           }
@@ -124,7 +122,7 @@ export function useSelection({ displayLinks }: UseSelectionOptions) {
           setSelectedIds(newSet);
           setLastSelectedIndex(index);
         }
-      } else if (e.metaKey) {
+      } else if (e.metaKey || e.ctrlKey) {
         const id = displayLinks[index].id;
         const newSet = new Set(selectedIds);
         if (newSet.has(id)) newSet.delete(id);
@@ -134,13 +132,25 @@ export function useSelection({ displayLinks }: UseSelectionOptions) {
         }
         setSelectedIds(newSet);
       }
+    } else {
+      // No modifiers
+      const id = displayLinks[index].id;
+
+      // If right-click on an already selected item, keep the selection for batch actions
+      if (e.button === 2 && selectedIds.has(id)) {
+        return;
+      }
+
+      // Otherwise select single item
+      const newSet = new Set<string>();
+      newSet.add(id);
+      setSelectedIds(newSet);
+      setLastSelectedIndex(index);
     }
   };
 
   const handleItemMouseEnter = (index: number) => {
     if (isDragging && dragStartIndex !== null) {
-      setDragCurrentIndex(index);
-
       const start = Math.min(dragStartIndex, index);
       const end = Math.max(dragStartIndex, index);
 
@@ -162,33 +172,8 @@ export function useSelection({ displayLinks }: UseSelectionOptions) {
       return;
     }
 
-    if (e.metaKey || e.shiftKey || wasDraggingRef.current) {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || wasDraggingRef.current) {
       e.preventDefault();
-
-      if (wasDraggingRef.current) return;
-
-      if (e.metaKey) {
-        const newSet = new Set(selectedIds);
-        if (newSet.has(link.id)) {
-          newSet.delete(link.id);
-        } else {
-          newSet.add(link.id);
-          setLastSelectedIndex(index);
-        }
-        setSelectedIds(newSet);
-      } else if (e.shiftKey && lastSelectedIndex !== null) {
-        const start = Math.min(lastSelectedIndex, index);
-        const end = Math.max(lastSelectedIndex, index);
-        const newSet = new Set(selectedIds);
-        if (!e.metaKey) {
-          newSet.clear();
-        }
-
-        for (let i = start; i <= end; i++) {
-          newSet.add(displayLinks[i].id);
-        }
-        setSelectedIds(newSet);
-      }
       return;
     }
 

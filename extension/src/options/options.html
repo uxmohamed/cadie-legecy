@@ -3,216 +3,64 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Caddy Extension Settings</title>
+    <title>Cadie</title>
     <link rel="stylesheet" href="options.css" />
   </head>
   <body>
     <div class="container">
-      <!-- Header -->
-      <div class="header">
-        <h1>Caddy Extension</h1>
-        <p class="subtitle">
-          Connect your Caddy account to start saving links from anywhere
-        </p>
+      <!-- Not Connected State -->
+      <div id="notConnectedView" class="card">
+        <div class="icon">
+          <svg
+            width="48"
+            height="48"
+            viewBox="0 0 32 32"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <g clip-path="url(#clip0)">
+              <rect x="6" y="5" width="19" height="22" fill="#F6F4EE" />
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M15.9999 0.571533C11.2181 0.571533 7.321 1.9201 4.61929 4.61953C1.91757 7.31896 0.571289 11.2184 0.571289 16.0001C0.571289 20.7818 1.91986 24.679 4.61929 27.3807C7.31872 30.0824 11.2181 31.4287 15.9999 31.4287C20.7816 31.4287 24.6787 30.0801 27.3804 27.3807C30.0821 24.6812 31.4284 20.7818 31.4284 16.0001C31.4284 11.2184 30.0799 7.32125 27.3804 4.61953C24.681 1.91782 20.7816 0.571533 15.9999 0.571533ZM7.18386 15.9567C7.18407 14.0684 7.7351 12.2213 8.76943 10.6415C9.80375 9.0618 11.2764 7.81809 13.007 7.06282C14.7376 6.30754 16.651 6.07351 18.5126 6.3894C20.3742 6.70529 22.1033 7.55737 23.4879 8.84125C23.9427 9.26411 23.8947 9.84239 23.6707 10.231C23.5515 10.4339 23.3821 10.6027 23.1787 10.7212C22.9753 10.8397 22.7449 10.9039 22.5096 10.9075C21.8373 10.8932 21.169 11.0133 20.5437 11.2607C19.9185 11.508 19.3489 11.8778 18.8684 12.3481C18.3879 12.8185 18.0062 13.3801 17.7456 13.9999C17.4849 14.6198 17.3507 15.2854 17.3507 15.9578C17.3507 16.6302 17.4849 17.2959 17.7456 17.9157C18.0062 18.5356 18.3879 19.0971 18.8684 19.5675C19.3489 20.0379 19.9185 20.4076 20.5437 20.655C21.169 20.9024 21.8373 21.0224 22.5096 21.0081C23.0239 21.0081 23.4513 21.3098 23.6707 21.6847C23.8947 22.0732 23.9427 22.6515 23.4879 23.0744C22.1031 24.3584 20.3739 25.2105 18.512 25.5263C16.6502 25.8421 14.7367 25.6079 13.006 24.8524C11.2753 24.0968 9.80264 22.8528 8.76849 21.2727C7.73434 19.6926 7.18363 17.8451 7.18386 15.9567Z"
+                fill="#343433"
+              />
+            </g>
+            <defs>
+              <clipPath id="clip0">
+                <rect width="32" height="32" fill="white" />
+              </clipPath>
+            </defs>
+          </svg>
+        </div>
+        <h1>Not Connected</h1>
+        <p class="description">Sign in to save links from any page.</p>
+        <button id="connectBtn" class="btn-primary">Connect with Cadie</button>
       </div>
 
-      <!-- Main Content -->
-      <div class="content">
-        <!-- Not Connected State -->
-        <div id="notConnectedView" class="view">
-          <div class="card connect-card">
-            <div class="connect-icon">
-              <svg
-                width="48"
-                height="48"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path
-                  d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
-                ></path>
-                <path
-                  d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
-                ></path>
-              </svg>
-            </div>
-
-            <h2>Not Connected</h2>
-            <p class="connect-description">
-              Connect your Caddy account with one click to start saving links,
-              text, and more from any webpage.
-            </p>
-
-            <button id="connectBtn" class="btn btn-primary btn-large">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path
-                  d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
-                ></path>
-                <path
-                  d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
-                ></path>
-              </svg>
-              Connect with Caddy
-            </button>
-
-            <p class="help-text">
-              You'll be redirected to your Caddy account to authorize the
-              extension
-            </p>
-          </div>
-
-          <!-- Advanced Section (collapsed by default) -->
-          <details class="advanced-section">
-            <summary>Advanced: Manual Configuration</summary>
-            <div class="card">
-              <div class="form-group">
-                <label for="manualCaddyUrl">Caddy URL</label>
-                <input
-                  type="text"
-                  id="manualCaddyUrl"
-                  placeholder="https://caddy-ed0.pages.dev"
-                  class="input"
-                />
-                <p class="help-text">
-                  For self-hosted or custom Caddy installations
-                </p>
-              </div>
-
-              <div class="form-group">
-                <label for="manualApiToken">API Token</label>
-                <input
-                  type="password"
-                  id="manualApiToken"
-                  placeholder="Paste your API token here"
-                  class="input"
-                />
-                <button
-                  type="button"
-                  id="manualToggleTokenBtn"
-                  class="text-btn"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <path
-                      d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
-                    ></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                  <span id="manualToggleTokenText">Show</span>
-                </button>
-              </div>
-
-              <div class="button-group">
-                <button id="manualSaveBtn" class="btn btn-primary">
-                  Save Settings
-                </button>
-                <button id="manualTestBtn" class="btn btn-secondary">
-                  Test Connection
-                </button>
-              </div>
-            </div>
-          </details>
+      <!-- Connected State -->
+      <div id="connectedView" class="card" style="display: none">
+        <div class="icon success">
+          <svg
+            width="48"
+            height="48"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#10b981"
+            stroke-width="2"
+          >
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
         </div>
-
-        <!-- Connected State -->
-        <div id="connectedView" class="view" style="display: none">
-          <div class="card status-card connected">
-            <div class="status-icon success">
-              <svg
-                width="32"
-                height="32"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            </div>
-
-            <h2>✅ Connected</h2>
-            <div class="user-info">
-              <p class="user-email" id="connectedEmail">user@example.com</p>
-              <p class="caddy-url" id="connectedUrl">
-                https://caddy-ed0.pages.dev
-              </p>
-            </div>
-
-            <div class="button-group">
-              <button id="testConnectionBtn" class="btn btn-secondary">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                </svg>
-                Test Connection
-              </button>
-              <button id="disconnectBtn" class="btn btn-destructive-outline">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-                Disconnect
-              </button>
-            </div>
-          </div>
-
-          <!-- Usage Info -->
-          <div class="card info-card-small">
-            <h3>How to Use</h3>
-            <ul class="usage-list">
-              <li>
-                <strong>Click extension icon</strong> - Quick save from popup
-              </li>
-              <li>
-                <strong>Right-click page</strong> - Select "Save to Caddy"
-              </li>
-              <li>
-                <strong>Keyboard shortcut</strong> - <kbd>⌘</kbd> <kbd>⇧</kbd>
-                <kbd>S</kbd> (Mac) or <kbd>Ctrl</kbd> <kbd>⇧</kbd>
-                <kbd>S</kbd> (Windows/Linux)
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Status Message -->
-        <div id="statusMessage" class="status-message" style="display: none">
-          <span id="statusText"></span>
-        </div>
+        <h1>Connected</h1>
+        <p class="description">You're all set to save links.</p>
+        <button id="disconnectBtn" class="btn-secondary">Disconnect</button>
       </div>
 
-      <!-- Footer -->
-      <div class="footer">
-        <p>Caddy Extension v1.0.0</p>
-        <a href="#" id="openCaddyBtn" class="footer-link">Open Caddy Web App</a>
+      <!-- Status Message -->
+      <div id="statusMessage" class="status" style="display: none">
+        <span id="statusText"></span>
       </div>
     </div>
 

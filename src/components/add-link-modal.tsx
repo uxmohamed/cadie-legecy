@@ -29,7 +29,7 @@ export function AddLinkModal({
   // Register keyboard shortcuts to open modal
   React.useEffect(() => {
     registerShortcut({
-      key: "c",
+      key: "a",
       description: "Add new item",
       category: "Global",
       action: () => {
@@ -54,7 +54,7 @@ export function AddLinkModal({
     });
 
     return () => {
-      unregisterShortcut("c");
+      unregisterShortcut("a");
       unregisterShortcut("/");
     };
   }, [registerShortcut, unregisterShortcut, isOpen]);
@@ -68,7 +68,7 @@ export function AddLinkModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Add to Caddy</DialogTitle>
+          <DialogTitle>Add to Cadie</DialogTitle>
         </DialogHeader>
         <div className="mt-4">
           <CaptureInput

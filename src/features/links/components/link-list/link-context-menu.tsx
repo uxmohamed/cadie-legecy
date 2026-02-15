@@ -64,7 +64,7 @@ export function LinkContextMenu({
       </MenuItem>
       <MenuSeparator />
       <MenuItem
-        className="text-[var(--accent-red-primary)] focus:text-[var(--accent-red-primary)]"
+        className="text-[var(--destructive)] focus:text-[var(--destructive)]"
         onClick={() => onDelete?.(link.id)}
       >
         <Trash className="h-4 w-4" />

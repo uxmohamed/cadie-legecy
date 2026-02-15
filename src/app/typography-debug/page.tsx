@@ -34,28 +34,28 @@ export default function TypographyDebugPage() {
   return (
     <div className="min-h-screen bg-white p-8 space-y-12">
       <div>
-        <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-4">Typography Debug</h1>
-        <p className="text-[var(--text-secondary)]">
+        <h1 className="text-3xl font-bold text-[var(--fg)] mb-4">Typography Debug</h1>
+        <p className="text-[var(--fg-muted)]">
           Debug page for all text sizes and font weight variants.
         </p>
       </div>
 
       {/* Text Sizes */}
       <section className="space-y-6">
-        <h2 className="text-2xl font-semibold text-[var(--text-primary)]">Text Sizes</h2>
+        <h2 className="text-2xl font-semibold text-[var(--fg)]">Text Sizes</h2>
         <div className="space-y-4">
           {textSizes.map((size) => (
             <div
               key={size.name}
-              className="flex items-baseline gap-6 p-4 border-b border-[var(--border-primary)]"
+              className="flex items-baseline gap-6 p-4 border-b border-[var(--border)]"
             >
               <div className="w-32 shrink-0">
-                <span className="font-mono text-sm text-[var(--text-secondary)]">{size.name}</span>
-                <span className="block font-mono text-xs text-[var(--text-tertiary)]">
+                <span className="font-mono text-sm text-[var(--fg-muted)]">{size.name}</span>
+                <span className="block font-mono text-xs text-[var(--fg-subtle)]">
                   {size.size}
                 </span>
               </div>
-              <p className={`${size.class} text-[var(--text-primary)]`}>
+              <p className={`${size.class} text-[var(--fg)]`}>
                 The quick brown fox jumps over the lazy dog
               </p>
             </div>
@@ -65,22 +65,22 @@ export default function TypographyDebugPage() {
 
       {/* Font Weights */}
       <section className="space-y-6">
-        <h2 className="text-2xl font-semibold text-[var(--text-primary)]">Font Weights</h2>
+        <h2 className="text-2xl font-semibold text-[var(--fg)]">Font Weights</h2>
         <div className="space-y-4">
           {fontWeights.map((weight) => (
             <div
               key={weight.name}
-              className="flex items-baseline gap-6 p-4 border-b border-[var(--border-primary)]"
+              className="flex items-baseline gap-6 p-4 border-b border-[var(--border)]"
             >
               <div className="w-32 shrink-0">
-                <span className="font-mono text-sm text-[var(--text-secondary)]">
+                <span className="font-mono text-sm text-[var(--fg-muted)]">
                   {weight.class}
                 </span>
-                <span className="block font-mono text-xs text-[var(--text-tertiary)]">
+                <span className="block font-mono text-xs text-[var(--fg-subtle)]">
                   {weight.weight}
                 </span>
               </div>
-              <p className={`${weight.class} text-lg text-[var(--text-primary)]`}>
+              <p className={`${weight.class} text-lg text-[var(--fg)]`}>
                 The quick brown fox jumps over the lazy dog
               </p>
             </div>
@@ -90,37 +90,37 @@ export default function TypographyDebugPage() {
 
       {/* Size × Weight Matrix */}
       <section className="space-y-6">
-        <h2 className="text-2xl font-semibold text-[var(--text-primary)]">
+        <h2 className="text-2xl font-semibold text-[var(--fg)]">
           Size × Weight Matrix (Common Sizes)
         </h2>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr>
-                <th className="p-4 border-b border-[var(--border-primary)] text-[var(--text-secondary)] font-medium">
+                <th className="p-4 border-b border-[var(--border)] text-[var(--fg-muted)] font-medium">
                   Size / Weight
                 </th>
                 {fontWeights.map((weight) => (
                   <th
                     key={weight.name}
-                    className="p-4 border-b border-[var(--border-primary)] text-[var(--text-secondary)] font-medium whitespace-nowrap"
+                    className="p-4 border-b border-[var(--border)] text-[var(--fg-muted)] font-medium whitespace-nowrap"
                   >
                     <div className="text-xs">{weight.name}</div>
-                    <div className="text-xs text-[var(--text-tertiary)]">{weight.weight}</div>
+                    <div className="text-xs text-[var(--fg-subtle)]">{weight.weight}</div>
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {textSizes.slice(0, 7).map((size) => (
-                <tr key={size.name} className="border-b border-[var(--border-primary)]">
-                  <td className="p-4 font-medium text-[var(--text-primary)] whitespace-nowrap">
+                <tr key={size.name} className="border-b border-[var(--border)]">
+                  <td className="p-4 font-medium text-[var(--fg)] whitespace-nowrap">
                     <div className="text-sm">{size.name}</div>
-                    <div className="text-xs text-[var(--text-tertiary)]">{size.size}</div>
+                    <div className="text-xs text-[var(--fg-subtle)]">{size.size}</div>
                   </td>
                   {fontWeights.map((weight) => (
                     <td key={`${size.name}-${weight.name}`} className="p-4">
-                      <span className={`${size.class} ${weight.class} text-[var(--text-primary)]`}>
+                      <span className={`${size.class} ${weight.class} text-[var(--fg)]`}>
                         Aa
                       </span>
                     </td>
@@ -134,61 +134,61 @@ export default function TypographyDebugPage() {
 
       {/* Text Colors */}
       <section className="space-y-6">
-        <h2 className="text-2xl font-semibold text-[var(--text-primary)]">Text Colors</h2>
+        <h2 className="text-2xl font-semibold text-[var(--fg)]">Text Colors</h2>
         <div className="space-y-4">
-          <div className="p-4 border-b border-[var(--border-primary)]">
-            <span className="font-mono text-sm text-[var(--text-secondary)] block mb-2">
+          <div className="p-4 border-b border-[var(--border)]">
+            <span className="font-mono text-sm text-[var(--fg-muted)] block mb-2">
               --text-primary
             </span>
-            <p className="text-lg text-[var(--text-primary)]">
+            <p className="text-lg text-[var(--fg)]">
               The quick brown fox jumps over the lazy dog
             </p>
           </div>
-          <div className="p-4 border-b border-[var(--border-primary)]">
-            <span className="font-mono text-sm text-[var(--text-secondary)] block mb-2">
+          <div className="p-4 border-b border-[var(--border)]">
+            <span className="font-mono text-sm text-[var(--fg-muted)] block mb-2">
               --text-secondary
             </span>
-            <p className="text-lg text-[var(--text-secondary)]">
+            <p className="text-lg text-[var(--fg-muted)]">
               The quick brown fox jumps over the lazy dog
             </p>
           </div>
-          <div className="p-4 border-b border-[var(--border-primary)]">
-            <span className="font-mono text-sm text-[var(--text-secondary)] block mb-2">
+          <div className="p-4 border-b border-[var(--border)]">
+            <span className="font-mono text-sm text-[var(--fg-muted)] block mb-2">
               --text-tertiary
             </span>
-            <p className="text-lg text-[var(--text-tertiary)]">
+            <p className="text-lg text-[var(--fg-subtle)]">
               The quick brown fox jumps over the lazy dog
             </p>
           </div>
-          <div className="p-4 border-b border-[var(--border-primary)]">
-            <span className="font-mono text-sm text-[var(--text-secondary)] block mb-2">
+          <div className="p-4 border-b border-[var(--border)]">
+            <span className="font-mono text-sm text-[var(--fg-muted)] block mb-2">
               --text-disabled
             </span>
-            <p className="text-lg text-[var(--text-disabled)]">
+            <p className="text-lg text-[var(--fg-disabled)]">
               The quick brown fox jumps over the lazy dog
             </p>
           </div>
-          <div className="p-4 border-b border-[var(--border-primary)]">
-            <span className="font-mono text-sm text-[var(--text-secondary)] block mb-2">
+          <div className="p-4 border-b border-[var(--border)]">
+            <span className="font-mono text-sm text-[var(--fg-muted)] block mb-2">
               --text-link
             </span>
-            <p className="text-lg text-[var(--text-link)]">
+            <p className="text-lg text-[var(--accent)]">
               The quick brown fox jumps over the lazy dog
             </p>
           </div>
-          <div className="p-4 border-b border-[var(--border-primary)]">
-            <span className="font-mono text-sm text-[var(--text-secondary)] block mb-2">
+          <div className="p-4 border-b border-[var(--border)]">
+            <span className="font-mono text-sm text-[var(--fg-muted)] block mb-2">
               --text-destructive
             </span>
-            <p className="text-lg text-[var(--text-destructive)]">
+            <p className="text-lg text-[var(--destructive)]">
               The quick brown fox jumps over the lazy dog
             </p>
           </div>
-          <div className="p-4 border-b border-[var(--border-primary)] bg-[var(--bg-inverse)]">
-            <span className="font-mono text-sm text-[var(--text-inverse)] block mb-2">
+          <div className="p-4 border-b border-[var(--border)] bg-[var(--bg-inverse)]">
+            <span className="font-mono text-sm text-[var(--fg-inverse)] block mb-2">
               --text-inverse
             </span>
-            <p className="text-lg text-[var(--text-inverse)]">
+            <p className="text-lg text-[var(--fg-inverse)]">
               The quick brown fox jumps over the lazy dog
             </p>
           </div>

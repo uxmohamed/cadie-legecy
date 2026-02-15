@@ -3,6 +3,50 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
+// =============================================================================
+// Global Favicon Cache
+// =============================================================================
+
+/**
+ * Global cache to track successfully loaded favicons
+ * Persists across component re-renders and unmounts
+ */
+const faviconCache = new Map<string, {
+  loadedUrl: string;        // The URL that successfully loaded
+  timestamp: number;        // When it was cached
+}>();
+
+/**
+ * Cache a successfully loaded favicon
+ */
+function cacheLoadedFavicon(cacheKey: string, loadedUrl: string) {
+  faviconCache.set(cacheKey, {
+    loadedUrl,
+    timestamp: Date.now(),
+  });
+}
+
+/**
+ * Get cached favicon if available
+ */
+function getCachedFavicon(cacheKey: string): string | null {
+  const cached = faviconCache.get(cacheKey);
+  if (cached) {
+    // Cache expires after 1 hour
+    const ONE_HOUR = 60 * 60 * 1000;
+    if (Date.now() - cached.timestamp < ONE_HOUR) {
+      return cached.loadedUrl;
+    }
+    // Remove expired cache
+    faviconCache.delete(cacheKey);
+  }
+  return null;
+}
+
+// =============================================================================
+// Component
+// =============================================================================
+
 interface FaviconProps {
   url: string;
   domain: string;
@@ -11,24 +55,71 @@ interface FaviconProps {
 }
 
 /**
- * Smart favicon component with progressive fallbacks
- * Tries multiple sources in order of quality:
- * 1. Provided favicon URL (usually from page metadata)
- * 2. Direct /favicon.ico from the domain
- * 3. DuckDuckGo's icon service (good quality, reliable)
- * 4. Google's favicon service (128x128 for higher resolution)
- * 5. Final fallback: gray box
+ * Fallback placeholder - light gray rectangle
+ */
+function FaviconFallback({ className, isLoading = false }: { className?: string; isLoading?: boolean }) {
+  return (
+    <div
+      className={cn(
+        "h-5 w-5 flex-shrink-0 rounded-[3px] bg-bg-muted",
+        isLoading && "animate-pulse",
+        className
+      )}
+    />
+  );
+}
+
+/**
+ * Check if domain is local/internal
+ */
+function isLocalDomain(domain: string): boolean {
+  return (
+    domain === "localhost" ||
+    domain.startsWith("localhost:") ||
+    domain === "127.0.0.1" ||
+    domain.startsWith("127.0.0.1:") ||
+    domain.startsWith("192.168.") ||
+    domain.startsWith("10.") ||
+    domain.endsWith(".local")
+  );
+}
+
+/**
+ * Generate cache key for a favicon
+ */
+function getCacheKey(url: string, domain: string): string {
+  return `${domain}:${url || "default"}`;
+}
+
+/**
+ * Smart favicon component with progressive fallbacks and caching
+ * Once a favicon loads successfully, it's cached to prevent re-loading on re-renders
  */
 export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
-  const [currentSource, setCurrentSource] = React.useState(0);
-  const [isLoaded, setIsLoaded] = React.useState(false);
+  const cacheKey = getCacheKey(url, domain);
+  const cachedUrl = getCachedFavicon(cacheKey);
+  
+  // If we have a cached URL, use it directly without fallback logic
+  const [currentSource, setCurrentSource] = React.useState(() => {
+    if (cachedUrl) return -1; // -1 indicates using cached URL
+    return 0;
+  });
   const [allFailed, setAllFailed] = React.useState(false);
+  const [imageLoaded, setImageLoaded] = React.useState(() => !!cachedUrl);
 
-  // Build fallback chain with multiple high-quality sources
+  // For local domains, immediately show fallback
+  const isLocal = isLocalDomain(domain);
+
+  // Build fallback chain - skip external services for local domains
   const sources = React.useMemo(() => {
+    if (isLocal) {
+      // Only try the provided URL for local domains
+      return url ? [url] : [];
+    }
+
     const fallbacks: string[] = [];
 
-    // 1. Provided favicon URL (if available and not already a low-res Google fallback)
+    // 1. Provided favicon URL (if available and not a low-res Google fallback)
     if (
       url &&
       !url.includes("google.com/s2/favicons?") &&
@@ -38,93 +129,100 @@ export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
       fallbacks.push(url);
     }
 
-    // 2. Try Clearbit Logo API (very high quality, supports many domains)
+    // 2. Try Clearbit Logo API (high quality)
     fallbacks.push(`https://logo.clearbit.com/${domain}`);
 
-    // 3. Google favicon with maximum size (256x256)
-    fallbacks.push(
-      `https://www.google.com/s2/favicons?domain=${domain}&sz=256`
-    );
-
-    // 4. Try direct favicon.ico
+    // 3. Try direct favicon.ico
     try {
       const urlObj = new URL(`https://${domain}`);
       fallbacks.push(`${urlObj.protocol}//${urlObj.host}/favicon.ico`);
     } catch {
-      // If domain is invalid, skip this fallback
+      // Skip if domain is invalid
     }
-
-    // 5. DuckDuckGo icon service
-    fallbacks.push(`https://icons.duckduckgo.com/ip3/${domain}.ico`);
-
-    // 6. Favicon.io service (another reliable option)
-    fallbacks.push(`https://api.faviconkit.com/${domain}/256`);
 
     return fallbacks;
-  }, [url, domain]);
+  }, [url, domain, isLocal]);
 
-  // Reset state when URL/domain changes
+  // Get the current image URL to display
+  const currentImageUrl = React.useMemo(() => {
+    if (cachedUrl && currentSource === -1) {
+      return cachedUrl;
+    }
+    if (currentSource >= 0 && currentSource < sources.length) {
+      return sources[currentSource];
+    }
+    return null;
+  }, [cachedUrl, currentSource, sources]);
+
+  // Reset state when URL/domain changes (but check cache first)
   React.useEffect(() => {
-    setCurrentSource(0);
-    setIsLoaded(false);
-    setAllFailed(false);
-  }, [url, domain]);
+    const newCachedUrl = getCachedFavicon(cacheKey);
+    if (newCachedUrl) {
+      setCurrentSource(-1);
+      setImageLoaded(true);
+      setAllFailed(false);
+    } else {
+      setCurrentSource(0);
+      setAllFailed(false);
+      setImageLoaded(false);
+    }
+  }, [cacheKey]);
 
   const handleError = React.useCallback(() => {
-    // Try next source in the fallback chain, but limit retries to 3 attempts
-    if (currentSource < Math.min(2, sources.length - 1)) {
+    // If using cached URL and it fails, start from beginning
+    if (currentSource === -1) {
+      faviconCache.delete(cacheKey);
+      setCurrentSource(0);
+      setImageLoaded(false);
+      return;
+    }
+    
+    if (currentSource < sources.length - 1) {
       setCurrentSource((prev) => prev + 1);
     } else {
-      // Max retries reached, keep showing placeholder
       setAllFailed(true);
     }
-  }, [currentSource, sources.length]);
+  }, [currentSource, sources.length, cacheKey]);
 
-  // If all sources failed, show placeholder with globe icon
-  if (allFailed || sources.length === 0) {
-    return (
-      <div
-        className={cn(
-          "h-5 w-5 flex-shrink-0 rounded bg-[var(--bg-l1-solid)] flex items-center justify-center",
-          className
-        )}
-      >
-        <svg
-          className="h-3 w-3 text-[var(--text-tertiary)]"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <line x1="2" y1="12" x2="22" y2="12" />
-          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-        </svg>
-      </div>
-    );
+  const handleLoad = React.useCallback(() => {
+    setImageLoaded(true);
+    
+    // Cache the successfully loaded URL
+    if (currentImageUrl && currentSource !== -1) {
+      cacheLoadedFavicon(cacheKey, currentImageUrl);
+    }
+  }, [cacheKey, currentImageUrl, currentSource]);
+
+  // Show fallback if: all sources failed, no sources available, or local domain with no URL
+  if (allFailed || (!currentImageUrl && sources.length === 0)) {
+    return <FaviconFallback className={className} isLoading={false} />;
   }
 
-  // Show placeholder while loading, then fade in image once loaded
+  // If no image URL available, show loading fallback
+  if (!currentImageUrl) {
+    return <FaviconFallback className={className} isLoading={true} />;
+  }
+
+  // Render image with fallback shown underneath until loaded
   return (
-    <img
-      src={sources[currentSource]}
-      alt={alt}
-      className={cn(
-        "h-5 w-5 flex-shrink-0 rounded object-cover antialiased",
-        className
+    <div className={cn("relative h-5 w-5 flex-shrink-0", className)}>
+      {/* Show fallback until image loads successfully */}
+      {!imageLoaded && (
+        <div className="absolute inset-0">
+          <FaviconFallback className="h-full w-full" isLoading={true} />
+        </div>
       )}
-      onError={handleError}
-      loading="lazy"
-      style={{
-        // High quality image rendering
-        imageRendering: "-webkit-optimize-contrast",
-        // Hardware acceleration for smoother rendering
-        transform: "translateZ(0)",
-        // Ensure image is scaled smoothly
-        backfaceVisibility: "hidden",
-      }}
-    />
+      <img
+        src={currentImageUrl}
+        alt={alt}
+        className={cn(
+          "h-full w-full rounded object-cover",
+          imageLoaded ? "opacity-100" : "opacity-0"
+        )}
+        onLoad={handleLoad}
+        onError={handleError}
+        loading="lazy"
+      />
+    </div>
   );
 }

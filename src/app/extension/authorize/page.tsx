@@ -33,8 +33,7 @@ export default function ExtensionAuthorizePage() {
     } catch (error) {
       console.error("Error:", error);
       // Redirect to app even on error
-      const caddyUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-      window.location.href = caddyUrl;
+      window.location.href = "https://cadie.app";
     }
   }
 
@@ -44,77 +43,101 @@ export default function ExtensionAuthorizePage() {
       const response = await fetch("/api/extension/authorize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Chrome Extension" }),
+        body: JSON.stringify({ name: "Extension" }),
       });
 
       if (!response.ok) {
         throw new Error("Failed to authorize");
       }
 
-      const data = await response.json();
+      interface AuthResponse {
+        token: string;
+      }
+      const data = (await response.json()) as AuthResponse;
 
       // Get the extension ID from URL params
       const params = new URLSearchParams(window.location.search);
       const extensionId = params.get("extensionId");
       const state = params.get("state");
 
-      // Use production URL
-      const caddyUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      // Always use production URL for extension - tokens are generated against production database
+      const cadieUrl = "https://cadie.app";
 
       // Construct authorization response
       const authData = {
         token: data.token,
         email: currentUser.email,
-        caddyUrl: caddyUrl,
+        cadieUrl: cadieUrl,
         state: state || "",
       };
 
       // Store auth data in DOM for content script
       const authDataElement = document.createElement("div");
-      authDataElement.id = "caddy-auth-data";
+      authDataElement.id = "cadie-auth-data";
       authDataElement.setAttribute("data-auth", JSON.stringify({
         token: authData.token,
         email: authData.email || "",
-        url: authData.caddyUrl,
+        url: authData.cadieUrl,
         state: authData.state || "",
       }));
       authDataElement.style.display = "none";
       document.body.appendChild(authDataElement);
 
-      // Dispatch custom event
-      const event = new CustomEvent("caddyAuthSuccess", {
-        detail: {
-          extensionId,
-          token: authData.token,
-          email: authData.email || "",
-          url: authData.caddyUrl,
-          caddyUrl: authData.caddyUrl,
-          state: authData.state || "",
-        },
-      });
-      window.dispatchEvent(event);
+      // Wait for extension to acknowledge before redirecting
+      let hasRedirected = false;
+      const redirect = () => {
+        if (!hasRedirected) {
+          hasRedirected = true;
+          window.location.href = cadieUrl;
+        }
+      };
 
-      // Retry event after delay
-      setTimeout(() => {
-        window.dispatchEvent(event);
-      }, 100);
+      // Listen for acknowledgment from extension via postMessage
+      const ackHandler = (e: MessageEvent) => {
+        if (e.data?.type === "CADIE_AUTH_ACK" && e.data?.success) {
+          window.removeEventListener("message", ackHandler);
+          redirect();
+        }
+      };
+      window.addEventListener("message", ackHandler);
 
-      // Redirect to app immediately
-      window.location.href = caddyUrl;
+      // Use postMessage to communicate with content script (works across isolated worlds)
+      const authMessage = {
+        type: "CADIE_AUTH_SUCCESS",
+        token: authData.token,
+        email: authData.email || "",
+        url: authData.cadieUrl,
+        cadieUrl: authData.cadieUrl,
+        state: authData.state || "",
+        extensionId,
+      };
+      
+      // SECURITY: Only send to same origin to prevent token theft via malicious iframes/openers
+      // The content script running on this page will receive the message
+      const targetOrigin = window.location.origin;
+      
+      // Send immediately and retry (restricted to same origin)
+      window.postMessage(authMessage, targetOrigin);
+      setTimeout(() => window.postMessage(authMessage, targetOrigin), 100);
+      setTimeout(() => window.postMessage(authMessage, targetOrigin), 300);
+      setTimeout(() => window.postMessage(authMessage, targetOrigin), 600);
+      setTimeout(() => window.postMessage(authMessage, targetOrigin), 1000);
+
+      // Fallback redirect after 2 seconds if no acknowledgment
+      setTimeout(redirect, 2000);
 
     } catch (error) {
       console.error("Error authorizing:", error);
       // Redirect to app even on error
-      const caddyUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-      window.location.href = caddyUrl;
+      window.location.href = "https://cadie.app";
     }
   }
 
   // Minimal loading state
   return (
-    <div className="min-h-screen bg-[var(--bg-l0-solid)] flex items-center justify-center">
+    <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center">
       <div className="text-center">
-        <div className="w-12 h-12 border-4 border-[var(--text-primary)] border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <div className="w-12 h-12 border-4 border-[var(--fg)] border-t-transparent rounded-full animate-spin mx-auto"></div>
       </div>
     </div>
   );

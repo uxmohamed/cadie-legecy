@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateToken, hashToken } from "@/lib/auth-middleware";
+import { rateLimitExtensionAuth, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 
-export const runtime = 'edge';
 
 /**
  * POST /api/extension/authorize
@@ -20,14 +20,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json().catch(() => ({}));
-    const name = body.name || "Chrome Extension";
+    // Rate limiting for extension authorization
+    const identifier = getIdentifier(request, user.id);
+    const { success, limit, reset, remaining } = await rateLimitExtensionAuth.limit(identifier);
+    
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many authorization attempts. Please try again later." },
+        { status: 429, headers: getRateLimitHeaders(limit, remaining, reset) }
+      );
+    }
+
+    interface AuthorizeBody {
+      name?: string;
+    }
+
+    const body = (await request.json().catch(() => ({}))) as AuthorizeBody;
+    const name = body.name || "Extension";
 
     // Generate a new token (plaintext)
     const token = generateToken(32); // 32 bytes = 43 characters in base64url
     
     // Hash the token for storage
-    const tokenHash = hashToken(token);
+    const tokenHash = await hashToken(token);
 
     // Check if user already has a token with this name, revoke it
     const { data: existingTokens } = await supabase
@@ -46,12 +61,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Store the hashed token in the database
+    // Set expiration to 1 year from now for extension tokens
+    const expiresAt = new Date();
+    expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+    
     const { data: tokenRecord, error } = await supabase
       .from("api_tokens")
       .insert({
         user_id: user.id,
         token_hash: tokenHash,
         name: name.trim(),
+        expires_at: expiresAt.toISOString(),
       })
       .select("id, name, created_at")
       .single();

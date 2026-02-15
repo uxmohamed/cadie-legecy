@@ -45,26 +45,26 @@ export default function ButtonDebugPage() {
   return (
     <div className="min-h-screen bg-white p-8 space-y-12">
       <div>
-        <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-4">Button Debug</h1>
-        <p className="text-[var(--text-secondary)]">
+        <h1 className="text-3xl font-bold text-[var(--fg)] mb-4">Button Debug</h1>
+        <p className="text-[var(--fg-muted)]">
           Debug page for all button variants, sizes, and states.
         </p>
       </div>
 
       {/* Text Buttons */}
       <section className="space-y-6">
-        <h2 className="text-2xl font-semibold text-[var(--text-primary)]">Text Buttons</h2>
+        <h2 className="text-2xl font-semibold text-[var(--fg)]">Text Buttons</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr>
-                <th className="p-4 border-b border-[var(--border-primary)] text-[var(--text-secondary)] font-medium">
+                <th className="p-4 border-b border-[var(--border)] text-[var(--fg-muted)] font-medium">
                   Variant / Size
                 </th>
                 {textSizes.map((size) => (
                   <th
                     key={size}
-                    className="p-4 border-b border-[var(--border-primary)] text-[var(--text-secondary)] font-medium whitespace-nowrap"
+                    className="p-4 border-b border-[var(--border)] text-[var(--fg-muted)] font-medium whitespace-nowrap"
                   >
                     {size}
                   </th>
@@ -73,8 +73,8 @@ export default function ButtonDebugPage() {
             </thead>
             <tbody>
               {variants.map((variant) => (
-                <tr key={variant} className="border-b border-[var(--border-primary)]">
-                  <td className="p-4 font-medium text-[var(--text-primary)] whitespace-nowrap">
+                <tr key={variant} className="border-b border-[var(--border)]">
+                  <td className="p-4 font-medium text-[var(--fg)] whitespace-nowrap">
                     {variant}
                   </td>
                   {textSizes.map((size) => (
@@ -93,18 +93,18 @@ export default function ButtonDebugPage() {
 
       {/* Pill Buttons */}
       <section className="space-y-6">
-        <h2 className="text-2xl font-semibold text-[var(--text-primary)]">Pill Buttons (Fully Rounded)</h2>
+        <h2 className="text-2xl font-semibold text-[var(--fg)]">Pill Buttons (Fully Rounded)</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr>
-                <th className="p-4 border-b border-[var(--border-primary)] text-[var(--text-secondary)] font-medium">
+                <th className="p-4 border-b border-[var(--border)] text-[var(--fg-muted)] font-medium">
                   Variant / Size
                 </th>
                 {pillSizes.map((size) => (
                   <th
                     key={size}
-                    className="p-4 border-b border-[var(--border-primary)] text-[var(--text-secondary)] font-medium whitespace-nowrap"
+                    className="p-4 border-b border-[var(--border)] text-[var(--fg-muted)] font-medium whitespace-nowrap"
                   >
                     {size}
                   </th>
@@ -113,8 +113,8 @@ export default function ButtonDebugPage() {
             </thead>
             <tbody>
               {variants.map((variant) => (
-                <tr key={variant} className="border-b border-[var(--border-primary)]">
-                  <td className="p-4 font-medium text-[var(--text-primary)] whitespace-nowrap">
+                <tr key={variant} className="border-b border-[var(--border)]">
+                  <td className="p-4 font-medium text-[var(--fg)] whitespace-nowrap">
                     {variant}
                   </td>
                   {pillSizes.map((size) => (
@@ -133,18 +133,18 @@ export default function ButtonDebugPage() {
 
       {/* Icon Buttons (Rounded) */}
       <section className="space-y-6">
-        <h2 className="text-2xl font-semibold text-[var(--text-primary)]">Icon Buttons (Rounded)</h2>
+        <h2 className="text-2xl font-semibold text-[var(--fg)]">Icon Buttons (Rounded)</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr>
-                <th className="p-4 border-b border-[var(--border-primary)] text-[var(--text-secondary)] font-medium">
+                <th className="p-4 border-b border-[var(--border)] text-[var(--fg-muted)] font-medium">
                   Variant / Size
                 </th>
                 {iconSizes.map((size) => (
                   <th
                     key={size}
-                    className="p-4 border-b border-[var(--border-primary)] text-[var(--text-secondary)] font-medium whitespace-nowrap"
+                    className="p-4 border-b border-[var(--border)] text-[var(--fg-muted)] font-medium whitespace-nowrap"
                   >
                     {size}
                   </th>
@@ -153,8 +153,8 @@ export default function ButtonDebugPage() {
             </thead>
             <tbody>
               {variants.map((variant) => (
-                <tr key={variant} className="border-b border-[var(--border-primary)]">
-                  <td className="p-4 font-medium text-[var(--text-primary)] whitespace-nowrap">
+                <tr key={variant} className="border-b border-[var(--border)]">
+                  <td className="p-4 font-medium text-[var(--fg)] whitespace-nowrap">
                     {variant}
                   </td>
                   {iconSizes.map((size) => (
@@ -173,18 +173,18 @@ export default function ButtonDebugPage() {
 
       {/* Icon Buttons (Circular) */}
       <section className="space-y-6">
-        <h2 className="text-2xl font-semibold text-[var(--text-primary)]">Icon Buttons (Circular)</h2>
+        <h2 className="text-2xl font-semibold text-[var(--fg)]">Icon Buttons (Circular)</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr>
-                <th className="p-4 border-b border-[var(--border-primary)] text-[var(--text-secondary)] font-medium">
+                <th className="p-4 border-b border-[var(--border)] text-[var(--fg-muted)] font-medium">
                   Variant / Size
                 </th>
                 {iconPillSizes.map((size) => (
                   <th
                     key={size}
-                    className="p-4 border-b border-[var(--border-primary)] text-[var(--text-secondary)] font-medium whitespace-nowrap"
+                    className="p-4 border-b border-[var(--border)] text-[var(--fg-muted)] font-medium whitespace-nowrap"
                   >
                     {size}
                   </th>
@@ -193,8 +193,8 @@ export default function ButtonDebugPage() {
             </thead>
             <tbody>
               {variants.map((variant) => (
-                <tr key={variant} className="border-b border-[var(--border-primary)]">
-                  <td className="p-4 font-medium text-[var(--text-primary)] whitespace-nowrap">
+                <tr key={variant} className="border-b border-[var(--border)]">
+                  <td className="p-4 font-medium text-[var(--fg)] whitespace-nowrap">
                     {variant}
                   </td>
                   {iconPillSizes.map((size) => (
@@ -213,7 +213,7 @@ export default function ButtonDebugPage() {
 
       {/* Disabled State */}
       <section className="space-y-6">
-        <h2 className="text-2xl font-semibold text-[var(--text-primary)]">Disabled State</h2>
+        <h2 className="text-2xl font-semibold text-[var(--fg)]">Disabled State</h2>
         <div className="flex flex-wrap gap-4">
           {variants.map((variant) => (
             <Button key={variant} variant={variant} disabled>
@@ -225,7 +225,7 @@ export default function ButtonDebugPage() {
 
       {/* With Icons (Text + Icon) */}
       <section className="space-y-6">
-        <h2 className="text-2xl font-semibold text-[var(--text-primary)]">Text + Icon</h2>
+        <h2 className="text-2xl font-semibold text-[var(--fg)]">Text + Icon</h2>
         <div className="flex flex-wrap gap-4">
           {variants.map((variant) => (
             <Button key={variant} variant={variant}>
@@ -238,7 +238,7 @@ export default function ButtonDebugPage() {
       
        {/* With Icons (Icon + Text) */}
       <section className="space-y-6">
-        <h2 className="text-2xl font-semibold text-[var(--text-primary)]">Icon + Text</h2>
+        <h2 className="text-2xl font-semibold text-[var(--fg)]">Icon + Text</h2>
         <div className="flex flex-wrap gap-4">
           {variants.map((variant) => (
             <Button key={variant} variant={variant}>

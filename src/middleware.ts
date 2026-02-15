@@ -1,13 +1,11 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { log } from '@/lib/logger'
-
-// Cloudflare Pages requires edge runtime for middleware
-export const runtime = 'experimental-edge'
+import { getSupabasePublicEnv, hasSupabasePublicEnv } from '@/lib/supabase/env'
 
 export async function middleware(request: NextRequest) {
   // Check if environment variables are available
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  if (!hasSupabasePublicEnv()) {
     log.warn('Supabase environment variables not set, skipping auth proxy')
     return NextResponse.next({
       request,
@@ -15,13 +13,15 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
+    const { url, key } = getSupabasePublicEnv()
+
     let supabaseResponse = NextResponse.next({
       request,
     })
 
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      url,
+      key,
       {
         cookies: {
           getAll() {
@@ -52,8 +52,8 @@ export async function middleware(request: NextRequest) {
       return supabaseResponse
     }
 
-    // Protected routes (except root, changelog, auth pages, theme-debug, button-debug, and typography-debug)
-    const publicRoutes = ['/', '/changelog', '/theme-debug', '/button-debug', '/typography-debug']
+    // Protected routes (except root, changelog, auth pages, theme-debug, button-debug, typography-debug, terms, privacy, homepage, and onboarding-debug)
+    const publicRoutes = ['/', '/changelog', '/theme-debug', '/button-debug', '/typography-debug', '/terms', '/privacy', '/homepage', '/onboarding-debug']
     const isPublicRoute = publicRoutes.includes(request.nextUrl.pathname) ||
       request.nextUrl.pathname.startsWith('/auth') ||
       request.nextUrl.pathname.startsWith('/api')
@@ -88,9 +88,9 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - static assets (images, videos, fonts, etc.)
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|webm|ogg|mp3|wav|woff|woff2|ttf|eot)$).*)',
   ],
 }
-

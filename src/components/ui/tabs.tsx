@@ -16,10 +16,10 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "relative z-0 flex w-fit items-center justify-center gap-x-0.5 text-[var(--text-secondary)]",
+      "relative z-0 flex w-fit items-center justify-center gap-x-0.5 text-fg-muted",
       "data-[orientation=vertical]:flex-col",
       variant === "default"
-        ? "rounded-lg bg-[var(--bg-l0-solid)] p-0.5 text-[var(--text-tertiary)]"
+        ? "rounded-lg bg-bg-emphasis p-0.5 text-fg-subtle"
         : "data-[orientation=vertical]:px-1 data-[orientation=horizontal]:py-1",
       className,
     )}
@@ -38,14 +38,14 @@ const TabsTab = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex flex-1 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap rounded-md border border-[var(--border-primary)] border-transparent font-medium text-sm outline-none transition-[color,background-color,box-shadow] focus-visible:ring-2 focus-visible:ring-[var(--border-active)] disabled:pointer-events-none disabled:opacity-64 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
-      "hover:text-[var(--text-secondary)] data-[state=active]:text-[var(--text-primary)]",
+      "flex flex-1 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap rounded-md border border-transparent font-medium text-sm outline-none transition-[color,background-color,box-shadow] focus-visible:ring-2 focus-visible:ring-border-emphasis disabled:pointer-events-none disabled:opacity-64 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+      "hover:text-fg-muted data-[state=active]:text-fg",
       "gap-1.5 px-[calc(--spacing(2.5)-1px)] py-[calc(--spacing(1.5)-1px)]",
       "data-[orientation=vertical]:w-full data-[orientation=vertical]:justify-start",
       variant === "default" &&
-        "data-[state=active]:bg-[var(--bg-l2-solid)] data-[state=active]:shadow-sm",
+        "data-[state=active]:bg-bg-selected data-[state=active]:shadow-sm",
       variant === "underline" &&
-        "rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--border-active)]",
+        "rounded-none border-b-2 border-transparent data-[state=active]:border-border-emphasis",
       className,
     )}
     data-slot="tabs-trigger"

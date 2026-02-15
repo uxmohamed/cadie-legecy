@@ -9,7 +9,7 @@ function Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxP
   return (
     <CheckboxPrimitive.Root
       className={cn(
-        "peer relative inline-flex size-4 shrink-0 items-center justify-center rounded-[0.25rem] border border-[var(--border-primary)] bg-[var(--bg-field-default)] bg-clip-padding shadow-xs outline-none ring-[var(--border-active)] transition-shadow before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(0.25rem-1px)] not-disabled:not-data-[state=checked]:not-aria-invalid:before:shadow-[0_1px_--theme(--color-black/4%)] focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-64 aria-invalid:border-[var(--accent-red-primary)]/36 focus-visible:aria-invalid:border-[var(--accent-red-primary)]/64 focus-visible:aria-invalid:ring-[var(--accent-red-primary)]/48 [&:is(:disabled,[data-state=checked],[aria-invalid])]:shadow-none",
+        "peer relative inline-flex size-4 shrink-0 items-center justify-center rounded-[0.25rem] border border-border bg-bg-input bg-clip-padding shadow-xs outline-none ring-border-emphasis transition-shadow before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(0.25rem-1px)] not-disabled:not-data-[state=checked]:not-aria-invalid:before:shadow-[0_1px_--theme(--color-black/4%)] focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-64 aria-invalid:border-destructive/36 focus-visible:aria-invalid:border-destructive/64 focus-visible:aria-invalid:ring-destructive/48 [&:is(:disabled,[data-state=checked],[aria-invalid])]:shadow-none",
         className,
       )}
       data-slot="checkbox"
@@ -17,7 +17,7 @@ function Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxP
     >
       <CheckboxPrimitive.Indicator
         className={cn(
-          "-inset-px absolute flex items-center justify-center rounded-[0.25rem] text-[var(--text-inverse)] data-[state=unchecked]:hidden data-[state=checked]:bg-[var(--cta-primary-default)] data-[state=indeterminate]:text-[var(--text-primary)]",
+          "-inset-px absolute flex items-center justify-center rounded-[0.25rem] text-fg-on-accent data-[state=unchecked]:hidden data-[state=checked]:bg-btn-primary data-[state=indeterminate]:text-fg",
         )}
         data-slot="checkbox-indicator"
       >

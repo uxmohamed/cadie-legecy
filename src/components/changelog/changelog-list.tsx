@@ -20,17 +20,23 @@ export function ChangelogList({ entries }: ChangelogListProps) {
   if (entries.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-[var(--text-tertiary)]">No changelog entries yet.</p>
+        <p className="text-fg-subtle">No changelog entries yet.</p>
       </div>
     );
   }
 
-  // Sort entries by date (newest first)
+  // Sort entries by date (newest first), then by version (newest first)
   const sortedEntries = useMemo(() => {
     return [...entries].sort((a, b) => {
       const dateA = new Date(a.date).getTime();
       const dateB = new Date(b.date).getTime();
-      return dateB - dateA;
+      if (dateB !== dateA) {
+        return dateB - dateA;
+      }
+      // If dates are equal, sort by version (descending)
+      const versionA = a.version || "0.0.0";
+      const versionB = b.version || "0.0.0";
+      return versionB.localeCompare(versionA, undefined, { numeric: true });
     });
   }, [entries]);
 
@@ -45,8 +51,8 @@ export function ChangelogList({ entries }: ChangelogListProps) {
             <div className="flex flex-col md:flex-row gap-y-4 md:gap-y-6">
               {/* Left column - Date */}
               <div className="md:w-48 flex-shrink-0">
-                <div className="md:sticky md:top-8">
-                  <time className="text-sm font-medium text-[var(--text-tertiary)] block mb-2 md:mb-3">
+                <div className="md:sticky md:top-8 h-5 flex items-center">
+                  <time className="text-sm font-medium text-fg-subtle">
                     {formattedDate}
                   </time>
                 </div>
@@ -54,15 +60,18 @@ export function ChangelogList({ entries }: ChangelogListProps) {
 
               {/* Right column - Content with Timeline */}
               <div className="flex-1 justify-start md:pl-8 relative pb-8 md:pb-10">
-                {/* Vertical timeline line */}
-                <div className="hidden md:block absolute top-2 left-0 w-px h-full bg-[var(--border-primary)]">
-                  {/* Timeline dot */}
-                  <div
-                    className={`hidden md:block absolute top-0 -translate-x-1/2 size-1.5 ml-[0.5px] rounded-full z-10 ${
-                      index === 0 ? "bg-[var(--accent-blue-primary)]" : "bg-[var(--bg-inverse-primary)]"
-                    }`}
-                  />
-                </div>
+                {/* Vertical timeline line - hidden for last entry */}
+                {index < sortedEntries.length - 1 && (
+                  <div className="hidden md:block absolute top-2.5 left-0 w-px h-full -translate-x-1/2 bg-border" />
+                )}
+                {/* Sticky timeline dot - moves with date, hidden if only one entry */}
+                {sortedEntries.length > 1 && (
+                  <div className="hidden md:block absolute left-0 top-0 h-full z-10">
+                    <div className="sticky top-8 h-5 flex items-center">
+                      <div className="-translate-x-1/2 size-1.5 rounded-full bg-[var(--accent)]" />
+                    </div>
+                  </div>
+                )}
 
                 <ChangelogEntryComponent entry={entry} />
               </div>

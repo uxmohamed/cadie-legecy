@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateToken, hashToken } from "@/lib/auth-middleware";
+import { rateLimitAuth, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
+import { validateRequestBody } from "@/lib/validation/validate";
+import { createTokenSchema } from "@/lib/validation/auth.schemas";
 
-export const runtime = 'edge';
 
 /**
  * GET /api/auth/tokens
  * List all API tokens for the authenticated user
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -17,10 +19,24 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Apply rate limiting
+    const identifier = getIdentifier(request, user.id);
+    const { success, limit, reset, remaining } = await rateLimitAuth.limit(identifier);
+    
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { 
+          status: 429,
+          headers: getRateLimitHeaders(limit, remaining, reset)
+        }
+      );
+    }
+
     // Fetch all tokens for the user (without token_hash)
     const { data: tokens, error } = await supabase
       .from("api_tokens")
-      .select("id, name, last_used_at, created_at")
+      .select("id, name, last_used_at, created_at, expires_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
@@ -32,7 +48,9 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json({ tokens: tokens || [] });
+    const response = NextResponse.json({ tokens: tokens || [] });
+    response.headers.set("Cache-Control", "private, max-age=0");
+    return response;
   } catch (error) {
     console.error("Error in GET /api/auth/tokens:", error);
     return NextResponse.json(
@@ -58,38 +76,53 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { name } = body;
-
-    if (!name || typeof name !== "string" || name.trim().length === 0) {
+    // Apply rate limiting
+    const identifier = getIdentifier(request, user.id);
+    const { success, limit, reset, remaining } = await rateLimitAuth.limit(identifier);
+    
+    if (!success) {
       return NextResponse.json(
-        { error: "Token name is required" },
-        { status: 400 }
+        { error: "Too many requests. Please try again later." },
+        { 
+          status: 429,
+          headers: getRateLimitHeaders(limit, remaining, reset)
+        }
       );
     }
 
-    if (name.length > 100) {
-      return NextResponse.json(
-        { error: "Token name must be 100 characters or less" },
-        { status: 400 }
-      );
+    // Validate request body
+    const { data: validatedData, error: validationError } = await validateRequestBody(
+      request,
+      createTokenSchema
+    );
+    
+    if (validationError) {
+      return validationError;
     }
+
+    const { name } = validatedData;
 
     // Generate a new token (plaintext)
     const token = generateToken(32); // 32 bytes = 43 characters in base64url
     
     // Hash the token for storage
-    const tokenHash = hashToken(token);
+    const tokenHash = await hashToken(token);
+    
+    // Set expiration (90 days from now)
+    const DEFAULT_TOKEN_EXPIRATION_DAYS = 90;
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + DEFAULT_TOKEN_EXPIRATION_DAYS);
 
-    // Store the hashed token in the database
+    // Store the hashed token in the database with expiration
     const { data: tokenRecord, error } = await supabase
       .from("api_tokens")
       .insert({
         user_id: user.id,
         token_hash: tokenHash,
         name: name.trim(),
+        expires_at: expiresAt.toISOString(),
       })
-      .select("id, name, created_at")
+      .select("id, name, created_at, expires_at")
       .single();
 
     if (error) {
@@ -100,12 +133,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Return the plaintext token (ONLY TIME we send it)
+    // Return the plaintext token (ONLY TIME we send it) and expiration
     return NextResponse.json({
       token,
       id: tokenRecord.id,
       name: tokenRecord.name,
       created_at: tokenRecord.created_at,
+      expires_at: tokenRecord.expires_at,
     }, { status: 201 });
   } catch (error) {
     console.error("Error in POST /api/auth/tokens:", error);

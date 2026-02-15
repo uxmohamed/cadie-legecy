@@ -1,7 +1,7 @@
 {
-  "name": "caddy-extension",
-  "version": "1.0.0",
-  "description": "Chrome extension for Caddy - Save anything from the web",
+  "name": "cadie-extension",
+  "version": "0.1.0-beta.1",
+  "description": "Chrome extension for Cadie - Save anything from the web",
   "private": true,
   "scripts": {
     "dev": "webpack --watch --mode development",

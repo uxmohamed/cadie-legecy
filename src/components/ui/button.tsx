@@ -36,23 +36,23 @@ const buttonVariants = cva(
       },
       variant: {
         default:
-          "bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2",
+          "bg-btn-primary text-fg-on-accent hover:bg-btn-primary-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         neutral:
-          "bg-[var(--cta-neutral-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-neutral-hover)] focus-visible:ring-2 focus-visible:ring-[var(--border-active)] focus-visible:ring-offset-2",
+          "bg-btn-neutral text-fg-on-accent hover:bg-btn-neutral-hover focus-visible:ring-2 focus-visible:ring-border-emphasis focus-visible:ring-offset-2",
         destructive:
-          "bg-[var(--cta-destructive-default)] text-[var(--text-destructive)] hover:bg-[var(--cta-destructive-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-red-primary)] focus-visible:ring-offset-2",
+          "bg-transparent text-destructive hover:bg-destructive-muted focus-visible:ring-2 focus-visible:ring-border-destructive focus-visible:ring-offset-2",
         "destructive-outline":
-          "border border-[var(--border-destructive)] bg-transparent text-[var(--text-destructive)] hover:bg-[var(--bg-overlay-destructive)] focus-visible:ring-2 focus-visible:ring-[var(--accent-red-primary)] focus-visible:ring-offset-2",
+          "border border-border-destructive bg-transparent text-destructive hover:bg-destructive-muted focus-visible:ring-2 focus-visible:ring-border-destructive focus-visible:ring-offset-2",
         "destructive-secondary":
-          "bg-[var(--bg-overlay-destructive)] text-[var(--text-destructive)] hover:bg-[var(--cta-destructive-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-red-primary)] focus-visible:ring-offset-2",
+          "bg-destructive-muted text-destructive hover:bg-destructive-muted focus-visible:ring-2 focus-visible:ring-border-destructive focus-visible:ring-offset-2",
         ghost:
-          "bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2",
+          "bg-transparent hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-border-muted focus-visible:ring-offset-2",
         link:
-          "bg-transparent text-[var(--text-link)] underline-offset-4 hover:underline hover:text-[var(--accent-blue-primary)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2",
+          "bg-transparent text-accent underline-offset-4 hover:underline hover:text-accent-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         outline:
-          "bg-[var(--bg-l2-solid)] hover:bg-[var(--bg-cell-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2 shadow-[0_0_0_1px_rgba(31,34,37,0.09)_inset,0_2px_8px_-2px_rgba(0,0,0,0.04),0_2px_4px_-2px_rgba(0,0,0,0.04)]",
+          "bg-bg-surface hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 shadow-sm",
         secondary:
-          "bg-[var(--bg-field-default)] text-[var(--text-primary)] hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2",
+          "bg-btn-secondary text-fg hover:bg-btn-secondary-hover focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2",
       },
     },
   },

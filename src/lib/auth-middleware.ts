@@ -23,12 +23,15 @@ export async function authenticateRequest(
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.substring(7);
     const userId = await authenticateWithToken(token);
-    if (userId) {
-      return userId;
+    // If Bearer token was provided but is invalid, DON'T fall back to session
+    // This ensures revoked tokens properly fail
+    if (!userId) {
+      return null;
     }
+    return userId;
   }
 
-  // Fall back to session-based authentication
+  // Fall back to session-based authentication (only when no Bearer token provided)
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
@@ -42,6 +45,8 @@ export async function authenticateRequest(
  */
 async function authenticateWithToken(token: string): Promise<string | null> {
   if (!token || token.length < 32) {
+    // SECURITY: Don't log token details - could aid attackers
+    log.warn("[AUTH] Invalid token format");
     return null;
   }
 
@@ -49,30 +54,44 @@ async function authenticateWithToken(token: string): Promise<string | null> {
     // Hash the token using SHA-256 (matching the hash we store)
     const tokenHash = await hashToken(token);
     
+    // SECURITY: Don't log hash prefix - could aid brute force attacks
+    
     // Use service role to query api_tokens table
     // We need to use service role because RLS won't let us query without auth
     const supabase = await createClient();
     
-    // Look up token in database
+    // Current timestamp for expiration check
+    const now = new Date().toISOString();
+    
+    // Look up token in database and check expiration
     const { data: tokenRecord, error } = await supabase
       .from("api_tokens")
-      .select("user_id, id")
+      .select("user_id, id, expires_at")
       .eq("token_hash", tokenHash)
+      .gt("expires_at", now) // Only return non-expired tokens
       .single();
 
     if (error || !tokenRecord) {
-      log.error("Token authentication failed", error);
+      // SECURITY: Log generic message only - don't reveal whether token exists
+      log.warn("[AUTH] Token authentication failed");
       return null;
     }
 
+    // SECURITY: Don't log userId in production - use structured audit logging instead
+    if (process.env.NODE_ENV === 'development') {
+      log.debug("[AUTH] Token authenticated successfully");
+    }
+
     // Update last_used_at timestamp asynchronously (don't await)
-    updateTokenLastUsed(tokenRecord.id).catch((err) => {
-      log.error("Failed to update token last_used_at", err, { tokenId: tokenRecord.id });
+    updateTokenLastUsed(tokenRecord.id).catch(() => {
+      // SECURITY: Don't log token ID - use generic message
+      log.warn("[AUTH] Failed to update token last used timestamp");
     });
 
     return tokenRecord.user_id;
   } catch (error) {
-    log.error("Error during token authentication", error);
+    // SECURITY: Don't log error details that could reveal system internals
+    log.error("[AUTH] Token authentication error");
     return null;
   }
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { validateUUID } from "@/lib/validation/validate";
 
-export const runtime = 'edge';
 
 /**
  * DELETE /api/auth/tokens/[id]
@@ -21,12 +21,9 @@ export async function DELETE(
 
     const { id } = await params;
 
-    if (!id) {
-      return NextResponse.json(
-        { error: "Token ID is required" },
-        { status: 400 }
-      );
-    }
+    // UUID validation
+    const uuidError = validateUUID(id, "Token ID");
+    if (uuidError) return uuidError;
 
     // Delete the token (RLS ensures user can only delete their own tokens)
     const { error } = await supabase

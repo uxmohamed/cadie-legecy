@@ -27,14 +27,12 @@ export interface Database {
           updated_at?: string;
         };
       };
-      categories: {
+      spaces: {
         Row: {
           id: string;
           user_id: string;
           name: string;
           color: string;
-          icon: string | null;
-          description: string | null;
           sort_order: number;
           created_at: string;
           updated_at: string;
@@ -44,8 +42,6 @@ export interface Database {
           user_id: string;
           name: string;
           color: string;
-          icon?: string | null;
-          description?: string | null;
           sort_order?: number;
           created_at?: string;
           updated_at?: string;
@@ -55,11 +51,29 @@ export interface Database {
           user_id?: string;
           name?: string;
           color?: string;
-          icon?: string | null;
-          description?: string | null;
           sort_order?: number;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      link_spaces: {
+        Row: {
+          id: string;
+          link_id: string;
+          space_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          link_id: string;
+          space_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          link_id?: string;
+          space_id?: string;
+          created_at?: string;
         };
       };
       links: {
@@ -70,7 +84,6 @@ export interface Database {
           url: string;
           clean_url: string;
           domain: string;
-          category_id: string | null;
           favicon_url: string | null;
           og_image_url: string | null;
           description: string | null;
@@ -91,6 +104,22 @@ export interface Database {
           sort_order: number;
           created_at: string;
           updated_at: string;
+          // Comprehensive metadata columns
+          final_url: string | null;
+          canonical_url: string | null;
+          site_name: string | null;
+          favicon_variants: Record<string, unknown>[] | null;
+          preview_image_width: number | null;
+          preview_image_height: number | null;
+          theme_color: string | null;
+          language: string | null;
+          word_count: number | null;
+          reading_time_minutes: number | null;
+          status_code: number | null;
+          fetch_status: string;
+          fetched_at: string | null;
+          etag: string | null;
+          last_modified: string | null;
         };
         Insert: {
           id?: string;
@@ -99,7 +128,6 @@ export interface Database {
           url: string;
           clean_url: string;
           domain: string;
-          category_id?: string | null;
           favicon_url?: string | null;
           og_image_url?: string | null;
           description?: string | null;
@@ -120,6 +148,22 @@ export interface Database {
           sort_order?: number;
           created_at?: string;
           updated_at?: string;
+          // Comprehensive metadata columns
+          final_url?: string | null;
+          canonical_url?: string | null;
+          site_name?: string | null;
+          favicon_variants?: Record<string, unknown>[] | null;
+          preview_image_width?: number | null;
+          preview_image_height?: number | null;
+          theme_color?: string | null;
+          language?: string | null;
+          word_count?: number | null;
+          reading_time_minutes?: number | null;
+          status_code?: number | null;
+          fetch_status?: string;
+          fetched_at?: string | null;
+          etag?: string | null;
+          last_modified?: string | null;
         };
         Update: {
           id?: string;
@@ -128,7 +172,6 @@ export interface Database {
           url?: string;
           clean_url?: string;
           domain?: string;
-          category_id?: string | null;
           favicon_url?: string | null;
           og_image_url?: string | null;
           description?: string | null;
@@ -149,6 +192,22 @@ export interface Database {
           sort_order?: number;
           created_at?: string;
           updated_at?: string;
+          // Comprehensive metadata columns
+          final_url?: string | null;
+          canonical_url?: string | null;
+          site_name?: string | null;
+          favicon_variants?: Record<string, unknown>[] | null;
+          preview_image_width?: number | null;
+          preview_image_height?: number | null;
+          theme_color?: string | null;
+          language?: string | null;
+          word_count?: number | null;
+          reading_time_minutes?: number | null;
+          status_code?: number | null;
+          fetch_status?: string;
+          fetched_at?: string | null;
+          etag?: string | null;
+          last_modified?: string | null;
         };
       };
       link_tags: {

@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LinkService } from "@/features/links/services";
-import { MetadataService } from "@/features/links/services";
-import { DuplicateDetectionService } from "@/features/links/services";
 import { SupabaseLinkRepository } from "@/features/links/repositories";
 import { authenticateRequest } from "@/lib/auth-middleware";
 import { toAppError, ErrorCode } from "@/lib/errors";
@@ -15,13 +13,7 @@ export class GetLinksHandler {
 
     constructor() {
         const repository = new SupabaseLinkRepository();
-        const metadataService = new MetadataService();
-        const duplicateDetectionService = new DuplicateDetectionService();
-        this.linkService = new LinkService(
-            repository,
-            metadataService,
-            duplicateDetectionService
-        );
+        this.linkService = new LinkService(repository);
     }
 
     async handle(request: NextRequest): Promise<NextResponse> {
@@ -43,18 +35,21 @@ export class GetLinksHandler {
 
             // Parse query parameters
             const searchParams = request.nextUrl.searchParams;
-            const categoryId = searchParams.get("category_id") || undefined;
+            const limit = parseInt(searchParams.get("limit") || "20");
+            const offset = parseInt(searchParams.get("offset") || "0");
+            const spaceId = searchParams.get("space_id") || undefined;
             const isArchived = searchParams.get("is_archived") === "true";
             const isDeleted = searchParams.get("is_deleted") === "true";
+            const searchQuery = searchParams.get("q") || undefined;
 
             // Get links using service
-            const links = await this.linkService.getLinks(userId, {
-                category_id: categoryId,
+            const result = await this.linkService.getLinks(userId, {
+                space_id: spaceId,
                 is_archived: isArchived,
                 is_deleted: isDeleted,
-            });
+            }, limit, offset, searchQuery);
 
-            return NextResponse.json({ links });
+            return NextResponse.json(result);
         } catch (error) {
             const appError = toAppError(error);
             return NextResponse.json(

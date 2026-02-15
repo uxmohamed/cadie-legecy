@@ -4,22 +4,75 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
-import { IconMenu, IconX } from "@tabler/icons-react";
+import { IconMenu, IconX, IconConfettiFilled, IconChevronDown, IconArrowRight } from "@tabler/icons-react";
 import {
   Sheet,
   SheetContent,
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
+import { Footer } from "@/components/footer";
+import type { ChangelogEntry } from "@/types/changelog";
+import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 
-export function LandingPage() {
+function FaqItem({ question, children, isOpen, onToggle }: { question: string; children: React.ReactNode; isOpen: boolean; onToggle: () => void }) {
+  return (
+    <div className="bg-bg-field-light rounded-xl transition-colors duration-150">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between text-left gap-4 px-5 py-4 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      >
+        <span className="text-sm font-medium text-fg">{question}</span>
+        <IconChevronDown 
+          className={`size-5 text-[var(--brand)] shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
+        />
+      </button>
+      <div className={`overflow-hidden transition-[max-height] duration-200 ${isOpen ? 'max-h-40' : 'max-h-0'}`}>
+        <p className="px-5 pb-4 text-sm text-fg-muted pr-12">
+          {children}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+interface LandingPageProps {
+  changelogEntries?: ChangelogEntry[];
+}
+
+export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [openFaqId, setOpenFaqId] = useState<string | null>(null);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--bg-l2-solid)] selection:bg-brand/10 selection:text-brand">
+    <div className="flex min-h-screen flex-col bg-bg selection:bg-brand/10 selection:text-brand">
       {/* Header */}
-      <div>
+      <header className={`sticky top-0 z-50 transition-all duration-200 ${isScrolled ? "bg-bg/90 backdrop-blur-md border-b border-border" : "bg-transparent"}`}>
         <div className="max-w-5xl mx-auto relative">
           <div className="p-3 sm:p-4 md:p-3 flex items-center justify-between relative">
             {/* Logo */}
@@ -30,65 +83,66 @@ export function LandingPage() {
             </div>
             
             {/* Desktop Navigation - Centered */}
-            <div className="hidden md:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
-              <Link href="#">
-                <Button className="relative text-black/60 hover:text-black inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
+            <nav className="hidden md:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
+              <Button asChild variant="ghost" className="text-fg-muted hover:text-fg">
+                <a
+                  href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   Extension
-                </Button>
-              </Link>
-              <Link href="/changelog">
-                <Button className="relative text-black/60 hover:text-black inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
-                  Changelog
-                </Button>
-              </Link>
-              <a
-                href="https://x.com/caddyapp_"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button className="relative text-black/60 hover:text-black inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-[var(--bg-field-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent-blue-primary)] focus-visible:ring-offset-2">
+                </a>
+              </Button>
+              <Button asChild variant="ghost" className="text-fg-muted hover:text-fg">
+                <Link href="/changelog">Changelog</Link>
+              </Button>
+              <Button asChild variant="ghost" className="text-fg-muted hover:text-fg">
+                <a
+                  href="https://x.com/cadieapp_"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   X (Twitter)
-                </Button>
-              </a>
-            </div>
+                </a>
+              </Button>
+            </nav>
             
             {/* Right Side - Auth Buttons + Mobile Menu */}
             <div className="flex items-center gap-3">
               {/* Get Started Button - Always visible */}
-              <Link href="/auth" className="hidden sm:block">
-                <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-9 px-3.5 py-2 text-base rounded-lg bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
-                  Get Started
-                </Button>
-              </Link>
+              <Button asChild size="lg" className="hidden sm:inline-flex text-sm">
+                <Link href="/auth">Get Started</Link>
+              </Button>
               
               {/* Mobile Menu */}
               <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button className="md:hidden py-2 px-2 bg-transparent border-0 text-[var(--text-primary)] rounded-xl shadow-none hover:bg-[var(--bg-field-hover)] transition-colors duration-150">
+                  <Button className="md:hidden py-2 px-2 bg-transparent border-0 text-fg rounded-xl shadow-none hover:bg-bg-hover transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" aria-label="Open menu">
                     <IconMenu className="h-6 w-6" />
                   </Button>
                 </SheetTrigger>
                 <SheetContent 
                   side="right" 
-                  className="w-full !max-w-none p-0 inset-y-0 right-0 left-0 !transition-all !duration-[400ms] ease-in-out data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:animate-in data-[state=open]:slide-in-from-right" 
+                  className="w-full !max-w-none p-0 inset-y-0 right-0 left-0 !transition-[transform,opacity] !duration-[400ms] ease-in-out data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:animate-in data-[state=open]:slide-in-from-right" 
                   showCloseButton={false}
                 >
                   <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                  <div className="flex flex-col h-full bg-[var(--bg-l2-solid)]">
+                  <div className="flex flex-col h-full bg-bg">
                     {/* Mobile Menu Header */}
-                    <div className="flex items-center justify-between p-4 border-b border-[var(--border-primary)]">
+                    <div className="flex items-center justify-between p-4 border-b border-border">
                       <Link href="/" onClick={() => setIsMenuOpen(false)}>
                         <Logo className="h-6 w-auto" />
                       </Link>
                       <div className="flex items-center gap-2">
-                        <Link href="/auth" onClick={() => setIsMenuOpen(false)}>
-                          <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2">
+                        <Button asChild>
+                          <Link href="/auth" onClick={() => setIsMenuOpen(false)}>
                             Get Started
-                          </Button>
-                        </Link>
-                        <Button 
+                          </Link>
+                        </Button>
+                        <Button
                           onClick={() => setIsMenuOpen(false)}
-                          className="py-2 px-2 bg-transparent border-0 text-[var(--text-secondary)] rounded-xl shadow-none hover:bg-[var(--bg-field-hover)] transition-colors duration-150"
+                          className="py-2 px-2 bg-transparent border-0 text-fg-muted rounded-xl shadow-none hover:bg-bg-hover transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          aria-label="Close menu"
                         >
                           <IconX className="h-5 w-5" />
                         </Button>
@@ -98,32 +152,34 @@ export function LandingPage() {
                     {/* Mobile Menu Items */}
                     <nav className="flex-1 overflow-y-auto p-6">
                       <div className="flex flex-col gap-6">
-                        <Link 
-                          href="#" 
-                          className="text-2xl font-medium text-[var(--text-primary)] hover:text-[var(--text-secondary)] transition-colors"
+                        <a
+                          href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-2xl font-medium text-fg hover:text-fg-muted transition-colors"
                           onClick={() => setIsMenuOpen(false)}
                         >
                           Extension
-                        </Link>
+                        </a>
                         <Link 
                           href="/changelog" 
-                          className="text-2xl font-medium text-[var(--text-primary)] hover:text-[var(--text-secondary)] transition-colors"
+                          className="text-2xl font-medium text-fg hover:text-fg-muted transition-colors"
                           onClick={() => setIsMenuOpen(false)}
                         >
                           Changelog
                         </Link>
                         <a
-                          href="https://x.com/caddyapp_"
+                          href="https://x.com/cadieapp_"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-2xl font-medium text-[var(--text-primary)] hover:text-[var(--text-secondary)] transition-colors"
+                          className="text-2xl font-medium text-fg hover:text-fg-muted transition-colors"
                           onClick={() => setIsMenuOpen(false)}
                         >
                           X (Twitter)
                         </a>
                         <Link 
                           href="/auth" 
-                          className="text-2xl font-medium text-[var(--text-primary)] hover:text-[var(--text-secondary)] transition-colors sm:hidden"
+                          className="text-2xl font-medium text-fg hover:text-fg-muted transition-colors sm:hidden"
                           onClick={() => setIsMenuOpen(false)}
                         >
                           Log In
@@ -136,55 +192,316 @@ export function LandingPage() {
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Hero Section */}
-      <main className="flex-1 pt-12 sm:pt-16 md:pt-20 pb-16 sm:pb-20 px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 pt-12 sm:pt-16 md:pt-20 pb-16 sm:pb-20 md:pb-24 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-[var(--text-primary)] mb-4 sm:mb-6 font-custom leading-tight sm:leading-snug">
-            The simplest way <br className="hidden sm:block" />{" "}
-            to <span
-              className="bg-[color-mix(in_oklab,var(--caddy-color-6)_12%,transparent)] text-[var(--text-link)] px-1"
-            >save links</span>
+          {/* Beta Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-bg-input mb-2 sm:mb-4">
+            <IconConfettiFilled className="size-5 text-fg-muted" />
+            <span className="text-sm font-medium text-fg-muted">Cadie beta is now live</span>
+          </div>
+
+          <h1 className="text-5xl sm:text-6xl font-medium tracking-[-0.05em] text-fg mb-2 sm:mb-4 font-custom leading-[1.1]">
+            Your personal library <br className="hidden sm:block" />
+            for the internet.
           </h1>
 
-          <p className="mx-auto max-w-xs sm:max-w-md text-base sm:text-lg font-medium text-[var(--text-tertiary)] mb-6 sm:mb-8 leading-6 sm:leading-7">
-            Save links from anywhere and keep everything in one place.
+          <p className="mx-auto max-w-xs sm:max-w-md text-base sm:text-lg font-medium text-fg-subtle mb-6 sm:mb-8 leading-6 sm:leading-7">
+            Never lose a link again. See it, save it, find it later.
           </p>
 
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <Link href="/auth">
-              <Button
-                size="lg"
-                className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-4 py-3 text-base rounded-xl [&_svg:not([class*='size-'])]:size-4.5 bg-[var(--cta-primary-default)] text-[var(--text-inverse)] hover:bg-[var(--cta-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--cta-primary-default)] focus-visible:ring-offset-2"
-              >
-                Get Started
-              </Button>
-            </Link>
-          </div>
-
-          {/* Product Screenshot */}
-          <div className="mt-12 sm:mt-16 md:mt-20 relative mx-auto w-full max-w-4xl ">
-            {/* Gradient border wrapper */}
-            <div className="relative rounded-2xl p-[1px] bg-gradient-to-b from-[var(--border-primary)] from-60% to-transparent to-100%">
-              <div className="relative w-full overflow-hidden rounded-2xl bg-[var(--bg-l2-solid)]">
-                <Image
-                  src="/product-landing.png"
-                  alt="Caddy Interface"
-                  width={1200}
-                  height={800}
-                  className="w-full h-auto"
-                  priority
-                />
-                {/* Gradient mask overlay */}
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent from-60% to-[var(--bg-l2-solid)] to-100%"></div>
-              </div>
-            </div>
+            <Button asChild className="w-full sm:w-auto min-h-10 px-8 py-3 text-base rounded-lg">
+              <Link href="/auth">Get Started</Link>
+            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-8 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-bg-muted text-fg hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
+                >
+                  Watch demo
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-black border-none">
+                <DialogTitle className="sr-only">Cadie Demo Video</DialogTitle>
+                <div className="aspect-video w-full">
+                  <iframe
+                    className="h-full w-full"
+                    src="https://www.youtube.com/embed/l4sVPobIW0A?autoplay=1"
+                    title="Cadie Demo Video"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  ></iframe>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </main>
+
+      {/* Full-width Product Showcase */}
+      <section className="relative w-full overflow-hidden">
+        {/* Artwork Background */}
+        <div className="absolute inset-0">
+          <Image
+            src="/artwork-bg.png"
+            alt=""
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
+        
+        {/* Product Screenshot */}
+        <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-12">
+          <div className="mx-auto max-w-4xl">
+            <div className="relative overflow-hidden">
+              <Image
+                src="/product-ui.png"
+                alt="Cadie Interface"
+                width={1200}
+                height={800}
+                className="w-full h-auto"
+                priority
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="pt-16 sm:pt-20 md:pt-24 pb-0 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto space-y-12 md:space-y-16">
+          
+          {/* Feature 1: Save with one click - Text Left, Image Right */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div className="space-y-4">
+              <h2 className="text-xl sm:text-2xl font-medium text-fg font-custom">
+                Save with one click
+              </h2>
+              <p className="text-md font-[470] text-fg-muted leading-relaxed max-w-md">
+                Click the Cadie Chrome extension and the current page is saved instantly to your library.
+              </p>
+              <a
+                href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm font-medium text-[var(--brand)] hover:text-[var(--brand-hover)] transition-colors mt-2"
+              >
+                Get extension
+                <IconArrowRight className="size-4" />
+              </a>
+            </div>
+            <div className="rounded-xl bg-bg-muted pt-12 pr-12">
+              <div className="relative aspect-[4/3] w-full overflow-hidden">
+                <video
+                  src="/vid-section01.mp4"
+                  autoPlay={!prefersReducedMotion}
+                  muted
+                  loop
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover object-right-top rounded-tr-[6px] rounded-br-[6px]"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Feature 2: Clean links by default - Image Left, Text Right */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div className="space-y-4 md:order-2">
+              <h2 className="text-xl sm:text-2xl font-medium text-fg font-custom">
+                Clean links by default
+              </h2>
+              <p className="text-md font-[470] text-fg-muted leading-relaxed max-w-md">
+                Cadie removes tracking and extra parameters when you save a link. You don&apos;t need to do anything.
+              </p>
+            </div>
+            <div className="rounded-xl bg-bg-muted pt-12 px-12 pb-0 overflow-hidden md:order-1">
+              <video
+                src="/vid-section02.mp4"
+                autoPlay={!prefersReducedMotion}
+                muted
+                loop
+                playsInline
+                className="w-full aspect-[4/3] object-cover object-center block rounded-t-[6px] border-t border-x border-[color-mix(in_oklab,var(--border)_40%,transparent)]"
+              />
+            </div>
+          </div>
+
+          {/* Feature 3: Keyboard-first - Text Left, Image Right */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div className="space-y-4">
+              <h2 className="text-xl sm:text-2xl font-medium text-fg font-custom">
+                Keyboard-first
+              </h2>
+              <p className="text-md font-[470] text-fg-muted leading-relaxed max-w-md">
+                You can navigate and manage your links using the keyboard instead of the mouse.
+              </p>
+            </div>
+            <div className="rounded-xl bg-bg-muted pt-12 px-12 pb-0 overflow-hidden">
+              <KeyboardShortcuts />
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* What's New Section */}
+      {changelogEntries.length > 0 && (
+        <section className="pt-16 sm:pt-20 md:pt-24 pb-0 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-2xl sm:text-4xl font-medium text-fg mb-6 font-custom">
+                What&apos;s New
+              </h2>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {changelogEntries.map((entry) => {
+                const date = new Date(entry.date);
+                const formattedDate = new Intl.DateTimeFormat(undefined, {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                }).format(date);
+                
+                return (
+                  <Link
+                    key={entry._id}
+                    href={`/changelog#${entry._raw.flattenedPath.replace("changelog/", "")}`}
+                    className="group block"
+                  >
+                    <article className="h-full bg-bg-muted rounded-xl p-6 transition-colors duration-200 hover:bg-bg-hover">
+                      <div className="flex flex-col gap-3">
+                        {/* Date */}
+                        <time className="text-sm font-medium text-fg-subtle">
+                          {formattedDate}
+                        </time>
+                        
+                        {/* Title */}
+                        <h3 className="text-lg font-[570] text-fg">
+                          {entry.title}
+                        </h3>
+                        
+                        {/* Description */}
+                        <p className="text-base font-[470] text-fg-muted line-clamp-2">
+                          {entry.description}
+                        </p>
+                        
+                        {/* Tags */}
+                        {entry.tags && Array.isArray(entry.tags) && entry.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {entry.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="h-6 w-fit px-2 text-xs font-medium bg-bg-surface text-fg-muted rounded-full border border-border flex items-center justify-center"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </article>
+                  </Link>
+                );
+              })}
+            </div>
+            
+            {/* View All Link */}
+            <div className="text-center mt-8">
+              <Link
+                href="/changelog"
+                className="inline-flex items-center gap-2 text-sm font-medium text-fg-muted hover:text-fg transition-colors"
+              >
+                View all updates
+                <IconArrowRight className="size-4" />
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* FAQ Section */}
+      <section className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl sm:text-4xl font-medium text-fg mb-6 font-custom">
+             FAQs
+            </h2>
+          </div>
+          <div className="max-w-[500px] mx-auto flex flex-col gap-1">
+            <FaqItem 
+              question="Is Cadie free to use?" 
+              isOpen={openFaqId === 'free'} 
+              onToggle={() => setOpenFaqId(openFaqId === 'free' ? null : 'free')}
+            >
+              Yes! Cadie is completely free during the beta period. We&apos;re focused on building the best link-saving experience before introducing any paid features.
+            </FaqItem>
+            <FaqItem 
+              question="How do I save links?" 
+              isOpen={openFaqId === 'save'} 
+              onToggle={() => setOpenFaqId(openFaqId === 'save' ? null : 'save')}
+            >
+              Manually add links from the dashboard using the input field or keyboard shortcuts. You can also use our Chrome extension for one-click saving!
+            </FaqItem>
+            <FaqItem 
+              question="Is my data private?" 
+              isOpen={openFaqId === 'privacy'} 
+              onToggle={() => setOpenFaqId(openFaqId === 'privacy' ? null : 'privacy')}
+            >
+              Absolutely. Your links are private by default and we never share or sell your data. You have full control over your content.
+            </FaqItem>
+            <FaqItem 
+              question="How do I organize my links?" 
+              isOpen={openFaqId === 'organize'} 
+              onToggle={() => setOpenFaqId(openFaqId === 'organize' ? null : 'organize')}
+            >
+              Use the archive feature to keep your main view clean. Quick search helps you find any link instantly, no folders needed.
+            </FaqItem>
+            <FaqItem 
+              question="What browsers are supported?" 
+              isOpen={openFaqId === 'browsers'} 
+              onToggle={() => setOpenFaqId(openFaqId === 'browsers' ? null : 'browsers')}
+            >
+              Cadie works on any modern web browser including Chrome, Firefox, Safari, Edge, and Brave. Access your links from any device with an internet connection.
+            </FaqItem>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="bg-[linear-gradient(to_bottom,var(--bg)_60%,var(--accent-muted)_100%)]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
+          <div className="flex flex-col items-center text-center space-y-8">
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-medium text-fg tracking-tight leading-[1.1]">
+              Save your web, simply.
+            </h2>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
+              <Button asChild className="w-full sm:w-auto min-h-12 px-8 text-base rounded-lg">
+                <Link href="/auth">Open app</Link>
+              </Button>
+              <Button asChild variant="secondary" className="w-full sm:w-auto min-h-12 px-8 text-base rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)] text-fg border border-border">
+                <a
+                  href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Get extension
+                </a>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="border-t border-border">
+        <Footer />
+      </div>
     </div>
   );
 }
-
 
