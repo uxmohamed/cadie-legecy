@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     .from("users")
     .select("preferences")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -95,7 +95,7 @@ export async function PATCH(request: NextRequest) {
     .from("users")
     .select("preferences")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
   if (readError) {
     return NextResponse.json({ error: readError.message }, { status: 500 });
@@ -122,10 +122,48 @@ export async function PATCH(request: NextRequest) {
     auto_space_forwarding_conditions: conditions,
   };
 
-  const { error: updateError } = await supabase
-    .from("users")
-    .update({ preferences })
-    .eq("id", userId);
+  let updateError: { message: string } | null = null;
+
+  if (current) {
+    const { error } = await supabase
+      .from("users")
+      .update({ preferences })
+      .eq("id", userId);
+
+    updateError = error;
+  } else {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError) {
+      return NextResponse.json({ error: authError.message }, { status: 500 });
+    }
+
+    if (!user?.email) {
+      return NextResponse.json(
+        { error: "Unable to persist settings because user email is unavailable" },
+        { status: 500 }
+      );
+    }
+
+    const { error } = await supabase
+      .from("users")
+      .insert({
+        id: userId,
+        email: user.email,
+        display_name:
+          typeof user.user_metadata?.full_name === "string"
+            ? user.user_metadata.full_name
+            : typeof user.user_metadata?.name === "string"
+              ? user.user_metadata.name
+              : null,
+        preferences,
+      });
+
+    updateError = error;
+  }
 
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });

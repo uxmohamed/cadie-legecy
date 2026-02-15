@@ -51,17 +51,19 @@ export function useKeyboardNavigation({
   // Register shortcuts for documentation purposes
   React.useEffect(() => {
     const shortcuts = [
-      { key: "j", description: "Move selection up", category: "Navigation", action: () => { } },
-      { key: "k", description: "Move selection down", category: "Navigation", action: () => { } },
+      { key: "j", description: "Move selection down", category: "Navigation", action: () => { } },
+      { key: "k", description: "Move selection up", category: "Navigation", action: () => { } },
       { key: "Enter", description: "Open selected link(s)", category: "Navigation", action: () => { } },
       { key: "e", description: "Edit selected link", category: "Actions", action: () => { } },
       { key: "d", description: "Move to Trash", category: "Actions", action: () => { } },
-      { key: "Backspace", description: "Delete selection", category: "Actions", action: () => { } },
+      { key: "Cmd+Backspace", description: "Delete selection", category: "Actions", action: () => { } },
+      { key: "Ctrl+Backspace", description: "Delete selection", category: "Actions", action: () => { } },
       { key: "Cmd+a", description: "Select all", category: "Actions", action: () => { } },
+      { key: "Ctrl+a", description: "Select all", category: "Actions", action: () => { } },
     ] as const;
 
-    shortcuts.forEach((s) => registerShortcut(s));
-    return () => shortcuts.forEach((s) => unregisterShortcut(s.key));
+    const shortcutIds = shortcuts.map((s) => registerShortcut(s));
+    return () => shortcutIds.forEach((id) => unregisterShortcut(id));
   }, [registerShortcut, unregisterShortcut]);
 
   React.useEffect(() => {
@@ -74,8 +76,10 @@ export function useKeyboardNavigation({
 
       if (isInputFocused) return;
 
+      const hasLinks = displayLinks.length > 0;
+
       // Navigation
-      if (e.key === "ArrowDown" || e.key === "k") {
+      if ((e.key === "ArrowDown" || e.key === "j") && hasLinks) {
         e.preventDefault();
         let nextIndex = 0;
 
@@ -113,7 +117,7 @@ export function useKeyboardNavigation({
           setLastSelectedIndex(nextIndex);
         }
 
-      } else if (e.key === "ArrowUp" || e.key === "j") {
+      } else if ((e.key === "ArrowUp" || e.key === "k") && hasLinks) {
         e.preventDefault();
         let nextIndex = 0;
 
@@ -175,11 +179,11 @@ export function useKeyboardNavigation({
         (document.activeElement as HTMLElement)?.blur();
       }
 
-      if (e.key === "Home") {
+      if (e.key === "Home" && hasLinks) {
         e.preventDefault();
         setFocusedIndex(0);
         linkRefs.current[0]?.focus();
-      } else if (e.key === "End") {
+      } else if (e.key === "End" && hasLinks) {
         e.preventDefault();
         const lastIndex = displayLinks.length - 1;
         setFocusedIndex(lastIndex);
@@ -193,7 +197,7 @@ export function useKeyboardNavigation({
         return;
       }
 
-      if (e.metaKey && selectedIds.size > 0) {
+      if ((e.metaKey || e.ctrlKey) && selectedIds.size > 0) {
         if (e.key === "Backspace") {
           e.preventDefault();
           // In trash view, Cmd+Backspace should permanently delete

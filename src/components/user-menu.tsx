@@ -147,21 +147,6 @@ export function UserMenu({ user }: UserMenuProps) {
     };
   }, [isOpen]);
 
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Shortcuts: Meta + /
-      if ((e.metaKey || e.ctrlKey) && e.key === "/") {
-        e.preventDefault();
-        toggleHelp();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [toggleHelp]);
-
   // Use profile data first, fall back to Google metadata
   const userName = profile?.display_name || user.user_metadata?.full_name || user.user_metadata?.name;
   const userAvatar = profile?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture || getDefaultAvatar(user.id);
