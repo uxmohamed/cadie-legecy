@@ -6,7 +6,6 @@ import {
   detectMultipleContentTypes,
   type DetectedContent,
 } from "@/lib/content-detector";
-import { useShortcuts } from "@/components/shortcut-context";
 
 interface CaptureInputProps {
   onSubmit?: (items: DetectedContent[]) => void;
@@ -29,7 +28,6 @@ export function CaptureInput({
   const [showFocusAnimation, setShowFocusAnimation] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  const { registerShortcut, unregisterShortcut } = useShortcuts();
 
   const focusInput = React.useCallback(() => {
     inputRef.current?.focus();
@@ -44,42 +42,8 @@ export function CaptureInput({
     }
   }, [onFocusRequest, focusInput]);
 
-  React.useEffect(() => {
-
-    registerShortcut({
-      key: "a",
-      description: "Focus capture input",
-      category: "Global",
-      action: () => {
-        focusInput();
-      },
-    });
-
-    registerShortcut({
-      key: "/",
-      description: "Search / Capture",
-      category: "Global",
-      action: () => {
-        focusInput();
-      },
-    });
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "f") {
-        e.preventDefault();
-        focusInput();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      unregisterShortcut("a");
-      unregisterShortcut("/");
-    };
-  }, [registerShortcut, unregisterShortcut]);
-
   // Auto-focus input when autoFocus is true
+
   React.useEffect(() => {
     if (autoFocus && inputRef.current) {
       inputRef.current.focus();

@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Kbd } from "@/components/ui/kbd";
 
 export function ShortcutsHelpModal() {
-  const { isHelpOpen, toggleHelp, shortcuts } = useShortcuts();
+  const { isHelpOpen, setHelpOpen, shortcuts } = useShortcuts();
 
   // Group shortcuts by category
   const groupedShortcuts = React.useMemo(() => {
@@ -80,7 +80,7 @@ export function ShortcutsHelpModal() {
   };
 
   return (
-    <Dialog open={isHelpOpen} onOpenChange={toggleHelp}>
+    <Dialog open={isHelpOpen} onOpenChange={setHelpOpen}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Keyboard Shortcuts</DialogTitle>
