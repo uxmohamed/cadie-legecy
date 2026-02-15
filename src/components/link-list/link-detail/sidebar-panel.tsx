@@ -66,7 +66,9 @@ export function SidebarPanel({
     ? "Copy Color"
     : isImage
       ? "Open Image"
-      : "Visit Website";
+      : isDocument
+        ? "Open PDF"
+        : "Visit Website";
   const timeLabel = formatRelativeDate(link.created_at);
   const tldrText = getTldrText(link, sourceLabel, colorValue);
   const imageDimensions =
@@ -381,6 +383,10 @@ function getTldrText(link: Link, sourceLabel: string, colorValue: string): strin
 
   if (link.content_type === "image") {
     return `Image saved from ${sourceLabel}.`;
+  }
+
+  if (link.content_type === "document") {
+    return "PDF document saved. Quick metadata skim enabled; deep content analysis is intentionally skipped.";
   }
 
   return `Saved link from ${sourceLabel}.`;

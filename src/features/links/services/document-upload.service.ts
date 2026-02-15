@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 
-/** Max file size: 25MB */
-export const MAX_DOCUMENT_FILE_SIZE = 25 * 1024 * 1024;
+/** Max file size: 10MB */
+export const MAX_DOCUMENT_FILE_SIZE = 10 * 1024 * 1024;
 /** Max files per single upload batch */
 export const MAX_DOCUMENTS_PER_UPLOAD = 1;
 /** Max total documents a user can store */

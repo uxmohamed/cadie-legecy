@@ -351,6 +351,18 @@ export async function POST(request: NextRequest) {
             enqueueBatchAIVisionTagging(visionJobs).catch(() => {});
           }
 
+          const documentLinks = createdLinks.filter(
+            (link) => link.content_type === "document"
+          );
+
+          if (documentLinks.length > 0) {
+            const docTagJobs = documentLinks.map((link) => ({
+              linkId: link.id,
+              userId: user.id,
+            }));
+            enqueueBatchAITagging(docTagJobs).catch(() => {});
+          }
+
           result.data.links = createdLinks;
 
           const forwardingResult = await autoSpaceForwardingService.forwardLinks(

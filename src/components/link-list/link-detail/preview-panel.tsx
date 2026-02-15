@@ -5,7 +5,7 @@ import { useRef, useState, useEffect } from "react";
 import type { Link } from "@/features/links/types";
 import { detectEmbedType, getYouTubeEmbedUrl } from "@/lib/embed-utils";
 import { Favicon } from "@/components/ui/favicon";
-import { IconWorld, IconBrandX } from "@tabler/icons-react";
+import { IconWorld, IconBrandX, IconFileTypePdf, IconExternalLink } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useTheme } from "@/components/theme-provider";
@@ -217,6 +217,73 @@ function ImagePreview({ link }: { link: Link }) {
   );
 }
 
+
+/**
+ * PDF document preview with graceful fallback
+ */
+function DocumentPreview({ link }: { link: Link }) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  const previewUrl = React.useMemo(() => {
+    if (link.url.includes("#")) return link.url;
+    return `${link.url}#view=FitH`;
+  }, [link.url]);
+
+  return (
+    <div className="w-full h-full relative bg-bg-surface">
+      {!hasError ? (
+        <iframe
+          src={previewUrl}
+          title={link.title || "PDF document preview"}
+          className="w-full h-full border-0"
+          onLoad={() => setIsLoading(false)}
+          onError={() => {
+            setHasError(true);
+            setIsLoading(false);
+          }}
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center bg-bg-muted/20">
+          <div className="flex flex-col items-center gap-3 text-center px-6">
+            <div className="h-16 w-16 rounded-2xl bg-bg flex items-center justify-center border border-border-muted">
+              <IconFileTypePdf className="h-8 w-8 text-fg-subtle" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-fg">Preview unavailable</p>
+              <p className="text-xs text-fg-subtle mt-1">This browser cannot render this PDF inline.</p>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => window.open(link.url, "_blank", "noopener,noreferrer")}
+            >
+              <IconExternalLink className="h-4 w-4 mr-1.5" />
+              Open PDF
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {isLoading && !hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-bg/45 backdrop-blur-[1px]">
+          <Spinner />
+        </div>
+      )}
+
+      <Button
+        variant="secondary"
+        size="sm"
+        className="absolute top-3 right-3 bg-bg/80 hover:bg-bg"
+        onClick={() => window.open(link.url, "_blank", "noopener,noreferrer")}
+      >
+        <IconExternalLink className="h-4 w-4 mr-1.5" />
+        Open
+      </Button>
+    </div>
+  );
+}
+
 /**
  * Fallback preview with centered scaled favicon
  */
@@ -254,6 +321,8 @@ export function PreviewPanel({ link }: PreviewPanelProps) {
       return <ColorPreview colorValue={link.color_value || "#000000"} />;
     case "image":
       return <ImagePreview link={link} />;
+    case "document":
+      return <DocumentPreview link={link} />;
     case "favicon":
     default:
       return <FaviconPreview link={link} />;

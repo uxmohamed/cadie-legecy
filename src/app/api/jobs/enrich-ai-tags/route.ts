@@ -5,6 +5,28 @@ import { AITaggingService } from "@/features/links/services/ai-tagging.service";
 import { log } from "@/lib/logger";
 import type { EnrichAITagsJob } from "@/lib/job-queue";
 
+function deriveDocumentLabel(title: string | null, url: string): string {
+  if (title && title.trim().length > 0) return title.trim();
+
+  try {
+    const parsed = new URL(url);
+    const file = decodeURIComponent(parsed.pathname.split("/").pop() || "");
+    const stripped = file.replace(/\.pdf$/i, "").replace(/[_-]+/g, " ").trim();
+    return stripped || "PDF document";
+  } catch {
+    return "PDF document";
+  }
+}
+
+function normalizeDocTitle(raw: string): string {
+  return raw
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 8)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ") || "PDF Document";
+}
+
 /**
  * POST /api/jobs/enrich-ai-tags
  *
@@ -75,12 +97,18 @@ export async function POST(request: NextRequest) {
 
     // Generate tags
     const taggingService = new AITaggingService();
+    const isDocument = link.content_type === "document";
+    const docLabel = isDocument ? deriveDocumentLabel(link.title, link.url) : null;
+
     const result = await taggingService.generateTags({
-      title: link.title,
-      description: link.description,
+      title: isDocument ? docLabel : link.title,
+      description: isDocument
+        ? (link.description || "PDF document. Fast skim mode: metadata only, no deep content analysis.")
+        : link.description,
       domain: link.domain,
       site_name: link.site_name,
       url: link.url,
+      // Token-efficient by design: we never send full PDF text.
       content: null,
     });
 
@@ -89,13 +117,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, noResult: true });
     }
 
+    const updates: Record<string, unknown> = {
+      ai_tags: result.tags,
+      ai_key_themes: { category: result.category },
+    };
+
+    if (isDocument) {
+      const normalizedTitle = normalizeDocTitle(docLabel || link.title || "PDF document");
+      const hasGenericTitle = !link.title || link.title === link.url || link.title.toLowerCase() === "pdf document";
+      if (hasGenericTitle) {
+        updates.title = normalizedTitle;
+      }
+
+      if (!link.description || link.description.trim().length === 0) {
+        updates.description = `PDF file saved as ${normalizedTitle}. Auto-tagged from filename and URL using low-token skim mode.`;
+      }
+    }
+
     // Update link with tags
     const { error: updateError } = await supabase
       .from("links")
-      .update({
-        ai_tags: result.tags,
-        ai_key_themes: { category: result.category },
-      })
+      .update(updates)
       .eq("id", linkId)
       .eq("user_id", userId);
 
