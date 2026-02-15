@@ -8,13 +8,16 @@ interface KeyboardShortcut {
 }
 
 const shortcuts: KeyboardShortcut[] = [
-  { keys: ["⌥", "D"], action: "Add new link" },
-  { keys: ["/"], action: "Search" },
+  { keys: ["N"], action: "Add new link" },
+  { keys: ["/"], action: "Focus search" },
+  { keys: ["⌘", "F"], action: "Focus search" },
   { keys: ["M"], action: "Toggle dark mode" },
   { keys: ["⇧", "T"], action: "Open Trash" },
   { keys: ["1"], action: "Switch to All" },
-  { keys: ["2"], action: "Switch to Inspo" },
-  { keys: ["⌘", "⌫"], action: "Delete item" },
+  { keys: ["2"], action: "Switch to first Space" },
+  { keys: ["J"], action: "Move down" },
+  { keys: ["K"], action: "Move up" },
+  { keys: ["⌘", "⌫"], action: "Delete selection" },
   { keys: ["⌘", "A"], action: "Select all" },
   { keys: ["?"], action: "Keyboard shortcuts" },
 ];

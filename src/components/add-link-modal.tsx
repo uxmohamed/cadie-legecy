@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/dialog";
 import { CaptureInput } from "@/components/capture-input";
 import type { DetectedContent } from "@/lib/content-detector";
-import { useShortcuts } from "@/components/shortcut-context";
 
 interface AddLinkModalProps {
   isOpen: boolean;
@@ -24,40 +23,6 @@ export function AddLinkModal({
   onSubmit,
   isLoading,
 }: AddLinkModalProps) {
-  const { registerShortcut, unregisterShortcut } = useShortcuts();
-
-  // Register keyboard shortcuts to open modal
-  React.useEffect(() => {
-    registerShortcut({
-      key: "a",
-      description: "Add new item",
-      category: "Global",
-      action: () => {
-        if (!isOpen) {
-          // Only open if not already open
-          const event = new CustomEvent("openAddModal");
-          window.dispatchEvent(event);
-        }
-      },
-    });
-
-    registerShortcut({
-      key: "/",
-      description: "Search / Add",
-      category: "Global",
-      action: () => {
-        if (!isOpen) {
-          const event = new CustomEvent("openAddModal");
-          window.dispatchEvent(event);
-        }
-      },
-    });
-
-    return () => {
-      unregisterShortcut("a");
-      unregisterShortcut("/");
-    };
-  }, [registerShortcut, unregisterShortcut, isOpen]);
 
   const handleSubmit = (items: DetectedContent[]) => {
     onSubmit(items);

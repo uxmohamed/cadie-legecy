@@ -161,8 +161,10 @@ export function DashboardShell({
 
   // Register keyboard shortcuts
   React.useEffect(() => {
-    registerShortcut({
-      key: "c",
+    const shortcutIds: string[] = [];
+
+    shortcutIds.push(registerShortcut({
+      key: "n",
       description: "Add new link",
       category: "Global",
       action: () => {
@@ -170,43 +172,63 @@ export function DashboardShell({
           onOpenAddMode();
         }
       },
-    });
+    }));
 
-    registerShortcut({
+    shortcutIds.push(registerShortcut({
       key: "/",
       description: "Focus search",
       category: "Global",
       action: () => {
         searchInputRef.current?.focus();
       },
-    });
+    }));
 
-    registerShortcut({
+    shortcutIds.push(registerShortcut({
+      key: "Cmd+f",
+      description: "Focus search",
+      category: "Global",
+      allowInInput: true,
+      action: () => {
+        searchInputRef.current?.focus();
+      },
+    }));
+
+    shortcutIds.push(registerShortcut({
+      key: "Ctrl+f",
+      description: "Focus search",
+      category: "Global",
+      allowInInput: true,
+      action: () => {
+        searchInputRef.current?.focus();
+      },
+    }));
+
+    shortcutIds.push(registerShortcut({
       key: "v",
       description: "Toggle view mode",
       category: "Global",
       action: () => {
         onViewModeChange(viewMode === "list" ? "grid" : "list");
       },
-    });
+    }));
 
-    registerShortcut({
-      key: "T",
+    shortcutIds.push(registerShortcut({
+      key: "Shift+t",
       description: "Switch to Trash view",
       category: "Navigation",
       action: () => {
         onViewChange("trash");
       },
-    });
+    }));
 
-    registerShortcut({
+    shortcutIds.push(registerShortcut({
       key: "1",
       description: "Switch to All view",
       category: "Navigation",
       action: () => {
         onViewChange(null);
       },
-    });
+    }));
 
     // Register shortcuts for spaces dynamically
     if (spaces && spaces.length > 0) {
@@ -216,14 +238,14 @@ export function DashboardShell({
           // First 8 spaces: shortcuts 2-9
           shortcutKey = String(index + 2);
           // Single key shortcuts (2-9)
-          registerShortcut({
+          shortcutIds.push(registerShortcut({
             key: shortcutKey,
             description: `Switch to ${space.name} space`,
             category: "Navigation",
             action: () => {
               onViewChange(space.id);
             },
-          });
+          }));
         }
         // Multi-key shortcuts (1B-9B, 1C-9C, etc.) are handled in handleKeyDown
       });
@@ -287,19 +309,6 @@ export function DashboardShell({
           }
         }
         return;
-      }
-
-      if (e.shiftKey && e.key === "T") {
-        const target = e.target as HTMLElement;
-        const isInputFocused =
-          target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable;
-
-        if (!isInputFocused) {
-          e.preventDefault();
-          onViewChange("trash");
-        }
       }
 
       const target = e.target as HTMLElement;
@@ -378,36 +387,12 @@ export function DashboardShell({
         }
       }
 
-      if (e.key === "c" && !e.metaKey && !e.ctrlKey) {
-        const target = e.target as HTMLElement;
-        const isInputFocused =
-          target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable;
-
-        if (!isInputFocused && selectedCategoryId !== "trash") {
-          e.preventDefault();
-          e.stopPropagation();
-          onOpenAddMode();
-        }
-      }
     };
 
     window.addEventListener("keydown", handleKeyDown, true);
     return () => {
       window.removeEventListener("keydown", handleKeyDown, true);
-      unregisterShortcut("c");
-      unregisterShortcut("/");
-      unregisterShortcut("v");
-      // Unregister space shortcuts
-      if (spaces && spaces.length > 0) {
-        spaces.forEach((space, index) => {
-          const shortcutNumber = index + 2;
-          if (shortcutNumber <= 9) {
-            unregisterShortcut(String(shortcutNumber));
-          }
-        });
-      }
+      shortcutIds.forEach(unregisterShortcut);
       if (pendingShortcutTimeoutRef.current) {
         clearTimeout(pendingShortcutTimeoutRef.current);
       }

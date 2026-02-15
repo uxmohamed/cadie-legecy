@@ -4,24 +4,118 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "./theme-provider";
 
+export type ShortcutCategory = "Global" | "Navigation" | "Actions";
+
 interface Shortcut {
   key: string;
   description: string;
-  category: "Global" | "Navigation" | "Actions";
+  category: ShortcutCategory;
   action: () => void;
+  allowInInput?: boolean;
+  priority?: number;
+}
+
+interface ShortcutRecord extends Shortcut {
+  id: string;
+  normalizedKey: string;
+  order: number;
 }
 
 interface ShortcutContextType {
-  registerShortcut: (shortcut: Shortcut) => void;
-  unregisterShortcut: (key: string) => void;
+  registerShortcut: (shortcut: Shortcut) => string;
+  unregisterShortcut: (id: string) => void;
   isHelpOpen: boolean;
+  setHelpOpen: (open: boolean) => void;
   toggleHelp: () => void;
-  shortcuts: Shortcut[];
+  shortcuts: Array<Pick<Shortcut, "key" | "description" | "category">>;
 }
 
 const ShortcutContext = React.createContext<ShortcutContextType | undefined>(
   undefined
 );
+
+const MODIFIER_ORDER = ["Cmd", "Ctrl", "Alt", "Shift"] as const;
+
+function normalizeKeyToken(token: string): string {
+  const value = token.trim();
+  const lower = value.toLowerCase();
+
+  const tokenMap: Record<string, string> = {
+    cmd: "Cmd",
+    command: "Cmd",
+    meta: "Cmd",
+    ctrl: "Ctrl",
+    control: "Ctrl",
+    alt: "Alt",
+    option: "Alt",
+    shift: "Shift",
+    esc: "Escape",
+    return: "Enter",
+    spacebar: "Space",
+    " ": "Space",
+    up: "ArrowUp",
+    down: "ArrowDown",
+    left: "ArrowLeft",
+    right: "ArrowRight",
+  };
+
+  if (tokenMap[lower]) {
+    return tokenMap[lower];
+  }
+
+  if (value.length === 1) {
+    return /[A-Z]/i.test(value) ? value.toLowerCase() : value;
+  }
+
+  return value;
+}
+
+function normalizeShortcutKey(shortcutKey: string): string {
+  const rawParts = shortcutKey
+    .split("+")
+    .map((part) => normalizeKeyToken(part))
+    .filter(Boolean);
+
+  const modifierSet = new Set(MODIFIER_ORDER);
+  const modifiers = MODIFIER_ORDER.filter((modifier) => rawParts.includes(modifier));
+  const keyPart = rawParts.find((part) => !modifierSet.has(part as (typeof MODIFIER_ORDER)[number]));
+
+  return [...modifiers, keyPart].filter(Boolean).join("+");
+}
+
+function getEventKey(event: KeyboardEvent): string {
+  const key = event.key;
+
+  if (key === " ") return "Space";
+  if (key === "Esc") return "Escape";
+
+  if (key.length === 1) {
+    if (/[A-Z]/i.test(key)) {
+      return key.toLowerCase();
+    }
+    return key;
+  }
+
+  return normalizeKeyToken(key);
+}
+
+function getEventCombo(event: KeyboardEvent): string {
+  const key = getEventKey(event);
+  const modifiers: string[] = [];
+
+  if (event.metaKey) modifiers.push("Cmd");
+  if (event.ctrlKey) modifiers.push("Ctrl");
+  if (event.altKey) modifiers.push("Alt");
+
+  // Preserve explicit Shift shortcuts for letters and named keys.
+  const shouldIncludeShift =
+    event.shiftKey &&
+    (key.length > 1 || /^[a-z]$/.test(key));
+
+  if (shouldIncludeShift) modifiers.push("Shift");
+
+  return [...modifiers, key].join("+");
+}
 
 export function useShortcuts() {
   const context = React.useContext(ShortcutContext);
@@ -32,25 +126,35 @@ export function useShortcuts() {
 }
 
 export function ShortcutProvider({ children }: { children: React.ReactNode }) {
-  const [shortcuts, setShortcuts] = React.useState<Shortcut[]>([]);
+  const [shortcutRecords, setShortcutRecords] = React.useState<ShortcutRecord[]>([]);
   const [isHelpOpen, setIsHelpOpen] = React.useState(false);
+  const sequenceRef = React.useRef(0);
   const router = useRouter();
   const { theme, setTheme } = useTheme();
 
   const toggleTheme = React.useCallback(() => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+    setTheme(theme === "dark" ? "light" : "dark");
   }, [theme, setTheme]);
 
   const registerShortcut = React.useCallback((shortcut: Shortcut) => {
-    setShortcuts((prev) => {
-      // Avoid duplicates
-      if (prev.some((s) => s.key === shortcut.key)) return prev;
-      return [...prev, shortcut];
-    });
+    const id = `shortcut_${sequenceRef.current++}`;
+    const normalizedKey = normalizeShortcutKey(shortcut.key);
+
+    setShortcutRecords((prev) => [
+      ...prev,
+      {
+        ...shortcut,
+        id,
+        normalizedKey,
+        order: sequenceRef.current,
+      },
+    ]);
+
+    return id;
   }, []);
 
-  const unregisterShortcut = React.useCallback((key: string) => {
-    setShortcuts((prev) => prev.filter((s) => s.key !== key));
+  const unregisterShortcut = React.useCallback((id: string) => {
+    setShortcutRecords((prev) => prev.filter((shortcut) => shortcut.id !== id));
   }, []);
 
   const toggleHelp = React.useCallback(() => {
@@ -58,88 +162,92 @@ export function ShortcutProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if input is focused, unless it's a special shortcut like Escape or Ctrl/Cmd combos
-      const target = e.target as HTMLElement;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
       const isInputFocused =
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
         target.isContentEditable;
 
-      // Always allow toggling help with ? (Shift + /)
-      if (e.key === "?" && !isInputFocused) {
-        e.preventDefault();
-        toggleHelp();
-        return;
-      }
-      
-      // Close help with Escape
-      if (isHelpOpen && e.key === "Escape") {
-        e.preventDefault();
+      const combo = getEventCombo(event);
+
+      if (isHelpOpen && combo === "Escape") {
+        event.preventDefault();
         setIsHelpOpen(false);
         return;
       }
 
-      // Don't trigger other shortcuts if help is open
-      if (isHelpOpen) return;
+      const candidates = shortcutRecords
+        .filter((shortcut) => shortcut.normalizedKey === combo)
+        .filter((shortcut) => !isInputFocused || shortcut.allowInInput)
+        .sort((a, b) => {
+          const priorityDiff = (b.priority ?? 0) - (a.priority ?? 0);
+          if (priorityDiff !== 0) return priorityDiff;
+          return b.order - a.order;
+        });
 
-      // Don't trigger single-key shortcuts when Ctrl/Cmd is pressed (allow copy/paste/etc)
-      if (e.metaKey || e.ctrlKey) {
-        return;
-      }
+      const matchedShortcut = candidates[0];
+      if (!matchedShortcut) return;
 
-      const matchedShortcut = shortcuts.find((s) => s.key === e.key);
+      // Allow Escape when modal/help is open, block all other shortcuts behind help modal.
+      if (isHelpOpen && combo !== "Escape") return;
 
-      if (matchedShortcut) {
-        // If input is focused, block single-key shortcuts
-        if (isInputFocused) {
-          return;
-        }
-
-        e.preventDefault();
-        matchedShortcut.action();
-      }
+      event.preventDefault();
+      matchedShortcut.action();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [shortcuts, isHelpOpen, toggleHelp]);
+  }, [shortcutRecords, isHelpOpen]);
 
-  // Register default global shortcuts
   React.useEffect(() => {
-    const globalShortcuts: Shortcut[] = [
-      {
+    const globalShortcutIds = [
+      registerShortcut({
         key: "?",
         description: "Toggle keyboard shortcuts help",
         category: "Global",
         action: toggleHelp,
-      },
-      {
+      }),
+      registerShortcut({
         key: "Cmd+/",
         description: "Toggle keyboard shortcuts help",
         category: "Global",
         action: toggleHelp,
-      },
-      {
-        key: "H", // Shift+h
+      }),
+      registerShortcut({
+        key: "Ctrl+/",
+        description: "Toggle keyboard shortcuts help",
+        category: "Global",
+        action: toggleHelp,
+      }),
+      registerShortcut({
+        key: "Shift+h",
         description: "Go to Home",
         category: "Navigation",
         action: () => router.push("/"),
-      },
-      {
+      }),
+      registerShortcut({
         key: "m",
         description: "Toggle dark/light mode",
         category: "Global",
         action: toggleTheme,
-      },
+      }),
     ];
 
-    globalShortcuts.forEach(registerShortcut);
-
     return () => {
-      globalShortcuts.forEach((s) => unregisterShortcut(s.key));
+      globalShortcutIds.forEach(unregisterShortcut);
     };
   }, [toggleHelp, toggleTheme, router, registerShortcut, unregisterShortcut]);
+
+  const shortcuts = React.useMemo(
+    () =>
+      shortcutRecords.map(({ key, description, category }) => ({
+        key,
+        description,
+        category,
+      })),
+    [shortcutRecords]
+  );
 
   return (
     <ShortcutContext.Provider
@@ -147,6 +255,7 @@ export function ShortcutProvider({ children }: { children: React.ReactNode }) {
         registerShortcut,
         unregisterShortcut,
         isHelpOpen,
+        setHelpOpen: setIsHelpOpen,
         toggleHelp,
         shortcuts,
       }}
