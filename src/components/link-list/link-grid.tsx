@@ -4,6 +4,7 @@ import * as React from "react";
 import type { Link } from "@/features/links/types";
 import { Badge } from "@/components/ui/badge";
 import { Favicon } from "@/components/ui/favicon";
+import { DocumentFabIcon } from "@/components/ui/document-fab-icon";
 import { formatDate } from "@/lib/utils";
 import { IconPinFilled, IconPhoto, IconNotes } from "@tabler/icons-react";
 

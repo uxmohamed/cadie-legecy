@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/menu";
 import { useShortcuts } from "@/components/shortcut-context";
+import { GlobalCommandMenu } from "@/components/global-command-menu";
 
 interface DashboardShellProps {
   user: User;
@@ -83,8 +84,9 @@ export function DashboardShell({
   onCreateNote,
 }: DashboardShellProps) {
   const searchInputRef = React.useRef<HTMLInputElement>(null);
-  const { registerShortcut, unregisterShortcut } = useShortcuts();
+  const { registerShortcut, unregisterShortcut, toggleHelp } = useShortcuts();
   const [pendingShortcut, setPendingShortcut] = React.useState<string | null>(null);
+  const [isCommandMenuOpen, setIsCommandMenuOpen] = React.useState(false);
   const pendingShortcutTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const isTrashView = selectedCategoryId === "trash";
@@ -203,6 +205,24 @@ export function DashboardShell({
       action: () => {
         searchInputRef.current?.focus();
       },
+    }));
+
+    shortcutIds.push(registerShortcut({
+      key: "Cmd+k",
+      description: "Open command menu",
+      category: "Global",
+      allowInInput: true,
+      priority: 100,
+      action: () => setIsCommandMenuOpen((prev) => !prev),
+    }));
+
+    shortcutIds.push(registerShortcut({
+      key: "Ctrl+k",
+      description: "Open command menu",
+      category: "Global",
+      allowInInput: true,
+      priority: 100,
+      action: () => setIsCommandMenuOpen((prev) => !prev),
     }));
 
     shortcutIds.push(registerShortcut({
@@ -711,6 +731,21 @@ export function DashboardShell({
           </div>
         </div>
       )}
+
+      <GlobalCommandMenu
+        open={isCommandMenuOpen}
+        onOpenChange={setIsCommandMenuOpen}
+        isTrashView={isTrashView}
+        viewMode={viewMode}
+        spaces={spaces}
+        selectedCategoryId={selectedCategoryId}
+        onFocusSearch={() => searchInputRef.current?.focus()}
+        onOpenAddMode={() => onOpenAddMode()}
+        onViewChange={onViewChange}
+        onViewModeChange={onViewModeChange}
+        onSortChange={handleSortChange}
+        onToggleHelp={toggleHelp}
+      />
 
       <input
         ref={uploadInputRef}

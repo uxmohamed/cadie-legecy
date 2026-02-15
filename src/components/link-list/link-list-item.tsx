@@ -5,6 +5,7 @@ import * as React from "react";
 import type { Link } from "@/features/links/types";
 import { cn, formatDate, cleanUrl } from "@/lib/utils";
 import { Favicon } from "@/components/ui/favicon";
+import { DocumentFabIcon } from "@/components/ui/document-fab-icon";
 import { Button } from "@/components/ui/button";
 import {
   IconFileTypePdf,
@@ -189,6 +190,10 @@ export function LinkListItem({
           ) : isDocument ? (
             <div className="h-5 w-5 flex-shrink-0 rounded-[3px] bg-bg-muted border border-border-muted flex items-center justify-center">
               <IconFileTypePdf className="h-3.5 w-3.5 text-fg-subtle" />
+            </div>
+          ) : isNote ? (
+            <div className="h-5 w-5 flex-shrink-0 rounded-[3px] bg-bg-muted border border-border-muted flex items-center justify-center">
+              <IconNotes className="h-3.5 w-3.5 text-fg-subtle" />
             </div>
           ) : isNote ? (
             <div className="h-5 w-5 flex-shrink-0 rounded-[3px] bg-bg-muted border border-border-muted flex items-center justify-center">
