@@ -91,21 +91,28 @@ function loadTwitterWidgets(): Promise<void> {
 
 function useEffectiveTheme(): "light" | "dark" {
   const { theme } = useTheme();
-  const [effective, setEffective] = useState<"light" | "dark">("dark");
+  const [systemTheme, setSystemTheme] = useState<"light" | "dark">(() => {
+    if (typeof window === "undefined") {
+      return "dark";
+    }
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  });
 
   useEffect(() => {
     if (theme !== "system") {
-      setEffective(theme);
       return;
     }
+
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    setEffective(mq.matches ? "dark" : "light");
-    const handler = (e: MediaQueryListEvent) => setEffective(e.matches ? "dark" : "light");
+    const handler = (e: MediaQueryListEvent) => {
+      setSystemTheme(e.matches ? "dark" : "light");
+    };
+
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, [theme]);
 
-  return effective;
+  return theme === "system" ? systemTheme : theme;
 }
 
 /**
