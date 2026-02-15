@@ -58,6 +58,7 @@ export function SidebarPanel({
 }: SidebarPanelProps) {
   const isColor = link.content_type === "color";
   const isImage = link.content_type === "image";
+  const isDocument = link.content_type === "document";
   const colorValue = link.color_value || link.url || link.title;
   const sourceLabel = resolveSourceLabel(link, isImage);
   const primaryAction = isColor ? onCopy : onOpen;
@@ -65,7 +66,9 @@ export function SidebarPanel({
     ? "Copy Color"
     : isImage
       ? "Open Image"
-      : "Visit Website";
+      : isDocument
+        ? "Open PDF"
+        : "Visit Website";
   const timeLabel = formatRelativeDate(link.created_at);
   const tldrText = getTldrText(link, sourceLabel, colorValue);
   const imageDimensions =
@@ -163,7 +166,7 @@ export function SidebarPanel({
         {tldrText}
       </div>
 
-      {(isColor || (isImage && imageDimensions)) && (
+      {(isColor || (isImage && imageDimensions) || isDocument) && (
         <>
           <SectionTitle label="DETAILS" />
           <div className="mb-5 space-y-2">
@@ -196,6 +199,13 @@ export function SidebarPanel({
                 <span className="text-xs font-medium text-fg">
                   {imageDimensions}
                 </span>
+              </div>
+            )}
+
+            {isDocument && (
+              <div className="rounded-lg border border-border bg-bg-surface px-3 py-2 flex items-center justify-between gap-3">
+                <span className="text-xs text-fg-subtle">Type</span>
+                <span className="text-xs font-medium text-fg">PDF document</span>
               </div>
             )}
           </div>
@@ -373,6 +383,10 @@ function getTldrText(link: Link, sourceLabel: string, colorValue: string): strin
 
   if (link.content_type === "image") {
     return `Image saved from ${sourceLabel}.`;
+  }
+
+  if (link.content_type === "document") {
+    return "PDF document saved. Quick metadata skim enabled; deep content analysis is intentionally skipped.";
   }
 
   return `Saved link from ${sourceLabel}.`;

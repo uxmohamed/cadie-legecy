@@ -1,5 +1,5 @@
 import { getNamedColorHex, isNamedColor } from "@/lib/canonicalize";
-export type ContentType = "url" | "color" | "image";
+export type ContentType = "url" | "color" | "image" | "document";
 
 export interface DetectedContent {
   type: ContentType;
@@ -131,6 +131,19 @@ const IMAGE_HOST_PATTERNS = [
   /\.supabase\.co\/storage\/v1\/object\/public\//,
 ];
 
+
+/**
+ * Document file extension pattern
+ */
+const DOCUMENT_EXTENSION_PATTERN = /\.pdf(\?.*)?(#.*)?$/i;
+
+/**
+ * Check if a URL points to a PDF document
+ */
+export function isDocumentUrl(url: string): boolean {
+  return DOCUMENT_EXTENSION_PATTERN.test(url);
+}
+
 /**
  * Check if a URL points to an image
  */
@@ -203,6 +216,17 @@ export function detectContentType(input: string): DetectedContent | null {
     return { type: "image", value: normalizedUrl };
   }
 
+  // Check for PDF URL before generic URL
+  if (
+    (trimmed.startsWith("http://") ||
+      trimmed.startsWith("https://") ||
+      trimmed.startsWith("www.")) &&
+    isDocumentUrl(trimmed)
+  ) {
+    const normalizedUrl = normalizeUrl(trimmed);
+    return { type: "document", value: normalizedUrl };
+  }
+
   // Check for URL - must match specific patterns, not just anything with a dot
   if (
     trimmed.startsWith("http://") ||
@@ -220,6 +244,11 @@ export function detectContentType(input: string): DetectedContent | null {
     if (isImageUrl(trimmed)) {
       const normalizedUrl = normalizeUrl(trimmed);
       return { type: "image", value: normalizedUrl };
+    }
+    // Check if domain-style input is a document URL
+    if (isDocumentUrl(trimmed)) {
+      const normalizedUrl = normalizeUrl(trimmed);
+      return { type: "document", value: normalizedUrl };
     }
     const normalizedUrl = normalizeUrl(trimmed);
     return { type: "url", value: normalizedUrl };

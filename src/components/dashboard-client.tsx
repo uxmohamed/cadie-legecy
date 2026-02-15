@@ -67,6 +67,7 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
   const [spaceModalOpen, setSpaceModalOpen] = React.useState(false);
   const [editingSpace, setEditingSpace] = React.useState<Space | null>(null);
   const imageUploadHandlerRef = React.useRef<((files: File[]) => void) | null>(null);
+  const documentUploadHandlerRef = React.useRef<((files: File[]) => void) | null>(null);
   
   // Sync selectedCategoryId with URL path changes
   React.useEffect(() => {
@@ -181,6 +182,14 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
     imageUploadHandlerRef.current?.(files);
   }, []);
 
+  const handleDocumentUploadReady = React.useCallback((handler: (files: File[]) => void) => {
+    documentUploadHandlerRef.current = handler;
+  }, []);
+
+  const handleUploadDocuments = React.useCallback((files: File[]) => {
+    documentUploadHandlerRef.current?.(files);
+  }, []);
+
   const handleCreateSpace = React.useCallback(() => {
     setEditingSpace(null);
     setSpaceModalOpen(true);
@@ -220,6 +229,7 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
         onEditSpace={handleEditSpace}
         onDeleteSpace={handleDeleteSpace}
         onUploadImages={handleUploadImages}
+        onUploadDocuments={handleUploadDocuments}
       sortBy={sortBy}
       sortOrder={sortOrder}
       onSortChange={handleSortChange}
@@ -297,6 +307,7 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
           searchQuery={searchQuery}
           viewMode={viewMode}
           onImageUploadReady={handleImageUploadReady}
+          onDocumentUploadReady={handleDocumentUploadReady}
         />
       </Suspense>
     </DashboardShell>

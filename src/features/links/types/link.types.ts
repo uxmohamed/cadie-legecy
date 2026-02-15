@@ -3,7 +3,7 @@
 /**
  * Content types supported by the application
  */
-export type ContentType = "url" | "color" | "image";
+export type ContentType = "url" | "color" | "image" | "document";
 
 /**
  * Link entity representing a saved item
