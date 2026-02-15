@@ -5,9 +5,9 @@ import * as React from "react";
 import type { Link } from "@/features/links/types";
 import { cn, formatDate, cleanUrl } from "@/lib/utils";
 import { Favicon } from "@/components/ui/favicon";
+import { DocumentFabIcon } from "@/components/ui/document-fab-icon";
 import { Button } from "@/components/ui/button";
 import {
-  IconFile,
   IconPinnedOff,
   IconCornerDownLeft,
 } from "@tabler/icons-react";
@@ -185,9 +185,11 @@ export function LinkListItem({
               className="h-5 w-5 flex-shrink-0 rounded-[3px] object-cover"
             />
           ) : isDocument ? (
-            <div className="h-5 w-5 flex-shrink-0 rounded-[3px] bg-bg-muted border border-border-muted flex items-center justify-center">
-              <IconFile className="h-3.5 w-3.5 text-fg-subtle" />
-            </div>
+            <DocumentFabIcon
+              title={link.title}
+              contentText={link.content_text}
+              fallbackText={link.url}
+            />
           ) : (
             <Favicon
               url={link.favicon_url || ""}

@@ -4,6 +4,7 @@ import * as React from "react";
 import type { Link } from "@/features/links/types";
 import { Badge } from "@/components/ui/badge";
 import { Favicon } from "@/components/ui/favicon";
+import { DocumentFabIcon } from "@/components/ui/document-fab-icon";
 import { formatDate } from "@/lib/utils";
 import { IconPinFilled, IconPhoto } from "@tabler/icons-react";
 
@@ -45,6 +46,7 @@ function LinkGridCard({
 }: LinkGridCardProps) {
   const isColor = link.content_type === "color";
   const isImage = link.content_type === "image";
+  const isDocument = link.content_type === "document";
 
   const renderThumbnail = () => {
     if (link.og_image_url) {
@@ -64,6 +66,19 @@ function LinkGridCard({
           className="w-full aspect-[4/3]"
           style={{ backgroundColor: link.color_value || link.title }}
         />
+      );
+    }
+
+    if (isDocument) {
+      return (
+        <div className="w-full aspect-[4/3] bg-bg-muted flex items-center justify-center">
+          <DocumentFabIcon
+            title={link.title}
+            contentText={link.content_text}
+            fallbackText={link.url}
+            className="h-8 w-8"
+          />
+        </div>
       );
     }
 
@@ -107,6 +122,18 @@ function LinkGridCard({
               <>
                 <IconPhoto className="h-4 w-4 text-fg-subtle" />
                 <span className="text-xs text-fg-subtle truncate">Image</span>
+              </>
+            ) : isDocument ? (
+              <>
+                <DocumentFabIcon
+                  title={link.title}
+                  contentText={link.content_text}
+                  fallbackText={link.url}
+                  className="h-4 w-4"
+                />
+                <span className="text-xs text-fg-subtle truncate">
+                  Document
+                </span>
               </>
             ) : (
               <>
