@@ -94,12 +94,14 @@ function showAddResultToast(
   message: string,
   description?: string
 ) {
+  const singleLineMessage = description ? `${message} · ${description}` : message;
+
   if (tone === "info") {
-    toast.info(message, { description });
+    toast.info(singleLineMessage);
     return;
   }
 
-  toast.success(message, { description });
+  toast.success(singleLineMessage);
 }
 
 function formatAutoForwardToast(spaceName: string, count: number): { message: string; description: string } {
