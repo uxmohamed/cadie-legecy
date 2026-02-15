@@ -209,6 +209,7 @@ export async function POST(request: NextRequest) {
           const isImage = ct === "image";
           const isColor = ct === "color";
           const isDocument = ct === "document";
+          const isNote = ct === "note";
           const colorMetadata = isColor
             ? resolveColorMetadata(link.color_value || link.url)
             : null;
@@ -218,7 +219,7 @@ export async function POST(request: NextRequest) {
           return {
             user_id: user.id,
             url: normalizedUrl,
-            clean_url: isColor || isImage || isDocument ? normalizedUrl : canonicalizeUrl(link.url),
+            clean_url: isColor || isImage || isDocument || isNote ? normalizedUrl : canonicalizeUrl(link.url),
             title: isColor ? normalizedColorName : (link.title || link.url),
             content_type: ct,
             favicon_url: link.favicon_url || null,
@@ -228,7 +229,10 @@ export async function POST(request: NextRequest) {
             is_deleted: false,
             is_archived: false,
             is_pinned: false,
-            fetch_status: "pending" as const,
+            fetch_status: isColor || isNote ? "success" as const : "pending" as const,
+            fetched_at: isColor || isNote ? new Date().toISOString() : null,
+            notes: link.notes || null,
+            content_text: link.content_text || null,
           };
         });
 

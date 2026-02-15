@@ -59,16 +59,19 @@ export function SidebarPanel({
   const isColor = link.content_type === "color";
   const isImage = link.content_type === "image";
   const isDocument = link.content_type === "document";
+  const isNote = link.content_type === "note";
   const colorValue = link.color_value || link.url || link.title;
   const sourceLabel = resolveSourceLabel(link, isImage);
-  const primaryAction = isColor ? onCopy : onOpen;
+  const primaryAction = isColor ? onCopy : isNote ? undefined : onOpen;
   const primaryActionLabel = isColor
     ? "Copy Color"
     : isImage
       ? "Open Image"
       : isDocument
         ? "Open PDF"
-        : "Visit Website";
+        : isNote
+          ? "Note"
+          : "Visit Website";
   const timeLabel = formatRelativeDate(link.created_at);
   const tldrText = getTldrText(link, sourceLabel, colorValue);
   const imageDimensions =
@@ -166,7 +169,7 @@ export function SidebarPanel({
         {tldrText}
       </div>
 
-      {(isColor || (isImage && imageDimensions) || isDocument) && (
+      {(isColor || (isImage && imageDimensions) || isDocument || isNote) && (
         <>
           <SectionTitle label="DETAILS" />
           <div className="mb-5 space-y-2">
@@ -208,6 +211,14 @@ export function SidebarPanel({
                 <span className="text-xs font-medium text-fg">PDF document</span>
               </div>
             )}
+
+            {isNote && (
+              <div className="rounded-lg border border-border bg-bg-surface px-3 py-2 flex items-center justify-between gap-3">
+                <span className="text-xs text-fg-subtle">Type</span>
+                <span className="text-xs font-medium text-fg">Rich text note</span>
+              </div>
+            )}
+
           </div>
         </>
       )}
@@ -387,6 +398,10 @@ function getTldrText(link: Link, sourceLabel: string, colorValue: string): strin
 
   if (link.content_type === "document") {
     return "PDF document saved. Quick metadata skim enabled; deep content analysis is intentionally skipped.";
+  }
+
+  if (link.content_type === "note") {
+    return "Rich text note saved for fast capture and reference.";
   }
 
   return `Saved link from ${sourceLabel}.`;
