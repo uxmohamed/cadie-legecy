@@ -17,6 +17,7 @@ const SpaceModal = dynamic(
 import type { User } from "@supabase/supabase-js";
 import type { Link } from "@/features/links/types";
 import type { Space } from "@/types";
+import { NoteEditorModal } from "@/components/note-editor-modal";
 
 interface DashboardClientProps {
   user: User;
@@ -68,6 +69,8 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
   const [editingSpace, setEditingSpace] = React.useState<Space | null>(null);
   const imageUploadHandlerRef = React.useRef<((files: File[]) => void) | null>(null);
   const documentUploadHandlerRef = React.useRef<((files: File[]) => void) | null>(null);
+  const createNoteHandlerRef = React.useRef<((payload: { title: string; html: string; plainText: string }) => Promise<unknown>) | null>(null);
+  const [isNoteModalOpen, setIsNoteModalOpen] = React.useState(false);
   
   // Sync selectedCategoryId with URL path changes
   React.useEffect(() => {
@@ -190,6 +193,18 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
     documentUploadHandlerRef.current?.(files);
   }, []);
 
+  const handleCreateNoteReady = React.useCallback((handler: (payload: { title: string; html: string; plainText: string }) => Promise<unknown>) => {
+    createNoteHandlerRef.current = handler;
+  }, []);
+
+  const handleCreateNote = React.useCallback(() => {
+    setIsNoteModalOpen(true);
+  }, []);
+
+  const handleSaveNote = React.useCallback(async (payload: { title: string; html: string; plainText: string }) => {
+    await createNoteHandlerRef.current?.(payload);
+  }, []);
+
   const handleCreateSpace = React.useCallback(() => {
     setEditingSpace(null);
     setSpaceModalOpen(true);
@@ -230,6 +245,7 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
         onDeleteSpace={handleDeleteSpace}
         onUploadImages={handleUploadImages}
         onUploadDocuments={handleUploadDocuments}
+        onCreateNote={handleCreateNote}
       sortBy={sortBy}
       sortOrder={sortOrder}
       onSortChange={handleSortChange}
@@ -308,10 +324,17 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
           viewMode={viewMode}
           onImageUploadReady={handleImageUploadReady}
           onDocumentUploadReady={handleDocumentUploadReady}
+          onCreateNoteReady={handleCreateNoteReady}
         />
       </Suspense>
     </DashboardShell>
-    
+
+    <NoteEditorModal
+      open={isNoteModalOpen}
+      onOpenChange={setIsNoteModalOpen}
+      onSave={handleSaveNote}
+    />
+
     <SpaceModal
       open={spaceModalOpen}
       onOpenChange={setSpaceModalOpen}

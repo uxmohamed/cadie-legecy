@@ -1,5 +1,5 @@
 import { getNamedColorHex, isNamedColor } from "@/lib/canonicalize";
-export type ContentType = "url" | "color" | "image" | "document";
+export type ContentType = "url" | "color" | "image" | "document" | "note";
 
 export interface DetectedContent {
   type: ContentType;

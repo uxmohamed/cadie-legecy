@@ -3,7 +3,7 @@
 /**
  * Content types supported by the application
  */
-export type ContentType = "url" | "color" | "image" | "document";
+export type ContentType = "url" | "color" | "image" | "document" | "note";
 
 /**
  * Link entity representing a saved item
@@ -67,6 +67,8 @@ export interface CreateLinkDTO {
     favicon_url?: string | null;
     og_image_url?: string | null;
     description?: string | null;
+    notes?: string | null;
+    content_text?: string | null;
 }
 
 /**

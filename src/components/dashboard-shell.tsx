@@ -10,7 +10,7 @@ import type { Link } from "@/features/links/types";
 import type { Space } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCircleCheckFilled, IconLayoutList, IconLayoutGrid, IconPhoto, IconUpload, IconPalette, IconFileTypePdf } from "@tabler/icons-react";
+import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCircleCheckFilled, IconLayoutList, IconLayoutGrid, IconPhoto, IconUpload, IconPalette, IconFileTypePdf, IconNotes } from "@tabler/icons-react";
 import { Kbd } from "@/components/ui/kbd";
 import {
   DropdownMenu,
@@ -50,6 +50,7 @@ interface DashboardShellProps {
   onDeleteSpace?: (spaceId: string) => void;
   onUploadImages?: (files: File[]) => void;
   onUploadDocuments?: (files: File[]) => void;
+  onCreateNote?: () => void;
 }
 
 export function DashboardShell({
@@ -80,6 +81,7 @@ export function DashboardShell({
   onDeleteSpace,
   onUploadImages,
   onUploadDocuments,
+  onCreateNote,
 }: DashboardShellProps) {
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const { registerShortcut, unregisterShortcut, toggleHelp } = useShortcuts();
@@ -529,6 +531,10 @@ export function DashboardShell({
                         Upload images
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuItem onSelect={() => onCreateNote?.()} disabled={!onCreateNote}>
+                      <IconNotes className="h-4 w-4 text-fg-on-overlay-muted" />
+                      Add note
+                    </DropdownMenuItem>
                     {onUploadDocuments && (
                       <DropdownMenuItem onSelect={() => uploadDocumentInputRef.current?.click()}>
                         <IconFileTypePdf className="h-4 w-4 text-fg-on-overlay-muted" />

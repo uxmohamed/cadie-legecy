@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Favicon } from "@/components/ui/favicon";
 import { DocumentFabIcon } from "@/components/ui/document-fab-icon";
 import { formatDate } from "@/lib/utils";
-import { IconPinFilled, IconPhoto } from "@tabler/icons-react";
+import { IconPinFilled, IconPhoto, IconNotes } from "@tabler/icons-react";
 
 interface LinkGridProps {
   pinnedLinks: Link[];
@@ -46,7 +46,7 @@ function LinkGridCard({
 }: LinkGridCardProps) {
   const isColor = link.content_type === "color";
   const isImage = link.content_type === "image";
-  const isDocument = link.content_type === "document";
+  const isNote = link.content_type === "note";
 
   const renderThumbnail = () => {
     if (link.og_image_url) {
@@ -69,15 +69,11 @@ function LinkGridCard({
       );
     }
 
-    if (isDocument) {
+    if (isNote) {
       return (
-        <div className="w-full aspect-[4/3] bg-bg-muted flex items-center justify-center">
-          <DocumentFabIcon
-            title={link.title}
-            contentText={link.content_text}
-            fallbackText={link.url}
-            className="h-8 w-8"
-          />
+        <div className="w-full aspect-[4/3] bg-bg-muted flex flex-col items-start justify-end p-4 gap-2">
+          <IconNotes className="h-5 w-5 text-fg-subtle" />
+          <p className="text-xs text-fg-subtle line-clamp-3">{link.notes || "Rich text note"}</p>
         </div>
       );
     }
@@ -123,17 +119,10 @@ function LinkGridCard({
                 <IconPhoto className="h-4 w-4 text-fg-subtle" />
                 <span className="text-xs text-fg-subtle truncate">Image</span>
               </>
-            ) : isDocument ? (
+            ) : isNote ? (
               <>
-                <DocumentFabIcon
-                  title={link.title}
-                  contentText={link.content_text}
-                  fallbackText={link.url}
-                  className="h-4 w-4"
-                />
-                <span className="text-xs text-fg-subtle truncate">
-                  Document
-                </span>
+                <IconNotes className="h-4 w-4 text-fg-subtle" />
+                <span className="text-xs text-fg-subtle truncate">Note</span>
               </>
             ) : (
               <>
