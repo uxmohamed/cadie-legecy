@@ -1058,7 +1058,7 @@ export function useLinkMutations(filters: LinkFilters) {
       }
 
       const itemLabel = (type: string) =>
-        type === "color" ? "Color" : type === "image" ? "Image" : "Link";
+        type === "color" ? "Color" : type === "image" ? "Image" : type === "document" ? "Document" : "Link";
 
       if (items.length === 1) {
         const label = itemLabel(items[0].type);
@@ -1293,6 +1293,79 @@ export function useLinkMutations(filters: LinkFilters) {
     },
   });
 
+
+  /**
+   * Upload PDF files and create document links
+   */
+  const addDocumentFilesMutation = useMutation({
+    mutationFn: async (files: File[]) => {
+      const {
+        uploadDocument,
+        validateDocumentFile,
+        getUserDocumentCount,
+        MAX_DOCUMENTS_PER_UPLOAD,
+        MAX_DOCUMENTS_PER_USER,
+      } = await import("@/features/links/services/document-upload.service");
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      if (files.length > MAX_DOCUMENTS_PER_UPLOAD) {
+        throw new Error(`Too many files. Maximum is ${MAX_DOCUMENTS_PER_UPLOAD} per upload`);
+      }
+
+      for (const file of files) {
+        const error = validateDocumentFile(file);
+        if (error) throw new Error(error);
+      }
+
+      const currentCount = await getUserDocumentCount(user.id);
+      if (currentCount + files.length > MAX_DOCUMENTS_PER_USER) {
+        const remaining = Math.max(0, MAX_DOCUMENTS_PER_USER - currentCount);
+        throw new Error(
+          remaining === 0
+            ? `Document limit reached (${MAX_DOCUMENTS_PER_USER}). Delete some documents to upload more`
+            : `Can only upload ${remaining} more document${remaining === 1 ? "" : "s"} (limit: ${MAX_DOCUMENTS_PER_USER})`
+        );
+      }
+
+      const uploadedItems: { url: string; name: string }[] = [];
+      for (const file of files) {
+        const url = await uploadDocument(user.id, file);
+        const name = file.name.replace(/\.[^/.]+$/, "");
+        uploadedItems.push({ url, name });
+      }
+
+      const linksToAdd = uploadedItems.map(({ url, name }) => ({
+        url,
+        title: name,
+        content_type: "document",
+      }));
+
+      const response = await fetch("/api/links/batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "add", links: linksToAdd }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error ?? "Failed to save documents");
+      }
+
+      return response.json() as Promise<{ links?: Link[]; count?: number; duplicates?: number }>;
+    },
+    onSuccess: (data) => {
+      const count = data.links?.length ?? 0;
+      toast.success(`${count} ${count === 1 ? "document" : "documents"} saved`);
+      queryClient.invalidateQueries({ queryKey: queryKeys.links.all, refetchType: "active" });
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to upload documents");
+    },
+  });
+
   return {
     // Single mutations
     deleteLink: deleteMutation.mutate,
@@ -1312,6 +1385,7 @@ export function useLinkMutations(filters: LinkFilters) {
     // Add links
     addLinks: addLinksMutation.mutate,
     addImageFiles: addImageFilesMutation.mutate,
+    addDocumentFiles: addDocumentFilesMutation.mutate,
 
     // Loading states
     isDeleting: deleteMutation.isPending,
@@ -1319,6 +1393,7 @@ export function useLinkMutations(filters: LinkFilters) {
     isUpdating: updateMutation.isPending,
     isAddingLinks: addLinksMutation.isPending,
     isUploadingImages: addImageFilesMutation.isPending,
+    isUploadingDocuments: addDocumentFilesMutation.isPending,
   };
 }
 

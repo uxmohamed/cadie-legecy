@@ -316,6 +316,26 @@ describe('detectContentType', () => {
     });
   });
 
+
+  describe('document URLs', () => {
+    it('detects pdf URLs as document type', () => {
+      const result = detectContentType('https://example.com/file.pdf');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('document');
+    });
+
+    it('detects uppercase PDF extensions', () => {
+      const result = detectContentType('https://example.com/REPORT.PDF');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('document');
+    });
+
+    it('does not treat non-pdf files as document', () => {
+      const result = detectContentType('https://example.com/file.pdf.png');
+      expect(result).not.toBeNull();
+      expect(result!.type).toBe('image');
+    });
+  });
   describe('edge cases', () => {
     it('handles whitespace around input', () => {
       const result = detectContentType('  https://example.com  ');

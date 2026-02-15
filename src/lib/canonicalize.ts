@@ -819,7 +819,7 @@ export function canonicalizeUrl(url: string): string {
  */
 export function canonicalizeContent(
   value: string,
-  type: "url" | "color" | "image" | "text"
+  type: "url" | "color" | "image" | "document" | "text"
 ): string {
   switch (type) {
     case "color":
@@ -828,6 +828,9 @@ export function canonicalizeContent(
       return canonicalizeUrl(value);
     case "image":
       // Images use their URL as-is for dedup
+      return value.trim();
+    case "document":
+      // Documents use their URL as-is for dedup
       return value.trim();
     case "text":
       // For text, just normalize whitespace and case

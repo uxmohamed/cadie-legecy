@@ -37,6 +37,7 @@ interface DashboardContentProps {
   searchQuery: string;
   viewMode?: "list" | "grid";
   onImageUploadReady?: (handler: (files: File[]) => void) => void;
+  onDocumentUploadReady?: (handler: (files: File[]) => void) => void;
 }
 
 export function DashboardContent({
@@ -53,6 +54,7 @@ export function DashboardContent({
   searchQuery,
   viewMode = "list",
   onImageUploadReady,
+  onDocumentUploadReady,
 }: DashboardContentProps) {
   const { spaces, addLinksToSpace, removeLinksFromSpace } = useSpaces(!!user);
   const [linkSpacesMap, setLinkSpacesMap] = React.useState<Map<string, string[]>>(new Map());
@@ -94,6 +96,7 @@ export function DashboardContent({
     batchUnpinLinks,
     addLinks,
     addImageFiles,
+    addDocumentFiles,
     isAddingLinks,
     isUploadingImages,
   } = useLinkMutations(filters);
@@ -105,6 +108,10 @@ export function DashboardContent({
   React.useEffect(() => {
     onImageUploadReady?.(addImageFiles);
   }, [onImageUploadReady, addImageFiles]);
+
+  React.useEffect(() => {
+    onDocumentUploadReady?.(addDocumentFiles);
+  }, [onDocumentUploadReady, addDocumentFiles]);
 
   // Stable key that only changes when the set of link IDs changes
   // (not when link data like titles/descriptions are updated)

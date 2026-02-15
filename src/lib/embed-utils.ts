@@ -3,7 +3,7 @@ import type { Link } from "@/features/links/types";
 /**
  * Embed type information for rendering previews
  */
-export type EmbedType = "youtube" | "twitter" | "color" | "image" | "favicon";
+export type EmbedType = "youtube" | "twitter" | "color" | "image" | "document" | "favicon";
 
 export interface EmbedInfo {
   type: EmbedType;
@@ -91,6 +91,11 @@ export function detectEmbedType(link: Link): EmbedInfo {
   // 1b. Image content type
   if (link.content_type === "image") {
     return { type: "image" };
+  }
+
+  // 1c. Document content type
+  if (link.content_type === "document") {
+    return { type: "document" };
   }
 
   // 2. YouTube patterns

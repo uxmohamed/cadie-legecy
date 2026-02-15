@@ -112,7 +112,7 @@ export function CaptureInput({
 
   const placeholder = searchOnly
     ? "Search your links..."
-    : "+ Insert a link or color...";
+    : "+ Insert a link, color, image, or PDF...";
 
   return (
     <form onSubmit={handleSubmit} autoComplete="off" className="w-full">

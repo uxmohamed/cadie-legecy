@@ -175,6 +175,8 @@ export class SupabaseLinkRepository implements ILinkRepository {
             domain = "color";
         } else if (contentType === "image") {
             domain = "image";
+        } else if (contentType === "document") {
+            domain = "document";
         } else {
             try {
                 domain = new URL(data.url).hostname.replace("www.", "");
@@ -188,7 +190,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
             .insert({
                 user_id: userId,
                 url: data.url,
-                clean_url: contentType === "color" || contentType === "image" ? data.url : canonicalizeUrl(data.url),
+                clean_url: contentType === "color" || contentType === "image" || contentType === "document" ? data.url : canonicalizeUrl(data.url),
                 title: data.title,
                 domain,
                 content_type: contentType,
