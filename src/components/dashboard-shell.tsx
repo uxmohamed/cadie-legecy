@@ -751,8 +751,6 @@ export function DashboardShell({
         spaces={spaces}
         selectedCategoryId={selectedCategoryId}
         onOpenAddMode={onOpenAddMode}
-        onFocusSearch={() => searchInputRef.current?.focus()}
-        onOpenAddMode={() => onOpenAddMode()}
         onViewChange={onViewChange}
         onViewModeChange={onViewModeChange}
         onSortChange={handleSortChange}
