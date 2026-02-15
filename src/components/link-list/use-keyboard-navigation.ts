@@ -73,8 +73,9 @@ export function useKeyboardNavigation({
       const target = e.target as HTMLElement;
       const isInputFocused =
         target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
+      const isCommandMenuOpen = document.body.dataset.commandMenuOpen === "true";
 
-      if (isInputFocused) return;
+      if (isInputFocused || isCommandMenuOpen) return;
 
       const hasLinks = displayLinks.length > 0;
 

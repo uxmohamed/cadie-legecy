@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/menu";
 import { useShortcuts } from "@/components/shortcut-context";
+import { GlobalCommandMenu } from "@/components/global-command-menu";
 
 interface DashboardShellProps {
   user: User;
@@ -81,8 +82,9 @@ export function DashboardShell({
   onUploadDocuments,
 }: DashboardShellProps) {
   const searchInputRef = React.useRef<HTMLInputElement>(null);
-  const { registerShortcut, unregisterShortcut } = useShortcuts();
+  const { registerShortcut, unregisterShortcut, toggleHelp } = useShortcuts();
   const [pendingShortcut, setPendingShortcut] = React.useState<string | null>(null);
+  const [isCommandMenuOpen, setIsCommandMenuOpen] = React.useState(false);
   const pendingShortcutTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const isTrashView = selectedCategoryId === "trash";
@@ -91,6 +93,13 @@ export function DashboardShell({
   const dragCounterRef = React.useRef(0);
   const uploadInputRef = React.useRef<HTMLInputElement>(null);
   const uploadDocumentInputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    document.body.dataset.commandMenuOpen = isCommandMenuOpen ? "true" : "false";
+    return () => {
+      delete document.body.dataset.commandMenuOpen;
+    };
+  }, [isCommandMenuOpen]);
 
   const handleUploadInputChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -204,6 +213,24 @@ export function DashboardShell({
     }));
 
     shortcutIds.push(registerShortcut({
+      key: "Cmd+k",
+      description: "Open command menu",
+      category: "Global",
+      allowInInput: true,
+      priority: 100,
+      action: () => setIsCommandMenuOpen((prev) => !prev),
+    }));
+
+    shortcutIds.push(registerShortcut({
+      key: "Ctrl+k",
+      description: "Open command menu",
+      category: "Global",
+      allowInInput: true,
+      priority: 100,
+      action: () => setIsCommandMenuOpen((prev) => !prev),
+    }));
+
+    shortcutIds.push(registerShortcut({
       key: "v",
       description: "Toggle view mode",
       category: "Global",
@@ -252,6 +279,10 @@ export function DashboardShell({
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isCommandMenuOpen) {
+        return;
+      }
+
       // Handle Cmd+V / Ctrl+V for clipboard paste
       if ((e.metaKey || e.ctrlKey) && e.key === "v") {
         const target = e.target as HTMLElement;
@@ -397,7 +428,7 @@ export function DashboardShell({
         clearTimeout(pendingShortcutTimeoutRef.current);
       }
     };
-  }, [registerShortcut, unregisterShortcut, selectedCategoryId, onOpenAddMode, onViewChange, viewMode, onViewModeChange, spaces, pendingShortcut, onUploadImages]);
+  }, [registerShortcut, unregisterShortcut, selectedCategoryId, onOpenAddMode, onViewChange, viewMode, onViewModeChange, spaces, pendingShortcut, onUploadImages, isCommandMenuOpen]);
 
   // Global drag-and-drop for image files
   React.useEffect(() => {
@@ -705,6 +736,27 @@ export function DashboardShell({
           </div>
         </div>
       )}
+
+      <GlobalCommandMenu
+        open={isCommandMenuOpen}
+        onOpenChange={setIsCommandMenuOpen}
+        isTrashView={isTrashView}
+        viewMode={viewMode}
+        spaces={spaces}
+        selectedCategoryId={selectedCategoryId}
+        onOpenAddMode={onOpenAddMode}
+        onViewChange={onViewChange}
+        onViewModeChange={onViewModeChange}
+        onSortChange={handleSortChange}
+        onToggleHelp={toggleHelp}
+        onUploadImagesClick={onUploadImages ? () => uploadInputRef.current?.click() : undefined}
+        onUploadDocumentsClick={onUploadDocuments ? () => uploadDocumentInputRef.current?.click() : undefined}
+        searchQuery={searchQuery}
+        onSearchChange={(value) => {
+          onSearchChange(value);
+          updateUrl(value);
+        }}
+      />
 
       <input
         ref={uploadInputRef}
