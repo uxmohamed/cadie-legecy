@@ -90,6 +90,7 @@ export interface Database {
           favicon_url: string | null;
           og_image_url: string | null;
           description: string | null;
+          content_text: string | null;
           content_type: string;
           color_value: string | null;
           rich_text_content: Record<string, unknown> | null;
@@ -134,6 +135,7 @@ export interface Database {
           favicon_url?: string | null;
           og_image_url?: string | null;
           description?: string | null;
+          content_text?: string | null;
           content_type?: string;
           color_value?: string | null;
           rich_text_content?: Record<string, unknown> | null;
@@ -178,6 +180,7 @@ export interface Database {
           favicon_url?: string | null;
           og_image_url?: string | null;
           description?: string | null;
+          content_text?: string | null;
           content_type?: string;
           color_value?: string | null;
           rich_text_content?: Record<string, unknown> | null;
@@ -236,4 +239,3 @@ export interface Database {
     };
   };
 }
-
