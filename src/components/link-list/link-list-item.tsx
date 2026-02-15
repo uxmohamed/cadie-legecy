@@ -184,7 +184,12 @@ export function LinkListItem({
               className="h-5 w-5 flex-shrink-0 rounded-[3px] object-cover"
             />
           ) : (
-            <Favicon url={link.favicon_url || ""} domain={link.domain} className="h-5 w-5" />
+            <Favicon
+              url={link.favicon_url || ""}
+              domain={link.domain}
+              className="h-5 w-5"
+              isPending={isMetadataLoading}
+            />
           )}
           <div className="min-w-0 flex-1">
             {isEditing && editMode === 'title' ? (
@@ -202,7 +207,9 @@ export function LinkListItem({
               <div className="flex items-center gap-2">
                 <div className={cn(
                   "truncate text-sm leading-4 font-[470] transition-colors duration-500",
-                  isMetadataLoading ? "text-fg-subtle" : "text-fg"
+                  isMetadataLoading
+                    ? "text-fg-subtle link-pending-shimmer"
+                    : "text-fg"
                 )}>
                   {link.title || link.url}
                 </div>
@@ -210,6 +217,7 @@ export function LinkListItem({
                   <div
                     className={cn(
                       "hidden sm:block truncate text-sm leading-4 text-fg-subtle font-[470]",
+                      isMetadataLoading && "link-pending-shimmer",
                       isSelected || isFocused
                         ? "opacity-100"
                         : "opacity-0 group-hover:opacity-100"
@@ -231,6 +239,7 @@ export function LinkListItem({
             <>
               <div className={cn(
                 "text-[11px] sm:text-[13px] text-fg-subtle font-[470] truncate text-right transition-opacity tabular-nums",
+                isMetadataLoading && "link-pending-shimmer",
                 isPinned && (isFocused || isSelected) && "opacity-0",
                 isPinned && "group-hover:opacity-0"
               )}>

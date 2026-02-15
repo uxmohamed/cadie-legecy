@@ -52,6 +52,7 @@ interface FaviconProps {
   domain: string;
   className?: string;
   alt?: string;
+  isPending?: boolean;
 }
 
 /**
@@ -95,7 +96,7 @@ function getCacheKey(url: string, domain: string): string {
  * Smart favicon component with progressive fallbacks and caching
  * Once a favicon loads successfully, it's cached to prevent re-loading on re-renders
  */
-export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
+export function Favicon({ url, domain, className, alt = "", isPending = false }: FaviconProps) {
   const cacheKey = getCacheKey(url, domain);
   const cachedUrl = getCachedFavicon(cacheKey);
   
@@ -195,17 +196,17 @@ export function Favicon({ url, domain, className, alt = "" }: FaviconProps) {
 
   // Show fallback if: all sources failed, no sources available, or local domain with no URL
   if (allFailed || (!currentImageUrl && sources.length === 0)) {
-    return <FaviconFallback className={className} isLoading={false} />;
+    return <FaviconFallback className={cn(className, isPending && "opacity-50")} isLoading={false} />;
   }
 
   // If no image URL available, show loading fallback
   if (!currentImageUrl) {
-    return <FaviconFallback className={className} isLoading={true} />;
+    return <FaviconFallback className={cn(className, isPending && "opacity-50")} isLoading={true} />;
   }
 
   // Render image with fallback shown underneath until loaded
   return (
-    <div className={cn("relative h-5 w-5 flex-shrink-0", className)}>
+    <div className={cn("relative h-5 w-5 flex-shrink-0", className, isPending && "opacity-50")}>
       {/* Show fallback until image loads successfully */}
       {!imageLoaded && (
         <div className="absolute inset-0">

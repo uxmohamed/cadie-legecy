@@ -87,6 +87,10 @@ function sortLinks(links: Link[]): Link[] {
   });
 }
 
+function getOptimisticDedupKey(link: Pick<Link, "content_type" | "url">): string {
+  return `${link.content_type}:${link.url.trim().toLowerCase()}`;
+}
+
 type AddToastTone = "success" | "info";
 
 function showAddResultToast(
@@ -945,11 +949,21 @@ export function useLinkMutations(filters: LinkFilters) {
         ? queryClient.getQueryData<LinksResponse>(queryKeys.links.list(filters))
         : undefined;
 
+      const existingKeys = new Set(
+        (previousAll?.links ?? []).map((link) => getOptimisticDedupKey(link))
+      );
+
       // Generate optimistic Link objects
       const now = new Date().toISOString();
       const tempIds: string[] = [];
-      const optimisticLinks: Link[] = items.map(({ value, type }) => {
+      const optimisticLinks: Link[] = items.flatMap(({ value, type }) => {
         const tempId = crypto.randomUUID();
+        const dedupKey = getOptimisticDedupKey({ content_type: type, url: value } as Pick<Link, "content_type" | "url">);
+        if (existingKeys.has(dedupKey)) {
+          return [];
+        }
+
+        existingKeys.add(dedupKey);
         tempIds.push(tempId);
 
         const isColor = type === "color";
@@ -969,7 +983,7 @@ export function useLinkMutations(filters: LinkFilters) {
           }
         }
 
-        return {
+        return [{
           id: tempId,
           user_id: "",
           url: normalizedValue,
@@ -1016,7 +1030,7 @@ export function useLinkMutations(filters: LinkFilters) {
           fetched_at: null,
           etag: null,
           last_modified: null,
-        };
+        }];
       });
 
       // Add optimistic links to cache immediately
