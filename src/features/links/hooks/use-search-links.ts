@@ -20,6 +20,8 @@ interface SearchableLink {
   ai_people: string;
   color_value: string;
   content_type: string;
+  notes: string;
+  content_text: string;
   spaces: string;
 }
 
@@ -35,18 +37,22 @@ interface SearchableLink {
  *   prefix (`^term`), suffix (`term$`), inverse (`!term`) operators.
  */
 const FUSE_OPTIONS: IFuseOptions<SearchableLink> = {
-  threshold: 0.35,
+  threshold: 0.28,
   ignoreLocation: true,
   useExtendedSearch: true,
   findAllMatches: true,
+  minMatchCharLength: 2,
+  includeScore: true,
   keys: [
     { name: "title", weight: 3 },
     { name: "ai_tags", weight: 2.5 },
     { name: "spaces", weight: 2 },
     { name: "domain", weight: 1.5 },
+    { name: "notes", weight: 1.5 },
     { name: "url", weight: 1 },
     { name: "description", weight: 1 },
     { name: "site_name", weight: 1 },
+    { name: "content_text", weight: 0.8 },
     { name: "ai_summary", weight: 0.8 },
     { name: "ai_people", weight: 0.8 },
     { name: "color_value", weight: 0.5 },
@@ -73,8 +79,50 @@ function toSearchable(
     ai_people: link.ai_people?.join(" ") ?? "",
     color_value: link.color_value ?? "",
     content_type: link.content_type ?? "",
+    notes: link.notes ?? "",
+    content_text: link.content_text ?? "",
     spaces: spaceNames.join(" "),
   };
+}
+
+function normalizeText(value: string): string {
+  return value
+    .toLocaleLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function rerankResult(item: SearchableLink, normalizedQuery: string, terms: string[]): number {
+  const title = normalizeText(item.title);
+  const domain = normalizeText(item.domain);
+  const url = normalizeText(item.url);
+  const tags = normalizeText(item.ai_tags);
+  const spaces = normalizeText(item.spaces);
+
+  let score = 0;
+
+  if (title === normalizedQuery) score += 220;
+  if (title.startsWith(normalizedQuery)) score += 130;
+  if (title.includes(normalizedQuery)) score += 95;
+  if (domain === normalizedQuery) score += 120;
+  if (domain.startsWith(normalizedQuery)) score += 85;
+  if (url.includes(normalizedQuery)) score += 65;
+  if (tags.includes(normalizedQuery)) score += 60;
+  if (spaces.includes(normalizedQuery)) score += 55;
+
+  const coveredTerms = terms.filter((term) =>
+    [title, domain, url, tags, spaces].some((field) => field.includes(term))
+  ).length;
+
+  score += coveredTerms * 24;
+  if (coveredTerms === terms.length && terms.length > 1) {
+    score += 75;
+  }
+
+  return score;
 }
 
 /**
@@ -136,10 +184,10 @@ export function useSearchLinks(
   return useMemo(() => {
     const trimmed = searchQuery.trim();
     if (!trimmed) return links;
+    const normalizedQuery = normalizeText(trimmed);
+    const terms = normalizedQuery.split(/\s+/).filter(Boolean);
 
-    // For multi-word queries, use Fuse extended search AND operator
-    // "react hooks" → search for items matching both "react" AND "hooks"
-    const terms = trimmed.split(/\s+/).filter(Boolean);
+    // For multi-word queries, prefer strict AND matching first for higher precision.
     let query: string | Expression;
 
     if (terms.length === 1) {
@@ -156,7 +204,24 @@ export function useSearchLinks(
       };
     }
 
-    const results = fuse.search(query);
-    return results.map((r) => r.item._link);
+    let results = fuse.search(query);
+
+    // If strict term matching is too restrictive, fall back to natural fuzzy search.
+    if (!results.length && terms.length > 1) {
+      results = fuse.search(normalizedQuery);
+    }
+
+    return results
+      .map((result) => ({
+        link: result.item._link,
+        score: rerankResult(result.item, normalizedQuery, terms),
+        fuseScore: result.score ?? 1,
+      }))
+      .sort((a, b) => {
+        const aCombined = a.score - a.fuseScore * 100;
+        const bCombined = b.score - b.fuseScore * 100;
+        return bCombined - aCombined;
+      })
+      .map((entry) => entry.link);
   }, [fuse, searchQuery, links]);
 }
