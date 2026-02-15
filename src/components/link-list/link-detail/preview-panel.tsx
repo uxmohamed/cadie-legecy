@@ -5,7 +5,7 @@ import { useRef, useState, useEffect } from "react";
 import type { Link } from "@/features/links/types";
 import { detectEmbedType, getYouTubeEmbedUrl } from "@/lib/embed-utils";
 import { Favicon } from "@/components/ui/favicon";
-import { IconWorld, IconBrandX, IconFileTypePdf, IconExternalLink } from "@tabler/icons-react";
+import { IconWorld, IconBrandX, IconFileTypePdf, IconExternalLink, IconNotes } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useTheme } from "@/components/theme-provider";
@@ -284,6 +284,25 @@ function DocumentPreview({ link }: { link: Link }) {
   );
 }
 
+
+function NotePreview({ link }: { link: Link }) {
+  return (
+    <div className="w-full h-full bg-bg-surface p-6 overflow-auto">
+      <div className="max-w-2xl mx-auto">
+        <div className="flex items-center gap-2 mb-3 text-fg-subtle">
+          <IconNotes className="h-4 w-4" />
+          <span className="text-xs uppercase tracking-wide">Note</span>
+        </div>
+        <h3 className="text-xl font-semibold text-fg mb-3">{link.title}</h3>
+        <div
+          className="prose prose-sm dark:prose-invert max-w-none text-fg"
+          dangerouslySetInnerHTML={{ __html: link.content_text || link.notes || "" }}
+        />
+      </div>
+    </div>
+  );
+}
+
 /**
  * Fallback preview with centered scaled favicon
  */
@@ -323,6 +342,8 @@ export function PreviewPanel({ link }: PreviewPanelProps) {
       return <ImagePreview link={link} />;
     case "document":
       return <DocumentPreview link={link} />;
+    case "note":
+      return <NotePreview link={link} />;
     case "favicon":
     default:
       return <FaviconPreview link={link} />;

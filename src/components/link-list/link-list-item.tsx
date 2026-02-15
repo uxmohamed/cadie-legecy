@@ -10,6 +10,7 @@ import {
   IconFile,
   IconPinnedOff,
   IconCornerDownLeft,
+  IconNotes,
 } from "@tabler/icons-react";
 
 interface LinkListItemProps {
@@ -73,7 +74,8 @@ export function LinkListItem({
   const isColor = link.content_type === "color";
   const isImage = link.content_type === "image";
   const isDocument = link.content_type === "document";
-  const isMetadataLoading = !isColor && !isImage && !isDocument && (link.fetch_status === "pending" || link.fetch_status === "fetching");
+  const isNote = link.content_type === "note";
+  const isMetadataLoading = !isColor && !isImage && !isDocument && !isNote && (link.fetch_status === "pending" || link.fetch_status === "fetching");
   const containerRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -165,9 +167,9 @@ export function LinkListItem({
       >
         <a
           ref={linkRef}
-          href={isColor || isImage ? "#" : link.url}
-          target={isColor || isImage ? undefined : "_blank"}
-          rel={isColor || isImage ? undefined : "noopener noreferrer nofollow"}
+          href={isColor || isImage || isNote ? "#" : link.url}
+          target={isColor || isImage || isNote ? undefined : "_blank"}
+          rel={isColor || isImage || isNote ? undefined : "noopener noreferrer nofollow"}
           onClick={(e) => e.preventDefault()}
           onFocus={() => onFocus(index)}
           className="flex min-w-0 items-center gap-3 focus-visible:outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring select-none"
@@ -187,6 +189,10 @@ export function LinkListItem({
           ) : isDocument ? (
             <div className="h-5 w-5 flex-shrink-0 rounded-[3px] bg-bg-muted border border-border-muted flex items-center justify-center">
               <IconFile className="h-3.5 w-3.5 text-fg-subtle" />
+            </div>
+          ) : isNote ? (
+            <div className="h-5 w-5 flex-shrink-0 rounded-[3px] bg-bg-muted border border-border-muted flex items-center justify-center">
+              <IconNotes className="h-3.5 w-3.5 text-fg-subtle" />
             </div>
           ) : (
             <Favicon
@@ -218,7 +224,7 @@ export function LinkListItem({
                 )}>
                   {link.title || link.url}
                 </div>
-                {!isColor && !isImage && (
+                {!isColor && !isImage && !isNote && (
                   <div
                     className={cn(
                       "hidden sm:block truncate text-sm leading-4 text-fg-subtle font-[470]",

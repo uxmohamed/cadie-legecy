@@ -53,6 +53,7 @@ export function ActionBar({
 }: ActionBarProps) {
   const [spacesOpen, setSpacesOpen] = React.useState(false);
   const isColor = link.content_type === "color";
+  const isNote = link.content_type === "note";
 
   const handleSpaceToggle = async (spaceId: string, isInSpace: boolean) => {
     if (isInSpace && onRemoveFromSpace) {
@@ -65,7 +66,7 @@ export function ActionBar({
   return (
     <div className="flex items-center gap-2 pt-4 border-t border-border">
       {/* Primary: Open Link */}
-      {!isColor && (
+      {!isColor && !isNote && (
         <Button onClick={onOpen} size="sm" className="gap-1.5">
           <IconExternalLink className="h-4 w-4" />
           Open
@@ -77,7 +78,7 @@ export function ActionBar({
         variant="ghost"
         size="icon-sm"
         onClick={onCopy}
-        title={isColor ? "Copy color" : "Copy URL"}
+        title={isColor ? "Copy color" : isNote ? "Copy note" : "Copy URL"}
       >
         <IconCopy className="h-4 w-4" />
       </Button>

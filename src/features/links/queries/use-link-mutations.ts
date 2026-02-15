@@ -899,6 +899,42 @@ export function useLinkMutations(filters: LinkFilters) {
     },
   });
 
+
+
+  const addNoteMutation = useMutation({
+    mutationFn: async ({ title, html, plainText }: { title: string; html: string; plainText: string }) => {
+      const response = await fetch("/api/links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: `note://${crypto.randomUUID()}`,
+          title,
+          content_type: "note",
+          content_text: html,
+          notes: plainText,
+          description: plainText.slice(0, 280),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData?.error?.message ?? "Failed to create note");
+      }
+
+      const data = await response.json();
+      return data.link as Link;
+    },
+    onSuccess: (link) => {
+      addLinksToCache(queryClient, ALL_FILTERS, [link]);
+      if (isCustomFilter(filters)) {
+        addLinksToCache(queryClient, filters, [link]);
+      }
+      toast.success("Note created");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to create note");
+    },
+  });
   /**
    * Add links (batch create)
    * Updates: Add to ALL cache
@@ -1384,6 +1420,7 @@ export function useLinkMutations(filters: LinkFilters) {
 
     // Add links
     addLinks: addLinksMutation.mutate,
+    addNote: addNoteMutation.mutateAsync,
     addImageFiles: addImageFilesMutation.mutate,
     addDocumentFiles: addDocumentFilesMutation.mutate,
 
@@ -1392,6 +1429,7 @@ export function useLinkMutations(filters: LinkFilters) {
     isRestoring: restoreMutation.isPending,
     isUpdating: updateMutation.isPending,
     isAddingLinks: addLinksMutation.isPending,
+    isAddingNote: addNoteMutation.isPending,
     isUploadingImages: addImageFilesMutation.isPending,
     isUploadingDocuments: addDocumentFilesMutation.isPending,
   };
