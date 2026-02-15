@@ -497,3 +497,32 @@ body {
   pointer-events: none;
   z-index: 0;
 }
+
+@keyframes linkPendingShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.link-pending-shimmer {
+  color: transparent;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--fg-subtle) 55%, transparent) 25%,
+    color-mix(in oklab, var(--fg-muted) 85%, transparent) 50%,
+    color-mix(in oklab, var(--fg-subtle) 55%, transparent) 75%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: linkPendingShimmer 1.5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link-pending-shimmer {
+    animation: none;
+  }
+}
