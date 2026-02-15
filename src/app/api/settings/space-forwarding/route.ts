@@ -10,7 +10,7 @@ import {
 
 const MAX_FORWARDING_CONDITIONS = 25;
 
-function sanitizeConditions(input: unknown): AutoForwardingCondition[] {
+function sanitizeConditions(input: unknown, validSpaceIds?: Set<string>): AutoForwardingCondition[] {
   if (!Array.isArray(input)) return [];
 
   return input
@@ -28,6 +28,7 @@ function sanitizeConditions(input: unknown): AutoForwardingCondition[] {
       const value = rawValue.trim().slice(0, 120);
 
       if (!targetSpaceId || !value) return null;
+      if (validSpaceIds && !validSpaceIds.has(targetSpaceId)) return null;
       if (!AUTO_FORWARDING_FIELDS.includes(field as (typeof AUTO_FORWARDING_FIELDS)[number])) return null;
       if (!AUTO_FORWARDING_OPERATORS.includes(operator as (typeof AUTO_FORWARDING_OPERATORS)[number])) return null;
       if (!AUTO_FORWARDING_JOIN_OPERATORS.includes(join as (typeof AUTO_FORWARDING_JOIN_OPERATORS)[number])) return null;
@@ -64,7 +65,14 @@ export async function GET(request: NextRequest) {
   const preferences = (data?.preferences || {}) as Record<string, unknown>;
   const enabled = preferences.auto_space_forwarding !== false;
 
-  const conditions = sanitizeConditions(preferences.auto_space_forwarding_conditions);
+  const { data: spaces, error: spacesError } = await supabase
+    .from("spaces")
+    .select("id")
+    .eq("user_id", userId);
+
+  const validSpaceIds = spacesError ? undefined : new Set((spaces || []).map((space) => space.id));
+
+  const conditions = sanitizeConditions(preferences.auto_space_forwarding_conditions, validSpaceIds);
 
   return NextResponse.json({ enabled, conditions });
 }
@@ -99,7 +107,14 @@ export async function PATCH(request: NextRequest) {
       ? body.enabled
       : currentPreferences.auto_space_forwarding !== false;
 
-  const conditions = sanitizeConditions(body.conditions);
+  const { data: spaces, error: spacesError } = await supabase
+    .from("spaces")
+    .select("id")
+    .eq("user_id", userId);
+
+  const validSpaceIds = spacesError ? undefined : new Set((spaces || []).map((space) => space.id));
+
+  const conditions = sanitizeConditions(body.conditions, validSpaceIds);
 
   const preferences = {
     ...currentPreferences,

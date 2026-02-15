@@ -34,6 +34,7 @@ export interface Database {
           name: string;
           color: string;
           sort_order: number;
+          description: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -43,6 +44,7 @@ export interface Database {
           name: string;
           color: string;
           sort_order?: number;
+          description?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -52,6 +54,7 @@ export interface Database {
           name?: string;
           color?: string;
           sort_order?: number;
+          description?: string | null;
           created_at?: string;
           updated_at?: string;
         };

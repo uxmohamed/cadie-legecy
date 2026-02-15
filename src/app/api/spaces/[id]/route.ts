@@ -32,10 +32,11 @@ export async function PATCH(
       name?: string;
       color?: string;
       sort_order?: number;
+      description?: string | null;
     }
 
     const body = (await request.json()) as UpdateSpaceBody;
-    const { name, color, sort_order } = body;
+    const { name, color, sort_order, description } = body;
 
     // Verify space belongs to user
     const supabase = await createClient();
@@ -54,10 +55,11 @@ export async function PATCH(
     }
 
     // Build update object
-    const updateData: { name?: string; color?: string; sort_order?: number } = {};
+    const updateData: { name?: string; color?: string; sort_order?: number; description?: string | null } = {};
     if (name !== undefined) updateData.name = name;
     if (color !== undefined) updateData.color = color;
     if (sort_order !== undefined) updateData.sort_order = sort_order;
+    if (description !== undefined) updateData.description = typeof description === "string" ? description.trim().slice(0, 240) : null;
 
     const { data, error } = await supabase
       .from("spaces")

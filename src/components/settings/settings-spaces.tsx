@@ -48,7 +48,7 @@ import type {
 
 interface SpaceItemProps {
   space: Space;
-  onUpdate: (id: string, updates: { name?: string; color?: string }) => Promise<boolean>;
+  onUpdate: (id: string, updates: { name?: string; color?: string; description?: string | null }) => Promise<boolean>;
   onDelete: (id: string) => Promise<boolean>;
 }
 
@@ -73,6 +73,7 @@ const JOIN_OPTIONS: Array<{ value: AutoForwardingJoinOperator; label: string }> 
 function SpaceItem({ space, onUpdate, onDelete }: SpaceItemProps) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [editName, setEditName] = React.useState(space.name);
+  const [editDescription, setEditDescription] = React.useState(space.description || "");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
@@ -84,27 +85,27 @@ function SpaceItem({ space, onUpdate, onDelete }: SpaceItemProps) {
 
   React.useEffect(() => {
     setEditName(space.name);
-  }, [space.name]);
+    setEditDescription(space.description || "");
+  }, [space.name, space.description]);
 
-  const handleSaveName = async () => {
-    if (!editName.trim()) return;
-    if (editName !== space.name) {
-      await onUpdate(space.id, { name: editName });
+  const handleSaveSpace = async () => {
+    const trimmedName = editName.trim();
+    const trimmedDescription = editDescription.trim();
+    if (!trimmedName) return;
+
+    if (trimmedName !== space.name || trimmedDescription !== (space.description || "")) {
+      await onUpdate(space.id, {
+        name: trimmedName,
+        description: trimmedDescription || null,
+      });
     }
     setIsEditing(false);
   };
 
   const handleCancel = () => {
     setEditName(space.name);
+    setEditDescription(space.description || "");
     setIsEditing(false);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSaveName();
-    } else if (e.key === "Escape") {
-      handleCancel();
-    }
   };
 
   const handleColorChange = async (newColor: string) => {
@@ -115,28 +116,43 @@ function SpaceItem({ space, onUpdate, onDelete }: SpaceItemProps) {
 
   if (isEditing) {
     return (
-      <div className="flex items-center gap-3 py-2 px-2 rounded-md bg-bg-muted">
+      <div className="flex items-start gap-3 py-2 px-2 rounded-md bg-bg-muted">
         <IconCapsuleHorizontalFilled
-          className="h-4 w-4 shrink-0"
+          className="h-4 w-4 shrink-0 mt-2"
           style={{ color: space.color }}
         />
 
-        <Input
-          ref={inputRef}
-          value={editName}
-          onChange={(e) => setEditName(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onBlur={handleSaveName}
-          className="flex-1 h-8 bg-bg-input border-transparent shadow-none before:shadow-none focus:bg-bg focus:border-accent px-2"
-        />
+        <div className="flex-1 space-y-2">
+          <Input
+            ref={inputRef}
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSaveSpace();
+              if (e.key === "Escape") handleCancel();
+            }}
+            className="h-8 bg-bg-input border-transparent shadow-none before:shadow-none focus:bg-bg focus:border-accent px-2"
+            placeholder="Space name"
+          />
+          <Input
+            value={editDescription}
+            onChange={(e) => setEditDescription(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") handleCancel();
+            }}
+            maxLength={240}
+            className="h-8 text-xs bg-bg-input border-transparent shadow-none before:shadow-none focus:bg-bg focus:border-accent px-2"
+            placeholder="Optional note for smarter AI routing"
+          />
+        </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 pt-1">
           <Button
             size="icon"
             variant="ghost"
             className="h-7 w-7 text-fg-muted hover:text-fg hover:bg-bg-hover disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-fg-muted"
-            onClick={handleSaveName}
-            disabled={editName.trim() === space.name || !editName.trim()}
+            onClick={handleSaveSpace}
+            disabled={editName.trim() === ""}
           >
             <IconCheck className="h-4 w-4" />
           </Button>
@@ -154,11 +170,11 @@ function SpaceItem({ space, onUpdate, onDelete }: SpaceItemProps) {
   }
 
   return (
-    <div className="group flex items-center gap-3 py-2 px-2 rounded-md hover:bg-bg-hover transition-colors w-full max-w-full overflow-hidden">
+    <div className="group flex items-start gap-3 py-2 px-2 rounded-md hover:bg-bg-hover transition-colors w-full max-w-full overflow-hidden">
       <Popover>
         <PopoverTrigger asChild>
           <button
-            className="h-6 w-6 flex items-center justify-center shrink-0 ring-2 ring-transparent hover:ring-border-hover transition-all cursor-pointer rounded-md"
+            className="h-6 w-6 mt-0.5 flex items-center justify-center shrink-0 ring-2 ring-transparent hover:ring-border-hover transition-all cursor-pointer rounded-md"
             aria-label="Change color"
           >
             <IconCapsuleHorizontalFilled
@@ -174,9 +190,13 @@ function SpaceItem({ space, onUpdate, onDelete }: SpaceItemProps) {
           />
         </PopoverContent>
       </Popover>
-      <span className="flex-1 w-0 text-sm text-fg font-medium overflow-hidden text-ellipsis whitespace-nowrap">
-        {space.name}
-      </span>
+
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-fg font-medium overflow-hidden text-ellipsis whitespace-nowrap">{space.name}</p>
+        <p className="text-xs text-fg-muted overflow-hidden text-ellipsis whitespace-nowrap">
+          {space.description || "No note added"}
+        </p>
+      </div>
 
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-auto">
         <Button
@@ -233,6 +253,11 @@ export function SettingsSpaces() {
   const [isLoadingAutoForwarding, setIsLoadingAutoForwarding] = React.useState(true);
   const [isSavingAutoForwarding, setIsSavingAutoForwarding] = React.useState(false);
 
+  const normalizeConditionTargets = React.useCallback((nextConditions: AutoForwardingCondition[]) => {
+    const availableSpaceIds = new Set(spaces.slice(1).map((space) => space.id));
+    return nextConditions.filter((condition) => availableSpaceIds.has(condition.targetSpaceId));
+  }, [spaces]);
+
   React.useEffect(() => {
     if (isCreating) {
       const colorKeys = Object.keys(SPACE_COLORS) as Array<keyof typeof SPACE_COLORS>;
@@ -262,7 +287,8 @@ export function SettingsSpaces() {
         });
 
         if (!response.ok) {
-          throw new Error("Failed to update auto-forwarding settings");
+          const errorData = (await response.json().catch(() => ({}))) as { error?: string };
+          throw new Error(errorData.error || "Failed to update auto-forwarding settings");
         }
 
         const data = (await response.json()) as { enabled: boolean; conditions: AutoForwardingCondition[] };
@@ -331,9 +357,10 @@ export function SettingsSpaces() {
   };
 
   const persistConditions = async (nextConditions: AutoForwardingCondition[]) => {
+    const normalizedConditions = normalizeConditionTargets(nextConditions);
     const previous = conditions;
-    setConditions(nextConditions);
-    const success = await saveAutoForwardingSettings(autoForwardingEnabled, nextConditions);
+    setConditions(normalizedConditions);
+    const success = await saveAutoForwardingSettings(autoForwardingEnabled, normalizedConditions);
     if (!success) {
       setConditions(previous);
       toast.error("Failed to save advanced forwarding rules");

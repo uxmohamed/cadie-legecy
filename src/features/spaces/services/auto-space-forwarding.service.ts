@@ -18,6 +18,7 @@ interface ForwardableLink {
 interface SpaceRow {
   id: string;
   name: string;
+  description: string | null;
   sort_order: number;
 }
 
@@ -180,7 +181,7 @@ export class AutoSpaceForwardingService {
     const supabase = await createClient();
     const { data } = await supabase
       .from("spaces")
-      .select("id, name, sort_order")
+      .select("id, name, description, sort_order")
       .eq("user_id", userId)
       .order("sort_order", { ascending: true });
 
@@ -197,7 +198,7 @@ export class AutoSpaceForwardingService {
     let best: { space: SpaceRow; score: number } | null = null;
 
     for (const space of spaceCandidates) {
-      const tokens = tokenize(space.name);
+      const tokens = [...tokenize(space.name), ...tokenize(space.description || "")];
       let score = 0;
 
       for (const token of tokens) {
@@ -236,6 +237,7 @@ export class AutoSpaceForwardingService {
     const candidates = spaces.slice(1).map((space) => ({
       id: space.id,
       name: space.name,
+      description: space.description,
     }));
 
     const prompt = `Decide whether this saved item should be auto-forwarded to ONE existing user space.\n` +
