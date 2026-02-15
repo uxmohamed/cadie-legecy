@@ -78,6 +78,10 @@ export function InlineAddItem({
     [hasContent, onCancel, onSubmit]
   );
 
+  React.useEffect(() => {
+    resolvedInputRef.current?.focus();
+  }, [resolvedInputRef]);
+
   // Handle click outside - always cancel
   React.useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -116,7 +120,7 @@ export function InlineAddItem({
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Enter a link, color, or image URL..."
-              className="w-full bg-transparent text-sm leading-4 text-fg font-[470] placeholder:text-fg-subtle outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-sm"
+              className="w-full bg-transparent text-sm leading-4 text-fg font-[470] placeholder:text-fg-subtle outline-none focus-visible:ring-0"
               autoComplete="off"
               autoFocus
               aria-label="Enter a link, color, or image URL"

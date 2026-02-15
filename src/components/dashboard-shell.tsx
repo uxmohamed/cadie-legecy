@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useSearchParams, useRouter } from "next/navigation";
 import { UserMenu } from "@/components/user-menu";
 import { LogoIcon } from "@/components/logo-icon";
 import { Dock } from "@/components/dock";
@@ -31,7 +30,6 @@ interface DashboardShellProps {
   sortOrder: "asc" | "desc";
   onSortChange: (sortBy: "date" | "title") => void;
   isAddingItem: boolean;
-  onToggleAddMode: () => void;
   onOpenAddMode: (initialValue?: string) => void;
   searchQuery: string;
   onSearchChange: (value: string) => void;
@@ -50,7 +48,6 @@ interface DashboardShellProps {
   onEditSpace?: (space: Space) => void;
   onDeleteSpace?: (spaceId: string) => void;
   onUploadImages?: (files: File[]) => void;
-  onOpenUploadModal?: () => void;
 }
 
 export function DashboardShell({
@@ -62,7 +59,6 @@ export function DashboardShell({
   sortOrder,
   onSortChange,
   isAddingItem,
-  onToggleAddMode,
   onOpenAddMode,
   searchQuery,
   onSearchChange,
@@ -81,10 +77,7 @@ export function DashboardShell({
   onEditSpace,
   onDeleteSpace,
   onUploadImages,
-  onOpenUploadModal,
 }: DashboardShellProps) {
-  const searchParams = useSearchParams();
-  const router = useRouter();
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const { registerShortcut, unregisterShortcut } = useShortcuts();
   const [pendingShortcut, setPendingShortcut] = React.useState<string | null>(null);
@@ -94,6 +87,22 @@ export function DashboardShell({
   const selectedSpace = spaces?.find(s => s.id === selectedCategoryId);
   const [isDraggingFiles, setIsDraggingFiles] = React.useState(false);
   const dragCounterRef = React.useRef(0);
+  const uploadInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleUploadInputChange = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files || []).filter((file) =>
+        file.type.startsWith("image/")
+      );
+
+      if (files.length > 0) {
+        onUploadImages?.(files);
+      }
+
+      e.target.value = "";
+    },
+    [onUploadImages]
+  );
 
   // Update URL immediately using history API (no navigation, instant URL update)
   const updateUrl = React.useCallback((value: string) => {
@@ -479,20 +488,18 @@ export function DashboardShell({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-44">
                     <DropdownMenuItem
-                      onSelect={() => onToggleAddMode()}
+                      onSelect={() => onOpenAddMode()}
                       disabled={isAddingItem}
                     >
                       <IconPlus className="h-4 w-4 text-fg-on-overlay-muted" />
                       Add links
                     </DropdownMenuItem>
-                    {onCreateSpace && (
-                      <DropdownMenuItem onSelect={() => onCreateSpace()}>
-                        <IconPalette className="h-4 w-4 text-fg-on-overlay-muted" />
-                        Add color
-                      </DropdownMenuItem>
-                    )}
-                    {onOpenUploadModal && (
-                      <DropdownMenuItem onSelect={() => onOpenUploadModal()}>
+                    <DropdownMenuItem onSelect={() => onOpenAddMode()} disabled={isAddingItem}>
+                      <IconPalette className="h-4 w-4 text-fg-on-overlay-muted" />
+                      Add color
+                    </DropdownMenuItem>
+                    {onUploadImages && (
+                      <DropdownMenuItem onSelect={() => uploadInputRef.current?.click()}>
                         <IconPhoto className="h-4 w-4 text-fg-on-overlay-muted" />
                         Upload images
                       </DropdownMenuItem>
@@ -687,6 +694,17 @@ export function DashboardShell({
           </div>
         </div>
       )}
+
+      <input
+        ref={uploadInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={handleUploadInputChange}
+        tabIndex={-1}
+        aria-hidden="true"
+      />
     </div>
   );
 }

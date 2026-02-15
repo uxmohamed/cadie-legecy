@@ -14,10 +14,6 @@ const SpaceModal = dynamic(
   () => import("@/components/spaces/space-modal").then((mod) => mod.SpaceModal),
   { ssr: false }
 );
-const ImageUploadModal = dynamic(
-  () => import("@/components/image-upload-modal").then((mod) => mod.ImageUploadModal),
-  { ssr: false }
-);
 import type { User } from "@supabase/supabase-js";
 import type { Link } from "@/features/links/types";
 import type { Space } from "@/types";
@@ -70,7 +66,6 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
   const { spaces, createSpace, updateSpace, deleteSpace } = useSpaces(!!user, initialSpaces);
   const [spaceModalOpen, setSpaceModalOpen] = React.useState(false);
   const [editingSpace, setEditingSpace] = React.useState<Space | null>(null);
-  const [imageUploadModalOpen, setImageUploadModalOpen] = React.useState(false);
   const imageUploadHandlerRef = React.useRef<((files: File[]) => void) | null>(null);
   
   // Sync selectedCategoryId with URL path changes
@@ -101,10 +96,6 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
     [sortBy, sortOrder]
   );
 
-  const handleToggleAddMode = React.useCallback(() => {
-    if (selectedCategoryId === "trash") return;
-    setIsAddingItem((prev) => !prev);
-  }, [selectedCategoryId]);
 
   const handleOpenAddMode = React.useCallback((initialValue?: string) => {
     if (selectedCategoryId === "trash") return;
@@ -190,10 +181,6 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
     imageUploadHandlerRef.current?.(files);
   }, []);
 
-  const handleOpenUploadModal = React.useCallback(() => {
-    setImageUploadModalOpen(true);
-  }, []);
-
   const handleCreateSpace = React.useCallback(() => {
     setEditingSpace(null);
     setSpaceModalOpen(true);
@@ -233,12 +220,10 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
         onEditSpace={handleEditSpace}
         onDeleteSpace={handleDeleteSpace}
         onUploadImages={handleUploadImages}
-        onOpenUploadModal={handleOpenUploadModal}
       sortBy={sortBy}
       sortOrder={sortOrder}
       onSortChange={handleSortChange}
       isAddingItem={isAddingItem}
-      onToggleAddMode={handleToggleAddMode}
       onOpenAddMode={handleOpenAddMode}
       searchQuery={searchQuery}
       onSearchChange={handleSearchChange}
@@ -322,12 +307,6 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
       space={editingSpace}
       onSave={handleSaveSpace}
       onDelete={editingSpace ? handleDeleteSpace : undefined}
-    />
-
-    <ImageUploadModal
-      open={imageUploadModalOpen}
-      onOpenChange={setImageUploadModalOpen}
-      onUploadFiles={handleUploadImages}
     />
     </>
   );
