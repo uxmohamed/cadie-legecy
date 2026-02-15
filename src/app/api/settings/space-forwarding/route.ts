@@ -75,10 +75,10 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => ({}))) as { enabled?: boolean; conditions?: unknown };
+  const body = (await request.json().catch(() => ({}))) as { enabled?: unknown; conditions?: unknown };
 
-  if (typeof body.enabled !== "boolean") {
-    return NextResponse.json({ error: "enabled must be a boolean" }, { status: 400 });
+  if (body.enabled !== undefined && typeof body.enabled !== "boolean") {
+    return NextResponse.json({ error: "enabled must be a boolean when provided" }, { status: 400 });
   }
 
   const supabase = await createClient();
@@ -93,11 +93,17 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: readError.message }, { status: 500 });
   }
 
+  const currentPreferences = ((current?.preferences || {}) as Record<string, unknown>);
+  const nextEnabled =
+    typeof body.enabled === "boolean"
+      ? body.enabled
+      : currentPreferences.auto_space_forwarding !== false;
+
   const conditions = sanitizeConditions(body.conditions);
 
   const preferences = {
-    ...((current?.preferences || {}) as Record<string, unknown>),
-    auto_space_forwarding: body.enabled,
+    ...currentPreferences,
+    auto_space_forwarding: nextEnabled,
     auto_space_forwarding_conditions: conditions,
   };
 
@@ -110,5 +116,5 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
-  return NextResponse.json({ enabled: body.enabled, conditions });
+  return NextResponse.json({ enabled: nextEnabled, conditions });
 }
