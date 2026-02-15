@@ -10,13 +10,6 @@ import {
 
 const MAX_FORWARDING_CONDITIONS = 25;
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function isUuid(value: string): boolean {
-  return UUID_REGEX.test(value);
-}
-
 function sanitizeConditions(input: unknown, validSpaceIds?: Set<string>): AutoForwardingCondition[] {
   if (!Array.isArray(input)) return [];
 
@@ -34,7 +27,7 @@ function sanitizeConditions(input: unknown, validSpaceIds?: Set<string>): AutoFo
       const rawValue = typeof record.value === "string" ? record.value : "";
       const value = rawValue.trim().slice(0, 120);
 
-      if (!targetSpaceId || !value || !isUuid(targetSpaceId)) return null;
+      if (!targetSpaceId || !value) return null;
       if (validSpaceIds && !validSpaceIds.has(targetSpaceId)) return null;
       if (!AUTO_FORWARDING_FIELDS.includes(field as (typeof AUTO_FORWARDING_FIELDS)[number])) return null;
       if (!AUTO_FORWARDING_OPERATORS.includes(operator as (typeof AUTO_FORWARDING_OPERATORS)[number])) return null;
@@ -77,11 +70,7 @@ export async function GET(request: NextRequest) {
     .select("id")
     .eq("user_id", userId);
 
-  if (spacesError) {
-    return NextResponse.json({ error: spacesError.message }, { status: 500 });
-  }
-
-  const validSpaceIds = new Set((spaces || []).map((space) => space.id));
+  const validSpaceIds = spacesError ? undefined : new Set((spaces || []).map((space) => space.id));
 
   const conditions = sanitizeConditions(preferences.auto_space_forwarding_conditions, validSpaceIds);
 
@@ -123,11 +112,7 @@ export async function PATCH(request: NextRequest) {
     .select("id")
     .eq("user_id", userId);
 
-  if (spacesError) {
-    return NextResponse.json({ error: spacesError.message }, { status: 500 });
-  }
-
-  const validSpaceIds = new Set((spaces || []).map((space) => space.id));
+  const validSpaceIds = spacesError ? undefined : new Set((spaces || []).map((space) => space.id));
 
   const conditions = sanitizeConditions(body.conditions, validSpaceIds);
 

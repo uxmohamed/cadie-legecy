@@ -78,11 +78,11 @@ export function useSpaceMutations() {
    * Create space
    */
   const createMutation = useMutation({
-    mutationFn: async ({ name, color }: { name: string; color: string }) => {
+    mutationFn: async ({ name, color, description }: { name: string; color: string; description?: string }) => {
       const response = await fetch("/api/spaces", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, color }),
+        body: JSON.stringify({ name, color, description }),
       });
 
       if (!response.ok) {
@@ -93,7 +93,7 @@ export function useSpaceMutations() {
       const data = await response.json();
       return data.space as Space;
     },
-    onMutate: async ({ name, color }) => {
+    onMutate: async ({ name, color, description }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.spaces.all });
       const previousData = queryClient.getQueryData<SpacesResponse>(queryKeys.spaces.list());
 
@@ -104,6 +104,7 @@ export function useSpaceMutations() {
         name,
         color,
         sort_order: (previousData?.spaces.length ?? 0),
+        description: description ?? null,
         link_count: 0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -141,7 +142,7 @@ export function useSpaceMutations() {
       updates,
     }: {
       id: string;
-      updates: { name?: string; color?: string; sort_order?: number };
+      updates: { name?: string; color?: string; sort_order?: number; description?: string | null };
     }) => {
       const response = await fetch(`/api/spaces/${id}`, {
         method: "PATCH",
@@ -308,8 +309,8 @@ export function useSpaceMutations() {
   });
 
   return {
-    createSpace: (name: string, color: string) => createMutation.mutateAsync({ name, color }),
-    updateSpace: (id: string, updates: { name?: string; color?: string; sort_order?: number }) =>
+    createSpace: (name: string, color: string, description?: string) => createMutation.mutateAsync({ name, color, description }),
+    updateSpace: (id: string, updates: { name?: string; color?: string; sort_order?: number; description?: string | null }) =>
       updateMutation.mutateAsync({ id, updates }).then(() => true).catch(() => false),
     deleteSpace: (id: string) =>
       deleteMutation.mutateAsync(id).then(() => true).catch(() => false),
