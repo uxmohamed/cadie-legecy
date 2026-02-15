@@ -1,5 +1,10 @@
 import OpenAI from "openai";
 import { createClient } from "@/lib/supabase/server";
+import type {
+  AutoForwardingCondition,
+  AutoForwardingField,
+  AutoForwardingOperator,
+} from "@/features/spaces/types/auto-forwarding";
 
 interface ForwardableLink {
   id: string;
@@ -14,6 +19,11 @@ interface SpaceRow {
   id: string;
   name: string;
   sort_order: number;
+}
+
+interface ForwardingPreferences {
+  enabled: boolean;
+  conditions: AutoForwardingCondition[];
 }
 
 const AI_TIMEOUT_MS = 3500;
@@ -62,7 +72,7 @@ export class AutoSpaceForwardingService {
     this.openAIClient = apiKey ? new OpenAI({ apiKey }) : null;
   }
 
-  private async isEnabled(userId: string): Promise<boolean> {
+  private async getForwardingPreferences(userId: string): Promise<ForwardingPreferences> {
     const supabase = await createClient();
     const { data } = await supabase
       .from("users")
@@ -72,8 +82,98 @@ export class AutoSpaceForwardingService {
 
     const preferences = (data?.preferences || {}) as Record<string, unknown>;
     const value = preferences.auto_space_forwarding;
+    const rawConditions = preferences.auto_space_forwarding_conditions;
+    const conditions = Array.isArray(rawConditions)
+      ? (rawConditions.filter((item): item is AutoForwardingCondition => {
+          if (!item || typeof item !== "object") return false;
+          const record = item as Record<string, unknown>;
+          return (
+            typeof record.id === "string" &&
+            typeof record.targetSpaceId === "string" &&
+            typeof record.field === "string" &&
+            typeof record.operator === "string" &&
+            typeof record.value === "string" &&
+            typeof record.join === "string"
+          );
+        }) as AutoForwardingCondition[])
+      : [];
 
-    return value !== false;
+    return { enabled: value !== false, conditions };
+  }
+
+  private evaluateCondition(
+    link: ForwardableLink,
+    condition: AutoForwardingCondition
+  ): boolean {
+    const getFieldValue = (field: AutoForwardingField): string => {
+      switch (field) {
+        case "domain":
+          return (link.domain || getDomain(link.url)).toLowerCase();
+        case "url":
+          return link.url.toLowerCase();
+        case "title":
+          return (link.title || "").toLowerCase();
+        case "description":
+          return (link.description || "").toLowerCase();
+        case "contentType":
+          return (link.content_type || "").toLowerCase();
+        default:
+          return "";
+      }
+    };
+
+    const sourceValue = getFieldValue(condition.field);
+    const conditionValue = condition.value.toLowerCase().trim();
+    if (!sourceValue || !conditionValue) return false;
+
+    const evaluate = (operator: AutoForwardingOperator): boolean => {
+      if (operator === "equals") {
+        return sourceValue === conditionValue;
+      }
+
+      return sourceValue.includes(conditionValue);
+    };
+
+    return evaluate(condition.operator);
+  }
+
+  private pickRuleBasedSpace(
+    link: ForwardableLink,
+    spaces: SpaceRow[],
+    conditions: AutoForwardingCondition[]
+  ): SpaceRow | null {
+    if (conditions.length === 0) return null;
+
+    const groupedConditions = new Map<string, AutoForwardingCondition[]>();
+    for (const condition of conditions) {
+      const existing = groupedConditions.get(condition.targetSpaceId) || [];
+      existing.push(condition);
+      groupedConditions.set(condition.targetSpaceId, existing);
+    }
+
+    const candidateSpaces = spaces.slice(1);
+    for (const space of candidateSpaces) {
+      const rules = groupedConditions.get(space.id);
+      if (!rules || rules.length === 0) continue;
+
+      let matches = this.evaluateCondition(link, rules[0]);
+
+      for (let index = 1; index < rules.length; index += 1) {
+        const rule = rules[index];
+        const currentMatch = this.evaluateCondition(link, rule);
+        if (rule.join === "AND") {
+          matches = matches && currentMatch;
+        } else {
+          matches = matches || currentMatch;
+        }
+      }
+
+      if (matches) {
+        return space;
+      }
+    }
+
+    return null;
   }
 
   private async getUserSpaces(userId: string): Promise<SpaceRow[]> {
@@ -188,8 +288,8 @@ export class AutoSpaceForwardingService {
       return { forwardedSpaceNames: [], forwardedByLinkId: {} };
     }
 
-    const enabled = await this.isEnabled(userId);
-    if (!enabled) {
+    const preferences = await this.getForwardingPreferences(userId);
+    if (!preferences.enabled) {
       return { forwardedSpaceNames: [], forwardedByLinkId: {} };
     }
 
@@ -203,7 +303,10 @@ export class AutoSpaceForwardingService {
     const forwardedByLinkId: Record<string, string | undefined> = {};
 
     for (const link of links) {
-      let target = this.pickHeuristicSpace(link, spaces);
+      let target = this.pickRuleBasedSpace(link, spaces, preferences.conditions);
+      if (!target) {
+        target = this.pickHeuristicSpace(link, spaces);
+      }
       if (!target) {
         target = await this.pickAISpace(link, spaces);
       }
