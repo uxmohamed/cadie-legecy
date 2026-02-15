@@ -63,7 +63,7 @@ const MockCaptureInput = ({
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        placeholder={searchOnly ? 'Search your links...' : '+ Insert a link or color...'}
+        placeholder={searchOnly ? 'Search your links...' : '+ Insert a link, color, image, or PDF...'}
         disabled={isLoading}
         data-testid="capture-input"
         autoFocus={autoFocus}
@@ -81,7 +81,7 @@ describe('CaptureInput', () => {
     it('renders input with default placeholder', () => {
       render(<MockCaptureInput />);
       
-      expect(screen.getByPlaceholderText('+ Insert a link or color...')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('+ Insert a link, color, image, or PDF...')).toBeInTheDocument();
     });
 
     it('renders search placeholder in searchOnly mode', () => {

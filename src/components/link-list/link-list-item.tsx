@@ -72,7 +72,8 @@ export function LinkListItem({
 }: LinkListItemProps) {
   const isColor = link.content_type === "color";
   const isImage = link.content_type === "image";
-  const isMetadataLoading = !isColor && !isImage && (link.fetch_status === "pending" || link.fetch_status === "fetching");
+  const isDocument = link.content_type === "document";
+  const isMetadataLoading = !isColor && !isImage && !isDocument && (link.fetch_status === "pending" || link.fetch_status === "fetching");
   const containerRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -183,6 +184,10 @@ export function LinkListItem({
               alt=""
               className="h-5 w-5 flex-shrink-0 rounded-[3px] object-cover"
             />
+          ) : isDocument ? (
+            <div className="h-5 w-5 flex-shrink-0 rounded-[3px] bg-bg-muted border border-border-muted flex items-center justify-center">
+              <IconFile className="h-3.5 w-3.5 text-fg-subtle" />
+            </div>
           ) : (
             <Favicon
               url={link.favicon_url || ""}

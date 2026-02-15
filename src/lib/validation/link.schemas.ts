@@ -50,7 +50,7 @@ export const createLinkSchema = z.object({
   // Title is optional - if not provided, server uses domain as placeholder
   // and metadata enrichment will set the real title
   title: z.string().max(500, "Title too long").optional(),
-  content_type: z.enum(["url", "color", "image"]).optional().default("url"),
+  content_type: z.enum(["url", "color", "image", "document"]).optional().default("url"),
   color_value: z.string().max(100, "Color value too long").optional().nullable(),
   favicon_url: z.string().url("Invalid favicon URL").max(2000).optional().nullable(),
   og_image_url: z.string().url("Invalid image URL").max(2000).optional().nullable(),
@@ -66,6 +66,15 @@ export const createLinkSchema = z.object({
       try {
         new URL(data.url);
         return true;
+      } catch {
+        return false;
+      }
+    }
+    // For document content type, validate URL format and ensure PDF extension
+    if (data.content_type === "document") {
+      try {
+        const parsed = new URL(data.url);
+        return /\.pdf$/i.test(parsed.pathname);
       } catch {
         return false;
       }
