@@ -122,10 +122,11 @@ export async function POST(request: NextRequest) {
       name: string;
       color: string;
       sort_order?: number;
+      description?: string;
     }
 
     const body = (await request.json()) as CreateSpaceBody;
-    const { name, color, sort_order } = body;
+    const { name, color, sort_order, description } = body;
 
     if (!name || !color) {
       return NextResponse.json(
@@ -146,6 +147,8 @@ export async function POST(request: NextRequest) {
     const maxSortOrder = existingSpaces?.[0]?.sort_order ?? -1;
     const newSortOrder = sort_order ?? maxSortOrder + 1;
 
+    const normalizedDescription = typeof description === "string" ? description.trim().slice(0, 240) : null;
+
     const { data, error } = await supabase
       .from("spaces")
       .insert({
@@ -153,6 +156,7 @@ export async function POST(request: NextRequest) {
         name,
         color,
         sort_order: newSortOrder,
+        description: normalizedDescription || null,
       })
       .select()
       .single();
