@@ -18,7 +18,8 @@ import {
   IconCapsuleHorizontalFilled 
 } from "@tabler/icons-react";
 import { SPACE_COLORS, ColorPicker } from "@/components/spaces/color-picker";
-import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -197,6 +198,9 @@ export function SettingsSpaces() {
   const [newSpaceName, setNewSpaceName] = React.useState("");
   const [newSpaceColor, setNewSpaceColor] = React.useState(SPACE_COLORS.blue.cssVar);
   const createInputRef = React.useRef<HTMLInputElement>(null);
+  const [autoForwardingEnabled, setAutoForwardingEnabled] = React.useState(true);
+  const [isLoadingAutoForwarding, setIsLoadingAutoForwarding] = React.useState(true);
+  const [isSavingAutoForwarding, setIsSavingAutoForwarding] = React.useState(false);
 
   React.useEffect(() => {
     if (isCreating) {
@@ -217,9 +221,80 @@ export function SettingsSpaces() {
     setIsCreating(false);
   };
 
+  React.useEffect(() => {
+    let mounted = true;
+
+    const loadAutoForwardingPreference = async () => {
+      try {
+        const response = await fetch("/api/settings/space-forwarding");
+        if (!response.ok) {
+          throw new Error("Failed to load auto-forwarding settings");
+        }
+
+        const data = (await response.json()) as { enabled: boolean };
+        if (mounted) {
+          setAutoForwardingEnabled(data.enabled);
+        }
+      } catch {
+        if (mounted) {
+          toast.error("Failed to load auto-forwarding setting");
+        }
+      } finally {
+        if (mounted) {
+          setIsLoadingAutoForwarding(false);
+        }
+      }
+    };
+
+    loadAutoForwardingPreference();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleAutoForwardingToggle = async (enabled: boolean) => {
+    const previous = autoForwardingEnabled;
+    setAutoForwardingEnabled(enabled);
+    setIsSavingAutoForwarding(true);
+
+    try {
+      const response = await fetch("/api/settings/space-forwarding", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ enabled }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update auto-forwarding settings");
+      }
+
+      toast.success(enabled ? "Auto-forwarding enabled" : "Auto-forwarding disabled");
+    } catch {
+      setAutoForwardingEnabled(previous);
+      toast.error("Failed to update auto-forwarding setting");
+    } finally {
+      setIsSavingAutoForwarding(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-2 min-w-0 w-full overflow-hidden">
       <div className="flex flex-col gap-1 min-w-0 w-full overflow-hidden">
+      <div className="flex items-start justify-between gap-4 rounded-md border border-border p-3 mb-2">
+        <div>
+          <p className="text-sm font-medium text-fg">Smart auto-forwarding</p>
+          <p className="text-xs text-fg-muted">Automatically adds new items to the best matching space.</p>
+        </div>
+        <Switch
+          checked={autoForwardingEnabled}
+          onCheckedChange={handleAutoForwardingToggle}
+          disabled={isLoadingAutoForwarding || isSavingAutoForwarding}
+          aria-label="Toggle smart auto-forwarding"
+        />
+      </div>
         {spaces.map((space) => (
           <SpaceItem
             key={space.id}

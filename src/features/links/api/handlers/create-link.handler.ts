@@ -6,6 +6,7 @@ import type { CreateLinkDTO } from "@/features/links/types";
 import { toAppError, ErrorCode, AppError } from "@/lib/errors";
 import { resolveColorMetadata } from "@/lib/canonicalize";
 import { enqueueMetadataEnrichment, enqueueAITagging, enqueueAIVisionTagging } from "@/lib/job-queue";
+import { AutoSpaceForwardingService } from "@/features/spaces/services/auto-space-forwarding.service";
 
 /**
  * Handler for POST /api/links
@@ -13,10 +14,12 @@ import { enqueueMetadataEnrichment, enqueueAITagging, enqueueAIVisionTagging } f
  */
 export class CreateLinkHandler {
     private linkService: LinkService;
+    private autoForwardingService: AutoSpaceForwardingService;
 
     constructor() {
         const repository = new SupabaseLinkRepository();
         this.linkService = new LinkService(repository);
+        this.autoForwardingService = new AutoSpaceForwardingService();
     }
 
     private async validateLink(url: string, title: string): Promise<void> {
@@ -200,8 +203,20 @@ export class CreateLinkHandler {
                 await this.enqueueEnrichmentJobs(userId, link);
             }
 
+            const forwardingResult = (!isDuplicate && !isRestored)
+                ? await this.autoForwardingService.forwardLinks(userId, [link])
+                : { forwardedSpaceNames: [], forwardedByLinkId: {} };
+
+            const autoForwardedTo = forwardingResult.forwardedByLinkId[link.id] ?? null;
+
             return NextResponse.json(
-                { link, duplicate: isDuplicate, restored: isRestored },
+                {
+                    link,
+                    duplicate: isDuplicate,
+                    restored: isRestored,
+                    auto_forwarded_to: autoForwardedTo,
+                    auto_forwarded_spaces: forwardingResult.forwardedSpaceNames,
+                },
                 { status: isDuplicate ? 200 : 201 }
             );
         } catch (error) {

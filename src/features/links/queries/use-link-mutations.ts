@@ -908,7 +908,7 @@ export function useLinkMutations(filters: LinkFilters) {
         throw new Error(errorData.error ?? "Failed to add links");
       }
 
-      return response.json() as Promise<{ links?: Link[]; count?: number; restored?: number; duplicates?: number }>;
+      return response.json() as Promise<{ links?: Link[]; count?: number; restored?: number; duplicates?: number; auto_forwarded_spaces?: string[]; auto_forwarded_by_link_id?: Record<string, string>; }>;
     },
     onMutate: async (items) => {
       // Cancel outgoing queries to prevent overwrites
@@ -1008,6 +1008,7 @@ export function useLinkMutations(filters: LinkFilters) {
       const restored = data.restored ?? 0;
       const successCount = count - restored;
       const duplicateCount = data.duplicates ?? 0;
+      const autoForwardedByLinkId = data.auto_forwarded_by_link_id ?? {};
 
       // Atomically swap temp links for real links (single setQueryData = no flash)
       if (context?.tempIds) {
@@ -1029,6 +1030,10 @@ export function useLinkMutations(filters: LinkFilters) {
           toast.success(`${label} restored from trash`);
         } else if (successCount === 1) {
           toast.success(`${label} saved successfully`);
+          const forwardedSpace = createdLinks[0] ? autoForwardedByLinkId[createdLinks[0].id] : undefined;
+          if (forwardedSpace) {
+            toast.success(`Also sent to ${forwardedSpace}`);
+          }
         }
       } else {
         const parts: string[] = [];
