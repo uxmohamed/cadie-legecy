@@ -122,4 +122,41 @@ describe("useSearchLinks", () => {
 
     expect(result.current[0].id).toBe("in-design-space");
   });
+
+  it("handles neutral language by downweighting generic words", () => {
+    const links: Link[] = [
+      makeLink({
+        id: "portfolio-note",
+        title: "My Portfolio",
+        content_type: "note",
+      }),
+      makeLink({
+        id: "other",
+        title: "Cooking plan",
+      }),
+    ];
+
+    const { result } = renderHook(() => useSearchLinks(links, "portfolio links"));
+    expect(result.current.map((link) => link.id)).toContain("portfolio-note");
+  });
+
+  it("matches meaningful terms from a long natural-language sentence", () => {
+    const links: Link[] = [
+      makeLink({
+        id: "ai-tech",
+        title: "AI and Tech Trends",
+        description: "Weekly digest",
+      }),
+      makeLink({
+        id: "cooking",
+        title: "Cooking basics",
+      }),
+    ];
+
+    const { result } = renderHook(() =>
+      useSearchLinks(links, "I want any link that related to AI and tech.")
+    );
+
+    expect(result.current[0]?.id).toBe("ai-tech");
+  });
 });

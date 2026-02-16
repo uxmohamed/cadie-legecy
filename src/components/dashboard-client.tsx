@@ -18,6 +18,21 @@ import type { User } from "@supabase/supabase-js";
 import type { Link } from "@/features/links/types";
 import type { Space } from "@/types";
 import { NoteEditorModal } from "@/components/note-editor-modal";
+import { toast } from "sonner";
+import {
+  decodeSmartChips,
+  encodeSmartChips,
+} from "@/features/search/lib/smart-search-url";
+import type {
+  SmartInterpretResponse,
+  SmartSearchChip,
+} from "@/features/search/types/smart-search.types";
+import { buildSmartFallbackPlan } from "@/features/search/lib/smart-search-fallback-plan";
+import {
+  trackSmartSearchPlanApplied,
+  trackSmartSearchPlanFallback,
+  trackSmartSearchPlanLatency,
+} from "@/lib/posthog-client";
 
 interface DashboardClientProps {
   user: User;
@@ -29,6 +44,10 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const timezone = React.useMemo(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+    []
+  );
   
   // Determine view from URL path or initialView prop
   const isTrashRoute = pathname === "/trash" || initialView === "trash";
@@ -51,7 +70,12 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("desc");
   const [isAddingItem, setIsAddingItem] = React.useState(false);
   const [addInputValue, setAddInputValue] = React.useState("");
-  const [searchQuery, setSearchQuery] = React.useState(searchParams.get("q") || "");
+  const [searchQuery, setSearchQuery] = React.useState(() => searchParams.get("q") || "");
+  const [plannerRewrittenQuery, setPlannerRewrittenQuery] = React.useState("");
+  const [smartChips, setSmartChips] = React.useState<SmartSearchChip[]>(
+    () => decodeSmartChips(searchParams.get("sq"))
+  );
+  const [isSmartParsing, setIsSmartParsing] = React.useState(false);
   const [selectedCount, setSelectedCount] = React.useState(0);
   const [selectedLinks, setSelectedLinks] = React.useState<Link[]>([]);
   const clearSelectionRef = React.useRef<(() => void) | null>(null);
@@ -88,6 +112,33 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
     }
   }, [pathname]);
 
+  const syncSearchStateToUrl = React.useCallback((query: string, chips: SmartSearchChip[]) => {
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+
+    if (query.trim()) {
+      params.set("q", query.trim());
+    } else {
+      params.delete("q");
+    }
+
+    const encodedChips = encodeSmartChips(chips);
+    if (encodedChips) {
+      params.set("sq", encodedChips);
+    } else {
+      params.delete("sq");
+    }
+
+    const targetPath = window.location.pathname;
+    const nextUrl = params.toString() ? `${targetPath}?${params.toString()}` : targetPath;
+    window.history.replaceState(null, "", nextUrl);
+  }, []);
+
+  React.useEffect(() => {
+    syncSearchStateToUrl(searchQuery, smartChips);
+  }, [searchQuery, smartChips, pathname, syncSearchStateToUrl]);
+
   const handleSortChange = React.useCallback(
     (newSortBy: "date" | "title") => {
       if (sortBy === newSortBy) {
@@ -120,6 +171,21 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
 
   const handleSearchChange = React.useCallback((value: string) => {
     setSearchQuery(value);
+  }, []);
+
+  const handleRemoveSmartChip = React.useCallback((chipId: string) => {
+    setSmartChips((prev) => {
+      const next = prev.filter((chip) => chip.id !== chipId);
+      if (next.length === 0) {
+        setPlannerRewrittenQuery("");
+      }
+      return next;
+    });
+  }, []);
+
+  const handleClearSmartChips = React.useCallback(() => {
+    setSmartChips([]);
+    setPlannerRewrittenQuery("");
   }, []);
 
   const handleAddSubmit = React.useCallback(() => {
@@ -176,6 +242,109 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
     // Navigate to the target path
     router.push(targetPath);
   }, [router]);
+
+  const handleSearchSubmit = React.useCallback(
+    async (value: string) => {
+      const query = value.trim();
+      if (!query) return;
+
+      const startedAt = performance.now();
+      setIsSmartParsing(true);
+      const scopeCategoryId =
+        selectedCategoryId === "trash" ||
+        selectedCategoryId === null ||
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(selectedCategoryId)
+          ? selectedCategoryId
+          : null;
+      const scopeType =
+        scopeCategoryId === null ? "all" : scopeCategoryId === "trash" ? "trash" : "space";
+      const abortController = new AbortController();
+      const timeoutId = setTimeout(() => abortController.abort(), 12000);
+
+      const applyPlan = (plan: { rewrittenQuery: string; chips: SmartSearchChip[]; confidence: number }) => {
+        setSmartChips(plan.chips);
+        setPlannerRewrittenQuery(plan.rewrittenQuery);
+        setSearchQuery("");
+      };
+
+      try {
+        const response = await fetch("/api/search/interpret", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: abortController.signal,
+          body: JSON.stringify({
+            query,
+            timezone,
+            currentScope: { selectedCategoryId: scopeCategoryId },
+            spaces: spaces.map((space) => ({ id: space.id, name: space.name })),
+          }),
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`Interpret request failed: ${response.status}`);
+        }
+
+        const payload = (await response.json()) as SmartInterpretResponse;
+        const latencyMs = Math.round(performance.now() - startedAt);
+
+        if (payload.mode === "smart") {
+          applyPlan(payload.plan);
+          trackSmartSearchPlanApplied({
+            chip_count: payload.plan.chips.length,
+            chip_kinds: payload.plan.chips.map((chip) => chip.kind),
+            confidence: payload.plan.confidence,
+            scope_type: scopeType,
+            latency_ms: latencyMs,
+          });
+          trackSmartSearchPlanLatency({
+            outcome: "smart",
+            scope_type: scopeType,
+            latency_ms: latencyMs,
+          });
+          return;
+        }
+
+        const fallbackPlan = buildSmartFallbackPlan(payload.rewrittenQuery || query);
+        applyPlan(fallbackPlan);
+        toast("AI was slow. Applied smart fallback.");
+
+        trackSmartSearchPlanFallback({
+          reason: payload.reason,
+          scope_type: scopeType,
+          latency_ms: latencyMs,
+        });
+        trackSmartSearchPlanLatency({
+          outcome: "literal",
+          reason: payload.reason,
+          scope_type: scopeType,
+          latency_ms: latencyMs,
+        });
+      } catch (error) {
+        clearTimeout(timeoutId);
+        const latencyMs = Math.round(performance.now() - startedAt);
+        const reason =
+          error instanceof Error && error.name === "AbortError" ? "timeout" : "ai_error";
+        const fallbackPlan = buildSmartFallbackPlan(query);
+        applyPlan(fallbackPlan);
+        toast("AI was slow. Applied smart fallback.");
+        trackSmartSearchPlanFallback({
+          reason,
+          scope_type: scopeType,
+          latency_ms: latencyMs,
+        });
+        trackSmartSearchPlanLatency({
+          outcome: "literal",
+          reason,
+          scope_type: scopeType,
+          latency_ms: latencyMs,
+        });
+      } finally {
+        setIsSmartParsing(false);
+      }
+    },
+    [selectedCategoryId, spaces, timezone]
+  );
   
   const handleImageUploadReady = React.useCallback((handler: (files: File[]) => void) => {
     imageUploadHandlerRef.current = handler;
@@ -253,6 +422,11 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
       onOpenAddMode={handleOpenAddMode}
       searchQuery={searchQuery}
       onSearchChange={handleSearchChange}
+      onSearchSubmit={handleSearchSubmit}
+      smartChips={smartChips}
+      onRemoveSmartChip={handleRemoveSmartChip}
+      onClearSmartChips={handleClearSmartChips}
+      isSmartParsing={isSmartParsing}
       selectedCount={selectedCount}
       selectedLinks={selectedLinks}
       onClearSelection={() => clearSelectionRef.current?.()}
@@ -321,6 +495,9 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
           onAddCancel={handleAddCancel}
           onSelectionChange={handleSelectionChange}
           searchQuery={searchQuery}
+          plannerRewrittenQuery={plannerRewrittenQuery}
+          smartChips={smartChips}
+          timezone={timezone}
           viewMode={viewMode}
           onImageUploadReady={handleImageUploadReady}
           onDocumentUploadReady={handleDocumentUploadReady}

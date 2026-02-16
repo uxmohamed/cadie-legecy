@@ -10,8 +10,10 @@ import type { Link } from "@/features/links/types";
 import type { Space } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCircleCheckFilled, IconLayoutList, IconLayoutGrid, IconPhoto, IconUpload, IconPalette, IconFileTypePdf, IconNotes } from "@tabler/icons-react";
+import type { SmartSearchChip } from "@/features/search/types/smart-search.types";
+import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCircleCheckFilled, IconLayoutList, IconLayoutGrid, IconPhoto, IconUpload, IconPalette, IconFileTypePdf, IconNotes, IconX } from "@tabler/icons-react";
 import { Kbd } from "@/components/ui/kbd";
+import { Spinner } from "@/components/ui/spinner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,6 +36,11 @@ interface DashboardShellProps {
   onOpenAddMode: (initialValue?: string) => void;
   searchQuery: string;
   onSearchChange: (value: string) => void;
+  onSearchSubmit: (value: string) => void;
+  smartChips: SmartSearchChip[];
+  onRemoveSmartChip: (chipId: string) => void;
+  onClearSmartChips: () => void;
+  isSmartParsing: boolean;
   selectedCount: number;
   selectedLinks: Link[];
   onClearSelection: () => void;
@@ -65,6 +72,11 @@ export function DashboardShell({
   onOpenAddMode,
   searchQuery,
   onSearchChange,
+  onSearchSubmit,
+  smartChips,
+  onRemoveSmartChip,
+  onClearSmartChips,
+  isSmartParsing,
   selectedCount,
   selectedLinks,
   onClearSelection,
@@ -88,6 +100,8 @@ export function DashboardShell({
   const [pendingShortcut, setPendingShortcut] = React.useState<string | null>(null);
   const [isCommandMenuOpen, setIsCommandMenuOpen] = React.useState(false);
   const pendingShortcutTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const chipScrollRef = React.useRef<HTMLDivElement>(null);
+  const [chipOverflow, setChipOverflow] = React.useState({ left: false, right: false });
 
   const isTrashView = selectedCategoryId === "trash";
   const selectedSpace = spaces?.find(s => s.id === selectedCategoryId);
@@ -96,12 +110,38 @@ export function DashboardShell({
   const uploadInputRef = React.useRef<HTMLInputElement>(null);
   const uploadDocumentInputRef = React.useRef<HTMLInputElement>(null);
 
+  const updateChipOverflow = React.useCallback(() => {
+    const el = chipScrollRef.current;
+    if (!el) {
+      setChipOverflow({ left: false, right: false });
+      return;
+    }
+
+    const left = el.scrollLeft > 2;
+    const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 2;
+    setChipOverflow((prev) => {
+      if (prev.left === left && prev.right === right) return prev;
+      return { left, right };
+    });
+  }, []);
+
   React.useEffect(() => {
     document.body.dataset.commandMenuOpen = isCommandMenuOpen ? "true" : "false";
     return () => {
       delete document.body.dataset.commandMenuOpen;
     };
   }, [isCommandMenuOpen]);
+
+  React.useEffect(() => {
+    const raf = requestAnimationFrame(updateChipOverflow);
+    const onResize = () => updateChipOverflow();
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [smartChips, updateChipOverflow]);
 
   const handleUploadInputChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,36 +171,44 @@ export function DashboardShell({
     },
     [onUploadDocuments]
   );
-// Update URL immediately using history API (no navigation, instant URL update)
-  const updateUrl = React.useCallback((value: string) => {
-    const params = new URLSearchParams(window.location.search);
-    if (value) {
-      params.set("q", value);
-    } else {
-      params.delete("q");
-    }
-    const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
-    window.history.replaceState(null, "", newUrl);
-  }, []);
 
   const handleSearchInputChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       onSearchChange(value);
-      updateUrl(value);
     },
-    [onSearchChange, updateUrl]
+    [onSearchChange]
   );
 
   const handleSearchKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        onSearchSubmit(searchQuery);
+        return;
+      }
+
+      if (e.key === "Backspace" && searchQuery.length === 0 && smartChips.length > 0) {
+        e.preventDefault();
+        onRemoveSmartChip(smartChips[smartChips.length - 1].id);
+        return;
+      }
+
       if (e.key === "Escape") {
-        onSearchChange("");
-        updateUrl("");
+        if (searchQuery.length > 0) {
+          onSearchChange("");
+          return;
+        }
+
+        if (smartChips.length > 0) {
+          onClearSmartChips();
+          return;
+        }
+
         searchInputRef.current?.blur();
       }
     },
-    [onSearchChange, updateUrl]
+    [onClearSmartChips, onRemoveSmartChip, onSearchChange, onSearchSubmit, searchQuery, smartChips]
   );
 
   const handleSortChange = React.useCallback(
@@ -582,22 +630,85 @@ export function DashboardShell({
 
             {/* Right side: Search + Options */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              <div className="relative">
-                <IconSearch className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-fg-subtle pointer-events-none z-10" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchQuery}
-                  onChange={handleSearchInputChange}
-                  onKeyDown={handleSearchKeyDown}
-                  placeholder="Search..."
-                  className="h-9 w-32 sm:w-48 md:w-[250px] py-0 pl-[26px] pr-[22px] rounded-lg outline-none placeholder:text-fg-subtle text-fg bg-bg-input focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 text-sm font-[470] tracking-[-0.1px]"
-                  aria-label="Search"
-                />
-                <div className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none z-10 hidden sm:flex items-center">
-                  <Kbd className="h-5 px-1.5 text-[10px] text-fg-subtle flex items-center justify-center">
-                    /
-                  </Kbd>
+              <div className="w-44 sm:w-56 md:w-[300px]">
+                <div className="relative">
+                  <div
+                    className="flex h-9 w-full items-center rounded-lg bg-bg-input pl-2 pr-8 text-fg focus-within:ring-2 focus-within:ring-accent focus-within:ring-offset-2"
+                    onClick={() => searchInputRef.current?.focus()}
+                  >
+                    <IconSearch className="h-4 w-4 shrink-0 text-fg-subtle" />
+                    <div className="ml-1 flex min-w-0 flex-1 items-center gap-1">
+                      {smartChips.length > 0 && (
+                        <div className="relative min-w-0 flex-1">
+                          <div
+                            ref={chipScrollRef}
+                            onScroll={updateChipOverflow}
+                            className="cadie-no-scrollbar flex items-center gap-1 overflow-x-auto py-0.5 pr-1"
+                          >
+                            {smartChips.map((chip) => (
+                              <Badge
+                                key={chip.id}
+                                variant="secondary"
+                                size="sm"
+                                className="h-6 shrink-0 gap-1 pr-1"
+                              >
+                                <span className="max-w-[112px] truncate">{chip.label}</span>
+                                <button
+                                  type="button"
+                                  className="rounded-sm p-0.5 text-fg-subtle hover:text-fg"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRemoveSmartChip(chip.id);
+                                  }}
+                                  aria-label={`Remove ${chip.label} chip`}
+                                >
+                                  <IconX className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            ))}
+                          </div>
+                          {chipOverflow.left && (
+                            <div className="pointer-events-none absolute inset-y-0 left-0 w-3 bg-gradient-to-r from-bg-input to-transparent" />
+                          )}
+                          {chipOverflow.right && (
+                            <div className="pointer-events-none absolute inset-y-0 right-0 w-3 bg-gradient-to-l from-bg-input to-transparent" />
+                          )}
+                        </div>
+                      )}
+                      <input
+                        ref={searchInputRef}
+                        type="text"
+                        value={searchQuery}
+                        onChange={handleSearchInputChange}
+                        onKeyDown={handleSearchKeyDown}
+                        placeholder={smartChips.length > 0 ? "Refine..." : "Search..."}
+                        className={`${smartChips.length > 0 ? "w-20 sm:w-24 flex-none" : "min-w-[90px] flex-1"} h-7 bg-transparent py-0 text-sm font-[470] tracking-[-0.1px] text-fg placeholder:text-fg-subtle outline-none`}
+                        aria-label="Search"
+                      />
+                    </div>
+                  </div>
+                  {smartChips.length > 0 && (
+                    <button
+                      type="button"
+                      className="absolute right-7 top-1/2 -translate-y-1/2 rounded-sm p-0.5 text-fg-subtle hover:text-fg"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onClearSmartChips();
+                      }}
+                      aria-label="Clear search chips"
+                    >
+                      <IconX className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  <div className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none z-10 hidden sm:flex items-center">
+                    {isSmartParsing ? (
+                      <Spinner className="text-fg-subtle" />
+                    ) : (
+                      <Kbd className="h-5 px-1.5 text-[10px] text-fg-subtle flex items-center justify-center">
+                        /
+                      </Kbd>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -758,10 +869,8 @@ export function DashboardShell({
         onUploadImagesClick={onUploadImages ? () => uploadInputRef.current?.click() : undefined}
         onUploadDocumentsClick={onUploadDocuments ? () => uploadDocumentInputRef.current?.click() : undefined}
         searchQuery={searchQuery}
-        onSearchChange={(value) => {
-          onSearchChange(value);
-          updateUrl(value);
-        }}
+        onSearchChange={onSearchChange}
+        onSearchSubmit={onSearchSubmit}
       />
 
       <input

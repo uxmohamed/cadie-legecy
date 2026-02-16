@@ -33,6 +33,16 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Hide visual scrollbars while preserving scroll behavior for compact chip lanes */
+.cadie-no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.cadie-no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* ============================================
    NEW DESIGN TOKEN SYSTEM - 52 SEMANTIC TOKENS
    ============================================ */

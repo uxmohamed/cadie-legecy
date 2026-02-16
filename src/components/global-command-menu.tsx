@@ -42,6 +42,7 @@ interface GlobalCommandMenuProps {
   onUploadDocumentsClick?: () => void;
   searchQuery: string;
   onSearchChange: (value: string) => void;
+  onSearchSubmit: (value: string) => void;
 }
 
 export function GlobalCommandMenu({
@@ -60,6 +61,7 @@ export function GlobalCommandMenu({
   onUploadDocumentsClick,
   searchQuery,
   onSearchChange,
+  onSearchSubmit,
 }: GlobalCommandMenuProps) {
   const [query, setQuery] = React.useState(searchQuery);
 
@@ -98,7 +100,7 @@ export function GlobalCommandMenu({
 
         {hasQuery && (
           <CommandGroup heading="Search">
-            <CommandItem onSelect={() => runCommand(() => onSearchChange(query))}>
+            <CommandItem onSelect={() => runCommand(() => onSearchSubmit(query))}>
               <IconSearch className="mr-2 h-4 w-4" />
               Search for “{query}”
               <CommandShortcut>↵</CommandShortcut>

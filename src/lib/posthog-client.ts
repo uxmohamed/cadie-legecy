@@ -24,6 +24,27 @@ interface SearchEventProperties {
   filter_type?: string;
 }
 
+interface SmartSearchPlanAppliedProperties {
+  chip_count: number;
+  chip_kinds: string[];
+  confidence: number;
+  scope_type: "all" | "space" | "trash";
+  latency_ms: number;
+}
+
+interface SmartSearchPlanFallbackProperties {
+  reason: "timeout" | "ai_error" | "ai_unavailable";
+  scope_type: "all" | "space" | "trash";
+  latency_ms: number;
+}
+
+interface SmartSearchPlanLatencyProperties {
+  outcome: "smart" | "literal";
+  scope_type: "all" | "space" | "trash";
+  latency_ms: number;
+  reason?: "timeout" | "ai_error" | "ai_unavailable";
+}
+
 /**
  * Track when a user saves a new link
  */
@@ -71,6 +92,27 @@ export function trackSpaceCreated(properties: SpaceEventProperties) {
  */
 export function trackSearch(properties: SearchEventProperties) {
   posthog.capture('search_performed', properties);
+}
+
+/**
+ * Track smart-search planner success
+ */
+export function trackSmartSearchPlanApplied(properties: SmartSearchPlanAppliedProperties) {
+  posthog.capture("smart_search_plan_applied", properties);
+}
+
+/**
+ * Track smart-search planner fallback
+ */
+export function trackSmartSearchPlanFallback(properties: SmartSearchPlanFallbackProperties) {
+  posthog.capture("smart_search_plan_fallback", properties);
+}
+
+/**
+ * Track smart-search planner latency
+ */
+export function trackSmartSearchPlanLatency(properties: SmartSearchPlanLatencyProperties) {
+  posthog.capture("smart_search_plan_latency", properties);
 }
 
 /**

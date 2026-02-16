@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import Fuse, { type IFuseOptions, type Expression, type FuseOptionKeyObject } from "fuse.js";
 import type { Link } from "../types/link.types";
 import type { Space } from "@/types";
@@ -23,6 +23,11 @@ interface SearchableLink {
   notes: string;
   content_text: string;
   spaces: string;
+}
+
+interface SearchHit {
+  item: SearchableLink;
+  score?: number;
 }
 
 /**
@@ -60,6 +65,59 @@ const FUSE_OPTIONS: IFuseOptions<SearchableLink> = {
   ],
 };
 
+const GENERIC_QUERY_TERMS = new Set([
+  "i",
+  "im",
+  "i'm",
+  "want",
+  "wanna",
+  "need",
+  "any",
+  "all",
+  "some",
+  "that",
+  "this",
+  "these",
+  "those",
+  "related",
+  "relation",
+  "about",
+  "to",
+  "and",
+  "or",
+  "with",
+  "please",
+  "can",
+  "could",
+  "would",
+  "should",
+  "get",
+  "give",
+  "item",
+  "items",
+  "saved",
+  "save",
+  "created",
+  "create",
+  "added",
+  "add",
+  "show",
+  "find",
+  "me",
+  "my",
+  "in",
+  "from",
+  "on",
+  "for",
+  "the",
+  "a",
+  "an",
+  "link",
+  "links",
+  "url",
+  "urls",
+]);
+
 /**
  * Build a flat, searchable record from a Link plus its resolved space names.
  */
@@ -93,6 +151,35 @@ function normalizeText(value: string): string {
     .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function uniqueTerms(terms: string[]): string[] {
+  const seen = new Set<string>();
+  const deduped: string[] = [];
+  for (const term of terms) {
+    if (!term || seen.has(term)) continue;
+    seen.add(term);
+    deduped.push(term);
+  }
+  return deduped;
+}
+
+function mergeTermResults(resultsByTerm: SearchHit[][]): SearchHit[] {
+  const bestById = new Map<string, SearchHit>();
+
+  for (const hits of resultsByTerm) {
+    for (const hit of hits) {
+      const id = hit.item._link.id;
+      const prev = bestById.get(id);
+      const nextScore = hit.score ?? 1;
+      const prevScore = prev?.score ?? 1;
+      if (!prev || nextScore < prevScore) {
+        bestById.set(id, hit);
+      }
+    }
+  }
+
+  return [...bestById.values()].sort((a, b) => (a.score ?? 1) - (b.score ?? 1));
 }
 
 function rerankResult(item: SearchableLink, normalizedQuery: string, terms: string[]): number {
@@ -171,50 +258,56 @@ export function useSearchLinks(
   }, [links, linkSpacesMap, spaceNameById]);
 
   // Build Fuse index — only rebuilt when the dataset changes, NOT on every keystroke
-  const fuseRef = useRef<Fuse<SearchableLink> | null>(null);
-  const fuseDataRef = useRef<SearchableLink[]>([]);
-
-  const fuse = useMemo(() => {
-    fuseDataRef.current = searchableLinks;
-    fuseRef.current = new Fuse(searchableLinks, FUSE_OPTIONS);
-    return fuseRef.current;
-  }, [searchableLinks]);
+  const fuse = useMemo(() => new Fuse(searchableLinks, FUSE_OPTIONS), [searchableLinks]);
 
   // Run the search — this is the only part that runs per keystroke
   return useMemo(() => {
     const trimmed = searchQuery.trim();
     if (!trimmed) return links;
     const normalizedQuery = normalizeText(trimmed);
-    const terms = normalizedQuery.split(/\s+/).filter(Boolean);
+    const terms = uniqueTerms(normalizedQuery.split(/\s+/).filter(Boolean));
+    const meaningfulTerms = terms.filter(
+      (term) => term.length >= 2 && !GENERIC_QUERY_TERMS.has(term)
+    );
+    const activeTerms = meaningfulTerms.length > 0 ? meaningfulTerms : terms;
 
     // For multi-word queries, prefer strict AND matching first for higher precision.
     let query: string | Expression;
 
-    if (terms.length === 1) {
-      query = terms[0];
+    if (activeTerms.length === 1) {
+      query = activeTerms[0];
     } else {
-      // AND logic: every term must match somewhere
-      const keyNames = (FUSE_OPTIONS.keys as FuseOptionKeyObject<SearchableLink>[])!.map(
-        (k) => k.name as string
-      );
-      query = {
-        $and: terms.map((term) => ({
-          $or: keyNames.map((name) => ({ [name]: term })),
-        })),
-      };
+      // Avoid over-constraining long natural-language queries.
+      if (activeTerms.length <= 4) {
+        const keyNames = (FUSE_OPTIONS.keys as FuseOptionKeyObject<SearchableLink>[])!.map(
+          (k) => k.name as string
+        );
+        query = {
+          $and: activeTerms.map((term) => ({
+            $or: keyNames.map((name) => ({ [name]: term })),
+          })),
+        };
+      } else {
+        query = activeTerms.join(" ");
+      }
     }
 
-    let results = fuse.search(query);
+    let results: SearchHit[] = fuse.search(query);
 
     // If strict term matching is too restrictive, fall back to natural fuzzy search.
-    if (!results.length && terms.length > 1) {
-      results = fuse.search(normalizedQuery);
+    if (!results.length && activeTerms.length > 1) {
+      results = fuse.search(activeTerms.join(" "));
+    }
+
+    // Last fallback: search by individual terms and merge hits by best score.
+    if (!results.length && activeTerms.length > 1) {
+      results = mergeTermResults(activeTerms.map((term) => fuse.search(term)));
     }
 
     return results
       .map((result) => ({
         link: result.item._link,
-        score: rerankResult(result.item, normalizedQuery, terms),
+        score: rerankResult(result.item, normalizedQuery, activeTerms),
         fuseScore: result.score ?? 1,
       }))
       .sort((a, b) => {

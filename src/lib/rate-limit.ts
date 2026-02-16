@@ -44,6 +44,18 @@ export const rateLimitMetadata = new Ratelimit({
 });
 
 /**
+ * Rate limiter for smart search interpretation endpoint
+ * Limit: 30 requests per minute
+ * Used for: /api/search/interpret
+ */
+export const rateLimitSearch = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(30, "1 m"),
+  analytics: true,
+  prefix: "ratelimit:search",
+});
+
+/**
  * Rate limiter for space operations
  * Limit: 30 requests per minute
  * Used for: /api/spaces

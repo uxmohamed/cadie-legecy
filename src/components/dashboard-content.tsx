@@ -9,6 +9,12 @@ import { useLinkMutations, useCopyUrl } from "@/features/links/queries/use-link-
 import { useSpaces } from "@/features/spaces/queries";
 import type { User } from "@supabase/supabase-js";
 import type { Link, LinkFilters } from "@/features/links/types";
+import type { SmartSearchChip } from "@/features/search/types/smart-search.types";
+import {
+  applySmartSearchFilters,
+  buildSmartEffectiveQuery,
+  buildSmartKeywordQuery,
+} from "@/features/search/lib/smart-search-filters";
 import {
   detectMultipleContentTypes,
 } from "@/lib/content-detector";
@@ -35,6 +41,9 @@ interface DashboardContentProps {
   onAddCancel: () => void;
   onSelectionChange: (count: number, links: Link[], clearSelection: () => void, batchHandlers: BatchHandlers) => void;
   searchQuery: string;
+  plannerRewrittenQuery?: string;
+  smartChips?: SmartSearchChip[];
+  timezone?: string;
   viewMode?: "list" | "grid";
   onImageUploadReady?: (handler: (files: File[]) => void) => void;
   onDocumentUploadReady?: (handler: (files: File[]) => void) => void;
@@ -53,6 +62,9 @@ export function DashboardContent({
   onAddCancel,
   onSelectionChange,
   searchQuery,
+  plannerRewrittenQuery = "",
+  smartChips = [],
+  timezone = "UTC",
   viewMode = "list",
   onImageUploadReady,
   onDocumentUploadReady,
@@ -80,8 +92,75 @@ export function DashboardContent({
     isFetching,
   } = useLinksQuery(filters, !!user);
 
-  // Client-side instant search — filters in memory, no network round-trip
-  const links = useSearchLinks(allLinks, searchQuery, spaces, linkSpacesMap);
+  const smartFilteredLinks = React.useMemo(() => {
+    if (smartChips.length === 0) {
+      return allLinks;
+    }
+
+    return applySmartSearchFilters(allLinks, smartChips, {
+      timezone,
+      linkSpacesMap,
+    });
+  }, [allLinks, linkSpacesMap, smartChips, timezone]);
+
+  const hasRelaxableTypeChip = React.useMemo(
+    () => smartChips.some((chip) => chip.kind === "content_type" && chip.value === "url"),
+    [smartChips]
+  );
+
+  const relaxedSmartChips = React.useMemo(() => {
+    if (!hasRelaxableTypeChip) {
+      return smartChips;
+    }
+    return smartChips.filter(
+      (chip) => !(chip.kind === "content_type" && chip.value === "url")
+    );
+  }, [hasRelaxableTypeChip, smartChips]);
+
+  const relaxedSmartFilteredLinks = React.useMemo(() => {
+    if (!hasRelaxableTypeChip || relaxedSmartChips.length === smartChips.length) {
+      return smartFilteredLinks;
+    }
+
+    return applySmartSearchFilters(allLinks, relaxedSmartChips, {
+      timezone,
+      linkSpacesMap,
+    });
+  }, [
+    allLinks,
+    hasRelaxableTypeChip,
+    linkSpacesMap,
+    relaxedSmartChips,
+    smartChips.length,
+    smartFilteredLinks,
+    timezone,
+  ]);
+
+  const effectiveSearchQuery = React.useMemo(() => {
+    const keywordQuery = buildSmartKeywordQuery(smartChips);
+    return buildSmartEffectiveQuery({
+      rewrittenQuery: plannerRewrittenQuery,
+      keywordQuery,
+      liveQuery: searchQuery,
+      chips: smartChips,
+    });
+  }, [plannerRewrittenQuery, searchQuery, smartChips]);
+
+  const strictLinks = useSearchLinks(smartFilteredLinks, effectiveSearchQuery, spaces, linkSpacesMap);
+  const relaxedLinks = useSearchLinks(
+    relaxedSmartFilteredLinks,
+    effectiveSearchQuery,
+    spaces,
+    linkSpacesMap
+  );
+
+  // If strict chips produce zero results, relax weak "url/links" type constraint.
+  const links = React.useMemo(() => {
+    if (!hasRelaxableTypeChip || strictLinks.length > 0) {
+      return strictLinks;
+    }
+    return relaxedLinks;
+  }, [hasRelaxableTypeChip, relaxedLinks, strictLinks]);
 
   // Use mutations hook
   const {
@@ -178,8 +257,14 @@ export function DashboardContent({
     });
   }, [removeLinksFromSpace]);
 
-  // Sort links based on current sort settings
-  const sortedLinks = React.useMemo(() => {
+  const isSearchMode = effectiveSearchQuery.trim().length > 0;
+
+  // Preserve relevance order from useSearchLinks during search mode.
+  const displayLinks = React.useMemo(() => {
+    if (isSearchMode) {
+      return links;
+    }
+
     const pinned = links.filter((link) => link.is_pinned);
     const unpinned = links.filter((link) => !link.is_pinned);
 
@@ -203,7 +288,7 @@ export function DashboardContent({
     unpinned.sort(sortFunction);
 
     return [...pinned, ...unpinned];
-  }, [links, sortBy, sortOrder]);
+  }, [isSearchMode, links, sortBy, sortOrder]);
 
   const handleInlineAddSubmit = React.useCallback(() => {
     if (!addInputValue.trim() || isAddingLinks) return;
@@ -324,7 +409,7 @@ export function DashboardContent({
 
   return (
     <LinkList
-      links={sortedLinks}
+      links={displayLinks}
       onDelete={handleDeleteLink}
       onRestore={handleRestoreLink}
       onPermanentDelete={handlePermanentDeleteLink}
