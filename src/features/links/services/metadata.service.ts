@@ -1,7 +1,7 @@
 import type { LinkMetadata, ExtractedMetadata, BatchMetadataOptions, FetchStatus } from "../types/link.types";
 import { extractMetadata } from "@/lib/metadata";
 import { log } from "@/lib/logger";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
 /**
  * Default options for batch metadata fetching
@@ -119,7 +119,7 @@ export class MetadataService {
      * This is used for background metadata enrichment
      * Skips enrichment for non-URL content types (e.g., colors)
      */
-    async enrichLink(linkId: string, url: string, contentType?: string): Promise<void> {
+    async enrichLink(linkId: string, url: string, contentType?: string, userId?: string): Promise<void> {
         // Skip enrichment for non-URL content types
         if (contentType && contentType !== "url") {
             log.info(`Skipping metadata enrichment for non-URL content type: ${contentType}`, { linkId });
@@ -131,41 +131,59 @@ export class MetadataService {
             const metadata = await extractMetadata(url);
             
             if (metadata.fetch_status === "success") {
-                const supabase = await createClient();
-                
-                const { error } = await supabase
-                    .from("links")
-                    .update({
-                        title: metadata.title,
-                        description: metadata.description,
-                        og_image_url: metadata.preview_image_url,
-                        favicon_url: metadata.favicon_url,
-                        site_name: metadata.site_name,
-                        fetch_status: "success",
-                        fetched_at: metadata.fetched_at,
-                    })
-                    .eq("id", linkId);
+                const supabase = createAdminClient();
+
+                let query = supabase
+                  .from("links")
+                  .update({
+                    title: metadata.title,
+                    description: metadata.description,
+                    og_image_url: metadata.preview_image_url,
+                    favicon_url: metadata.favicon_url,
+                    site_name: metadata.site_name,
+                    fetch_status: "success",
+                    fetched_at: metadata.fetched_at,
+                  })
+                  .eq("id", linkId);
+
+                if (userId) {
+                    query = query.eq("user_id", userId);
+                }
+
+                const { error } = await query;
 
                 if (error) {
                     log.error(`[EnrichLink] Failed to update metadata for ${linkId}`, error);
+                    throw error;
                 } else {
                     log.info(`[EnrichLink] Successfully updated metadata for ${linkId}`);
                 }
             } else {
                 // Update with failure status but preserve url as title if needed
-                const supabase = await createClient();
-                await supabase
-                    .from("links")
-                    .update({
-                         fetch_status: metadata.fetch_status,
-                         fetched_at: metadata.fetched_at,
-                    })
-                    .eq("id", linkId);
+                const supabase = createAdminClient();
+                let query = supabase
+                  .from("links")
+                  .update({
+                    fetch_status: metadata.fetch_status,
+                    fetched_at: metadata.fetched_at,
+                  })
+                  .eq("id", linkId);
+
+                if (userId) {
+                    query = query.eq("user_id", userId);
+                }
+
+                const { error } = await query;
+                if (error) {
+                    log.error(`[EnrichLink] Failed to update metadata status for ${linkId}`, error);
+                    throw error;
+                }
 
                 log.warn(`[EnrichLink] Metadata extraction completed with status ${metadata.fetch_status}`, { linkId });
             }
         } catch (error) {
             log.error(`[EnrichLink] Metadata enrichment failed`, error);
+            throw error instanceof Error ? error : new Error(String(error));
         }
     }
 
@@ -198,7 +216,7 @@ export class MetadataService {
         const metadataMap = await this.fetchBatchMetadata(urls, { concurrency: 10, timeout: 8000 });
         
         // Initializing Supabase client for direct updates
-        const supabase = await createClient();
+        const supabase = createAdminClient();
 
         for (const link of urlLinks) {
             const metadata = metadataMap.get(link.url);

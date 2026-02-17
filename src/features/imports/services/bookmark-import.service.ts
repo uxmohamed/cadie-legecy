@@ -9,19 +9,12 @@ import {
   parseBookmarkHtml,
   parseBookmarkHtmlDetailed,
 } from "@/features/imports/parsers/bookmark-html.server";
-import {
-  getDeterministicSpaceColor,
-  normalizeFolderMapKey,
-  resolveDestinationSpaceId,
-} from "@/features/imports/utils/folder-mapping";
 import type {
   BookmarkImportLink,
   BookmarkPreview,
-  FolderMode,
   ImportCounters,
   ImportJobDTO,
   ProcessBookmarkImportJob,
-  StartImportRequest,
 } from "@/features/imports/types/import.types";
 
 const IMPORTS_BUCKET = "imports";
@@ -42,12 +35,6 @@ interface LinkRowMinimal {
   content_type: string;
 }
 
-interface SpaceRowMinimal {
-  id: string;
-  name: string;
-  sort_order: number;
-}
-
 interface ImportCleanupResult {
   expiredDrafts: number;
   removedFiles: number;
@@ -57,8 +44,6 @@ interface PreparedLink {
   url: string;
   cleanUrl: string;
   title: string;
-  topLevelFolder: string | null;
-  destinationSpaceId: string | null;
 }
 
 function isHttpUrl(url: string): boolean {
@@ -75,15 +60,6 @@ function safeFileName(name: string): string {
     .replace(/[^a-zA-Z0-9._-]/g, "_")
     .replace(/_+/g, "_")
     .slice(0, 120) || "bookmarks.html";
-}
-
-function normalizeFolderMap(input: Record<string, string>): Record<string, string> {
-  const normalized: Record<string, string> = {};
-  Object.entries(input || {}).forEach(([folder, spaceId]) => {
-    if (!spaceId) return;
-    normalized[normalizeFolderMapKey(folder)] = spaceId;
-  });
-  return normalized;
 }
 
 function extractDomain(url: string): string {
@@ -331,54 +307,9 @@ export class BookmarkImportService {
     return normalizeImportJobRow(data as unknown as Record<string, unknown>);
   }
 
-  private async validateStartRequest(
-    userId: string,
-    request: StartImportRequest
-  ): Promise<{
-    normalizedFolderMap: Record<string, string>;
-    allowedSpaceIds: Set<string>;
-  }> {
-    const supabase = this.getClient();
-    const { data: spaces, error } = await supabase
-      .from("spaces")
-      .select("id")
-      .eq("user_id", userId);
-
-    if (error) {
-      throw new Error(`Failed to validate destination spaces: ${error.message}`);
-    }
-
-    const allowedSpaceIds = new Set((spaces || []).map((space) => space.id));
-    const normalizedFolderMap = normalizeFolderMap(request.folder_to_space_map || {});
-
-    if (request.folder_mode === "single_space" && request.single_space_id) {
-      if (!allowedSpaceIds.has(request.single_space_id)) {
-        throw new Error("Selected destination space does not exist");
-      }
-    }
-
-    if ((request.folder_mode === "manual_map" || request.folder_mode === "auto_create_spaces") && request.fallback_space_id) {
-      if (!allowedSpaceIds.has(request.fallback_space_id)) {
-        throw new Error("Fallback destination space does not exist");
-      }
-    }
-
-    Object.values(normalizedFolderMap).forEach((spaceId) => {
-      if (!allowedSpaceIds.has(spaceId)) {
-        throw new Error("One or more mapped spaces do not exist");
-      }
-    });
-
-    return {
-      normalizedFolderMap,
-      allowedSpaceIds,
-    };
-  }
-
   async startJob(
     userId: string,
     jobId: string,
-    request: StartImportRequest,
     baseUrl: string
   ): Promise<ImportJobDTO> {
     ensureQStashConfigured();
@@ -401,17 +332,16 @@ export class BookmarkImportService {
       throw new Error("Import preview expired. Upload the bookmark file again.");
     }
 
-    const { normalizedFolderMap } = await this.validateStartRequest(userId, request);
     const supabase = this.getClient();
 
     const { data, error } = await supabase
       .from("bookmark_import_jobs")
       .update({
         status: "queued",
-        folder_mode: request.folder_mode,
-        single_space_id: request.single_space_id,
-        folder_to_space_map: normalizedFolderMap,
-        fallback_space_id: request.fallback_space_id,
+        folder_mode: null,
+        single_space_id: null,
+        folder_to_space_map: null,
+        fallback_space_id: null,
         processed_links: 0,
         created_links: 0,
         restored_links: 0,
@@ -466,76 +396,9 @@ export class BookmarkImportService {
         restored_links: counters.restored_links,
         duplicate_links: counters.duplicate_links,
         invalid_links: counters.invalid_links,
-        space_attached_existing_links: counters.space_attached_existing_links,
+        space_attached_existing_links: 0,
       })
       .eq("id", jobId);
-  }
-
-  private async ensureAutoCreatedSpaces(
-    userId: string,
-    topLevelFolders: string[]
-  ): Promise<Map<string, string>> {
-    const supabase = this.getClient();
-    const { data: existingSpaces, error } = await supabase
-      .from("spaces")
-      .select("id, name, sort_order")
-      .eq("user_id", userId)
-      .order("sort_order", { ascending: true });
-
-    if (error) {
-      throw new Error(`Failed to load spaces: ${error.message}`);
-    }
-
-    const byNormalizedName = new Map<string, SpaceRowMinimal>();
-    let sortOrderSeed = 0;
-
-    (existingSpaces || []).forEach((space) => {
-      byNormalizedName.set(normalizeFolderMapKey(space.name), {
-        id: space.id,
-        name: space.name,
-        sort_order: space.sort_order,
-      });
-      sortOrderSeed = Math.max(sortOrderSeed, Number(space.sort_order || 0));
-    });
-
-    for (const folderName of topLevelFolders) {
-      const normalized = normalizeFolderMapKey(folderName);
-      if (byNormalizedName.has(normalized)) continue;
-
-      sortOrderSeed += 1;
-      const { data: created, error: createError } = await supabase
-        .from("spaces")
-        .insert({
-          user_id: userId,
-          name: folderName,
-          color: getDeterministicSpaceColor(folderName),
-          sort_order: sortOrderSeed,
-          description: null,
-        })
-        .select("id, name, sort_order")
-        .single();
-
-      if (createError || !created) {
-        throw new Error(`Failed to auto-create space "${folderName}": ${createError?.message || "Unknown error"}`);
-      }
-
-      byNormalizedName.set(normalized, {
-        id: created.id,
-        name: created.name,
-        sort_order: created.sort_order,
-      });
-    }
-
-    const folderToSpace = new Map<string, string>();
-    topLevelFolders.forEach((folderName) => {
-      const normalized = normalizeFolderMapKey(folderName);
-      const space = byNormalizedName.get(normalized);
-      if (space) {
-        folderToSpace.set(normalized, space.id);
-      }
-    });
-
-    return folderToSpace;
   }
 
   async processJob(jobId: string, userId: string): Promise<void> {
@@ -599,12 +462,6 @@ export class BookmarkImportService {
       const parsed = parseBookmarkHtmlDetailed(content);
       counters.invalid_links = parsed.invalid_links;
 
-      const normalizedFolderMap = normalizeFolderMap(job.folder_to_space_map || {});
-      const autoCreatedFolderToSpaceMap =
-        job.folder_mode === "auto_create_spaces"
-          ? await this.ensureAutoCreatedSpaces(userId, parsed.top_level_folders)
-          : new Map<string, string>();
-
       const validUniqueLinks: PreparedLink[] = [];
       const seen = new Set<string>();
 
@@ -614,21 +471,10 @@ export class BookmarkImportService {
         if (seen.has(cleanUrl)) return;
         seen.add(cleanUrl);
 
-        const destinationSpaceId = resolveDestinationSpaceId({
-          folderMode: (job.folder_mode || "single_space") as FolderMode,
-          topLevelFolder: link.topLevelFolder,
-          singleSpaceId: job.single_space_id,
-          fallbackSpaceId: job.fallback_space_id,
-          folderToSpaceMap: normalizedFolderMap,
-          autoCreatedFolderToSpaceMap,
-        });
-
         validUniqueLinks.push({
           url: link.url,
           cleanUrl,
           title: link.title,
-          topLevelFolder: link.topLevelFolder,
-          destinationSpaceId,
         });
       });
 
@@ -653,8 +499,6 @@ export class BookmarkImportService {
         });
 
         const restoreIds: string[] = [];
-        const restoreToSpace: Array<{ linkId: string; spaceId: string }> = [];
-        const duplicateToSpace: Array<{ linkId: string; spaceId: string }> = [];
         const toInsert = chunk.filter((item) => {
           const existing = existingByClean.get(item.cleanUrl);
           if (!existing) return true;
@@ -662,16 +506,10 @@ export class BookmarkImportService {
           if (existing.is_deleted || existing.is_archived) {
             restoreIds.push(existing.id);
             counters.restored_links += 1;
-            if (item.destinationSpaceId) {
-              restoreToSpace.push({ linkId: existing.id, spaceId: item.destinationSpaceId });
-            }
             return false;
           }
 
           counters.duplicate_links += 1;
-          if (item.destinationSpaceId) {
-            duplicateToSpace.push({ linkId: existing.id, spaceId: item.destinationSpaceId });
-          }
           return false;
         });
 
@@ -733,69 +571,6 @@ export class BookmarkImportService {
               content_type: string | null;
             }>;
           counters.created_links += insertedRows.length;
-        }
-
-        const insertByCleanUrl = new Map<string, string>();
-        insertedRows.forEach((row) => {
-          insertByCleanUrl.set(row.clean_url, row.id);
-        });
-
-        const insertToSpace: Array<{ linkId: string; spaceId: string }> = [];
-        toInsert.forEach((item) => {
-          if (!item.destinationSpaceId) return;
-          const id = insertByCleanUrl.get(item.cleanUrl);
-          if (!id) return;
-          insertToSpace.push({ linkId: id, spaceId: item.destinationSpaceId });
-        });
-
-        const allSpaceTargets = [...duplicateToSpace, ...restoreToSpace, ...insertToSpace];
-        const dedupSpaceTargets = new Map<string, { linkId: string; spaceId: string }>();
-        allSpaceTargets.forEach((target) => {
-          dedupSpaceTargets.set(`${target.linkId}:${target.spaceId}`, target);
-        });
-
-        if (dedupSpaceTargets.size > 0) {
-          const targets = [...dedupSpaceTargets.values()];
-          const linkIds = [...new Set(targets.map((target) => target.linkId))];
-          const spaceIds = [...new Set(targets.map((target) => target.spaceId))];
-          const { data: existingAssignments, error: assignmentQueryError } = await supabase
-            .from("link_spaces")
-            .select("link_id, space_id")
-            .in("link_id", linkIds)
-            .in("space_id", spaceIds);
-
-          if (assignmentQueryError) {
-            throw new Error(`Failed to load existing space assignments: ${assignmentQueryError.message}`);
-          }
-
-          const assigned = new Set(
-            (existingAssignments || []).map((assignment) => `${assignment.link_id}:${assignment.space_id}`)
-          );
-          const toAssign = targets.filter((target) => !assigned.has(`${target.linkId}:${target.spaceId}`));
-
-          if (toAssign.length > 0) {
-            const { error: assignError } = await supabase
-              .from("link_spaces")
-              .insert(
-                toAssign.map((target) => ({
-                  link_id: target.linkId,
-                  space_id: target.spaceId,
-                }))
-              );
-
-            if (assignError && assignError.code !== "23505") {
-              throw new Error(`Failed to attach imported links to spaces: ${assignError.message}`);
-            }
-
-            const duplicateTargetKeys = new Set(
-              duplicateToSpace.map((target) => `${target.linkId}:${target.spaceId}`)
-            );
-            toAssign.forEach((target) => {
-              if (duplicateTargetKeys.has(`${target.linkId}:${target.spaceId}`)) {
-                counters.space_attached_existing_links += 1;
-              }
-            });
-          }
         }
 
         const enrichable = [...insertedRows, ...restoredRows].filter(

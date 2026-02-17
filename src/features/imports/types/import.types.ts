@@ -1,5 +1,3 @@
-export type FolderMode = "single_space" | "manual_map" | "auto_create_spaces";
-
 export type ImportJobStatus =
   | "draft"
   | "queued"
@@ -22,13 +20,6 @@ export interface BookmarkPreview {
   sample_links: BookmarkImportLink[];
 }
 
-export interface StartImportRequest {
-  folder_mode: FolderMode;
-  single_space_id: string | null;
-  folder_to_space_map: Record<string, string>;
-  fallback_space_id: string | null;
-}
-
 export interface ImportCounters {
   processed_links: number;
   created_links: number;
@@ -45,7 +36,7 @@ export interface ImportJobDTO extends ImportCounters {
   storage_path: string;
   original_filename: string;
   file_size_bytes: number;
-  folder_mode: FolderMode | null;
+  folder_mode: string | null;
   single_space_id: string | null;
   folder_to_space_map: Record<string, string> | null;
   fallback_space_id: string | null;
@@ -65,4 +56,3 @@ export interface ProcessBookmarkImportJob {
   importJobId: string;
   userId: string;
 }
-

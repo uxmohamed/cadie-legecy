@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     
     // Execute the metadata enrichment
     const metadataService = new MetadataService();
-    await metadataService.enrichLink(linkId, url);
+    await metadataService.enrichLink(linkId, url, "url", userId);
     
     log.info("[Job] Metadata enrichment completed", { linkId });
     
@@ -76,4 +76,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
