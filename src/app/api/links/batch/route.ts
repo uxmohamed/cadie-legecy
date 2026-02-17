@@ -45,6 +45,25 @@ interface CreatedLink {
   content_text?: string | null;
 }
 
+interface LinkInsertPayload {
+  user_id: string;
+  url: string;
+  clean_url: string;
+  title: string;
+  content_type: string;
+  favicon_url: string | null;
+  color_value: string | null;
+  og_image_url: string | null;
+  domain: string;
+  is_deleted: boolean;
+  is_archived: boolean;
+  is_pinned: boolean;
+  fetch_status: "success" | "pending";
+  fetched_at: string | null;
+  notes: string | null;
+  content_text: string | null;
+}
+
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 async function runWithConcurrency<T>(
@@ -135,6 +154,34 @@ async function enrichUrlLinksWithAI(
   });
 
   return [...failedIds];
+}
+
+async function insertLinksWithFallback(
+  supabase: SupabaseServerClient,
+  linksToInsert: LinkInsertPayload[]
+) {
+  const initialInsert = await supabase
+    .from("links")
+    .insert(linksToInsert)
+    .select();
+
+  // Backward compatibility: older deployments might not have content_text yet.
+  if (
+    initialInsert.error?.code === "PGRST204" &&
+    initialInsert.error.message?.includes("content_text")
+  ) {
+    const withoutContentText = linksToInsert.map((link) => {
+      const copy = { ...link } as Partial<LinkInsertPayload>;
+      delete copy.content_text;
+      return copy;
+    });
+    return supabase
+      .from("links")
+      .insert(withoutContentText)
+      .select();
+  }
+
+  return initialInsert;
 }
 
 /**
@@ -238,8 +285,14 @@ export async function POST(request: NextRequest) {
           };
         });
 
+        // Collapse duplicates inside the same request payload before touching DB.
+        const uniqueLinksToCheck = Array.from(
+          new Map(linksToCheck.map((link) => [link.clean_url, link])).values()
+        );
+        const payloadDuplicateCount = linksToCheck.length - uniqueLinksToCheck.length;
+
         // Check for existing links (duplicates) - only check non-deleted links
-        const cleanUrls = linksToCheck.map(l => l.clean_url);
+        const cleanUrls = uniqueLinksToCheck.map(l => l.clean_url);
         const { data: existingLinks } = await supabase
           .from("links")
           .select("clean_url")
@@ -250,15 +303,12 @@ export async function POST(request: NextRequest) {
         const existingCleanUrls = new Set(existingLinks?.map(l => l.clean_url) || []);
         
         // Filter out duplicates
-        const linksToInsert = linksToCheck.filter(l => !existingCleanUrls.has(l.clean_url));
-        const duplicateCount = linksToCheck.length - linksToInsert.length;
+        const linksToInsert = uniqueLinksToCheck.filter(l => !existingCleanUrls.has(l.clean_url));
+        const duplicateCount = payloadDuplicateCount + (uniqueLinksToCheck.length - linksToInsert.length);
 
         // Only insert non-duplicate links
         if (linksToInsert.length > 0) {
-          const insertResult = await supabase
-            .from("links")
-            .insert(linksToInsert)
-            .select();
+          const insertResult = await insertLinksWithFallback(supabase, linksToInsert);
 
           result = {
             data: {

@@ -970,7 +970,7 @@ export function useLinkMutations(filters: LinkFilters) {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error ?? "Failed to add links");
+        throw new Error(errorData.details ?? errorData.error ?? "Failed to add links");
       }
 
       return response.json() as Promise<{ links?: Link[]; count?: number; restored?: number; duplicates?: number; auto_forwarded_spaces?: string[]; auto_forwarded_by_link_id?: Record<string, string>; }>;
