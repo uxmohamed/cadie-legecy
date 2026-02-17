@@ -89,6 +89,7 @@ export async function saveLink(request: SaveLinkRequest): Promise<SaveLinkRespon
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
+        "X-Cadie-Source": "extension",
       },
       body: JSON.stringify(request),
     });
