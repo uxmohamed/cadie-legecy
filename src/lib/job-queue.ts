@@ -7,6 +7,19 @@ interface EnqueueOptions {
   baseUrl?: string;
 }
 
+function isValidPublicBaseUrl(candidate: string): boolean {
+  try {
+    const url = new URL(candidate);
+    const host = url.hostname.toLowerCase();
+    if (url.protocol !== "http:" && url.protocol !== "https:") return false;
+    if (host === "0.0.0.0" || host === "::" || host === "::1") return false;
+    if (host === "localhost" || host === "127.0.0.1") return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function getQStashClient(): Client | null {
   if (!qstash) {
     console.warn("[QStash] QSTASH_TOKEN is missing, skipping enqueue");
@@ -17,10 +30,21 @@ function getQStashClient(): Client | null {
 }
 
 function resolveBaseUrl(baseUrlOverride?: string): string {
-  const selected = baseUrlOverride
-    || process.env.NEXT_PUBLIC_BASE_URL
-    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
-    || "http://localhost:3000";
+  const candidates = [
+    baseUrlOverride,
+    process.env.NEXT_PUBLIC_SITE_URL,
+    process.env.NEXT_PUBLIC_BASE_URL,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null,
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+    process.env.NODE_ENV === "production" ? null : "http://localhost:3000",
+  ].filter((value): value is string => Boolean(value));
+
+  const selected = candidates.find(isValidPublicBaseUrl);
+  if (!selected) {
+    throw new Error(
+      "No valid public base URL for QStash job callbacks. Set NEXT_PUBLIC_SITE_URL to your production domain."
+    );
+  }
 
   return selected.replace(/\/+$/, "");
 }
