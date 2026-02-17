@@ -95,7 +95,7 @@ export function ExtensionStep({ onComplete, onSkip, onInstallClick, isLoading = 
         {/* Header Section */}
         <div className="flex flex-col gap-[2px] items-center w-full">
           <h1 className="text-[18px] font-semibold leading-[32px] text-fg text-center">
-            One Click and it's saved!
+            One Click and it&apos;s saved!
           </h1>
           <p className="text-[16px] font-medium leading-[32px] text-fg-muted text-center">
             Save links you want to remember.

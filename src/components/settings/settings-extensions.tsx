@@ -173,20 +173,22 @@ export function SettingsExtensions() {
                 </div>
               </div>
               <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-fg-muted hover:text-destructive hover:bg-destructive-muted"
-                    disabled={disconnectingId === token.id}
-                    aria-label="Disconnect extension"
-                  >
-                    {disconnectingId === token.id ? (
-                      <IconLoader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <IconTrash className="h-4 w-4" />
-                    )}
-                  </Button>
+                <AlertDialogTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-fg-muted hover:text-destructive hover:bg-destructive-muted"
+                      disabled={disconnectingId === token.id}
+                      aria-label="Disconnect extension"
+                    />
+                  }
+                >
+                  {disconnectingId === token.id ? (
+                    <IconLoader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <IconTrash className="h-4 w-4" />
+                  )}
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
@@ -196,8 +198,8 @@ export function SettingsExtensions() {
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogClose asChild>
-                      <Button variant="outline">Cancel</Button>
+                    <AlertDialogClose render={<Button variant="outline" />}>
+                      Cancel
                     </AlertDialogClose>
                     <Button
                       variant="destructive"

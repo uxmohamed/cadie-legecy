@@ -172,16 +172,18 @@ function SpaceItem({ space, onUpdate, onDelete }: SpaceItemProps) {
   return (
     <div className="group flex items-start gap-3 py-2 px-2 rounded-md hover:bg-bg-hover transition-colors w-full max-w-full overflow-hidden">
       <Popover>
-        <PopoverTrigger asChild>
-          <button
-            className="h-6 w-6 mt-0.5 flex items-center justify-center shrink-0 ring-2 ring-transparent hover:ring-border-hover transition-all cursor-pointer rounded-md"
-            aria-label="Change color"
-          >
-            <IconCapsuleHorizontalFilled
-              className="h-4 w-4"
-              style={{ color: space.color }}
+        <PopoverTrigger
+          render={
+            <button
+              className="h-6 w-6 mt-0.5 flex items-center justify-center shrink-0 ring-2 ring-transparent hover:ring-border-hover transition-all cursor-pointer rounded-md"
+              aria-label="Change color"
             />
-          </button>
+          }
+        >
+          <IconCapsuleHorizontalFilled
+            className="h-4 w-4"
+            style={{ color: space.color }}
+          />
         </PopoverTrigger>
         <PopoverContent className="w-auto p-3" align="start">
           <ColorPicker
@@ -208,14 +210,16 @@ function SpaceItem({ space, onUpdate, onDelete }: SpaceItemProps) {
           <IconPencil className="h-3.5 w-3.5" />
         </Button>
         <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-7 w-7 text-fg-subtle hover:text-destructive hover:bg-destructive-muted"
-            >
-              <IconTrash className="h-3.5 w-3.5" />
-            </Button>
+          <AlertDialogTrigger
+            render={
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 text-fg-subtle hover:text-destructive hover:bg-destructive-muted"
+              />
+            }
+          >
+            <IconTrash className="h-3.5 w-3.5" />
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -468,7 +472,11 @@ export function SettingsSpaces() {
                         <span>send to</span>
                         <Select
                           value={condition.targetSpaceId}
-                          onValueChange={(value) => handleSaveConditionField(condition.id, { targetSpaceId: value })}
+                          onValueChange={(value) =>
+                            handleSaveConditionField(condition.id, {
+                              targetSpaceId: value ?? condition.targetSpaceId,
+                            })
+                          }
                           disabled={isSavingAutoForwarding}
                         >
                           <SelectTrigger className="h-7 w-[160px] text-xs">
@@ -559,16 +567,18 @@ export function SettingsSpaces() {
         {isCreating ? (
           <div className="flex items-center gap-3 py-2 px-2 rounded-md bg-bg-muted">
             <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  className="h-6 w-6 flex items-center justify-center shrink-0 ring-2 ring-transparent hover:ring-border-hover transition-all cursor-pointer rounded-md"
-                  aria-label="Select color"
-                >
-                  <IconCapsuleHorizontalFilled
-                    className="h-4 w-4"
-                    style={{ color: newSpaceColor }}
+              <PopoverTrigger
+                render={
+                  <button
+                    className="h-6 w-6 flex items-center justify-center shrink-0 ring-2 ring-transparent hover:ring-border-hover transition-all cursor-pointer rounded-md"
+                    aria-label="Select color"
                   />
-                </button>
+                }
+              >
+                <IconCapsuleHorizontalFilled
+                  className="h-4 w-4"
+                  style={{ color: newSpaceColor }}
+                />
               </PopoverTrigger>
               <PopoverContent className="w-auto p-3" align="start">
                 <ColorPicker

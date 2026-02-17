@@ -17,14 +17,6 @@ function formatDate(date: Date): string {
 }
 
 export function ChangelogList({ entries }: ChangelogListProps) {
-  if (entries.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-fg-subtle">No changelog entries yet.</p>
-      </div>
-    );
-  }
-
   // Sort entries by date (newest first), then by version (newest first)
   const sortedEntries = useMemo(() => {
     return [...entries].sort((a, b) => {
@@ -39,6 +31,14 @@ export function ChangelogList({ entries }: ChangelogListProps) {
       return versionB.localeCompare(versionA, undefined, { numeric: true });
     });
   }, [entries]);
+
+  if (entries.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-fg-subtle">No changelog entries yet.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="relative">

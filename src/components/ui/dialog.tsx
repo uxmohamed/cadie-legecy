@@ -1,6 +1,6 @@
 "use client";
 
-import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { IconX } from "@tabler/icons-react";
 import * as React from "react";
 
@@ -15,35 +15,35 @@ const DialogPortal = DialogPrimitive.Portal;
 const DialogClose = DialogPrimitive.Close;
 
 const DialogBackdrop = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Overlay>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
+  React.ElementRef<typeof DialogPrimitive.Backdrop>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Backdrop>
 >(({ className, ...props }, ref) => (
-  <DialogPrimitive.Overlay
+  <DialogPrimitive.Backdrop
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-bg-scrim transition-all duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+      "fixed inset-0 z-[120] bg-bg-scrim transition-all duration-200 data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:animate-in data-[open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
       className,
     )}
     data-slot="dialog-backdrop"
     {...props}
   />
 ));
-DialogBackdrop.displayName = DialogPrimitive.Overlay.displayName;
+DialogBackdrop.displayName = DialogPrimitive.Backdrop.displayName;
 
 const DialogPopup = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+  React.ElementRef<typeof DialogPrimitive.Popup>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Popup> & {
     showCloseButton?: boolean;
   }
 >(({ className, children, showCloseButton = true, ...props }, ref) => (
   <DialogPortal>
     <DialogBackdrop />
-    <div className="fixed inset-0 z-50 pointer-events-none">
+    <div className="fixed inset-0 z-[130] pointer-events-none">
       <div className="flex h-dvh flex-col items-center overflow-hidden pt-6 max-sm:before:flex-1 sm:overflow-y-auto sm:p-4 sm:after:flex-1 sm:before:basis-[20vh] pointer-events-auto">
-        <DialogPrimitive.Content
+        <DialogPrimitive.Popup
           ref={ref}
           className={cn(
-            "sm:-tranneutral-y-[calc(1.25rem*var(--nested-dialogs))] relative row-start-2 grid w-full min-w-0 origin-top gap-4 border border-border bg-bg-elevated bg-clip-padding p-6 text-fg shadow-lg transition-[scale,opacity,translate] duration-200 ease-in-out will-change-transform before:pointer-events-none before:absolute before:inset-0 before:shadow-[0_1px_--theme(--color-black/4%)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 max-sm:overflow-y-auto max-sm:border-none max-sm:opacity-[calc(1-min(var(--nested-dialogs),1))] max-sm:before:hidden sm:max-w-lg sm:scale-[calc(1-0.1*var(--nested-dialogs))] sm:rounded-2xl sm:before:rounded-[calc(var(--radius-2xl)-1px)]",
+            "sm:-tranneutral-y-[calc(1.25rem*var(--nested-dialogs))] relative z-[130] row-start-2 grid w-full min-w-0 origin-top gap-4 border border-border bg-bg-elevated bg-clip-padding p-6 text-fg shadow-lg transition-[scale,opacity,translate] duration-200 ease-in-out will-change-transform before:pointer-events-none before:absolute before:inset-0 before:shadow-[0_1px_--theme(--color-black/4%)] data-[closed]:animate-out data-[closed]:fade-out-0 data-[closed]:zoom-out-95 data-[open]:animate-in data-[open]:fade-in-0 data-[open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 max-sm:overflow-y-auto max-sm:border-none max-sm:opacity-[calc(1-min(var(--nested-dialogs),1))] max-sm:before:hidden sm:max-w-lg sm:scale-[calc(1-0.1*var(--nested-dialogs))] sm:rounded-2xl sm:before:rounded-[calc(var(--radius-2xl)-1px)]",
             className,
           )}
           data-slot="dialog-popup"
@@ -56,12 +56,12 @@ const DialogPopup = React.forwardRef<
               <span className="sr-only">Close</span>
             </DialogPrimitive.Close>
           )}
-        </DialogPrimitive.Content>
+        </DialogPrimitive.Popup>
       </div>
     </div>
   </DialogPortal>
 ));
-DialogPopup.displayName = DialogPrimitive.Content.displayName;
+DialogPopup.displayName = DialogPrimitive.Popup.displayName;
 
 const DialogHeader = ({
   className,

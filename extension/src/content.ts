@@ -121,7 +121,7 @@ let currentLinkId: string | null = null;
 let isHovering = false;
 let spacesExpanded = false;
 let spacesCache: Space[] | null = null;
-let selectedSpaces: Set<string> = new Set();
+const selectedSpaces: Set<string> = new Set();
 
 // ============================================================================
 // Message Listener

@@ -514,40 +514,42 @@ export function DashboardShell({
               {/* Add Button */}
               {!isTrashView && (
                 <DropdownMenu modal={false}>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-9 w-9 rounded-md border-[var(--border-primary)] bg-[var(--bg-control-btn)] text-[var(--fg)] hover:bg-[var(--bg-field-hover)] focus-visible:ring-[var(--border-primary)] shadow-[0_0_0_1px_rgba(31,34,37,0.09)_inset,0_2px_8px_-2px_rgba(0,0,0,0.04),0_2px_4px_-2px_rgba(0,0,0,0.04)] transition-none"
-                      aria-label="Add menu"
-                    >
-                      <IconPlus className="h-4 w-4" />
-                    </Button>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-9 w-9 rounded-md border-[var(--border-primary)] bg-[var(--bg-control-btn)] text-[var(--fg)] hover:bg-[var(--bg-field-hover)] focus-visible:ring-[var(--border-primary)] shadow-[0_0_0_1px_rgba(31,34,37,0.09)_inset,0_2px_8px_-2px_rgba(0,0,0,0.04),0_2px_4px_-2px_rgba(0,0,0,0.04)] transition-none"
+                        aria-label="Add menu"
+                      />
+                    }
+                  >
+                    <IconPlus className="h-4 w-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-44">
                     <DropdownMenuItem
-                      onSelect={() => onOpenAddMode()}
+                      onClick={() => onOpenAddMode()}
                       disabled={isAddingItem}
                     >
                       <IconPlus className="h-4 w-4 text-fg-on-overlay-muted" />
                       Add links
                     </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => onOpenAddMode()} disabled={isAddingItem}>
+                    <DropdownMenuItem onClick={() => onOpenAddMode()} disabled={isAddingItem}>
                       <IconPalette className="h-4 w-4 text-fg-on-overlay-muted" />
                       Add color
                     </DropdownMenuItem>
                     {onUploadImages && (
-                      <DropdownMenuItem onSelect={() => uploadInputRef.current?.click()}>
+                      <DropdownMenuItem onClick={() => uploadInputRef.current?.click()}>
                         <IconPhoto className="h-4 w-4 text-fg-on-overlay-muted" />
                         Upload images
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onSelect={() => onCreateNote?.()} disabled={!onCreateNote}>
+                    <DropdownMenuItem onClick={() => onCreateNote?.()} disabled={!onCreateNote}>
                       <IconNotes className="h-4 w-4 text-fg-on-overlay-muted" />
                       Add note
                     </DropdownMenuItem>
                     {onUploadDocuments && (
-                      <DropdownMenuItem onSelect={() => uploadDocumentInputRef.current?.click()}>
+                      <DropdownMenuItem onClick={() => uploadDocumentInputRef.current?.click()}>
                         <IconFileTypePdf className="h-4 w-4 text-fg-on-overlay-muted" />
                         Upload PDF
                       </DropdownMenuItem>
@@ -603,15 +605,17 @@ export function DashboardShell({
 
               {/* Options Menu */}
               <DropdownMenu modal={false}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="hidden sm:flex h-9 w-9 rounded-md bg-bg-input hover:bg-bg-hover transition-none"
-                    aria-label="Options"
-                  >
-                    <IconDots className="h-4 w-4" />
-                  </Button>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="hidden sm:flex h-9 w-9 rounded-md bg-bg-input hover:bg-bg-hover transition-none"
+                      aria-label="Options"
+                    />
+                  }
+                >
+                  <IconDots className="h-4 w-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
                   {/* View Mode Toggle */}
@@ -645,7 +649,7 @@ export function DashboardShell({
                   </div>
                   <div className="flex flex-col gap-0.5 px-0.75 pb-0.75">
                     <DropdownMenuItem
-                      onSelect={(e) => {
+                      onClick={(e) => {
                         e.preventDefault();
                         handleSortChange("date");
                       }}
@@ -666,7 +670,7 @@ export function DashboardShell({
                       )}
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onSelect={(e) => {
+                      onClick={(e) => {
                         e.preventDefault();
                         handleSortChange("title");
                       }}

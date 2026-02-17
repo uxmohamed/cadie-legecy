@@ -50,12 +50,15 @@ interface LandingPageProps {
 export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openFaqId, setOpenFaqId] = useState<string | null>(null);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefersReducedMotion(mq.matches);
     const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
@@ -84,42 +87,63 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
             
             {/* Desktop Navigation - Centered */}
             <nav className="hidden md:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
-              <Button asChild variant="ghost" className="text-fg-muted hover:text-fg">
-                <a
-                  href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Extension
-                </a>
+              <Button
+                variant="ghost"
+                className="text-fg-muted hover:text-fg"
+                render={
+                  <a
+                    href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  />
+                }
+              >
+                Extension
               </Button>
-              <Button asChild variant="ghost" className="text-fg-muted hover:text-fg">
-                <Link href="/changelog">Changelog</Link>
+              <Button
+                variant="ghost"
+                className="text-fg-muted hover:text-fg"
+                render={<Link href="/changelog" />}
+              >
+                Changelog
               </Button>
-              <Button asChild variant="ghost" className="text-fg-muted hover:text-fg">
-                <a
-                  href="https://x.com/cadieapp_"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  X (Twitter)
-                </a>
+              <Button
+                variant="ghost"
+                className="text-fg-muted hover:text-fg"
+                render={
+                  <a
+                    href="https://x.com/cadieapp_"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  />
+                }
+              >
+                X (Twitter)
               </Button>
             </nav>
             
             {/* Right Side - Auth Buttons + Mobile Menu */}
             <div className="flex items-center gap-3">
               {/* Get Started Button - Always visible */}
-              <Button asChild size="lg" className="hidden sm:inline-flex text-sm">
-                <Link href="/auth">Get Started</Link>
+              <Button
+                size="lg"
+                className="hidden sm:inline-flex text-sm"
+                render={<Link href="/auth" />}
+              >
+                Get Started
               </Button>
               
               {/* Mobile Menu */}
               <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-                <SheetTrigger asChild>
-                  <Button className="md:hidden py-2 px-2 bg-transparent border-0 text-fg rounded-xl shadow-none hover:bg-bg-hover transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" aria-label="Open menu">
-                    <IconMenu className="h-6 w-6" />
-                  </Button>
+                <SheetTrigger
+                  render={
+                    <Button
+                      className="md:hidden py-2 px-2 bg-transparent border-0 text-fg rounded-xl shadow-none hover:bg-bg-hover transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      aria-label="Open menu"
+                    />
+                  }
+                >
+                  <IconMenu className="h-6 w-6" />
                 </SheetTrigger>
                 <SheetContent 
                   side="right" 
@@ -134,10 +158,10 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
                         <Logo className="h-6 w-auto" />
                       </Link>
                       <div className="flex items-center gap-2">
-                        <Button asChild>
-                          <Link href="/auth" onClick={() => setIsMenuOpen(false)}>
-                            Get Started
-                          </Link>
+                        <Button
+                          render={<Link href="/auth" onClick={() => setIsMenuOpen(false)} />}
+                        >
+                          Get Started
                         </Button>
                         <Button
                           onClick={() => setIsMenuOpen(false)}
@@ -213,17 +237,22 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
           </p>
 
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <Button asChild className="w-full sm:w-auto min-h-10 px-8 py-3 text-base rounded-lg">
-              <Link href="/auth">Get Started</Link>
+            <Button
+              className="w-full sm:w-auto min-h-10 px-8 py-3 text-base rounded-lg"
+              render={<Link href="/auth" />}
+            >
+              Get Started
             </Button>
             <Dialog>
-              <DialogTrigger asChild>
-                <Button
-                  size="lg"
-                  className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-8 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-bg-muted text-fg hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
-                >
-                  Watch demo
-                </Button>
+              <DialogTrigger
+                render={
+                  <Button
+                    size="lg"
+                    className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-8 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-bg-muted text-fg hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
+                  />
+                }
+              >
+                Watch demo
               </DialogTrigger>
               <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-black border-none">
                 <DialogTitle className="sr-only">Cadie Demo Video</DialogTitle>
@@ -481,17 +510,24 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
               Save your web, simply.
             </h2>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
-              <Button asChild className="w-full sm:w-auto min-h-12 px-8 text-base rounded-lg">
-                <Link href="/auth">Open app</Link>
+              <Button
+                className="w-full sm:w-auto min-h-12 px-8 text-base rounded-lg"
+                render={<Link href="/auth" />}
+              >
+                Open app
               </Button>
-              <Button asChild variant="secondary" className="w-full sm:w-auto min-h-12 px-8 text-base rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)] text-fg border border-border">
-                <a
-                  href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Get extension
-                </a>
+              <Button
+                variant="secondary"
+                className="w-full sm:w-auto min-h-12 px-8 text-base rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)] text-fg border border-border"
+                render={
+                  <a
+                    href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  />
+                }
+              >
+                Get extension
               </Button>
             </div>
           </div>
@@ -504,4 +540,3 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
     </div>
   );
 }
-

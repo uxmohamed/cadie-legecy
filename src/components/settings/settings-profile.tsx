@@ -243,17 +243,17 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
           <Label htmlFor="email">Email Address</Label>
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="inline-block w-full cursor-not-allowed">
-                  <Input
-                    id="email"
-                    value={user.email}
-                    readOnly
-                    disabled
-                    className="w-full bg-bg-input border-transparent shadow-none before:shadow-none opacity-75 [&_input]:px-4 [&_input]:py-[12px]"
-                    style={{ cursor: 'not-allowed' }}
-                  />
-                </div>
+              <TooltipTrigger
+                render={<div className="inline-block w-full cursor-not-allowed" />}
+              >
+                <Input
+                  id="email"
+                  value={user.email}
+                  readOnly
+                  disabled
+                  className="w-full bg-bg-input border-transparent shadow-none before:shadow-none opacity-75 [&_input]:px-4 [&_input]:py-[12px]"
+                  style={{ cursor: 'not-allowed' }}
+                />
               </TooltipTrigger>
               <TooltipPopup>
                 <p>Your email address is managed via your login provider.</p>
@@ -279,48 +279,48 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-fg">Danger Zone</h3>
               <AlertDialog onOpenChange={(open) => !open && setDeleteConfirmEmail("")}>
-                <AlertDialogTrigger asChild>
-                  <button
-                    type="button"
-                    className="w-full text-left rounded-lg bg-bg-muted p-4 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    style={{ backgroundColor: 'rgba(255, 80, 80, 0.1)' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 80, 80, 0.14)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 80, 80, 0.1)'; }}
-                  >
-                    <div className="text-sm font-medium text-destructive mb-3">
-                      Delete Account
-                    </div>
-                    <p className="text-sm text-fg-muted">
-                      Deleting your account will permanently delete all your data. This action cannot be undone.
-                    </p>
-                  </button>
+                <AlertDialogTrigger
+                  render={
+                    <button
+                      type="button"
+                      className="w-full text-left rounded-lg bg-bg-muted p-4 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      style={{ backgroundColor: 'rgba(255, 80, 80, 0.1)' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 80, 80, 0.14)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 80, 80, 0.1)'; }}
+                    />
+                  }
+                >
+                  <div className="text-sm font-medium text-destructive mb-3">
+                    Delete Account
+                  </div>
+                  <p className="text-sm text-fg-muted">
+                    Deleting your account will permanently delete all your data. This action cannot be undone.
+                  </p>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete Account</AlertDialogTitle>
-                    <AlertDialogDescription asChild>
-                      <div className="space-y-4">
-                        <p>
-                          This action cannot be undone. This will permanently delete your account and all associated data.
-                        </p>
-                        <div className="space-y-2">
-                          <Label htmlFor="confirm-email" className="text-fg-muted">
-                            Type <span className="font-medium text-fg">{user.email}</span> to confirm
-                          </Label>
-                          <Input
-                            id="confirm-email"
-                            value={deleteConfirmEmail}
-                            onChange={(e) => setDeleteConfirmEmail(e.target.value)}
-                            placeholder="Enter your email"
-                            className="bg-bg-input border-transparent shadow-none before:shadow-none"
-                          />
-                        </div>
+                    <AlertDialogDescription render={<div className="space-y-4" />}>
+                      <p>
+                        This action cannot be undone. This will permanently delete your account and all associated data.
+                      </p>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm-email" className="text-fg-muted">
+                          Type <span className="font-medium text-fg">{user.email}</span> to confirm
+                        </Label>
+                        <Input
+                          id="confirm-email"
+                          value={deleteConfirmEmail}
+                          onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+                          placeholder="Enter your email"
+                          className="bg-bg-input border-transparent shadow-none before:shadow-none"
+                        />
                       </div>
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogClose asChild>
-                      <Button variant="outline">Cancel</Button>
+                    <AlertDialogClose render={<Button variant="outline" />}>
+                      Cancel
                     </AlertDialogClose>
                     <Button
                       variant="destructive"

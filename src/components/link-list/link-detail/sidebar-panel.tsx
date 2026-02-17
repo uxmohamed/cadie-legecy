@@ -331,14 +331,16 @@ export function SidebarPanel({
           </Button>
 
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon-lg"
-                className="border-border bg-bg-surface text-fg-muted hover:text-fg"
-              >
-                <IconDots className="w-4 h-4" />
-              </Button>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon-lg"
+                  className="border-border bg-bg-surface text-fg-muted hover:text-fg"
+                />
+              }
+            >
+              <IconDots className="w-4 h-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={link.is_pinned ? onUnpin : onPin} className="gap-2">

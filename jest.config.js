@@ -4,6 +4,7 @@ const config = {
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^cheerio$': '<rootDir>/node_modules/cheerio/dist/commonjs/index.js',
   },
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
@@ -35,6 +36,9 @@ const config = {
   testPathIgnorePatterns: [
     '/node_modules/',
     '/.next/',
+  ],
+  modulePathIgnorePatterns: [
+    '<rootDir>/.next/standalone/',
   ],
   transformIgnorePatterns: [
     '/node_modules/',

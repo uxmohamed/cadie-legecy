@@ -25,14 +25,20 @@ const shortcuts: KeyboardShortcut[] = [
 export function KeyboardShortcuts() {
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [isPressed, setIsPressed] = useState(false);
-  const [showText, setShowText] = useState(false);
+  const [showText, setShowText] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefersReducedMotion(mq.matches);
-    if (mq.matches) setShowText(true);
     const handler = (e: MediaQueryListEvent) => {
       setPrefersReducedMotion(e.matches);
       if (e.matches) setShowText(true);

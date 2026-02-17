@@ -105,7 +105,6 @@ describe("useSearchLinks", () => {
         user_id: "user-1",
         name: "Design",
         color: "#ff0000",
-        icon: null,
         description: null,
         sort_order: 0,
         created_at: "2026-01-01T00:00:00.000Z",

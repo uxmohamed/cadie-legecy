@@ -16,7 +16,7 @@ async function run() {
 
         const response = await fetch(url, {
             method: 'POST', // enrich-metadata endpoint uses POST? wait, let me check route.ts
-            headers: headers as any,
+            headers: headers as HeadersInit,
         });
 
         console.log(`Response Status: ${response.status}`);

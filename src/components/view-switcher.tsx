@@ -90,30 +90,32 @@ export function ViewSwitcher({
   return (
     <TooltipProvider delayDuration={300}>
       <Popover open={viewPopoverOpen} onOpenChange={setViewPopoverOpen}>
-        <PopoverTrigger asChild>
-          <button
-            aria-label="Switch view"
-            className="group/trigger relative flex items-center gap-2 h-auto px-2 py-1.5 -ml-2 rounded-lg bg-transparent text-fg cursor-pointer min-w-0"
-            style={{
-              '--hover-bg': isTrashSelected 
-                ? 'var(--destructive)' 
-                : selectedSpace?.color || 'var(--fg-muted)'
-            } as React.CSSProperties}
-          >
-            <span className="absolute inset-0 rounded-lg opacity-0 group-hover/trigger:opacity-10" style={{ backgroundColor: 'var(--hover-bg)' }} />
-            {isTrashSelected ? (
-              <IconTrashFilled className="h-4 w-4 text-destructive shrink-0 relative" />
-            ) : (
-              <IconCapsuleHorizontalFilled 
-                className="h-4 w-4 shrink-0 relative" 
-                style={{ color: selectedSpace?.color || "var(--fg-muted)" }}
-              />
-            )}
-            <span className="not-italic text-lg sm:text-[22px] font-[570] leading-tight sm:leading-[32px] tracking-[-0.16px] text-fg hover:text-fg overflow-hidden text-ellipsis whitespace-nowrap min-w-0 relative">
-              {title}
-            </span>
-            <ChevronUpDown className="w-3.5 h-3.5 shrink-0 relative" />
-          </button>
+        <PopoverTrigger
+          render={
+            <button
+              aria-label="Switch view"
+              className="group/trigger relative flex items-center gap-2 h-auto px-2 py-1.5 -ml-2 rounded-lg bg-transparent text-fg cursor-pointer min-w-0"
+              style={{
+                '--hover-bg': isTrashSelected 
+                  ? 'var(--destructive)' 
+                  : selectedSpace?.color || 'var(--fg-muted)'
+              } as React.CSSProperties}
+            />
+          }
+        >
+          <span className="absolute inset-0 rounded-lg opacity-0 group-hover/trigger:opacity-10" style={{ backgroundColor: 'var(--hover-bg)' }} />
+          {isTrashSelected ? (
+            <IconTrashFilled className="h-4 w-4 text-destructive shrink-0 relative" />
+          ) : (
+            <IconCapsuleHorizontalFilled 
+              className="h-4 w-4 shrink-0 relative" 
+              style={{ color: selectedSpace?.color || "var(--fg-muted)" }}
+            />
+          )}
+          <span className="not-italic text-lg sm:text-[22px] font-[570] leading-tight sm:leading-[32px] tracking-[-0.16px] text-fg hover:text-fg overflow-hidden text-ellipsis whitespace-nowrap min-w-0 relative">
+            {title}
+          </span>
+          <ChevronUpDown className="w-3.5 h-3.5 shrink-0 relative" />
         </PopoverTrigger>
         <PopoverPopup
           side="bottom"
@@ -340,12 +342,12 @@ export function ViewSwitcher({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete space?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "<span className="inline-block max-w-[200px] truncate align-bottom font-medium text-fg">{spaceToDelete?.name}</span>"? This will remove all links from this space.
+              Are you sure you want to delete &quot;<span className="inline-block max-w-[200px] truncate align-bottom font-medium text-fg">{spaceToDelete?.name}</span>&quot;? This will remove all links from this space.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogClose asChild>
-              <Button variant="secondary">Cancel</Button>
+            <AlertDialogClose render={<Button variant="secondary" />}>
+              Cancel
             </AlertDialogClose>
             <Button
               variant="destructive"

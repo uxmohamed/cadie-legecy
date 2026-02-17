@@ -78,10 +78,12 @@ export function ChangelogHeader() {
 
             {/* Mobile Menu */}
             <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-              <SheetTrigger asChild>
-                <Button className="md:hidden py-2 px-2 bg-transparent border-0 text-fg rounded-xl shadow-none hover:bg-bg-hover transition-colors duration-150">
-                  <IconMenu className="h-6 w-6" />
-                </Button>
+              <SheetTrigger
+                render={
+                  <Button className="md:hidden py-2 px-2 bg-transparent border-0 text-fg rounded-xl shadow-none hover:bg-bg-hover transition-colors duration-150" />
+                }
+              >
+                <IconMenu className="h-6 w-6" />
               </SheetTrigger>
               <SheetContent 
                 side="right" 

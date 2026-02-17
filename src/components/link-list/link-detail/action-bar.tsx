@@ -115,14 +115,16 @@ export function ActionBar({
       {/* Spaces popover */}
       {spaces.length > 0 && (onAddToSpace || onRemoveFromSpace) && (
         <Popover open={spacesOpen} onOpenChange={setSpacesOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title="Add to space"
-            >
-              <IconCapsuleHorizontalFilled className="h-4 w-4" />
-            </Button>
+          <PopoverTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title="Add to space"
+              />
+            }
+          >
+            <IconCapsuleHorizontalFilled className="h-4 w-4" />
           </PopoverTrigger>
           <PopoverContent align="start" className="w-56 p-2">
             <div className="text-xs font-semibold uppercase tracking-wider text-fg-subtle px-2 py-1.5 mb-1">

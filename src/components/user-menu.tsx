@@ -185,21 +185,23 @@ export function UserMenu({ user }: UserMenuProps) {
   return (
     <>
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen} modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="h-9 w-9 rounded-full p-0 hover:bg-[var(--bg-hover)]"
-          >
-            <Avatar className="h-9 w-9">
-              <AvatarImage 
-                src={userAvatar} 
-                alt={user.email} 
-              />
-              <AvatarFallback className="bg-[var(--bg-inverse)] text-[var(--fg-inverse)]">
-                {userName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
-          </Button>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              className="h-9 w-9 rounded-full p-0 hover:bg-[var(--bg-hover)]"
+            />
+          }
+        >
+          <Avatar className="h-9 w-9">
+            <AvatarImage 
+              src={userAvatar} 
+              alt={user.email} 
+            />
+            <AvatarFallback className="bg-[var(--bg-inverse)] text-[var(--fg-inverse)]">
+              {userName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || "U"}
+            </AvatarFallback>
+          </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent ref={menuRef} align="end" className="w-64">
           <div className="px-2 py-3">
@@ -219,21 +221,23 @@ export function UserMenu({ user }: UserMenuProps) {
             )}
           </div>
           <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <a 
-              href="https://x.com/messages/compose?recipient_id=1649994120725778432" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="cursor-pointer w-full flex items-center group"
-            >
-              <IconMessage className="h-4 w-4 text-[var(--icon-secondary)]" />
-              Beta Feedback
-              <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
-            </a>
+          <DropdownMenuItem
+            render={
+              <a 
+                href="https://x.com/messages/compose?recipient_id=1649994120725778432" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="cursor-pointer w-full flex items-center group"
+              />
+            }
+          >
+            <IconMessage className="h-4 w-4 text-[var(--icon-secondary)]" />
+            Beta Feedback
+            <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
           </DropdownMenuItem>
           <DropdownMenuItem
             className="cursor-pointer"
-            onSelect={() => {
+            onClick={() => {
               setIsOpen(false);
               setIsSettingsOpen(true);
             }}
@@ -245,10 +249,6 @@ export function UserMenu({ user }: UserMenuProps) {
           <DropdownMenuSeparator />
           <DropdownMenuItem 
             className="cursor-pointer"
-            onSelect={(e) => {
-              e.preventDefault();
-              handleThemeToggle(!isDarkMode);
-            }}
             onClick={(e) => {
               e.preventDefault();
               handleThemeToggle(!isDarkMode);
@@ -264,22 +264,22 @@ export function UserMenu({ user }: UserMenuProps) {
             />
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <Link href="/changelog" className="cursor-pointer w-full flex items-center group">
-              <IconShip className="h-4 w-4 text-[var(--icon-secondary)]" />
-              Changelog
-              <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
-            </Link>
+          <DropdownMenuItem render={<Link href="/changelog" className="cursor-pointer w-full flex items-center group" />}>
+            <IconShip className="h-4 w-4 text-[var(--icon-secondary)]" />
+            Changelog
+            <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <a href="https://x.com/cadieapp_" target="_blank" rel="noopener noreferrer" className="cursor-pointer w-full flex items-center group">
-              <IconBrandX className="h-4 w-4 text-[var(--icon-secondary)]" />
-              Follow us on X
-              <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
-            </a>
+          <DropdownMenuItem
+            render={
+              <a href="https://x.com/cadieapp_" target="_blank" rel="noopener noreferrer" className="cursor-pointer w-full flex items-center group" />
+            }
+          >
+            <IconBrandX className="h-4 w-4 text-[var(--icon-secondary)]" />
+            Follow us on X
+            <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
           </DropdownMenuItem>
           <DropdownMenuItem 
-            onSelect={(e) => {
+            onClick={(e) => {
               e.preventDefault();
               toggleHelp();
             }}

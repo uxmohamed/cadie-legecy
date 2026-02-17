@@ -172,17 +172,21 @@ export function ArchivedDock({
             onOpenChange={setAddPopoverOpen}
           >
             <Tooltip>
-              <TooltipTrigger asChild>
-                <PopoverTrigger asChild>
-                  <Button
-                    onClick={handleAddClick}
-                    aria-label="Add link"
-                    variant="ghost"
-                    className="p-0 w-[50px] h-[50px] rounded-full bg-[var(--overlay-hover)] hover:bg-white/25 text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0 transition-colors"
-                  >
-                    <IconPlus className="w-[18px] h-[18px]" />
-                  </Button>
-                </PopoverTrigger>
+              <TooltipTrigger
+                render={
+                  <PopoverTrigger
+                    render={
+                      <Button
+                        onClick={handleAddClick}
+                        aria-label="Add link"
+                        variant="ghost"
+                        className="p-0 w-[50px] h-[50px] rounded-full bg-[var(--overlay-hover)] hover:bg-white/25 text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0 transition-colors"
+                      />
+                    }
+                  />
+                }
+              >
+                <IconPlus className="w-[18px] h-[18px]" />
               </TooltipTrigger>
               <TooltipContent side="top" sideOffset={12}>
                 <div className="flex items-center gap-2">
@@ -231,15 +235,17 @@ export function ArchivedDock({
 
           {/* Search Button */}
           <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={onSearchClick}
-                aria-label="Search"
-                variant="ghost"
-                className="p-0 w-[50px] h-[50px] rounded-full bg-transparent hover:bg-[var(--overlay-hover)] text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0"
-              >
-                <IconSearch className="w-[18px] h-[18px]" />
-              </Button>
+            <TooltipTrigger
+              render={
+                <Button
+                  onClick={onSearchClick}
+                  aria-label="Search"
+                  variant="ghost"
+                  className="p-0 w-[50px] h-[50px] rounded-full bg-transparent hover:bg-[var(--overlay-hover)] text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0"
+                />
+              }
+            >
+              <IconSearch className="w-[18px] h-[18px]" />
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={12}>
               <div className="flex items-center gap-2">
@@ -252,16 +258,20 @@ export function ArchivedDock({
           {/* Sort Button with Popover */}
           <Popover open={sortPopoverOpen} onOpenChange={setSortPopoverOpen}>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <PopoverTrigger asChild>
-                  <Button
-                    aria-label="Sort"
-                    variant="ghost"
-                    className="p-0 w-[50px] h-[50px] rounded-full bg-transparent hover:bg-[var(--overlay-hover)] text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0"
-                  >
-                    {getSortIcon()}
-                  </Button>
-                </PopoverTrigger>
+              <TooltipTrigger
+                render={
+                  <PopoverTrigger
+                    render={
+                      <Button
+                        aria-label="Sort"
+                        variant="ghost"
+                        className="p-0 w-[50px] h-[50px] rounded-full bg-transparent hover:bg-[var(--overlay-hover)] text-[var(--overlay-text-primary)] [&_svg]:!w-[18px] [&_svg]:!h-[18px] shrink-0"
+                      />
+                    }
+                  />
+                }
+              >
+                {getSortIcon()}
               </TooltipTrigger>
               <TooltipContent side="top" sideOffset={12}>
                 <span>Sort</span>
@@ -327,24 +337,28 @@ export function ArchivedDock({
           {onViewChange && (
             <Popover open={viewPopoverOpen} onOpenChange={setViewPopoverOpen}>
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <PopoverTrigger asChild>
-                    <Button
-                      aria-label="Switch view"
-                      variant="ghost"
-                      className="rounded-full bg-[var(--overlay-hover)] hover:bg-white/25 text-[var(--overlay-text-primary)] shrink-0 transition-colors px-4 h-[50px] gap-2"
-                    >
-                      {isTrashSelected ? (
-                        <IconTrashFilled className="h-[18px] w-[18px] text-[var(--destructive)]" />
-                      ) : (
-                        <IconCapsuleHorizontalFilled className="h-[18px] w-[18px] text-[var(--overlay-text-secondary)]" />
-                      )}
-                      <span className="text-sm font-[470]">
-                        {isTrashSelected ? "Trash" : "All items"}
-                      </span>
-                      <ChevronUpDown className="w-[15px] h-[15px]" />
-                    </Button>
-                  </PopoverTrigger>
+                <TooltipTrigger
+                  render={
+                    <PopoverTrigger
+                      render={
+                        <Button
+                          aria-label="Switch view"
+                          variant="ghost"
+                          className="rounded-full bg-[var(--overlay-hover)] hover:bg-white/25 text-[var(--overlay-text-primary)] shrink-0 transition-colors px-4 h-[50px] gap-2"
+                        />
+                      }
+                    />
+                  }
+                >
+                  {isTrashSelected ? (
+                    <IconTrashFilled className="h-[18px] w-[18px] text-[var(--destructive)]" />
+                  ) : (
+                    <IconCapsuleHorizontalFilled className="h-[18px] w-[18px] text-[var(--overlay-text-secondary)]" />
+                  )}
+                  <span className="text-sm font-[470]">
+                    {isTrashSelected ? "Trash" : "All items"}
+                  </span>
+                  <ChevronUpDown className="w-[15px] h-[15px]" />
                 </TooltipTrigger>
                 <TooltipContent side="top" sideOffset={12}>
                   <span>Switch view</span>

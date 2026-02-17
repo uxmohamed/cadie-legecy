@@ -1,4 +1,35 @@
 import '@testing-library/jest-dom';
+import { TextDecoder, TextEncoder } from 'util';
+import { ReadableStream, TransformStream, WritableStream } from 'stream/web';
+import { MessageChannel, MessagePort } from 'worker_threads';
+
+if (typeof global.TextEncoder === 'undefined') {
+  global.TextEncoder = TextEncoder;
+}
+
+if (typeof global.TextDecoder === 'undefined') {
+  global.TextDecoder = TextDecoder as unknown as typeof global.TextDecoder;
+}
+
+if (typeof global.ReadableStream === 'undefined') {
+  global.ReadableStream = ReadableStream as unknown as typeof global.ReadableStream;
+}
+
+if (typeof global.WritableStream === 'undefined') {
+  global.WritableStream = WritableStream as unknown as typeof global.WritableStream;
+}
+
+if (typeof global.TransformStream === 'undefined') {
+  global.TransformStream = TransformStream as unknown as typeof global.TransformStream;
+}
+
+if (typeof global.MessagePort === 'undefined') {
+  global.MessagePort = MessagePort as unknown as typeof global.MessagePort;
+}
+
+if (typeof global.MessageChannel === 'undefined') {
+  global.MessageChannel = MessageChannel as unknown as typeof global.MessageChannel;
+}
 
 // =============================================================================
 // Mock: Supabase Client

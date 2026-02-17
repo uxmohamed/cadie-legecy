@@ -177,7 +177,7 @@ export function CompletionStep({
             className="h-6 w-auto"
             animate={{
               "--logo-fill": logoFillColor,
-            } as any}
+            } as Record<string, string>}
             transition={prefersReducedMotion ? { duration: 0 } : {
               type: "spring",
               stiffness: config.logoSpringStiffness,
@@ -261,7 +261,7 @@ export function CompletionStep({
               className="px-8 py-3 rounded-[12px] text-white"
             >
               <span className="font-medium leading-[24px]">
-                Let's begin
+                Let&apos;s begin
               </span>
             </Button>
           </motion.div>

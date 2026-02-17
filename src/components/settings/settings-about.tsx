@@ -57,11 +57,14 @@ export function SettingsAbout() {
                 <p className="text-xs text-fg-muted">Get the latest updates and features</p>
               </div>
             </div>
-            <Button variant="secondary" size="sm" className="w-full gap-2" asChild>
-              <a href="https://x.com/cadieapp_" target="_blank" rel="noopener noreferrer">
-                Follow @cadieapp_
-                <IconArrowRight className="h-3 w-3 opacity-50" />
-              </a>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full gap-2"
+              render={<a href="https://x.com/cadieapp_" target="_blank" rel="noopener noreferrer" />}
+            >
+              Follow @cadieapp_
+              <IconArrowRight className="h-3 w-3 opacity-50" />
             </Button>
           </div>
 
@@ -75,11 +78,14 @@ export function SettingsAbout() {
                 <p className="text-xs text-fg-muted">Found a bug or have an idea?</p>
               </div>
             </div>
-            <Button variant="secondary" size="sm" className="w-full justify-between" asChild>
-              <a href="https://x.com/messages/compose?recipient_id=1649994120725778432" target="_blank" rel="noopener noreferrer">
-                <span>Send Message</span>
-                <IconArrowRight className="h-3 w-3 opacity-50" />
-              </a>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full justify-between"
+              render={<a href="https://x.com/messages/compose?recipient_id=1649994120725778432" target="_blank" rel="noopener noreferrer" />}
+            >
+              <span>Send Message</span>
+              <IconArrowRight className="h-3 w-3 opacity-50" />
             </Button>
           </div>
         </div>

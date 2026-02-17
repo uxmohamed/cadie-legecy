@@ -166,3 +166,4 @@ describe("extractMetadata provider fallbacks", () => {
     expect(metadata.canonical_url).toBe("https://twitter.com/amasad/status/2022736974545850878");
   });
 });
+/** @jest-environment node */

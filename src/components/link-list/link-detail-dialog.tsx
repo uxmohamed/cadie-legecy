@@ -5,10 +5,12 @@ import type { Link } from "@/features/links/types";
 import type { Space } from "@/types";
 import {
   Dialog,
+  DialogClose,
+  DialogContent,
   DialogOverlay,
   DialogPortal,
+  DialogTitle,
 } from "@/components/ui/dialog";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { 
   IconX, 
   IconChevronUp, 
@@ -102,13 +104,14 @@ export function LinkDetailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogPortal>
         <DialogOverlay />
-        <DialogPrimitive.Content
+        <DialogContent
+          showCloseButton={false}
           className="fixed left-[50%] top-[50%] z-50 flex flex-col w-[95vw] h-[95vh] translate-x-[-50%] translate-y-[-50%] gap-0 border border-border bg-bg p-0 shadow-2xl transition-[scale,opacity,translate] duration-200 ease-in-out will-change-transform data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:rounded-2xl overflow-hidden"
         >
           {/* Accessible title - visually hidden */}
-          <DialogPrimitive.Title className="sr-only">
+          <DialogTitle className="sr-only">
             {link.title}
-          </DialogPrimitive.Title>
+          </DialogTitle>
 
           <div className="flex flex-col md:flex-row h-full min-h-0">
             {/* Left Panel: Browser Preview */}
@@ -172,12 +175,12 @@ export function LinkDetailDialog({
             </div>
 
             {/* Close Button */}
-            <DialogPrimitive.Close className="rounded-md opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground bg-black/5 dark:bg-white/10 p-2">
+            <DialogClose className="rounded-md opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground bg-black/5 dark:bg-white/10 p-2">
               <IconX className="h-4 w-4" />
               <span className="sr-only">Close</span>
-            </DialogPrimitive.Close>
+            </DialogClose>
           </div>
-        </DialogPrimitive.Content>
+        </DialogContent>
       </DialogPortal>
     </Dialog>
   );

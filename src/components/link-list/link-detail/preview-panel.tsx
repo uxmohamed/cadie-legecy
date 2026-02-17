@@ -314,19 +314,61 @@ function NotePreview({ link }: { link: Link }) {
  * Fallback preview with centered scaled favicon
  */
 function FaviconPreview({ link }: { link: Link }) {
+  const description =
+    link.description ||
+    link.ai_summary ||
+    link.content_text ||
+    `Saved link from ${link.domain || link.clean_url || "this site"}.`;
+  const primaryLabel = link.site_name || link.domain || link.title || "Saved link";
+
   return (
-    <div className="w-full h-full flex items-center justify-center bg-bg-surface">
-      {link.domain ? (
-        <div className="p-8 rounded-2xl bg-bg">
-          <Favicon
-            url={link.favicon_url || ""}
-            domain={link.domain}
-            className="h-20 w-20"
-          />
+    <div className="w-full h-full flex items-center justify-center bg-bg-surface p-6">
+      <div className="w-full max-w-2xl rounded-2xl border border-border bg-bg p-6 shadow-sm">
+        <div className="flex items-center gap-4">
+          {link.domain ? (
+            <div className="h-14 w-14 rounded-2xl bg-bg-muted/60 border border-border-muted flex items-center justify-center">
+              <Favicon
+                url={link.favicon_url || ""}
+                domain={link.domain}
+                className="h-8 w-8"
+              />
+            </div>
+          ) : (
+            <div className="h-14 w-14 rounded-2xl bg-bg-muted/60 border border-border-muted flex items-center justify-center">
+              <IconWorld className="h-7 w-7 text-fg-subtle" />
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-wide text-fg-subtle">Link</p>
+            <p className="text-lg font-semibold text-fg truncate">
+              {primaryLabel}
+            </p>
+            {link.domain && (
+              <p className="text-xs text-fg-muted truncate">{link.domain}</p>
+            )}
+          </div>
         </div>
-      ) : (
-        <IconWorld className="h-20 w-20 text-fg-subtle" />
-      )}
+
+        <p className="mt-4 text-sm text-fg-muted line-clamp-6">
+          {description}
+        </p>
+
+        <div className="mt-6 flex items-center gap-3">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => window.open(link.url, "_blank", "noopener,noreferrer")}
+          >
+            <IconExternalLink className="h-4 w-4 mr-1.5" />
+            Open site
+          </Button>
+          {link.reading_time_minutes ? (
+            <span className="text-xs text-fg-subtle">
+              {link.reading_time_minutes} min read
+            </span>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }

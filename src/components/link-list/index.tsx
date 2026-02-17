@@ -1010,8 +1010,8 @@ export function LinkList({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogClose asChild>
-              <Button variant="ghost">Cancel</Button>
+            <AlertDialogClose render={<Button variant="ghost" />}>
+              Cancel
             </AlertDialogClose>
             <Button variant="destructive" onClick={executeDelete}>
               Delete permanently
@@ -1028,40 +1028,38 @@ export function LinkList({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Change color?</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-4">
-                <p>This will change the actual color, not just the label.</p>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="h-5 w-5 flex-shrink-0 rounded-full border border-border-muted"
-                      style={{
-                        backgroundColor: colorChangeDialog.currentColorValue,
-                      }}
-                    />
-                    <span className="text-sm font-[470] text-fg">
-                      Current
-                    </span>
-                  </div>
-                  <span className="text-fg-subtle">→</span>
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="h-5 w-5 flex-shrink-0 rounded-full border border-border-muted"
-                      style={{
-                        backgroundColor: colorChangeDialog.newColorValue,
-                      }}
-                    />
-                    <span className="text-sm font-[470] text-fg">
-                      {colorChangeDialog.newTitle}
-                    </span>
-                  </div>
+            <AlertDialogDescription render={<div className="space-y-4" />}>
+              <p>This will change the actual color, not just the label.</p>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="h-5 w-5 flex-shrink-0 rounded-full border border-border-muted"
+                    style={{
+                      backgroundColor: colorChangeDialog.currentColorValue,
+                    }}
+                  />
+                  <span className="text-sm font-[470] text-fg">
+                    Current
+                  </span>
+                </div>
+                <span className="text-fg-subtle">→</span>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="h-5 w-5 flex-shrink-0 rounded-full border border-border-muted"
+                    style={{
+                      backgroundColor: colorChangeDialog.newColorValue,
+                    }}
+                  />
+                  <span className="text-sm font-[470] text-fg">
+                    {colorChangeDialog.newTitle}
+                  </span>
                 </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogClose asChild>
-              <Button variant="ghost">Cancel</Button>
+            <AlertDialogClose render={<Button variant="ghost" />}>
+              Cancel
             </AlertDialogClose>
             <Button onClick={handleColorChangeConfirm}>Change Color</Button>
           </AlertDialogFooter>

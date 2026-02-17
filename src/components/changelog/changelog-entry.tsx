@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/static-components */
+
 "use client";
 
 import { useMDXComponent } from "next-contentlayer2/hooks";

@@ -1,6 +1,6 @@
 "use client";
 
-import * as AccordionPrimitive from "@radix-ui/react-accordion";
+import { Accordion as AccordionPrimitive } from "@base-ui/react/accordion";
 import { IconChevronDown } from "@tabler/icons-react";
 import * as React from "react";
 
@@ -43,19 +43,19 @@ const AccordionTrigger = React.forwardRef<
 AccordionTrigger.displayName = AccordionPrimitive.Trigger.displayName;
 
 const AccordionPanel = React.forwardRef<
-  React.ElementRef<typeof AccordionPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Content>
+  React.ElementRef<typeof AccordionPrimitive.Panel>,
+  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Panel>
 >(({ className, children, ...props }, ref) => (
-  <AccordionPrimitive.Content
+  <AccordionPrimitive.Panel
     ref={ref}
-    className="overflow-hidden text-fg-muted text-sm transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
+    className="overflow-hidden text-fg-muted text-sm transition-all data-[ending-style]:animate-accordion-up data-[starting-style]:animate-accordion-down"
     data-slot="accordion-panel"
     {...props}
   >
     <div className={cn("pt-0 pb-4", className)}>{children}</div>
-  </AccordionPrimitive.Content>
+  </AccordionPrimitive.Panel>
 ));
-AccordionPanel.displayName = AccordionPrimitive.Content.displayName;
+AccordionPanel.displayName = AccordionPrimitive.Panel.displayName;
 
 export {
   Accordion,

@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import Fuse, { type IFuseOptions, type Expression, type FuseOptionKeyObject } from "fuse.js";
 import type { Link } from "../types/link.types";
 import type { Space } from "@/types";
@@ -170,14 +170,8 @@ export function useSearchLinks(
     });
   }, [links, linkSpacesMap, spaceNameById]);
 
-  // Build Fuse index — only rebuilt when the dataset changes, NOT on every keystroke
-  const fuseRef = useRef<Fuse<SearchableLink> | null>(null);
-  const fuseDataRef = useRef<SearchableLink[]>([]);
-
   const fuse = useMemo(() => {
-    fuseDataRef.current = searchableLinks;
-    fuseRef.current = new Fuse(searchableLinks, FUSE_OPTIONS);
-    return fuseRef.current;
+    return new Fuse(searchableLinks, FUSE_OPTIONS);
   }, [searchableLinks]);
 
   // Run the search — this is the only part that runs per keystroke

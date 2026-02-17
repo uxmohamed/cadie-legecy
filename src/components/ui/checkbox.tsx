@@ -1,6 +1,6 @@
 "use client";
 
-import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
+import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
@@ -21,7 +21,7 @@ function Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxP
         )}
         data-slot="checkbox-indicator"
       >
-        {props.checked === "indeterminate" ? (
+        {props.indeterminate ? (
           <svg
             className="size-3"
             fill="none"
@@ -30,7 +30,7 @@ function Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxP
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth="3"
-            viewBox="0 24"
+            viewBox="0 0 24 24"
             width="24"
             xmlns="http://www.w3.org/2000/svg"
           >
@@ -45,7 +45,7 @@ function Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxP
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth="3"
-            viewBox="0 24"
+            viewBox="0 0 24 24"
             width="24"
             xmlns="http://www.w3.org/2000/svg"
           >

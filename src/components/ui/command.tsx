@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { type DialogProps } from "@radix-ui/react-dialog"
 import { Command as CommandPrimitive } from "cmdk"
 import { IconSearch } from "@tabler/icons-react"
 
@@ -23,7 +22,9 @@ const Command = React.forwardRef<
 ))
 Command.displayName = CommandPrimitive.displayName
 
-interface CommandDialogProps extends DialogProps {
+interface CommandDialogProps
+  extends Omit<React.ComponentProps<typeof Dialog>, "children"> {
+  children?: React.ReactNode
   commandProps?: React.ComponentPropsWithoutRef<typeof CommandPrimitive>
 }
 
