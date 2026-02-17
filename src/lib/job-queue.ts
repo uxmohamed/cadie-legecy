@@ -3,6 +3,10 @@ import { Client } from "@upstash/qstash";
 const qstashToken = process.env.QSTASH_TOKEN;
 const qstash = qstashToken ? new Client({ token: qstashToken }) : null;
 
+interface EnqueueOptions {
+  baseUrl?: string;
+}
+
 function getQStashClient(): Client | null {
   if (!qstash) {
     console.warn("[QStash] QSTASH_TOKEN is missing, skipping enqueue");
@@ -10,6 +14,15 @@ function getQStashClient(): Client | null {
   }
 
   return qstash;
+}
+
+function resolveBaseUrl(baseUrlOverride?: string): string {
+  const selected = baseUrlOverride
+    || process.env.NEXT_PUBLIC_BASE_URL
+    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+    || "http://localhost:3000";
+
+  return selected.replace(/\/+$/, "");
 }
 
 /**
@@ -30,14 +43,14 @@ export interface EnrichMetadataJob {
  * @param job - The job payload
  * @returns Promise that resolves when job is enqueued (not when executed)
  */
-export async function enqueueMetadataEnrichment(job: EnrichMetadataJob): Promise<void> {
+export async function enqueueMetadataEnrichment(
+  job: EnrichMetadataJob,
+  options?: EnqueueOptions
+): Promise<void> {
   const client = getQStashClient();
   if (!client) return;
 
-  // Determine the base URL for the callback
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL 
-    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
-    || "http://localhost:3000";
+  const baseUrl = resolveBaseUrl(options?.baseUrl);
   
   try {
     await client.publishJSON({
@@ -57,9 +70,12 @@ export async function enqueueMetadataEnrichment(job: EnrichMetadataJob): Promise
  *
  * @param jobs - Array of job payloads
  */
-export async function enqueueBatchMetadataEnrichment(jobs: EnrichMetadataJob[]): Promise<void> {
+export async function enqueueBatchMetadataEnrichment(
+  jobs: EnrichMetadataJob[],
+  options?: EnqueueOptions
+): Promise<void> {
   await Promise.allSettled(
-    jobs.map(job => enqueueMetadataEnrichment(job))
+    jobs.map(job => enqueueMetadataEnrichment(job, options))
   );
 }
 
@@ -76,13 +92,14 @@ export interface EnrichAITagsJob {
  *
  * Uses a 5s delay to let metadata settle first.
  */
-export async function enqueueAITagging(job: EnrichAITagsJob): Promise<void> {
+export async function enqueueAITagging(
+  job: EnrichAITagsJob,
+  options?: EnqueueOptions
+): Promise<void> {
   const client = getQStashClient();
   if (!client) return;
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
-    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
-    || "http://localhost:3000";
+  const baseUrl = resolveBaseUrl(options?.baseUrl);
 
   try {
     await client.publishJSON({
@@ -99,9 +116,12 @@ export async function enqueueAITagging(job: EnrichAITagsJob): Promise<void> {
 /**
  * Enqueue multiple AI tagging jobs
  */
-export async function enqueueBatchAITagging(jobs: EnrichAITagsJob[]): Promise<void> {
+export async function enqueueBatchAITagging(
+  jobs: EnrichAITagsJob[],
+  options?: EnqueueOptions
+): Promise<void> {
   await Promise.allSettled(
-    jobs.map(job => enqueueAITagging(job))
+    jobs.map(job => enqueueAITagging(job, options))
   );
 }
 
@@ -117,13 +137,14 @@ export interface EnrichAIVisionTagsJob {
  * Enqueue an AI vision tagging job for an image item.
  * Uses a 2s delay to let the upload settle.
  */
-export async function enqueueAIVisionTagging(job: EnrichAIVisionTagsJob): Promise<void> {
+export async function enqueueAIVisionTagging(
+  job: EnrichAIVisionTagsJob,
+  options?: EnqueueOptions
+): Promise<void> {
   const client = getQStashClient();
   if (!client) return;
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
-    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
-    || "http://localhost:3000";
+  const baseUrl = resolveBaseUrl(options?.baseUrl);
 
   try {
     await client.publishJSON({
@@ -140,8 +161,11 @@ export async function enqueueAIVisionTagging(job: EnrichAIVisionTagsJob): Promis
 /**
  * Enqueue multiple AI vision tagging jobs
  */
-export async function enqueueBatchAIVisionTagging(jobs: EnrichAIVisionTagsJob[]): Promise<void> {
+export async function enqueueBatchAIVisionTagging(
+  jobs: EnrichAIVisionTagsJob[],
+  options?: EnqueueOptions
+): Promise<void> {
   await Promise.allSettled(
-    jobs.map(job => enqueueAIVisionTagging(job))
+    jobs.map(job => enqueueAIVisionTagging(job, options))
   );
 }

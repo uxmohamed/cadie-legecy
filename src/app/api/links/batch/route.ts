@@ -150,6 +150,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const callbackBaseUrl = request.nextUrl.origin;
+
     // Apply rate limiting
     const identifier = getIdentifier(request, user.id);
     const { success, limit, reset, remaining } = await rateLimitLinks.limit(identifier);
@@ -323,7 +325,7 @@ export async function POST(request: NextRequest) {
                   linkId,
                   userId: user.id,
                 }));
-                enqueueBatchAITagging(fallbackTagJobs).catch(() => {});
+                enqueueBatchAITagging(fallbackTagJobs, { baseUrl: callbackBaseUrl }).catch(() => {});
               }
 
               const linksAfterUrlAI = await refreshCreatedLinks(
@@ -332,14 +334,14 @@ export async function POST(request: NextRequest) {
               );
               createdLinks = linksAfterUrlAI;
             } else {
-              enqueueBatchMetadataEnrichment(metadataJobs).catch(err => {
+              enqueueBatchMetadataEnrichment(metadataJobs, { baseUrl: callbackBaseUrl }).catch(err => {
                 console.error("[Batch] Failed to enqueue metadata jobs:", err);
               });
               const aiTagJobs = urlLinks.map((link) => ({
                 linkId: link.id,
                 userId: user.id,
               }));
-              enqueueBatchAITagging(aiTagJobs).catch(() => {});
+              enqueueBatchAITagging(aiTagJobs, { baseUrl: callbackBaseUrl }).catch(() => {});
             }
           }
 
@@ -352,7 +354,7 @@ export async function POST(request: NextRequest) {
               linkId: link.id,
               userId: user.id,
             }));
-            enqueueBatchAIVisionTagging(visionJobs).catch(() => {});
+            enqueueBatchAIVisionTagging(visionJobs, { baseUrl: callbackBaseUrl }).catch(() => {});
           }
 
           const documentLinks = createdLinks.filter(
@@ -364,7 +366,7 @@ export async function POST(request: NextRequest) {
               linkId: link.id,
               userId: user.id,
             }));
-            enqueueBatchAITagging(docTagJobs).catch(() => {});
+            enqueueBatchAITagging(docTagJobs, { baseUrl: callbackBaseUrl }).catch(() => {});
           }
 
           result.data.links = createdLinks;

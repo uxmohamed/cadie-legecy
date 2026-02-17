@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { LinkService } from "@/features/links/services";
+import { AITaggingService } from "@/features/links/services/ai-tagging.service";
 import { SupabaseLinkRepository } from "@/features/links/repositories";
 import { authenticateRequest } from "@/lib/auth-middleware";
 import type { CreateLinkDTO } from "@/features/links/types";
@@ -7,6 +8,46 @@ import { toAppError, ErrorCode, AppError } from "@/lib/errors";
 import { resolveColorMetadata } from "@/lib/canonicalize";
 import { enqueueMetadataEnrichment, enqueueAITagging, enqueueAIVisionTagging } from "@/lib/job-queue";
 import { AutoSpaceForwardingService } from "@/features/spaces/services/auto-space-forwarding.service";
+import { createAdminClient } from "@/lib/supabase/server";
+import { extractMetadata } from "@/lib/metadata";
+import { log } from "@/lib/logger";
+
+const EXTENSION_SOURCE_HEADER = "x-cadie-source";
+const EXTENSION_SOURCE_VALUE = "extension";
+const EXTENSION_FALLBACK_DELAY_MS = 12_000;
+const RECOVERY_SELECT_FIELDS = [
+    "id",
+    "user_id",
+    "url",
+    "title",
+    "description",
+    "domain",
+    "site_name",
+    "content_text",
+    "content_type",
+    "og_image_url",
+    "ai_tags",
+    "fetch_status",
+].join(", ");
+
+type RecoveryOutcome = "success" | "failed" | "skipped";
+type RecoveryStage = "precheck" | "metadata" | "ai" | "finalize";
+type AdminClient = ReturnType<typeof createAdminClient>;
+
+interface RecoveryLink {
+    id: string;
+    user_id: string;
+    url: string;
+    title: string | null;
+    description: string | null;
+    domain: string | null;
+    site_name: string | null;
+    content_text: string | null;
+    content_type: string | null;
+    og_image_url: string | null;
+    ai_tags: string[] | null;
+    fetch_status: string | null;
+}
 
 /**
  * Handler for POST /api/links
@@ -67,7 +108,394 @@ export class CreateLinkHandler {
         }
     }
 
-    private async enqueueEnrichmentJobs(userId: string, link: { id: string; url: string; content_type?: string }): Promise<void> {
+    private isExtensionSource(request: NextRequest): boolean {
+        return request.headers.get(EXTENSION_SOURCE_HEADER)?.toLowerCase() === EXTENSION_SOURCE_VALUE;
+    }
+
+    private sleep(ms: number): Promise<void> {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    private isAiMissing(link: Pick<RecoveryLink, "ai_tags">): boolean {
+        return !Array.isArray(link.ai_tags) || link.ai_tags.length === 0;
+    }
+
+    private isFetchStillLoading(status: string | null): boolean {
+        return status === "pending" || status === "fetching";
+    }
+
+    private shouldRunRecovery(link: RecoveryLink): boolean {
+        const contentType = link.content_type || "url";
+
+        if (contentType === "url") {
+            return this.isFetchStillLoading(link.fetch_status) || this.isAiMissing(link);
+        }
+
+        if (contentType === "document" || contentType === "image") {
+            return this.isAiMissing(link);
+        }
+
+        return false;
+    }
+
+    private logRecovery(
+        linkId: string,
+        stage: RecoveryStage,
+        outcome: RecoveryOutcome,
+        extras?: Record<string, unknown>
+    ): void {
+        log.info("[ExtensionRecovery]", {
+            source: EXTENSION_SOURCE_VALUE,
+            linkId,
+            stage,
+            outcome,
+            ...extras,
+        });
+    }
+
+    private deriveDocumentLabel(title: string | null, url: string): string {
+        if (title && title.trim().length > 0) return title.trim();
+
+        try {
+            const parsed = new URL(url);
+            const file = decodeURIComponent(parsed.pathname.split("/").pop() || "");
+            const stripped = file.replace(/\.pdf$/i, "").replace(/[_-]+/g, " ").trim();
+            return stripped || "PDF document";
+        } catch {
+            return "PDF document";
+        }
+    }
+
+    private normalizeDocTitle(raw: string): string {
+        return raw
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 8)
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(" ") || "PDF Document";
+    }
+
+    private async loadRecoveryLink(
+        supabase: AdminClient,
+        linkId: string,
+        userId: string
+    ): Promise<RecoveryLink | null> {
+        const { data, error } = await supabase
+            .from("links")
+            .select(RECOVERY_SELECT_FIELDS)
+            .eq("id", linkId)
+            .eq("user_id", userId)
+            .maybeSingle();
+
+        if (error) {
+            this.logRecovery(linkId, "precheck", "failed", { reason: "load_failed", error: error.message });
+            return null;
+        }
+
+        return (data as RecoveryLink | null) ?? null;
+    }
+
+    private async recoverUrlMetadata(
+        supabase: AdminClient,
+        link: RecoveryLink
+    ): Promise<{ outcome: RecoveryOutcome; link: RecoveryLink }> {
+        if (!this.isFetchStillLoading(link.fetch_status)) {
+            this.logRecovery(link.id, "metadata", "skipped", { reason: "fetch_already_resolved", fetchStatus: link.fetch_status });
+            return { outcome: "skipped", link };
+        }
+
+        try {
+            const metadata = await extractMetadata(link.url);
+            const hasGenericTitle = !link.title || link.title === link.url || (link.domain ? link.title === link.domain : false);
+            const updates: Record<string, unknown> = {
+                fetch_status: metadata.fetch_status,
+                fetched_at: metadata.fetched_at,
+            };
+
+            if (hasGenericTitle && metadata.title && metadata.title !== metadata.domain) {
+                updates.title = metadata.title;
+            }
+            if (!link.description && metadata.description) {
+                updates.description = metadata.description;
+            }
+            if (!link.og_image_url && metadata.preview_image_url) {
+                updates.og_image_url = metadata.preview_image_url;
+            }
+            if (metadata.site_name) {
+                updates.site_name = metadata.site_name;
+            }
+            if (metadata.final_url) {
+                updates.final_url = metadata.final_url;
+            }
+            if (metadata.canonical_url) {
+                updates.canonical_url = metadata.canonical_url;
+            }
+            if (metadata.content_text) {
+                updates.content_text = metadata.content_text;
+            }
+            if (metadata.favicon_url) {
+                updates.favicon_url = metadata.favicon_url;
+            }
+
+            const { error } = await supabase
+                .from("links")
+                .update(updates)
+                .eq("id", link.id)
+                .eq("user_id", link.user_id);
+
+            if (error) {
+                this.logRecovery(link.id, "metadata", "failed", { reason: "update_failed", error: error.message });
+                return { outcome: "failed", link };
+            }
+
+            const refreshedLink = await this.loadRecoveryLink(supabase, link.id, link.user_id);
+            this.logRecovery(link.id, "metadata", "success", { fetchStatus: metadata.fetch_status });
+            return { outcome: "success", link: refreshedLink ?? link };
+        } catch (error) {
+            this.logRecovery(link.id, "metadata", "failed", {
+                reason: "extract_failed",
+                error: error instanceof Error ? error.message : String(error),
+            });
+            return { outcome: "failed", link };
+        }
+    }
+
+    private async recoverUrlOrDocumentAI(
+        supabase: AdminClient,
+        link: RecoveryLink
+    ): Promise<{ outcome: RecoveryOutcome; link: RecoveryLink }> {
+        if (!this.isAiMissing(link)) {
+            this.logRecovery(link.id, "ai", "skipped", { reason: "already_tagged" });
+            return { outcome: "skipped", link };
+        }
+
+        const isDocument = link.content_type === "document";
+
+        try {
+            const taggingService = new AITaggingService();
+            const documentLabel = isDocument ? this.deriveDocumentLabel(link.title, link.url) : null;
+            const result = await taggingService.generateTags({
+                title: isDocument ? documentLabel : (link.title || link.url),
+                description: isDocument
+                    ? (link.description || "PDF document. Fast skim mode: metadata only, no deep content analysis.")
+                    : link.description,
+                domain: link.domain,
+                site_name: link.site_name,
+                url: link.url,
+                content: isDocument ? null : link.content_text,
+            });
+
+            if (!result) {
+                this.logRecovery(link.id, "ai", "failed", { reason: "no_tags_returned", contentType: link.content_type || "url" });
+                return { outcome: "failed", link };
+            }
+
+            const updates: Record<string, unknown> = {
+                ai_tags: result.tags,
+                ai_key_themes: { category: result.category },
+            };
+
+            if (isDocument) {
+                const normalizedTitle = this.normalizeDocTitle(documentLabel || link.title || "PDF document");
+                const hasGenericTitle = !link.title || link.title === link.url || link.title.toLowerCase() === "pdf document";
+                if (hasGenericTitle) {
+                    updates.title = normalizedTitle;
+                }
+                if (!link.description || link.description.trim().length === 0) {
+                    updates.description = `PDF file saved as ${normalizedTitle}. Auto-tagged from filename and URL using low-token skim mode.`;
+                }
+                updates.fetch_status = "success";
+                updates.fetched_at = new Date().toISOString();
+            }
+
+            const { error } = await supabase
+                .from("links")
+                .update(updates)
+                .eq("id", link.id)
+                .eq("user_id", link.user_id);
+
+            if (error) {
+                this.logRecovery(link.id, "ai", "failed", { reason: "update_failed", error: error.message, contentType: link.content_type || "url" });
+                return { outcome: "failed", link };
+            }
+
+            const refreshedLink = await this.loadRecoveryLink(supabase, link.id, link.user_id);
+            this.logRecovery(link.id, "ai", "success", { contentType: link.content_type || "url", tagsCount: result.tags.length });
+            return { outcome: "success", link: refreshedLink ?? link };
+        } catch (error) {
+            this.logRecovery(link.id, "ai", "failed", {
+                reason: "generate_failed",
+                contentType: link.content_type || "url",
+                error: error instanceof Error ? error.message : String(error),
+            });
+            return { outcome: "failed", link };
+        }
+    }
+
+    private async recoverImageAI(
+        supabase: AdminClient,
+        link: RecoveryLink
+    ): Promise<{ outcome: RecoveryOutcome; link: RecoveryLink }> {
+        if (!this.isAiMissing(link)) {
+            this.logRecovery(link.id, "ai", "skipped", { reason: "already_tagged", contentType: "image" });
+            return { outcome: "skipped", link };
+        }
+
+        try {
+            const taggingService = new AITaggingService();
+            const result = await taggingService.generateTagsFromImage(link.og_image_url || link.url);
+
+            if (!result) {
+                this.logRecovery(link.id, "ai", "failed", { reason: "no_tags_returned", contentType: "image" });
+                return { outcome: "failed", link };
+            }
+
+            const updates: Record<string, unknown> = {
+                ai_tags: result.tags,
+                ai_key_themes: { category: result.category },
+                fetch_status: "success",
+                fetched_at: new Date().toISOString(),
+            };
+
+            if (result.description) {
+                updates.description = result.description;
+            }
+            if (result.title) {
+                updates.title = result.title;
+            } else if (result.description) {
+                updates.title = result.description.split(/\s+/).slice(0, 5).join(" ");
+            }
+
+            const { error } = await supabase
+                .from("links")
+                .update(updates)
+                .eq("id", link.id)
+                .eq("user_id", link.user_id);
+
+            if (error) {
+                this.logRecovery(link.id, "ai", "failed", { reason: "update_failed", error: error.message, contentType: "image" });
+                return { outcome: "failed", link };
+            }
+
+            const refreshedLink = await this.loadRecoveryLink(supabase, link.id, link.user_id);
+            this.logRecovery(link.id, "ai", "success", { contentType: "image", tagsCount: result.tags.length });
+            return { outcome: "success", link: refreshedLink ?? link };
+        } catch (error) {
+            this.logRecovery(link.id, "ai", "failed", {
+                reason: "generate_failed",
+                contentType: "image",
+                error: error instanceof Error ? error.message : String(error),
+            });
+            return { outcome: "failed", link };
+        }
+    }
+
+    private async runExtensionRecovery(linkId: string, userId: string): Promise<void> {
+        await this.sleep(EXTENSION_FALLBACK_DELAY_MS);
+
+        let supabase: AdminClient;
+        try {
+            supabase = createAdminClient();
+        } catch (error) {
+            this.logRecovery(linkId, "precheck", "failed", {
+                reason: "admin_client_unavailable",
+                error: error instanceof Error ? error.message : String(error),
+            });
+            return;
+        }
+
+        let link = await this.loadRecoveryLink(supabase, linkId, userId);
+        if (!link) {
+            this.logRecovery(linkId, "precheck", "skipped", { reason: "link_not_found" });
+            return;
+        }
+
+        if (!this.shouldRunRecovery(link)) {
+            this.logRecovery(linkId, "precheck", "skipped", {
+                reason: "already_resolved",
+                fetchStatus: link.fetch_status,
+                hasTags: !this.isAiMissing(link),
+                contentType: link.content_type || "url",
+            });
+            return;
+        }
+
+        const contentType = link.content_type || "url";
+        let hadFailedStage = false;
+
+        if (contentType === "url") {
+            const metadataResult = await this.recoverUrlMetadata(supabase, link);
+            link = metadataResult.link;
+            hadFailedStage ||= metadataResult.outcome === "failed";
+
+            const aiResult = await this.recoverUrlOrDocumentAI(supabase, link);
+            link = aiResult.link;
+            hadFailedStage ||= aiResult.outcome === "failed";
+        } else if (contentType === "document") {
+            const aiResult = await this.recoverUrlOrDocumentAI(supabase, link);
+            link = aiResult.link;
+            hadFailedStage ||= aiResult.outcome === "failed";
+        } else if (contentType === "image") {
+            const aiResult = await this.recoverImageAI(supabase, link);
+            link = aiResult.link;
+            hadFailedStage ||= aiResult.outcome === "failed";
+        } else {
+            this.logRecovery(linkId, "finalize", "skipped", { reason: "unsupported_content_type", contentType });
+            return;
+        }
+
+        const finalLink = await this.loadRecoveryLink(supabase, linkId, userId);
+        if (!finalLink) {
+            this.logRecovery(linkId, "finalize", "failed", { reason: "link_missing_after_recovery" });
+            return;
+        }
+
+        if (!this.shouldRunRecovery(finalLink)) {
+            this.logRecovery(linkId, "finalize", "success", {
+                reason: "resolved",
+                fetchStatus: finalLink.fetch_status,
+                hasTags: !this.isAiMissing(finalLink),
+                contentType,
+            });
+            return;
+        }
+
+        const shouldMarkFailed =
+            hadFailedStage &&
+            this.isFetchStillLoading(finalLink.fetch_status);
+
+        if (shouldMarkFailed) {
+            const { error } = await supabase
+                .from("links")
+                .update({
+                    fetch_status: "failed",
+                    fetched_at: new Date().toISOString(),
+                })
+                .eq("id", linkId)
+                .eq("user_id", userId);
+
+            if (error) {
+                this.logRecovery(linkId, "finalize", "failed", { reason: "mark_failed_update_error", error: error.message, contentType });
+                return;
+            }
+
+            this.logRecovery(linkId, "finalize", "success", { reason: "marked_failed_after_full_recovery_failure", contentType });
+            return;
+        }
+
+        this.logRecovery(linkId, "finalize", "skipped", {
+            reason: "still_unresolved_no_full_failure",
+            fetchStatus: finalLink.fetch_status,
+            hasTags: !this.isAiMissing(finalLink),
+            contentType,
+        });
+    }
+
+    private async enqueueEnrichmentJobs(
+        userId: string,
+        link: { id: string; url: string; content_type?: string },
+        baseUrl?: string
+    ): Promise<void> {
         const contentType = link.content_type || "url";
 
         if (contentType === "color" || contentType === "note") {
@@ -78,7 +506,7 @@ export class CreateLinkHandler {
             await enqueueAIVisionTagging({
                 linkId: link.id,
                 userId,
-            });
+            }, { baseUrl });
             return;
         }
 
@@ -87,11 +515,11 @@ export class CreateLinkHandler {
                 linkId: link.id,
                 url: link.url,
                 userId,
-            }),
+            }, { baseUrl }),
             enqueueAITagging({
                 linkId: link.id,
                 userId,
-            }),
+            }, { baseUrl }),
         ]);
     }
 
@@ -203,8 +631,17 @@ export class CreateLinkHandler {
                 createLinkDTO
             );
 
+            const isExtensionSave = this.isExtensionSource(request);
+            const callbackBaseUrl = request.nextUrl.origin;
+
             if (!isDuplicate) {
-                await this.enqueueEnrichmentJobs(userId, link);
+                await this.enqueueEnrichmentJobs(userId, link, callbackBaseUrl);
+            }
+
+            if (isExtensionSave && !isDuplicate && !isRestored) {
+                after(async () => {
+                    await this.runExtensionRecovery(link.id, userId);
+                });
             }
 
             const forwardingResult = (!isDuplicate && !isRestored)
