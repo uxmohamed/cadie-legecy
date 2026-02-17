@@ -9,6 +9,7 @@ import { LinkListSkeleton } from "@/components/skeletons";
 import { useRealtimeSync } from "@/features/links/hooks/use-realtime-sync.hook";
 import { useSpaces } from "@/features/spaces/queries";
 import dynamic from "next/dynamic";
+import { toast } from "sonner";
 
 const SpaceModal = dynamic(
   () => import("@/components/spaces/space-modal").then((mod) => mod.SpaceModal),
@@ -61,6 +62,7 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
     onBatchPermanentDelete: (ids: string[]) => Promise<void>;
     onBatchPin: (ids: string[]) => void;
     onBatchUnpin: (ids: string[]) => void;
+    onBatchAddToSpace: (spaceId: string, ids: string[]) => Promise<void>;
   } | null>(null);
   
   // Spaces management
@@ -139,6 +141,7 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
       onBatchPermanentDelete: (ids: string[]) => Promise<void>;
       onBatchPin: (ids: string[]) => void;
       onBatchUnpin: (ids: string[]) => void;
+      onBatchAddToSpace: (spaceId: string, ids: string[]) => Promise<void>;
     }) => {
       setSelectedCount(count);
       setSelectedLinks(links);
@@ -302,6 +305,37 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
               const ids = selectedLinks.map(link => link.id);
               if (ids.length > 0 && batchHandlersRef.current) {
                 batchHandlersRef.current.onBatchUnpin(ids);
+                clearSelectionRef.current?.();
+              }
+            }
+          : undefined
+      }
+      onBatchCopyLinks={
+        selectedCategoryId !== "trash"
+          ? async () => {
+              const urls = selectedLinks
+                .map((link) => link.url?.trim())
+                .filter((url): url is string => Boolean(url));
+              if (urls.length === 0) {
+                toast.error("No links to copy");
+                return;
+              }
+
+              try {
+                await navigator.clipboard.writeText(urls.join("\n"));
+                toast.success(urls.length === 1 ? "Link copied to clipboard" : `${urls.length} links copied to clipboard`);
+              } catch {
+                toast.error("Failed to copy links");
+              }
+            }
+          : undefined
+      }
+      onBatchMoveToSpace={
+        selectedCategoryId !== "trash"
+          ? async (spaceId: string) => {
+              const ids = selectedLinks.map((link) => link.id);
+              if (ids.length > 0 && batchHandlersRef.current) {
+                await batchHandlersRef.current.onBatchAddToSpace(spaceId, ids);
                 clearSelectionRef.current?.();
               }
             }

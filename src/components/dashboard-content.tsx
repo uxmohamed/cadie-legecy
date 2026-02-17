@@ -21,6 +21,7 @@ export interface BatchHandlers {
   onBatchPermanentDelete: (ids: string[]) => Promise<void>;
   onBatchPin: (ids: string[]) => Promise<void>;
   onBatchUnpin: (ids: string[]) => Promise<void>;
+  onBatchAddToSpace: (spaceId: string, ids: string[]) => Promise<void>;
 }
 
 interface DashboardContentProps {
@@ -303,15 +304,24 @@ export function DashboardContent({
     batchUnpinLinks(ids);
   }, [batchUnpinLinks]);
 
-  // Create stable batch handlers that accept IDs as parameters
-  // These are passed to onSelectionChange and stored in DashboardClient
-  const batchHandlers: BatchHandlers = React.useMemo(() => ({
-    onBatchDelete: handleBatchDeleteLinks,
-    onBatchRestore: handleBatchRestoreLinks,
-    onBatchPermanentDelete: handleBatchPermanentDeleteLinks,
-    onBatchPin: handleBatchPinLinks,
-    onBatchUnpin: handleBatchUnpinLinks,
-  }), [handleBatchDeleteLinks, handleBatchRestoreLinks, handleBatchPermanentDeleteLinks, handleBatchPinLinks, handleBatchUnpinLinks]);
+  const handleBatchAddToSpace = React.useCallback(async (spaceId: string, ids: string[]) => {
+    if (ids.length === 0) return;
+
+    const didAdd = await addLinksToSpace(spaceId, ids);
+    if (!didAdd) return;
+
+    // Keep the local link-space map in sync for immediate UI feedback.
+    setLinkSpacesMap(prev => {
+      const updated = new Map(prev);
+      ids.forEach((linkId) => {
+        const existing = updated.get(linkId) || [];
+        if (!existing.includes(spaceId)) {
+          updated.set(linkId, [...existing, spaceId]);
+        }
+      });
+      return updated;
+    });
+  }, [addLinksToSpace]);
 
   // Show skeleton when:
   // 1. Initial load for this query key (isLoading)
@@ -337,6 +347,7 @@ export function DashboardContent({
       onBatchPermanentDelete={handleBatchPermanentDeleteLinks}
       onBatchPin={handleBatchPinLinks}
       onBatchUnpin={handleBatchUnpinLinks}
+      onBatchAddToSpace={handleBatchAddToSpace}
       onUpdate={handleUpdateLink}
       isTrashView={selectedCategoryId === "trash"}
       isAddingItem={isAddingItem && selectedCategoryId !== "trash"}

@@ -3,6 +3,7 @@ import * as React from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SelectionToolbar } from "@/components/link-list/selection-toolbar";
 import type { Link } from "@/features/links/types";
+import type { Space } from "@/types";
 
 interface DockProps {
   selectedCount?: number;
@@ -12,8 +13,11 @@ interface DockProps {
   onBatchPermanentDelete?: () => void;
   onBatchPin?: () => void;
   onBatchUnpin?: () => void;
+  onBatchCopyLinks?: () => Promise<void>;
+  onBatchMoveToSpace?: (spaceId: string) => Promise<void>;
   selectedLinks?: Link[];
   isTrashView?: boolean;
+  spaces?: Space[];
 }
 
 export function Dock({
@@ -24,8 +28,11 @@ export function Dock({
   onBatchPermanentDelete,
   onBatchPin,
   onBatchUnpin,
+  onBatchCopyLinks,
+  onBatchMoveToSpace,
   selectedLinks = [],
   isTrashView = false,
+  spaces = [],
 }: DockProps) {
   const [navWidth, setNavWidth] = React.useState<number | null>(null);
   const selectionRef = React.useRef<HTMLDivElement>(null);
@@ -116,8 +123,11 @@ export function Dock({
               onBatchPermanentDelete={onBatchPermanentDelete}
               onBatchPin={onBatchPin}
               onBatchUnpin={onBatchUnpin}
+              onBatchCopyLinks={onBatchCopyLinks}
+              onBatchMoveToSpace={onBatchMoveToSpace}
               selectedLinks={selectedLinks}
               isTrashView={isTrashView}
+              spaces={spaces}
             />
           </div>
         </nav>

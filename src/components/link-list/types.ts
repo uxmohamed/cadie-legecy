@@ -15,6 +15,7 @@ export interface LinkListProps {
   onBatchPermanentDelete?: (ids: string[]) => Promise<void> | void;
   onBatchPin?: (ids: string[]) => Promise<void> | void;
   onBatchUnpin?: (ids: string[]) => Promise<void> | void;
+  onBatchAddToSpace?: (spaceId: string, ids: string[]) => Promise<void> | void;
 
   isTrashView?: boolean;
 

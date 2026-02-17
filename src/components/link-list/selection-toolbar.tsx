@@ -4,11 +4,16 @@ import {
   Menu,
   MenuItem,
   MenuPopup,
+  MenuSeparator,
+  MenuSub,
+  MenuSubPopup,
+  MenuSubTrigger,
   MenuTrigger,
 } from "@/components/ui/menu";
 import { Button } from "@/components/ui/button";
-import { IconX, IconTrash, IconDots, IconPin, IconPinnedOff, IconRestore } from "@tabler/icons-react";
+import { IconX, IconTrash, IconDots, IconPin, IconPinnedOff, IconRestore, IconCopy, IconCapsuleHorizontalFilled } from "@tabler/icons-react";
 import type { Link } from "@/features/links/types";
+import type { Space } from "@/types";
 
 interface SelectionToolbarProps {
   selectedCount: number;
@@ -18,8 +23,11 @@ interface SelectionToolbarProps {
   onBatchPermanentDelete?: () => void;
   onBatchPin?: () => void;
   onBatchUnpin?: () => void;
+  onBatchCopyLinks?: () => Promise<void>;
+  onBatchMoveToSpace?: (spaceId: string) => Promise<void>;
   selectedLinks?: Link[];
   isTrashView?: boolean;
+  spaces?: Space[];
 }
 
 export function SelectionToolbar({
@@ -30,8 +38,11 @@ export function SelectionToolbar({
   onBatchPermanentDelete,
   onBatchPin,
   onBatchUnpin,
+  onBatchCopyLinks,
+  onBatchMoveToSpace,
   selectedLinks = [],
   isTrashView = false,
+  spaces = [],
 }: SelectionToolbarProps) {
   if (selectedCount < 2) return null;
 
@@ -44,6 +55,7 @@ export function SelectionToolbar({
   const showPin = (allUnpinned || hasMixed) && onBatchPin;
   // Show unpin if all are pinned or mixed
   const showUnpin = (allPinned || hasMixed) && onBatchUnpin;
+  const showMoveToSpace = spaces.length > 0 && onBatchMoveToSpace;
 
   if (isTrashView) {
     return (
@@ -120,6 +132,39 @@ export function SelectionToolbar({
           Actions
         </MenuTrigger>
         <MenuPopup align="center" side="top" sideOffset={16}>
+          {onBatchCopyLinks && (
+            <MenuItem onClick={onBatchCopyLinks}>
+              <IconCopy className="h-4 w-4" />
+              Copy links
+            </MenuItem>
+          )}
+          {showMoveToSpace && (
+            <MenuSub>
+              <MenuSubTrigger>
+                <IconCapsuleHorizontalFilled className="h-4 w-4" />
+                Move to Space
+              </MenuSubTrigger>
+              <MenuSubPopup>
+                {spaces.map((space) => (
+                  <MenuItem
+                    key={space.id}
+                    onClick={() => onBatchMoveToSpace?.(space.id)}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <IconCapsuleHorizontalFilled
+                        className="h-3 w-3 shrink-0"
+                        style={{ color: space.color }}
+                      />
+                      <span className="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">
+                        {space.name}
+                      </span>
+                    </div>
+                  </MenuItem>
+                ))}
+              </MenuSubPopup>
+            </MenuSub>
+          )}
+          {(onBatchCopyLinks || showMoveToSpace) && (showPin || showUnpin) && <MenuSeparator />}
           {showPin && (
             <MenuItem onClick={onBatchPin}>
               <IconPin className="h-4 w-4" />
@@ -137,4 +182,3 @@ export function SelectionToolbar({
     </div>
   );
 }
-

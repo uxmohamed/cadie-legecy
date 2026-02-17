@@ -42,6 +42,8 @@ interface DashboardShellProps {
   onBatchPermanentDelete?: () => void;
   onBatchPin?: () => void;
   onBatchUnpin?: () => void;
+  onBatchCopyLinks?: () => Promise<void>;
+  onBatchMoveToSpace?: (spaceId: string) => Promise<void>;
   viewMode: "list" | "grid";
   onViewModeChange: (mode: "list" | "grid") => void;
   spaces?: Space[];
@@ -73,6 +75,8 @@ export function DashboardShell({
   onBatchPermanentDelete,
   onBatchPin,
   onBatchUnpin,
+  onBatchCopyLinks,
+  onBatchMoveToSpace,
   viewMode,
   onViewModeChange,
   spaces,
@@ -733,8 +737,11 @@ export function DashboardShell({
         onBatchPermanentDelete={onBatchPermanentDelete}
         onBatchPin={onBatchPin}
         onBatchUnpin={onBatchUnpin}
+        onBatchCopyLinks={onBatchCopyLinks}
+        onBatchMoveToSpace={onBatchMoveToSpace}
         selectedLinks={selectedLinks}
         isTrashView={isTrashView}
+        spaces={spaces}
       />
 
       {/* Global drag-drop overlay */}

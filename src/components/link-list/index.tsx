@@ -45,6 +45,7 @@ interface LinkListProps {
   onBatchPermanentDelete: (ids: string[]) => Promise<void>;
   onBatchPin: (ids: string[]) => Promise<void>;
   onBatchUnpin: (ids: string[]) => Promise<void>;
+  onBatchAddToSpace: (spaceId: string, ids: string[]) => Promise<void>;
   isTrashView?: boolean;
   isAddingItem?: boolean;
   addInputValue?: string;
@@ -72,6 +73,7 @@ interface LinkListProps {
       onBatchPermanentDelete: (ids: string[]) => Promise<void>;
       onBatchPin: (ids: string[]) => Promise<void>;
       onBatchUnpin: (ids: string[]) => Promise<void>;
+      onBatchAddToSpace: (spaceId: string, ids: string[]) => Promise<void>;
     }
   ) => void;
   spaces?: Space[];
@@ -96,6 +98,7 @@ export function LinkList({
   onBatchPermanentDelete,
   onBatchPin,
   onBatchUnpin,
+  onBatchAddToSpace,
   isTrashView = false,
   isAddingItem = false,
   addInputValue = "",
@@ -342,6 +345,7 @@ export function LinkList({
           onBatchPermanentDelete: onBatchPermanentDelete,
           onBatchPin: onBatchPin,
           onBatchUnpin: onBatchUnpin,
+          onBatchAddToSpace,
         }
       );
     }
@@ -353,6 +357,7 @@ export function LinkList({
     onBatchPermanentDelete,
     onBatchPin,
     onBatchUnpin,
+    onBatchAddToSpace,
   ]);
 
   // Inline edit handlers

@@ -169,7 +169,7 @@ cadie/
 - **Framework**: Next.js 15 (App Router) with React 19
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS v4
-- **UI Components**: shadcn/ui (Radix UI primitives)
+- **UI Components**: shadcn/ui (Base UI primitives)
 - **Icons**: Lucide React
 - **Notifications**: Sonner (toast)
 

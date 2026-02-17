@@ -1,31 +1,68 @@
 "use client"
 
 import * as React from "react"
-import { Command as CommandPrimitive } from "cmdk"
 import { IconSearch } from "@tabler/icons-react"
 
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 
-const Command = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive
-    ref={ref}
-    className={cn(
-      "flex h-full w-full flex-col overflow-hidden rounded-md bg-bg-surface text-fg",
-      className
-    )}
-    {...props}
-  />
-))
-Command.displayName = CommandPrimitive.displayName
+type CommandContextValue = {
+  value: string
+  onValueChange: (value: string) => void
+}
+
+const CommandContext = React.createContext<CommandContextValue | null>(null)
+
+function useCommandContext() {
+  return React.useContext(CommandContext)
+}
+
+interface CommandProps extends React.ComponentPropsWithoutRef<"div"> {
+  value?: string
+  onValueChange?: (value: string) => void
+}
+
+const Command = React.forwardRef<HTMLDivElement, CommandProps>(
+  ({ className, value: controlledValue, onValueChange, ...props }, ref) => {
+    const [uncontrolledValue, setUncontrolledValue] = React.useState("")
+    const isControlled = controlledValue !== undefined
+    const value = isControlled ? controlledValue : uncontrolledValue
+
+    const handleValueChange = React.useCallback(
+      (nextValue: string) => {
+        if (!isControlled) {
+          setUncontrolledValue(nextValue)
+        }
+        onValueChange?.(nextValue)
+      },
+      [isControlled, onValueChange]
+    )
+
+    const contextValue = React.useMemo(
+      () => ({ value, onValueChange: handleValueChange }),
+      [value, handleValueChange]
+    )
+
+    return (
+      <CommandContext.Provider value={contextValue}>
+        <div
+          ref={ref}
+          className={cn(
+            "flex h-full w-full flex-col overflow-hidden rounded-md bg-bg-surface text-fg",
+            className
+          )}
+          {...props}
+        />
+      </CommandContext.Provider>
+    )
+  }
+)
+Command.displayName = "Command"
 
 interface CommandDialogProps
   extends Omit<React.ComponentProps<typeof Dialog>, "children"> {
   children?: React.ReactNode
-  commandProps?: React.ComponentPropsWithoutRef<typeof CommandPrimitive>
+  commandProps?: CommandProps
 }
 
 const CommandDialog = ({ children, commandProps, ...props }: CommandDialogProps) => {
@@ -33,7 +70,7 @@ const CommandDialog = ({ children, commandProps, ...props }: CommandDialogProps)
     <Dialog {...props}>
       <DialogContent className="overflow-hidden p-0 shadow-lg">
         <Command
-          className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-fg-muted [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5"
+          className="py-1"
           {...commandProps}
         >
           {children}
@@ -44,93 +81,169 @@ const CommandDialog = ({ children, commandProps, ...props }: CommandDialogProps)
 }
 
 const CommandInput = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Input>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
->(({ className, ...props }, ref) => (
-  <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
-    <IconSearch className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-    <CommandPrimitive.Input
-      ref={ref}
-      className={cn(
-        "flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-fg-subtle disabled:cursor-not-allowed disabled:opacity-50",
-        className
-      )}
-      {...props}
-    />
-  </div>
-))
+  HTMLInputElement,
+  React.ComponentPropsWithoutRef<"input">
+>(({ className, onChange, autoFocus, ...props }, ref) => {
+  const context = useCommandContext()
 
-CommandInput.displayName = CommandPrimitive.Input.displayName
+  const handleChange = React.useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      context?.onValueChange(event.target.value)
+      onChange?.(event)
+    },
+    [context, onChange]
+  )
+
+  return (
+    <div className="flex items-center border-b px-3" data-slot="command-input-wrapper">
+      <IconSearch className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+      <input
+        ref={ref}
+        className={cn(
+          "flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-fg-subtle disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}
+        autoFocus={autoFocus ?? true}
+        value={context?.value ?? ""}
+        onChange={handleChange}
+        {...props}
+      />
+    </div>
+  )
+})
+
+CommandInput.displayName = "CommandInput"
 
 const CommandList = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.List>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.List
-    ref={ref}
-    className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
-    {...props}
-  />
-))
+  HTMLDivElement,
+  React.ComponentPropsWithoutRef<"div">
+>(({ className, onKeyDown, ...props }, ref) => {
+  const handleKeyDown = React.useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      onKeyDown?.(event)
+      if (event.defaultPrevented) return
+      if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return
 
-CommandList.displayName = CommandPrimitive.List.displayName
+      const list = event.currentTarget
+      const items = Array.from(
+        list.querySelectorAll<HTMLButtonElement>("[data-command-item='true']:not([disabled])")
+      ).filter((item) => item.offsetParent !== null)
+
+      if (items.length === 0) return
+
+      event.preventDefault()
+      const currentIndex = items.findIndex((item) => item === document.activeElement)
+      if (currentIndex === -1) {
+        items[0]?.focus()
+        return
+      }
+
+      const nextIndex =
+        event.key === "ArrowDown"
+          ? (currentIndex + 1) % items.length
+          : (currentIndex - 1 + items.length) % items.length
+
+      items[nextIndex]?.focus()
+    },
+    [onKeyDown]
+  )
+
+  return (
+    <div
+      ref={ref}
+      className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
+      onKeyDown={handleKeyDown}
+      {...props}
+    />
+  )
+})
+
+CommandList.displayName = "CommandList"
 
 const CommandEmpty = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Empty>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Empty>
+  HTMLDivElement,
+  React.ComponentPropsWithoutRef<"div">
 >((props, ref) => (
-  <CommandPrimitive.Empty
+  <div
     ref={ref}
     className="py-6 text-center text-sm"
     {...props}
   />
 ))
 
-CommandEmpty.displayName = CommandPrimitive.Empty.displayName
+CommandEmpty.displayName = "CommandEmpty"
+
+interface CommandGroupProps extends React.ComponentPropsWithoutRef<"div"> {
+  heading?: React.ReactNode
+}
 
 const CommandGroup = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Group>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.Group
+  HTMLDivElement,
+  CommandGroupProps
+>(({ className, heading, children, ...props }, ref) => (
+  <div
     ref={ref}
-    className={cn(
-      "overflow-hidden p-1 text-fg [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-fg-muted",
-      className
-    )}
+    className={cn("overflow-hidden p-1 text-fg", className)}
     {...props}
-  />
+  >
+    {heading && (
+      <div className="px-2 py-1.5 text-xs font-medium text-fg-muted">
+        {heading}
+      </div>
+    )}
+    {children}
+  </div>
 ))
 
-CommandGroup.displayName = CommandPrimitive.Group.displayName
+CommandGroup.displayName = "CommandGroup"
 
 const CommandSeparator = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Separator>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Separator>
+  HTMLDivElement,
+  React.ComponentPropsWithoutRef<"div">
 >(({ className, ...props }, ref) => (
-  <CommandPrimitive.Separator
+  <div
     ref={ref}
     className={cn("-mx-1 h-px bg-border", className)}
     {...props}
   />
 ))
-CommandSeparator.displayName = CommandPrimitive.Separator.displayName
+CommandSeparator.displayName = "CommandSeparator"
+
+interface CommandItemProps
+  extends Omit<React.ComponentPropsWithoutRef<"button">, "onSelect" | "value"> {
+  onSelect?: (value: string) => void
+  value?: string
+}
 
 const CommandItem = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.Item
-    ref={ref}
-    className={cn(
-      "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-bg-selected aria-selected:text-fg hover:bg-bg-selected/70 data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      className
-    )}
-    {...props}
-  />
-))
+  HTMLButtonElement,
+  CommandItemProps
+>(({ className, onClick, onSelect, value, ...props }, ref) => {
+  const handleClick = React.useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      onClick?.(event)
+      if (event.defaultPrevented) return
+      onSelect?.(value ?? event.currentTarget.textContent?.trim() ?? "")
+    },
+    [onClick, onSelect, value]
+  )
 
-CommandItem.displayName = CommandPrimitive.Item.displayName
+  return (
+    <button
+      ref={ref}
+      type="button"
+      data-command-item="true"
+      className={cn(
+        "relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm text-left outline-none hover:bg-bg-selected/70 focus-visible:bg-bg-selected focus-visible:text-fg disabled:pointer-events-none disabled:opacity-50",
+        className
+      )}
+      onClick={handleClick}
+      {...props}
+    />
+  )
+})
+
+CommandItem.displayName = "CommandItem"
 
 const CommandShortcut = ({
   className,
