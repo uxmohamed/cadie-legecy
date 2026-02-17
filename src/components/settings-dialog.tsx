@@ -2,7 +2,14 @@
 
 import * as React from "react";
 import type { User } from "@supabase/supabase-js";
-import { IconUserFilled, IconPaletteFilled, IconInfoCircleFilled, IconPuzzleFilled, IconCapsuleHorizontalFilled } from "@tabler/icons-react";
+import {
+  IconUserFilled,
+  IconPaletteFilled,
+  IconInfoCircleFilled,
+  IconPuzzleFilled,
+  IconCapsuleHorizontalFilled,
+  IconDownload,
+} from "@tabler/icons-react";
 
 import {
   Dialog,
@@ -25,14 +32,22 @@ import { SettingsSpaces } from "@/components/settings/settings-spaces";
 import { SettingsAppearance } from "@/components/settings/settings-appearance";
 import { SettingsAbout } from "@/components/settings/settings-about";
 import { SettingsExtensions } from "@/components/settings/settings-extensions";
+import { SettingsImport } from "@/components/settings/settings-import";
 
-type SettingsSection = "profile" | "spaces" | "appearance" | "extensions" | "about";
+type SettingsSection =
+  | "profile"
+  | "spaces"
+  | "appearance"
+  | "extensions"
+  | "import"
+  | "about";
 
 const navItems = [
   { id: "profile" as const, name: "Profile", icon: IconUserFilled },
   { id: "spaces" as const, name: "Spaces", icon: IconCapsuleHorizontalFilled },
   { id: "appearance" as const, name: "Appearance", icon: IconPaletteFilled },
   { id: "extensions" as const, name: "Extensions", icon: IconPuzzleFilled },
+  { id: "import" as const, name: "Import", icon: IconDownload },
   { id: "about" as const, name: "About", icon: IconInfoCircleFilled },
 ];
 
@@ -112,6 +127,7 @@ export function SettingsDialog({ user, open, onOpenChange, onProfileUpdate }: Se
               {activeSection === "spaces" && <SettingsSpaces />}
               {activeSection === "appearance" && <SettingsAppearance />}
               {activeSection === "extensions" && <SettingsExtensions />}
+              {activeSection === "import" && <SettingsImport />}
               {activeSection === "about" && <SettingsAbout />}
             </div>
           </main>

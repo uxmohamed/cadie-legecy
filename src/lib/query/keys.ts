@@ -54,6 +54,11 @@ export const queryKeys = {
     byLink: (linkId: string) => ["linkSpaces", "link", linkId] as const,
     bySpace: (spaceId: string) => ["linkSpaces", "space", spaceId] as const,
   },
+  imports: {
+    all: ["imports"] as const,
+    list: (limit: number = 20) => ["imports", "list", limit] as const,
+    detail: (id: string) => ["imports", "detail", id] as const,
+  },
 } as const;
 
 /**

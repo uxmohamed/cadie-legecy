@@ -11,11 +11,28 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Cleanup Endpoint
+      - name: Trigger Trash Cleanup Endpoint
         run: |
           response=$(curl -s -w "\n%{http_code}" -X GET \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             https://cadie.app/api/cron/cleanup-trash)
+
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n-1)
+
+          echo "Response: $body"
+          echo "Status Code: $http_code"
+
+          if [ $http_code -ne 200 ]; then
+            echo "Cleanup failed with status $http_code"
+            exit 1
+          fi
+
+      - name: Trigger Import Cleanup Endpoint
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://cadie.app/api/cron/cleanup-imports)
 
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | head -n-1)

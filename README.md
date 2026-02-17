@@ -348,11 +348,32 @@ npm run extension:install    # Install extension dependencies
    ```
    NEXT_PUBLIC_SUPABASE_URL
    NEXT_PUBLIC_SUPABASE_ANON_KEY
+   SUPABASE_SERVICE_ROLE_KEY
    NEXT_PUBLIC_SITE_URL (your production domain)
+   QSTASH_TOKEN
+   QSTASH_CURRENT_SIGNING_KEY
+   QSTASH_NEXT_SIGNING_KEY
+   CRON_SECRET
    ```
 4. **Deploy**
 
 The app is optimized for Vercel with automatic deployments on push.
+
+### Bookmark Import V0 (Production Setup)
+
+If you are deploying bookmark import, complete these additional steps:
+
+1. Run migration `supabase/migrations/20260217_add_bookmark_import_jobs.sql`.
+2. Verify private storage bucket `imports` exists and uses RLS policies from migration.
+3. Ensure QStash can call:
+   - `POST /api/jobs/process-bookmark-import`
+   - `POST /api/jobs/enrich-metadata`
+   - `POST /api/jobs/enrich-ai-tags`
+4. Configure daily cron calls with `Authorization: Bearer $CRON_SECRET`:
+   - `GET /api/cron/cleanup-trash`
+   - `GET /api/cron/cleanup-imports`
+
+Detailed checklist: `docs/bookmark-import-v0-rollout.md`.
 
 ## 🗺️ Roadmap
 

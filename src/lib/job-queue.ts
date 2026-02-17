@@ -133,6 +133,11 @@ export interface EnrichAIVisionTagsJob {
   userId: string;
 }
 
+export interface ProcessBookmarkImportJob {
+  importJobId: string;
+  userId: string;
+}
+
 /**
  * Enqueue an AI vision tagging job for an image item.
  * Uses a 2s delay to let the upload settle.
@@ -168,4 +173,27 @@ export async function enqueueBatchAIVisionTagging(
   await Promise.allSettled(
     jobs.map(job => enqueueAIVisionTagging(job, options))
   );
+}
+
+/**
+ * Enqueue a bookmark import processing job.
+ * This powers large background imports from Settings > Import.
+ */
+export async function enqueueBookmarkImportProcessing(
+  job: ProcessBookmarkImportJob,
+  options?: EnqueueOptions
+): Promise<void> {
+  const client = getQStashClient();
+  if (!client) {
+    throw new Error("QStash is not configured");
+  }
+
+  const baseUrl = resolveBaseUrl(options?.baseUrl);
+
+  await client.publishJSON({
+    url: `${baseUrl}/api/jobs/process-bookmark-import`,
+    body: job,
+    retries: 5,
+    delay: 0,
+  });
 }
