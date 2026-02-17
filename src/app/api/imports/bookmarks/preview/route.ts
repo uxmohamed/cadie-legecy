@@ -26,7 +26,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Bookmark file is required" }, { status: 400 });
     }
 
-    const { job, preview } = await service.createPreviewDraft(user.id, file);
+    const displayName =
+      typeof user.user_metadata?.full_name === "string"
+        ? user.user_metadata.full_name
+        : typeof user.user_metadata?.name === "string"
+          ? user.user_metadata.name
+          : null;
+
+    const { job, preview } = await service.createPreviewDraft(
+      user.id,
+      file,
+      user.email ?? null,
+      displayName
+    );
     return NextResponse.json({
       success: true,
       job,
@@ -39,4 +51,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

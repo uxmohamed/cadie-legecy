@@ -173,6 +173,41 @@ export class BookmarkImportService {
     return createAdminClient();
   }
 
+  private async ensurePublicUserRow(
+    userId: string,
+    email: string | null,
+    displayName: string | null
+  ): Promise<void> {
+    const supabase = this.getClient();
+    const { data: existing, error: lookupError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (lookupError) {
+      throw new Error(`Failed to verify user profile: ${lookupError.message}`);
+    }
+
+    if (existing?.id) return;
+
+    const userEmail = (email || "").trim().toLowerCase();
+    if (!userEmail) {
+      throw new Error("Unable to create import draft because user email is unavailable");
+    }
+
+    const { error: insertError } = await supabase.from("users").insert({
+      id: userId,
+      email: userEmail,
+      display_name: displayName,
+      preferences: {},
+    });
+
+    if (insertError) {
+      throw new Error(`Failed to provision user profile for import: ${insertError.message}`);
+    }
+  }
+
   private validateFile(file: File): void {
     if (!file) {
       throw new Error("Bookmark file is required");
@@ -197,8 +232,14 @@ export class BookmarkImportService {
     }
   }
 
-  async createPreviewDraft(userId: string, file: File): Promise<{ job: ImportJobDTO; preview: BookmarkPreview }> {
+  async createPreviewDraft(
+    userId: string,
+    file: File,
+    email: string | null,
+    displayName: string | null
+  ): Promise<{ job: ImportJobDTO; preview: BookmarkPreview }> {
     this.validateFile(file);
+    await this.ensurePublicUserRow(userId, email, displayName);
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const content = buffer.toString("utf-8");
