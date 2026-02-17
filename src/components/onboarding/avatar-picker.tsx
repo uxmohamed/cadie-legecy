@@ -4,6 +4,7 @@ import * as React from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { IconPencil, IconLoader2 } from "@tabler/icons-react";
 import { createClient } from "@/lib/supabase/client";
+import { buildAvatarFallbackChain } from "@/lib/avatar";
 
 interface AvatarPickerProps {
   value: string;
@@ -16,6 +17,25 @@ export function AvatarPicker({ value, onChange, userId, userInitial = "U" }: Ava
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const avatarSources = React.useMemo(
+    () => buildAvatarFallbackChain(userId, value),
+    [userId, value],
+  );
+  const [avatarSourceIndex, setAvatarSourceIndex] = React.useState(0);
+
+  React.useEffect(() => {
+    setAvatarSourceIndex(0);
+  }, [avatarSources]);
+
+  const visibleAvatar = avatarSources[Math.min(avatarSourceIndex, avatarSources.length - 1)];
+
+  const handleAvatarLoadingStatusChange = React.useCallback(
+    (status: "idle" | "loading" | "loaded" | "error") => {
+      if (status !== "error") return;
+      setAvatarSourceIndex((prev) => (prev < avatarSources.length - 1 ? prev + 1 : prev));
+    },
+    [avatarSources.length],
+  );
 
   const uploadToStorage = async (file: File): Promise<string | null> => {
     const supabase = createClient();
@@ -94,7 +114,11 @@ export function AvatarPicker({ value, onChange, userId, userInitial = "U" }: Ava
     <div className="relative">
       {/* Avatar Display */}
       <Avatar className="h-24 w-24">
-        <AvatarImage src={value} alt="Your avatar" />
+        <AvatarImage
+          src={visibleAvatar}
+          alt="Your avatar"
+          onLoadingStatusChange={handleAvatarLoadingStatusChange}
+        />
         <AvatarFallback className="bg-bg-inverse text-fg-inverse text-2xl">
           {userInitial}
         </AvatarFallback>

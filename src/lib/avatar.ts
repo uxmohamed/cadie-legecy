@@ -33,3 +33,25 @@ export function getAvatarPath(avatarNumber: number): string {
   const paddedNumber = String(clampedNumber).padStart(2, "0");
   return `/avatars/avatar-pic-${paddedNumber}.webp`;
 }
+
+/**
+ * Build a deduplicated avatar source chain with deterministic local fallback.
+ * Remote URLs are tried first; local preset avatar is always appended last.
+ */
+export function buildAvatarFallbackChain(
+  userId: string,
+  ...candidates: Array<string | null | undefined>
+): string[] {
+  const normalized = candidates
+    .map((value) => {
+      if (!value) return null;
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+      if (trimmed.startsWith("//")) return `https:${trimmed}`;
+      return trimmed;
+    })
+    .filter((value): value is string => Boolean(value));
+
+  normalized.push(getDefaultAvatar(userId));
+  return Array.from(new Set(normalized));
+}

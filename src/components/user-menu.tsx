@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { Switch } from "@/components/ui/switch";
-import { getDefaultAvatar } from "@/lib/avatar";
+import { buildAvatarFallbackChain } from "@/lib/avatar";
 import { getUserProfile } from "@/hooks/use-onboarding";
 import {
   DropdownMenu,
@@ -149,7 +149,31 @@ export function UserMenu({ user }: UserMenuProps) {
 
   // Use profile data first, fall back to Google metadata
   const userName = profile?.display_name || user.user_metadata?.full_name || user.user_metadata?.name;
-  const userAvatar = profile?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture || getDefaultAvatar(user.id);
+  const avatarSources = React.useMemo(
+    () =>
+      buildAvatarFallbackChain(
+        user.id,
+        profile?.avatar_url,
+        user.user_metadata?.avatar_url,
+        user.user_metadata?.picture,
+      ),
+    [profile?.avatar_url, user.id, user.user_metadata?.avatar_url, user.user_metadata?.picture],
+  );
+  const [avatarSourceIndex, setAvatarSourceIndex] = React.useState(0);
+
+  React.useEffect(() => {
+    setAvatarSourceIndex(0);
+  }, [avatarSources]);
+
+  const userAvatar = avatarSources[Math.min(avatarSourceIndex, avatarSources.length - 1)];
+
+  const handleAvatarLoadingStatusChange = React.useCallback(
+    (status: "idle" | "loading" | "loaded" | "error") => {
+      if (status !== "error") return;
+      setAvatarSourceIndex((prev) => (prev < avatarSources.length - 1 ? prev + 1 : prev));
+    },
+    [avatarSources.length],
+  );
 
   // Determine if dark mode is effectively active
   const [isDarkMode, setIsDarkMode] = React.useState(() => {
@@ -197,6 +221,7 @@ export function UserMenu({ user }: UserMenuProps) {
             <AvatarImage 
               src={userAvatar} 
               alt={user.email} 
+              onLoadingStatusChange={handleAvatarLoadingStatusChange}
             />
             <AvatarFallback className="bg-[var(--bg-inverse)] text-[var(--fg-inverse)]">
               {userName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || "U"}

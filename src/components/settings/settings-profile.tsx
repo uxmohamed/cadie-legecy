@@ -24,7 +24,7 @@ import {
   TooltipPopup,
 } from "@/components/ui/tooltip";
 import { getUserProfile, completeOnboarding } from "@/hooks/use-onboarding";
-import { getDefaultAvatar } from "@/lib/avatar";
+import { buildAvatarFallbackChain } from "@/lib/avatar";
 import { createClient } from "@/lib/supabase/client";
 import { IconPencil, IconLoader2, IconLogout } from "@tabler/icons-react";
 import { toast } from "sonner";
@@ -50,7 +50,12 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
     const loadProfile = async () => {
       const profile = await getUserProfile(user.id);
       const name = profile?.display_name || user.user_metadata?.full_name || user.user_metadata?.name || "";
-      const avatar = profile?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture || getDefaultAvatar(user.id);
+      const avatar = buildAvatarFallbackChain(
+        user.id,
+        profile?.avatar_url,
+        user.user_metadata?.avatar_url,
+        user.user_metadata?.picture,
+      )[0];
       
       setDisplayName(name);
       setOriginalDisplayName(name);
@@ -161,6 +166,32 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
     }
   };
 
+  const avatarSources = React.useMemo(
+    () =>
+      buildAvatarFallbackChain(
+        user.id,
+        avatarUrl,
+        user.user_metadata?.avatar_url,
+        user.user_metadata?.picture,
+      ),
+    [avatarUrl, user.id, user.user_metadata?.avatar_url, user.user_metadata?.picture],
+  );
+  const [avatarSourceIndex, setAvatarSourceIndex] = React.useState(0);
+
+  React.useEffect(() => {
+    setAvatarSourceIndex(0);
+  }, [avatarSources]);
+
+  const visibleAvatar = avatarSources[Math.min(avatarSourceIndex, avatarSources.length - 1)];
+
+  const handleAvatarLoadingStatusChange = React.useCallback(
+    (status: "idle" | "loading" | "loaded" | "error") => {
+      if (status !== "error") return;
+      setAvatarSourceIndex((prev) => (prev < avatarSources.length - 1 ? prev + 1 : prev));
+    },
+    [avatarSources.length],
+  );
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -175,7 +206,11 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
       <div className="flex items-center gap-6">
         <div className="relative group">
           <Avatar className="h-24 w-24 shadow-sm">
-            <AvatarImage src={avatarUrl} alt={displayName} />
+            <AvatarImage
+              src={visibleAvatar}
+              alt={displayName}
+              onLoadingStatusChange={handleAvatarLoadingStatusChange}
+            />
             <AvatarFallback className="bg-accent text-white text-2xl">
               {displayName.charAt(0).toUpperCase() || "U"}
             </AvatarFallback>
