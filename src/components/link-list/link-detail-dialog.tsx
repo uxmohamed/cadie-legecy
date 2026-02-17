@@ -3,14 +3,7 @@
 import * as React from "react";
 import type { Link } from "@/features/links/types";
 import type { Space } from "@/types";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogOverlay,
-  DialogPortal,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { 
   IconX, 
   IconChevronUp, 
@@ -101,88 +94,86 @@ export function LinkDetailDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogPortal>
-        <DialogOverlay />
-        <DialogContent
-          showCloseButton={false}
-          className="fixed left-[50%] top-[50%] z-50 flex flex-col w-[95vw] h-[95vh] translate-x-[-50%] translate-y-[-50%] gap-0 border border-border bg-bg p-0 shadow-2xl transition-[scale,opacity,translate] duration-200 ease-in-out will-change-transform data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:rounded-2xl overflow-hidden"
-        >
-          {/* Accessible title - visually hidden */}
-          <DialogTitle className="sr-only">
-            {link.title}
-          </DialogTitle>
+    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Backdrop className="fixed inset-0 z-[120] bg-bg-scrim transition-all duration-200 data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:animate-in data-[open]:fade-in-0" />
+        <DialogPrimitive.Viewport className="fixed inset-0 z-[130] grid place-items-center p-2 sm:p-4">
+          <DialogPrimitive.Popup className="group/popup relative flex h-full w-full justify-center pointer-events-none">
+            <DialogPrimitive.Title className="sr-only">
+              {link.title}
+            </DialogPrimitive.Title>
 
-          <div className="flex flex-col md:flex-row h-full min-h-0">
-            {/* Left Panel: Browser Preview */}
-            <div className="flex-1 flex flex-col p-6 min-h-0 min-w-0 bg-bg-muted">
-              
-              {/* Browser Window Frame */}
-              <div className="flex-1 flex flex-col bg-bg-surface rounded-lg border border-border overflow-hidden shadow-sm relative">
-                <BrowserAddressBar link={link} />
-                
-                {/* Content Container with Spacing as requested */}
-                <div className="flex-1 p-4 md:p-8 overflow-hidden flex items-center justify-center bg-bg-surface">
-                   <div className="w-full h-full relative flex items-center justify-center">
-                      <PreviewPanel link={link} />
-                   </div>
+            <div className="pointer-events-auto relative flex flex-col w-[95vw] md:w-[92vw] max-w-[1200px] h-[95vh] max-h-[92vh] gap-0 border border-border bg-bg p-0 shadow-2xl transition-[scale,opacity,translate] duration-200 ease-in-out will-change-transform data-[closed]:animate-out data-[closed]:fade-out-0 data-[closed]:zoom-out-95 data-[open]:animate-in data-[open]:fade-in-0 data-[open]:zoom-in-95 sm:rounded-2xl overflow-hidden">
+              <div className="flex flex-col md:grid md:grid-cols-[minmax(0,1fr)_360px] lg:grid-cols-[minmax(0,1fr)_420px] h-full min-h-0">
+                {/* Left Panel: Browser Preview */}
+                <div className="flex-1 flex flex-col p-6 min-h-0 min-w-0 bg-bg-muted">
+                  {/* Browser Window Frame */}
+                  <div className="flex-1 flex flex-col bg-bg-surface rounded-lg border border-border overflow-hidden shadow-sm relative">
+                    <BrowserAddressBar link={link} />
+
+                    {/* Content Container with Spacing as requested */}
+                    <div className="flex-1 p-4 md:p-8 overflow-hidden flex items-center justify-center bg-bg-surface">
+                      <div className="w-full h-full relative flex items-center justify-center">
+                        <PreviewPanel link={link} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Panel: Sidebar */}
+                <div className="w-full md:w-auto md:min-w-[320px] flex flex-col h-[40%] md:h-full border-t md:border-t-0 md:border-l border-border bg-bg-elevated relative">
+                  <div className="flex-1 overflow-y-auto min-h-0 p-6 md:p-8 md:pt-14">
+                    <SidebarPanel
+                      link={link}
+                      onOpen={handleOpen}
+                      onCopy={() => onCopy?.(copyValue, isColor)}
+                      onPin={() => onPin?.(link.id)}
+                      onUnpin={() => onUnpin?.(link.id)}
+                      onRename={() => onRename?.(link)}
+                      onDelete={() => onDelete?.(link.id)}
+                      onUpdate={(updates) => onUpdate?.(link.id, updates)}
+                      spaces={spaces}
+                      linkSpaces={linkSpaces}
+                      onAddToSpace={async (spaceId) => { if (onAddToSpace) await onAddToSpace(link.id, spaceId); }}
+                      onRemoveFromSpace={async (spaceId) => { if (onRemoveFromSpace) await onRemoveFromSpace(link.id, spaceId); }}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Right Panel: Sidebar */}
-            <div className="w-full md:w-[320px] lg:w-[400px] flex-shrink-0 flex flex-col h-[40%] md:h-full border-t md:border-t-0 md:border-l border-border bg-bg-elevated relative">
-              <div className="flex-1 overflow-y-auto min-h-0 p-6 md:p-8 md:pt-14">
-                <SidebarPanel 
-                  link={link}
-                  onOpen={handleOpen}
-                  onCopy={() => onCopy?.(copyValue, isColor)}
-                  onPin={() => onPin?.(link.id)}
-                  onUnpin={() => onUnpin?.(link.id)}
-                  onRename={() => onRename?.(link)}
-                  onDelete={() => onDelete?.(link.id)}
-                  onUpdate={(updates) => onUpdate?.(link.id, updates)}
-                  spaces={spaces}
-                  linkSpaces={linkSpaces}
-                  onAddToSpace={async (spaceId) => { if (onAddToSpace) await onAddToSpace(link.id, spaceId); }}
-                  onRemoveFromSpace={async (spaceId) => { if (onRemoveFromSpace) await onRemoveFromSpace(link.id, spaceId); }}
-                />
+              {/* Navigation & Close Controls */}
+              <div className="absolute right-4 top-4 flex items-center gap-2">
+                {/* Navigation Arrows */}
+                <div className="flex items-center gap-1 bg-black/5 dark:bg-white/10 rounded-md p-1 backdrop-blur-sm">
+                  <button
+                    onClick={onPrev}
+                    disabled={!hasPrev}
+                    className="p-1 rounded-sm text-fg-muted hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Previous item (Up Arrow)"
+                  >
+                    <IconChevronUp className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={onNext}
+                    disabled={!hasNext}
+                    className="p-1 rounded-sm text-fg-muted hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Next item (Down Arrow)"
+                  >
+                    <IconChevronDown className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Close Button */}
+                <DialogPrimitive.Close className="rounded-md opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none bg-black/5 dark:bg-white/10 p-2">
+                  <IconX className="h-4 w-4" />
+                  <span className="sr-only">Close</span>
+                </DialogPrimitive.Close>
               </div>
             </div>
-          </div>
-
-          {/* Navigation & Close Controls */}
-          <div className="absolute right-4 top-4 flex items-center gap-2">
-            
-            {/* Navigation Arrows */}
-            <div className="flex items-center gap-1 bg-black/5 dark:bg-white/10 rounded-md p-1 backdrop-blur-sm">
-               <button 
-                  onClick={onPrev}
-                  disabled={!hasPrev}
-                  className="p-1 rounded-sm text-fg-muted hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                  aria-label="Previous item (Up Arrow)"
-               >
-                  <IconChevronUp className="w-4 h-4" />
-               </button>
-               <button 
-                  onClick={onNext}
-                  disabled={!hasNext}
-                  className="p-1 rounded-sm text-fg-muted hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                  aria-label="Next item (Down Arrow)"
-               >
-                  <IconChevronDown className="w-4 h-4" />
-               </button>
-            </div>
-
-            {/* Close Button */}
-            <DialogClose className="rounded-md opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground bg-black/5 dark:bg-white/10 p-2">
-              <IconX className="h-4 w-4" />
-              <span className="sr-only">Close</span>
-            </DialogClose>
-          </div>
-        </DialogContent>
-      </DialogPortal>
-    </Dialog>
+          </DialogPrimitive.Popup>
+        </DialogPrimitive.Viewport>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }
 

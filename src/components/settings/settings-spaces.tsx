@@ -430,8 +430,8 @@ export function SettingsSpaces() {
 
           {autoForwardingEnabled && (
             <div className="rounded-md border border-border/70 bg-bg-subtle/40 p-3 space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <div>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
                   <p className="text-xs font-medium text-fg">Advanced routing rules</p>
                   <p className="text-xs text-fg-muted">
                     Add optional IF / OR / AND conditions. These rules run before AI matching.
@@ -452,15 +452,15 @@ export function SettingsSpaces() {
                 <div className="space-y-2">
                   {conditions.map((condition, index) => (
                     <div key={condition.id} className="flex flex-col gap-2 rounded-md border border-border/60 bg-bg p-2">
-                      <div className="flex items-center gap-2 text-xs text-fg-muted">
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-fg-muted min-w-0">
                         {index === 0 ? <span className="font-medium text-fg">IF</span> : (
                           <Select
                             value={condition.join}
                             onValueChange={(value) => handleSaveConditionField(condition.id, { join: value as AutoForwardingJoinOperator })}
                             disabled={isSavingAutoForwarding}
                           >
-                            <SelectTrigger className="h-7 w-[84px] text-xs">
-                              <SelectValue />
+                            <SelectTrigger className="h-7 w-[84px] text-xs min-w-0">
+                              <SelectValue className="truncate" />
                             </SelectTrigger>
                             <SelectContent>
                               {JOIN_OPTIONS.map((option) => (
@@ -479,8 +479,8 @@ export function SettingsSpaces() {
                           }
                           disabled={isSavingAutoForwarding}
                         >
-                          <SelectTrigger className="h-7 w-[160px] text-xs">
-                            <SelectValue />
+                          <SelectTrigger className="h-7 w-[180px] max-w-[240px] text-xs min-w-0">
+                            <SelectValue className="truncate" />
                           </SelectTrigger>
                           <SelectContent>
                             {spaces.slice(1).map((space) => (
@@ -490,14 +490,14 @@ export function SettingsSpaces() {
                         </Select>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2 min-w-0">
                         <Select
                           value={condition.field}
                           onValueChange={(value) => handleSaveConditionField(condition.id, { field: value as AutoForwardingField })}
                           disabled={isSavingAutoForwarding}
                         >
-                          <SelectTrigger className="h-8 w-[140px] text-xs">
-                            <SelectValue />
+                          <SelectTrigger className="h-8 w-[140px] text-xs min-w-0">
+                            <SelectValue className="truncate" />
                           </SelectTrigger>
                           <SelectContent>
                             {FIELD_OPTIONS.map((option) => (
@@ -511,8 +511,8 @@ export function SettingsSpaces() {
                           onValueChange={(value) => handleSaveConditionField(condition.id, { operator: value as AutoForwardingOperator })}
                           disabled={isSavingAutoForwarding}
                         >
-                          <SelectTrigger className="h-8 w-[120px] text-xs">
-                            <SelectValue />
+                          <SelectTrigger className="h-8 w-[120px] text-xs min-w-0">
+                            <SelectValue className="truncate" />
                           </SelectTrigger>
                           <SelectContent>
                             {OPERATOR_OPTIONS.map((option) => (
@@ -531,7 +531,7 @@ export function SettingsSpaces() {
                             }
                           }}
                           placeholder="instagram.com"
-                          className="h-8 text-xs"
+                          className="h-8 text-xs min-w-[160px] flex-1"
                           disabled={isSavingAutoForwarding}
                         />
 
