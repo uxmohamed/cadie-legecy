@@ -98,6 +98,18 @@ export const rateLimitPermanentDelete = new Ratelimit({
 });
 
 /**
+ * Rate limiter for CSV export operations
+ * Limit: 10 requests per minute
+ * Used for: /api/exports/links/csv
+ */
+export const rateLimitExports = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(10, "1 m"),
+  analytics: true,
+  prefix: "ratelimit:exports",
+});
+
+/**
  * Helper to get identifier for rate limiting
  * Uses user ID if authenticated, otherwise IP address
  */

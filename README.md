@@ -375,6 +375,21 @@ If you are deploying bookmark import, complete these additional steps:
 
 Detailed checklist: `docs/bookmark-import-v0-rollout.md`.
 
+### Link Export V0 (Production Setup)
+
+Link export is available at:
+
+- `GET /api/exports/links/csv`
+
+Current behavior:
+
+- Exports active links only (`is_deleted=false`, `is_archived=false`)
+- Returns a single CSV download
+- Includes full `links` row mirror columns
+- Appends `space_ids_json` and `space_names_json` columns for relationship export
+
+Detailed checklist: `docs/link-export-v0-rollout.md`.
+
 ## 🗺️ Roadmap
 
 ### Planned Features

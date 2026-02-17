@@ -8,7 +8,8 @@ import {
   IconInfoCircleFilled,
   IconPuzzleFilled,
   IconCapsuleHorizontalFilled,
-  IconDownload,
+  IconFileDownloadFilled,
+  IconFileUploadFilled,
 } from "@tabler/icons-react";
 
 import {
@@ -33,6 +34,7 @@ import { SettingsAppearance } from "@/components/settings/settings-appearance";
 import { SettingsAbout } from "@/components/settings/settings-about";
 import { SettingsExtensions } from "@/components/settings/settings-extensions";
 import { SettingsImport } from "@/components/settings/settings-import";
+import { SettingsExport } from "@/components/settings/settings-export";
 
 type SettingsSection =
   | "profile"
@@ -40,6 +42,7 @@ type SettingsSection =
   | "appearance"
   | "extensions"
   | "import"
+  | "export"
   | "about";
 
 const navItems = [
@@ -47,7 +50,8 @@ const navItems = [
   { id: "spaces" as const, name: "Spaces", icon: IconCapsuleHorizontalFilled },
   { id: "appearance" as const, name: "Appearance", icon: IconPaletteFilled },
   { id: "extensions" as const, name: "Extensions", icon: IconPuzzleFilled },
-  { id: "import" as const, name: "Import", icon: IconDownload },
+  { id: "import" as const, name: "Import", icon: IconFileDownloadFilled },
+  { id: "export" as const, name: "Export", icon: IconFileUploadFilled },
   { id: "about" as const, name: "About", icon: IconInfoCircleFilled },
 ];
 
@@ -128,6 +132,7 @@ export function SettingsDialog({ user, open, onOpenChange, onProfileUpdate }: Se
               {activeSection === "appearance" && <SettingsAppearance />}
               {activeSection === "extensions" && <SettingsExtensions />}
               {activeSection === "import" && <SettingsImport />}
+              {activeSection === "export" && <SettingsExport />}
               {activeSection === "about" && <SettingsAbout />}
             </div>
           </main>

@@ -3,3 +3,4 @@ export { SettingsSpaces } from "./settings-spaces";
 export { SettingsAppearance } from "./settings-appearance";
 export { SettingsAbout } from "./settings-about";
 export { SettingsImport } from "./settings-import";
+export { SettingsExport } from "./settings-export";

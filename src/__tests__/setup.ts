@@ -31,6 +31,38 @@ if (typeof global.MessageChannel === 'undefined') {
   global.MessageChannel = MessageChannel as unknown as typeof global.MessageChannel;
 }
 
+if (typeof global.Request === "undefined") {
+  class MockRequest {
+    url: string;
+    headers: Headers;
+    method: string;
+
+    constructor(input: string, init?: { headers?: HeadersInit; method?: string }) {
+      this.url = input;
+      this.headers = new Headers(init?.headers);
+      this.method = init?.method || "GET";
+    }
+  }
+
+  global.Request = MockRequest as unknown as typeof global.Request;
+}
+
+if (typeof global.Response === "undefined") {
+  class MockResponse {
+    headers: Headers;
+    status: number;
+    ok: boolean;
+
+    constructor(_body?: unknown, init?: { headers?: HeadersInit; status?: number }) {
+      this.headers = new Headers(init?.headers);
+      this.status = init?.status ?? 200;
+      this.ok = this.status >= 200 && this.status < 300;
+    }
+  }
+
+  global.Response = MockResponse as unknown as typeof global.Response;
+}
+
 // =============================================================================
 // Mock: Supabase Client
 // =============================================================================
@@ -73,6 +105,7 @@ jest.mock('@/lib/supabase/client', () => ({
 
 jest.mock('@/lib/supabase/server', () => ({
   createClient: jest.fn(() => mockSupabaseClient),
+  createAdminClient: jest.fn(() => mockSupabaseClient),
 }));
 
 // =============================================================================
