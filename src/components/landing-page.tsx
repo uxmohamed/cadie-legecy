@@ -17,12 +17,20 @@ import {
   DialogTrigger,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useState, useEffect } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Footer } from "@/components/footer";
 import type { ChangelogEntry } from "@/types/changelog";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 
 function FaqItem({ question, children, isOpen, onToggle }: { question: string; children: React.ReactNode; isOpen: boolean; onToggle: () => void }) {
+  const contentRef = useRef<HTMLParagraphElement>(null);
+  const [contentHeight, setContentHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    if (!contentRef.current) return;
+    setContentHeight(contentRef.current.scrollHeight);
+  }, [children, isOpen]);
+
   return (
     <div className="bg-bg-field-light rounded-xl transition-colors duration-150">
       <button
@@ -31,11 +39,14 @@ function FaqItem({ question, children, isOpen, onToggle }: { question: string; c
       >
         <span className="text-sm font-medium text-fg">{question}</span>
         <IconChevronDown 
-          className={`size-5 text-[var(--brand)] shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
+          className={`size-5 text-[var(--brand)] shrink-0 transition-transform duration-200 ease-out motion-reduce:transition-none ${isOpen ? 'rotate-180' : ''}`} 
         />
       </button>
-      <div className={`overflow-hidden transition-[max-height] duration-200 ${isOpen ? 'max-h-40' : 'max-h-0'}`}>
-        <p className="px-5 pb-4 text-sm text-fg-muted pr-12">
+      <div
+        className="overflow-hidden transition-[height,opacity] duration-200 ease-out motion-reduce:transition-none"
+        style={{ height: isOpen ? `${contentHeight}px` : "0px", opacity: isOpen ? 1 : 0 }}
+      >
+        <p ref={contentRef} className="px-5 pb-4 text-sm text-fg-muted pr-12">
           {children}
         </p>
       </div>
@@ -75,7 +86,7 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
   return (
     <div className="flex min-h-screen flex-col bg-bg selection:bg-brand/10 selection:text-brand">
       {/* Header */}
-      <header className={`sticky top-0 z-50 transition-all duration-200 ${isScrolled ? "bg-bg/90 backdrop-blur-md border-b border-border" : "bg-transparent"}`}>
+      <header className={`sticky top-0 z-50 transition-[background-color,backdrop-filter,border-color] duration-200 ease-out motion-reduce:transition-none ${isScrolled ? "bg-bg/90 backdrop-blur-md border-b border-border" : "bg-transparent"}`}>
         <div className="max-w-5xl mx-auto relative">
           <div className="p-3 sm:p-4 md:p-3 flex items-center justify-between relative">
             {/* Logo */}
@@ -147,7 +158,7 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
                 </SheetTrigger>
                 <SheetContent 
                   side="right" 
-                  className="w-full !max-w-none p-0 inset-y-0 right-0 left-0 !transition-[transform,opacity] !duration-[400ms] ease-in-out data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:animate-in data-[state=open]:slide-in-from-right" 
+                  className="w-full !max-w-none p-0 inset-y-0 right-0 left-0 !transition-[transform,opacity] !ease-out data-[state=closed]:!duration-[180ms] data-[state=open]:!duration-[240ms] motion-reduce:!transition-none motion-reduce:animate-none data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:animate-in data-[state=open]:slide-in-from-right" 
                   showCloseButton={false}
                 >
                   <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
@@ -248,7 +259,7 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
                 render={
                   <Button
                     size="lg"
-                    className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-8 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-bg-muted text-fg hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
+                    className="w-full sm:w-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-[background-color,color,box-shadow,transform,opacity] duration-120 ease-out motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-10 px-8 py-3 text-base rounded-lg [&_svg:not([class*='size-'])]:size-4.5 bg-bg-muted text-fg hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
                   />
                 }
               >

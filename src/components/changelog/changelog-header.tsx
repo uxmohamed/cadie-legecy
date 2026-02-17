@@ -35,12 +35,12 @@ export function ChangelogHeader() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <Button className="relative text-fg-muted hover:text-fg inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2">
+              <Button className="relative text-fg-muted hover:text-fg inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-[background-color,color,box-shadow,transform,opacity] duration-120 ease-out motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2">
                 Extension
               </Button>
             </a>
             <Link href="/changelog">
-              <Button className="relative text-fg-muted hover:text-fg inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2">
+              <Button className="relative text-fg-muted hover:text-fg inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-[background-color,color,box-shadow,transform,opacity] duration-120 ease-out motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2">
                 Changelog
               </Button>
             </Link>
@@ -49,7 +49,7 @@ export function ChangelogHeader() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <Button className="relative text-fg-muted hover:text-fg inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2">
+              <Button className="relative text-fg-muted hover:text-fg inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-[background-color,color,box-shadow,transform,opacity] duration-120 ease-out motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-transparent hover:bg-bg-hover focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2">
                 X (Twitter)
               </Button>
             </a>
@@ -63,13 +63,13 @@ export function ChangelogHeader() {
                 <div className="w-[100px]" />
               ) : user ? (
                 <Link href="/">
-                  <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-9 px-3.5 py-2 text-sm rounded-lg bg-[var(--btn-primary)] text-fg-on-accent hover:bg-[var(--btn-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--btn-primary)] focus-visible:ring-offset-2">
+                  <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-[background-color,color,box-shadow,transform,opacity] duration-120 ease-out motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-9 px-3.5 py-2 text-sm rounded-lg bg-[var(--btn-primary)] text-fg-on-accent hover:bg-[var(--btn-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--btn-primary)] focus-visible:ring-offset-2">
                     Open app
                   </Button>
                 </Link>
               ) : (
                 <Link href="/auth">
-                  <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-9 px-3.5 py-2 text-sm rounded-lg bg-[var(--btn-primary)] text-fg-on-accent hover:bg-[var(--btn-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--btn-primary)] focus-visible:ring-offset-2">
+                  <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-[background-color,color,box-shadow,transform,opacity] duration-120 ease-out motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-9 px-3.5 py-2 text-sm rounded-lg bg-[var(--btn-primary)] text-fg-on-accent hover:bg-[var(--btn-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--btn-primary)] focus-visible:ring-offset-2">
                     Get Started
                   </Button>
                 </Link>
@@ -87,7 +87,7 @@ export function ChangelogHeader() {
               </SheetTrigger>
               <SheetContent 
                 side="right" 
-                className="w-full !max-w-none p-0 inset-y-0 right-0 left-0 !transition-all !duration-[400ms] ease-in-out data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:animate-in data-[state=open]:slide-in-from-right" 
+                className="w-full !max-w-none p-0 inset-y-0 right-0 left-0 !transition-[transform,opacity] !ease-out data-[state=closed]:!duration-[180ms] data-[state=open]:!duration-[240ms] motion-reduce:!transition-none motion-reduce:animate-none data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:animate-in data-[state=open]:slide-in-from-right" 
                 showCloseButton={false}
               >
                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
@@ -102,13 +102,13 @@ export function ChangelogHeader() {
                         <div className="w-[100px]" />
                       ) : user ? (
                         <Link href="/" onClick={() => setIsMenuOpen(false)}>
-                          <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-[var(--btn-primary)] text-fg-on-accent hover:bg-[var(--btn-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--btn-primary)] focus-visible:ring-offset-2">
+                          <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-[background-color,color,box-shadow,transform,opacity] duration-120 ease-out motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-[var(--btn-primary)] text-fg-on-accent hover:bg-[var(--btn-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--btn-primary)] focus-visible:ring-offset-2">
                             Open app
                           </Button>
                         </Link>
                       ) : (
                         <Link href="/auth" onClick={() => setIsMenuOpen(false)}>
-                          <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-all duration-120 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-[var(--btn-primary)] text-fg-on-accent hover:bg-[var(--btn-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--btn-primary)] focus-visible:ring-offset-2">
+                          <Button className="relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-[background-color,color,box-shadow,transform,opacity] duration-120 ease-out motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 min-h-8 px-3 py-1.5 rounded-md bg-[var(--btn-primary)] text-fg-on-accent hover:bg-[var(--btn-primary-hover)] focus-visible:ring-2 focus-visible:ring-[var(--btn-primary)] focus-visible:ring-offset-2">
                             Get Started
                           </Button>
                         </Link>

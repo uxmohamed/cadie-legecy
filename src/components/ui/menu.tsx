@@ -65,7 +65,7 @@ const DropdownMenuSubContent = React.forwardRef<
         ref={ref}
         style={{ ...style, marginTop: "-8px" }}
         className={cn(
-          "overlay-blur z-[90] min-w-[10rem] max-w-[224px] overflow-hidden rounded-[14px] border-[var(--overlay-border)] p-2 text-[var(--overlay-text-primary)] data-[open]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:fade-in-0 data-[closed]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+          "overlay-blur z-[90] min-w-[10rem] max-w-[224px] overflow-hidden rounded-[14px] border-[var(--overlay-border)] p-2 text-[var(--overlay-text-primary)] motion-reduce:animate-none motion-reduce:transition-none data-[open]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:fade-in-0 data-[closed]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
           className,
         )}
         {...props}
@@ -100,7 +100,7 @@ const DropdownMenuContent = React.forwardRef<
       <MenuPrimitive.Popup
         ref={ref}
         className={cn(
-          "overlay-blur z-[90] min-w-[8rem] overflow-hidden rounded-[18px] p-2 text-[var(--overlay-text-primary)] data-[open]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:fade-in-0 data-[closed]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+          "overlay-blur z-[90] min-w-[8rem] overflow-hidden rounded-[18px] p-2 text-[var(--overlay-text-primary)] motion-reduce:animate-none motion-reduce:transition-none data-[open]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:fade-in-0 data-[closed]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
           className,
         )}
         {...props}

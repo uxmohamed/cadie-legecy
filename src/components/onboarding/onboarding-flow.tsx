@@ -56,10 +56,18 @@ export function OnboardingFlow({ user, onComplete }: OnboardingFlowProps) {
     return false;
   }, [theme, mounted]);
 
-  // Detect reduced motion preference
-  const prefersReducedMotion = React.useMemo(() => {
-    if (typeof window === "undefined") return false;
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const [prefersReducedMotion, setPrefersReducedMotion] = React.useState(false);
+
+  // Detect reduced motion preference and react to runtime changes
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = (matches: boolean) => setPrefersReducedMotion(matches);
+
+    update(mq.matches);
+    const handler = (event: MediaQueryListEvent) => update(event.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, []);
 
   // Memoize transitions

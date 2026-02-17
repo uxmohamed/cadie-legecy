@@ -50,22 +50,31 @@ export function KeyboardShortcuts() {
   useEffect(() => {
     if (prefersReducedMotion) return;
 
-    const interval = setInterval(() => {
+    const timeoutIds = new Set<number>();
+    const scheduleTimeout = (callback: () => void, delay: number) => {
+      const timeoutId = window.setTimeout(() => {
+        timeoutIds.delete(timeoutId);
+        callback();
+      }, delay);
+      timeoutIds.add(timeoutId);
+    };
+
+    const intervalId = window.setInterval(() => {
       // Phase 1: Start fade out and hide text
       setIsTransitioning(true);
       setShowText(false);
       
-      setTimeout(() => {
+      scheduleTimeout(() => {
         // Phase 2: Change shortcut and show it (no press, no text yet)
         setActiveIndex((prev) => (prev + 1) % shortcuts.length);
         setIsPressed(false);
         setIsTransitioning(false);
         
-        setTimeout(() => {
+        scheduleTimeout(() => {
           // Phase 3: Show press animation
           setIsPressed(true);
           
-          setTimeout(() => {
+          scheduleTimeout(() => {
             // Phase 4: Release press and show text
             setIsPressed(false);
             setShowText(true);
@@ -74,7 +83,11 @@ export function KeyboardShortcuts() {
       }, 400); // Wait for fade out
     }, 3500); // Total cycle time
 
-    return () => clearInterval(interval);
+    return () => {
+      window.clearInterval(intervalId);
+      timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
+      timeoutIds.clear();
+    };
   }, [prefersReducedMotion]);
 
   const currentShortcut = shortcuts[activeIndex];
@@ -100,7 +113,7 @@ export function KeyboardShortcuts() {
                   border border-[#E5E5E5] dark:border-[#404040]
                   shadow-[0_4px_0_#E5E5E5,0_4px_8px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.5)]
                   dark:shadow-[0_4px_0_#111111,0_4px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.1)]
-                  transform transition-all duration-100 ease-out
+                  transform transition-[transform,box-shadow] duration-100 ease-out motion-reduce:transition-none
                   ${isPressed
                     ? 'translate-y-[4px] shadow-none'
                     : 'translate-y-0'}

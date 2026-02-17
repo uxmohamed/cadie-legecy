@@ -340,7 +340,7 @@ export function AuthForm() {
                           required
                           disabled={loading}
                           autoFocus
-                          className="w-full px-4 py-4 bg-bg-input border border-transparent text-fg text-[14px] font-medium rounded-[12px] outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[#2783de] placeholder:text-fg-subtle disabled:opacity-50"
+                          className="w-full px-4 py-4 bg-bg-input border border-transparent text-fg text-[14px] font-medium rounded-[12px] outline-none transition-[border-color,box-shadow,opacity] duration-150 ease-out motion-reduce:transition-none focus:border-transparent focus:ring-2 focus:ring-[#2783de] placeholder:text-fg-subtle disabled:opacity-50"
                         />
                       </div>
                       {error && (

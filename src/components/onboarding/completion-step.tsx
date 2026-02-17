@@ -120,9 +120,28 @@ export function CompletionStep({
     }
   }, [skipAnimation, onComplete]);
 
+  const [prefersReducedMotion, setPrefersReducedMotion] = React.useState(false);
+
+  // Detect reduced motion preference and react to runtime changes
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = (matches: boolean) => setPrefersReducedMotion(matches);
+
+    update(mq.matches);
+    const handler = (event: MediaQueryListEvent) => update(event.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
   // Animation sequence
   React.useEffect(() => {
     if (skipAnimation) return;
+    if (prefersReducedMotion) {
+      setLogoFillColor(isDarkMode ? "var(--fg-inverse)" : "var(--fg)");
+      setShowContent(true);
+      return;
+    }
 
     // Animate logo color during layout transition (starts immediately)
     // Light mode: gray → black, Dark mode: gray → white
@@ -140,17 +159,11 @@ export function CompletionStep({
       clearTimeout(logoColorTimer);
       clearTimeout(contentTimer);
     };
-  }, [skipAnimation, config, isDarkMode]);
+  }, [skipAnimation, config, isDarkMode, prefersReducedMotion]);
 
   const handleBegin = React.useCallback(() => {
     onComplete();
   }, [onComplete]);
-
-  // Detect reduced motion preference
-  const prefersReducedMotion = React.useMemo(() => {
-    if (typeof window === "undefined") return false;
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  }, []);
 
   // Get easing curves
   const textEasing = COMPLETION_EASING_CURVES[config.textEasing];
@@ -201,8 +214,8 @@ export function CompletionStep({
             {taglineWords.map((word, index) => (
               <motion.span
                 key={index}
-                initial={prefersReducedMotion ? { opacity: 1, y: 0, filter: "none" } : { opacity: 0, y: config.textSlideDistance, filter: `blur(${config.textBlurAmount}px)` }}
-                animate={showContent ? { opacity: 1, y: 0, filter: "blur(0px)" } : {}}
+                initial={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: config.textSlideDistance }}
+                animate={showContent ? { opacity: 1, y: 0 } : {}}
                 transition={prefersReducedMotion ? { duration: 0 } : {
                   duration: config.textDuration / 1000,
                   delay: (index * config.textStagger) / 1000,
@@ -220,19 +233,16 @@ export function CompletionStep({
 
           {/* Button with delayed fade + slide + blur */}
           <motion.div
-            initial={prefersReducedMotion ? { opacity: 1, y: 0, filter: "none" } : {
+            initial={prefersReducedMotion ? { opacity: 1, y: 0 } : {
               opacity: 0,
               y: config.buttonSlideDistance,
-              filter: `blur(${config.buttonBlurAmount}px)`,
             }}
             animate={showContent ? {
               opacity: 1,
               y: 0,
-              filter: "blur(0px)",
             } : {
               opacity: 0,
               y: config.buttonSlideDistance,
-              filter: `blur(${config.buttonBlurAmount}px)`,
             }}
             transition={prefersReducedMotion ? { duration: 0 } : {
               opacity: {
@@ -241,11 +251,6 @@ export function CompletionStep({
                 ease: buttonEasing,
               },
               y: {
-                duration: config.buttonDuration / 1000,
-                delay: buttonDelaySeconds,
-                ease: buttonEasing,
-              },
-              filter: {
                 duration: config.buttonDuration / 1000,
                 delay: buttonDelaySeconds,
                 ease: buttonEasing,

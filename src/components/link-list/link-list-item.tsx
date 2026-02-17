@@ -156,7 +156,8 @@ export function LinkListItem({
         onKeyDown={handleKeyDown}
         onContextMenu={(e) => onContextMenu(e, link)}
         className={cn(
-          "group relative flex-1 grid grid-cols-[1fr_80px] sm:grid-cols-[1fr_120px] md:grid-cols-[1fr_150px] ease-in will-change-transform items-center gap-1 rounded-lg py-4 px-2 select-none cursor-pointer transition-transform",
+          "group relative flex-1 grid grid-cols-[1fr_80px] sm:grid-cols-[1fr_120px] md:grid-cols-[1fr_150px] ease-in items-center gap-1 rounded-lg py-4 px-2 select-none cursor-pointer transition-transform",
+          isDragging && "will-change-transform",
           isEditing
             ? "bg-[var(--grey-50)]"
             : isSelected

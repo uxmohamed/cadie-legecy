@@ -17,7 +17,7 @@ const AlertDialogBackdrop = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Backdrop
     className={cn(
-      "fixed inset-0 z-[140] bg-bg-scrim transition-all duration-200 ease-out data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:animate-in data-[open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+      "fixed inset-0 z-[140] bg-bg-scrim transition-opacity duration-200 ease-out motion-reduce:animate-none motion-reduce:transition-none data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:animate-in data-[open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
       className,
     )}
     {...props}
@@ -38,7 +38,7 @@ const AlertDialogPopup = React.forwardRef<
         <AlertDialogPrimitive.Popup
           ref={ref}
           className={cn(
-            "sm:-tranneutral-y-[calc(1.25rem*var(--nested-dialogs))] row-start-2 z-[150] grid w-full min-w-0 origin-top gap-4 border border-border bg-bg-elevated bg-clip-padding p-6 text-fg shadow-lg transition-[scale,opacity,translate] duration-200 ease-in-out will-change-transform data-[closed]:animate-out data-[closed]:fade-out-0 data-[closed]:zoom-out-95 data-[open]:animate-in data-[open]:fade-in-0 data-[open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 max-sm:overflow-y-auto max-sm:border-none max-sm:opacity-[calc(1-min(var(--nested-dialogs),1))] sm:max-w-lg sm:scale-[calc(1-0.1*var(--nested-dialogs))] sm:rounded-2xl",
+            "sm:-tranneutral-y-[calc(1.25rem*var(--nested-dialogs))] row-start-2 z-[150] grid w-full min-w-0 origin-top gap-4 border border-border bg-bg-elevated bg-clip-padding p-6 text-fg shadow-lg transition-[scale,opacity,translate] duration-200 ease-out motion-reduce:animate-none motion-reduce:transition-none data-[closed]:animate-out data-[closed]:fade-out-0 data-[closed]:zoom-out-95 data-[open]:animate-in data-[open]:fade-in-0 data-[open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 max-sm:overflow-y-auto max-sm:border-none max-sm:opacity-[calc(1-min(var(--nested-dialogs),1))] sm:max-w-lg sm:scale-[calc(1-0.1*var(--nested-dialogs))] sm:rounded-2xl",
             "relative before:pointer-events-none before:absolute before:inset-0 before:shadow-[0_1px_--theme(--color-black/4%)] max-sm:before:hidden sm:before:rounded-[calc(var(--radius-2xl)-1px)]",
             className,
           )}

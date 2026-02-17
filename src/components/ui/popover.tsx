@@ -42,7 +42,7 @@ const PopoverPopup = React.forwardRef<
         <PopoverPrimitive.Popup
           ref={ref}
           className={cn(
-            "overlay-blur z-[80] w-72 rounded-[20px] border-border-overlay bg-bg-overlay p-4 text-fg-on-overlay shadow-md outline-none data-[open]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:fade-in-0 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[closed]:zoom-out-95 data-[open]:zoom-in-95 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+            "overlay-blur z-[80] w-72 rounded-[20px] border-border-overlay bg-bg-overlay p-4 text-fg-on-overlay shadow-md outline-none motion-reduce:animate-none motion-reduce:transition-none data-[open]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:fade-in-0 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[closed]:zoom-out-95 data-[open]:zoom-in-95 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
             tooltipStyle &&
               "w-fit text-balance rounded-[18px] text-xs shadow-black/5 shadow-md",
             className,

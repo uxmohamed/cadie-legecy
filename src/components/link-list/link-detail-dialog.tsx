@@ -96,14 +96,14 @@ export function LinkDetailDialog({
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Backdrop className="fixed inset-0 z-[120] min-h-dvh bg-bg-scrim opacity-70 backdrop-blur-[2px] transition-[opacity,backdrop-filter] duration-150 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0" />
+        <DialogPrimitive.Backdrop className="fixed inset-0 z-[120] min-h-dvh bg-bg-scrim opacity-70 backdrop-blur-[2px] transition-[opacity,backdrop-filter] duration-220 ease-out motion-reduce:transition-none data-[starting-style]:opacity-0 data-[ending-style]:opacity-0" />
         <DialogPrimitive.Viewport className="fixed inset-0 z-[130] grid place-items-center p-2 sm:p-4 xl:py-6">
-          <DialogPrimitive.Popup className="group/popup relative flex h-full w-full justify-center pointer-events-none transition-opacity duration-150 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0">
+          <DialogPrimitive.Popup className="group/popup relative flex h-full w-full justify-center pointer-events-none transition-opacity duration-220 ease-out motion-reduce:transition-none data-[starting-style]:opacity-0 data-[ending-style]:opacity-0">
             <DialogPrimitive.Title className="sr-only">
               {link.title}
             </DialogPrimitive.Title>
 
-            <div className="pointer-events-auto relative box-border flex flex-col w-[95vw] md:w-[92vw] max-w-[1200px] h-[95vh] max-h-[92vh] gap-0 border border-border bg-bg p-0 shadow-2xl outline outline-1 outline-border/60 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-data-[starting-style]/popup:scale-110 sm:rounded-2xl overflow-hidden">
+            <div className="pointer-events-auto relative box-border flex flex-col w-[95vw] md:w-[92vw] max-w-[1200px] h-[95vh] max-h-[92vh] gap-0 border border-border bg-bg p-0 shadow-2xl outline outline-1 outline-border/60 transition-transform duration-220 ease-out motion-reduce:transition-none group-data-[starting-style]/popup:scale-110 sm:rounded-2xl overflow-hidden">
               <div className="flex flex-col md:grid md:grid-cols-[minmax(0,1fr)_360px] lg:grid-cols-[minmax(0,1fr)_420px] h-full min-h-0">
                 {/* Left Panel: Browser Preview */}
                 <div className="flex-1 flex flex-col p-6 min-h-0 min-w-0 bg-bg-muted">
