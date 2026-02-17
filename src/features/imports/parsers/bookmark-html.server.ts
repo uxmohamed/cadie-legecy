@@ -1,5 +1,4 @@
 import { load } from "cheerio";
-import type { Element } from "domhandler";
 import type { BookmarkImportLink, BookmarkPreview } from "@/features/imports/types/import.types";
 
 interface ParseAccumulator {
@@ -40,17 +39,17 @@ function normalizeTitle(input: string, fallbackUrl: string): string {
 
 function processContainer(
   $: ReturnType<typeof load>,
-  element: Element,
+  element: unknown,
   folderStack: string[],
   acc: ParseAccumulator
 ): void {
-  const children = $(element)
+  const children = $(element as never)
     .contents()
     .toArray()
-    .filter((node): node is Element => node.type === "tag");
+    .filter((node) => (node as { type?: string }).type === "tag");
 
   for (let i = 0; i < children.length; i++) {
-    const node = children[i];
+    const node = children[i] as any;
     const tag = node.tagName?.toLowerCase();
 
     if (!tag) continue;
@@ -94,11 +93,11 @@ function processContainer(
           continue;
         }
 
-        const next = children[i + 1];
+        const next = children[i + 1] as any;
         const nextTag = next?.tagName?.toLowerCase();
 
         if (next && (nextTag === "dl" || nextTag === "p")) {
-          processContainer($, next as Element, [...folderStack, folderName], acc);
+          processContainer($, next, [...folderStack, folderName], acc);
           i += 1;
           continue;
         }

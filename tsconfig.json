@@ -38,7 +38,8 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".contentlayer/generated.d.ts",
-    "**/*.mts"
+    "**/*.mts",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
