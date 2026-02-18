@@ -2,7 +2,7 @@
  * Options page - Simple connect/disconnect flow
  */
 
-import { getSettings, clearSettings } from "../lib/storage";
+import { getSettings, getCadieUrl, clearSettings } from "../lib/storage";
 
 // DOM elements
 const notConnectedView = document.getElementById("notConnectedView") as HTMLDivElement;
@@ -41,7 +41,8 @@ async function handleConnect() {
     connectBtn.disabled = true;
 
     const extensionId = chrome.runtime.id;
-    const authUrl = `https://cadie.app/extension/authorize?extensionId=${extensionId}`;
+    const cadieUrl = await getCadieUrl();
+    const authUrl = `${cadieUrl}/extension/authorize?extensionId=${extensionId}`;
 
     // Open authorization page
     await chrome.tabs.create({ url: authUrl });

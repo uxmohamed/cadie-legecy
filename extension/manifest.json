@@ -15,7 +15,8 @@
   ],
   "host_permissions": [
     "https://cadie.app/*",
-    "http://localhost:3000/*"
+    "http://localhost/*",
+    "http://127.0.0.1/*"
   ],
   "content_scripts": [
     {

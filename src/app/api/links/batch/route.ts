@@ -1,22 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { canonicalizeUrl } from "@/lib/canonicalize";
-import { enqueueBatchMetadataEnrichment, enqueueBatchAITagging, enqueueBatchAIVisionTagging } from "@/lib/job-queue";
+import { canonicalizeUrl, resolveColorMetadata } from "@/lib/canonicalize";
+import {
+  enqueueBatchMetadataEnrichment,
+  enqueueBatchAITagging,
+  enqueueBatchAIVisionTagging,
+  isJobQueueConfigured,
+} from "@/lib/job-queue";
 import { MetadataService } from "@/features/links/services/metadata.service";
-import { AITaggingService } from "@/features/links/services/ai-tagging.service";
 import { rateLimitLinks, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 import { validateRequestBody } from "@/lib/validation/validate";
 import { batchActionSchema } from "@/lib/validation/link.schemas";
 import { withRetry, supabaseRetryPredicate } from "@/lib/retry";
-import { resolveColorMetadata } from "@/lib/canonicalize";
 
 /**
  * Maximum number of items per batch operation
  * Prevents resource exhaustion and ensures reasonable response times
  */
 const MAX_BATCH_SIZE = 100;
-const EAGER_ENRICHMENT_LIMIT = 40;
-const AI_ENRICHMENT_CONCURRENCY = 4;
 
 /**
  * Extract domain from URL
@@ -32,107 +33,107 @@ function extractDomain(url: string): string {
 interface CreatedLink {
   id: string;
   url: string;
-  title?: string;
   content_type?: string;
-  favicon_url?: string;
-  description?: string;
-  og_image_url?: string;
-  domain?: string;
-  site_name?: string | null;
-  ai_tags?: string[] | null;
-  content_text?: string | null;
 }
 
-type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
-
-async function runWithConcurrency<T>(
-  items: T[],
-  limit: number,
-  worker: (item: T) => Promise<void>
-): Promise<void> {
-  if (items.length === 0) return;
-
-  const queue = [...items];
-  const workers = Array.from(
-    { length: Math.min(limit, items.length) },
-    async () => {
-      while (queue.length > 0) {
-        const next = queue.shift();
-        if (!next) return;
-        await worker(next);
-      }
-    }
-  );
-
-  await Promise.all(workers);
+interface LinkInsertPayload {
+  user_id: string;
+  url: string;
+  clean_url: string;
+  title: string;
+  content_type: "url" | "color" | "image";
+  favicon_url: string | null;
+  color_value: string | null;
+  og_image_url: string | null;
+  domain: string;
+  is_deleted: boolean;
+  is_archived: boolean;
+  is_pinned: boolean;
+  fetch_status: "pending" | "success";
+  fetched_at: string | null;
 }
 
-async function refreshCreatedLinks(
-  supabase: SupabaseServerClient,
-  links: CreatedLink[]
-): Promise<CreatedLink[]> {
-  if (links.length === 0) return links;
-
-  const ids = links.map((link) => link.id);
-  const { data: freshLinks } = await supabase
-    .from("links")
-    .select("*")
-    .in("id", ids);
-
-  if (!freshLinks || freshLinks.length === 0) {
-    return links;
+function normalizeLinkForInsert(
+  userId: string,
+  link: {
+    url: string;
+    title?: string;
+    content_type?: "url" | "color" | "image";
+    color_value?: string | null;
+    favicon_url?: string | null;
+    og_image_url?: string | null;
   }
+): LinkInsertPayload {
+  const contentType = link.content_type || "url";
+  const isColor = contentType === "color";
+  const isImage = contentType === "image";
+  const colorMetadata = isColor
+    ? resolveColorMetadata(link.color_value || link.url)
+    : null;
+  const normalizedColorCode = colorMetadata?.colorCode || (link.color_value || link.url);
+  const normalizedColorName = colorMetadata?.colorName || link.title || "Custom Color";
+  const normalizedUrl = isColor ? normalizedColorCode : link.url;
 
-  const freshMap = new Map(freshLinks.map((link) => [link.id, link as CreatedLink]));
-  return links.map((link) => freshMap.get(link.id) || link);
+  return {
+    user_id: userId,
+    url: normalizedUrl,
+    clean_url: isColor || isImage ? normalizedUrl : canonicalizeUrl(link.url),
+    title: isColor ? normalizedColorName : (link.title || link.url),
+    content_type: contentType,
+    favicon_url: link.favicon_url || null,
+    color_value: isColor ? normalizedColorCode : (link.color_value || null),
+    og_image_url: isImage ? (link.og_image_url || link.url) : null,
+    domain: isColor ? "color" : isImage ? "image" : extractDomain(link.url),
+    is_deleted: false,
+    is_archived: false,
+    is_pinned: false,
+    fetch_status: isColor ? "success" : "pending",
+    fetched_at: isColor ? new Date().toISOString() : null,
+  };
 }
 
-async function enrichUrlLinksWithAI(
-  supabase: SupabaseServerClient,
+async function scheduleEnrichment(
   userId: string,
   links: CreatedLink[]
-): Promise<string[]> {
-  const taggingService = new AITaggingService();
-  const failedIds = new Set<string>();
+): Promise<void> {
+  if (links.length === 0) return;
 
-  await runWithConcurrency(links, AI_ENRICHMENT_CONCURRENCY, async (link) => {
-    if (link.ai_tags && link.ai_tags.length > 0) {
-      return;
-    }
+  const urlLinks = links.filter((link) => link.content_type === "url" || !link.content_type);
+  const imageLinks = links.filter((link) => link.content_type === "image");
+  const hasQueue = isJobQueueConfigured();
 
-    try {
-      const result = await taggingService.generateTags({
-        title: link.title || link.url,
-        description: link.description,
-        domain: link.domain || extractDomain(link.url),
-        site_name: link.site_name || null,
-        url: link.url,
-        content: link.content_text || null,
-      });
+  if (hasQueue && urlLinks.length > 0) {
+    const metadataJobs = urlLinks.map((link) => ({
+      linkId: link.id,
+      url: link.url,
+      userId,
+    }));
+    const aiTagJobs = urlLinks.map((link) => ({
+      linkId: link.id,
+      userId,
+    }));
 
-      if (!result) {
-        failedIds.add(link.id);
-        return;
-      }
+    await Promise.allSettled([
+      enqueueBatchMetadataEnrichment(metadataJobs),
+      enqueueBatchAITagging(aiTagJobs),
+    ]);
+  }
 
-      const { error } = await supabase
-        .from("links")
-        .update({
-          ai_tags: result.tags,
-          ai_key_themes: { category: result.category },
-        })
-        .eq("id", link.id)
-        .eq("user_id", userId);
+  // Local/dev fallback when queue is unavailable.
+  if (!hasQueue && urlLinks.length > 0) {
+    const metadataService = new MetadataService();
+    await Promise.allSettled(
+      urlLinks.map((link) => metadataService.enrichLink(link.id, link.url, link.content_type))
+    );
+  }
 
-      if (error) {
-        failedIds.add(link.id);
-      }
-    } catch {
-      failedIds.add(link.id);
-    }
-  });
-
-  return [...failedIds];
+  if (hasQueue && imageLinks.length > 0) {
+    const visionJobs = imageLinks.map((link) => ({
+      linkId: link.id,
+      userId,
+    }));
+    await enqueueBatchAIVisionTagging(visionJobs);
+  }
 }
 
 /**
@@ -151,13 +152,13 @@ export async function POST(request: NextRequest) {
     // Apply rate limiting
     const identifier = getIdentifier(request, user.id);
     const { success, limit, reset, remaining } = await rateLimitLinks.limit(identifier);
-    
+
     if (!success) {
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
-        { 
+        {
           status: 429,
-          headers: getRateLimitHeaders(limit, remaining, reset)
+          headers: getRateLimitHeaders(limit, remaining, reset),
         }
       );
     }
@@ -167,7 +168,7 @@ export async function POST(request: NextRequest) {
       request,
       batchActionSchema
     );
-    
+
     if (validationError) {
       return validationError;
     }
@@ -177,91 +178,47 @@ export async function POST(request: NextRequest) {
     // SECURITY: Enforce batch size limits to prevent resource exhaustion
     if (ids && ids.length > MAX_BATCH_SIZE) {
       return NextResponse.json(
-        { 
+        {
           error: `Batch size exceeds maximum of ${MAX_BATCH_SIZE} items`,
           maxBatchSize: MAX_BATCH_SIZE,
-          requestedSize: ids.length
+          requestedSize: ids.length,
         },
         { status: 400 }
       );
     }
-    
+
     if (links && links.length > MAX_BATCH_SIZE) {
       return NextResponse.json(
-        { 
+        {
           error: `Batch size exceeds maximum of ${MAX_BATCH_SIZE} items`,
           maxBatchSize: MAX_BATCH_SIZE,
-          requestedSize: links.length
+          requestedSize: links.length,
         },
         { status: 400 }
       );
     }
 
-    let result;
+    let result: { data: Record<string, unknown>; error: { message?: string; code?: string; details?: string; hint?: string } | null };
 
     switch (action) {
-      case "add":
-        // Prepare links with clean_url for duplicate checking
-        const linksToCheck = links!.map((link) => {
-          const ct = link.content_type || "url";
-          const isImage = ct === "image";
-          const isColor = ct === "color";
-          const colorMetadata = isColor
-            ? resolveColorMetadata(link.color_value || link.url)
-            : null;
-          const normalizedColorCode = colorMetadata?.colorCode || (link.color_value || link.url);
-          const normalizedColorName = colorMetadata?.colorName || link.title || "Custom Color";
-          const normalizedUrl = isColor ? normalizedColorCode : link.url;
-          return {
-            user_id: user.id,
-            url: normalizedUrl,
-            clean_url: isColor || isImage ? normalizedUrl : canonicalizeUrl(link.url),
-            title: isColor ? normalizedColorName : (link.title || link.url),
-            content_type: ct,
-            favicon_url: link.favicon_url || null,
-            color_value: isColor ? normalizedColorCode : (link.color_value || null),
-            og_image_url: isImage ? link.url : null,
-            domain: isColor ? "color" : isImage ? "image" : extractDomain(link.url),
-            is_deleted: false,
-            is_archived: false,
-            is_pinned: false,
-            fetch_status: "pending" as const,
-          };
+      case "add": {
+        const normalizedLinks = links!.map((link) => normalizeLinkForInsert(user.id, link));
+
+        // De-duplicate within request payload by clean_url.
+        const seenCleanUrls = new Set<string>();
+        const uniqueLinks: LinkInsertPayload[] = [];
+        let duplicateCount = 0;
+
+        normalizedLinks.forEach((link) => {
+          if (seenCleanUrls.has(link.clean_url)) {
+            duplicateCount++;
+            return;
+          }
+          seenCleanUrls.add(link.clean_url);
+          uniqueLinks.push(link);
         });
 
-        // Check for existing links (duplicates) - only check non-deleted links
-        const cleanUrls = linksToCheck.map(l => l.clean_url);
-        const { data: existingLinks } = await supabase
-          .from("links")
-          .select("clean_url")
-          .eq("user_id", user.id)
-          .eq("is_deleted", false)
-          .in("clean_url", cleanUrls);
-
-        const existingCleanUrls = new Set(existingLinks?.map(l => l.clean_url) || []);
-        
-        // Filter out duplicates
-        const linksToInsert = linksToCheck.filter(l => !existingCleanUrls.has(l.clean_url));
-        const duplicateCount = linksToCheck.length - linksToInsert.length;
-
-        // Only insert non-duplicate links
-        if (linksToInsert.length > 0) {
-          const insertResult = await supabase
-            .from("links")
-            .insert(linksToInsert)
-            .select();
-
-          result = {
-            data: {
-              links: insertResult.data || [],
-              count: insertResult.data?.length || 0,
-              duplicates: duplicateCount,
-              restored: 0,
-            },
-            error: insertResult.error,
-          };
-        } else {
-          // All links were duplicates
+        if (uniqueLinks.length === 0) {
           result = {
             data: {
               links: [],
@@ -271,86 +228,102 @@ export async function POST(request: NextRequest) {
             },
             error: null,
           };
+          break;
         }
 
-        if (!result.error && result.data?.links) {
-          let createdLinks = result.data.links as CreatedLink[];
-          const urlLinks = createdLinks.filter(
-            (link) => link.content_type === "url" || !link.content_type
-          );
+        const cleanUrls = uniqueLinks.map((link) => link.clean_url);
+        const { data: existingLinks, error: existingError } = await supabase
+          .from("links")
+          .select("id, clean_url, is_deleted, is_archived")
+          .eq("user_id", user.id)
+          .in("clean_url", cleanUrls);
 
-          if (urlLinks.length > 0) {
-            const metadataJobs = urlLinks.map((link) => ({
-              linkId: link.id,
-              url: link.url,
-              userId: user.id,
-            }));
+        if (existingError) {
+          result = { data: {}, error: existingError };
+          break;
+        }
 
-            if (urlLinks.length <= EAGER_ENRICHMENT_LIMIT) {
-              const metadataService = new MetadataService();
-              await Promise.allSettled(
-                urlLinks.map(link => 
-                  metadataService.enrichLink(link.id, link.url).catch(err => {
-                    console.error(`[Batch] Metadata enrichment failed for ${link.url}:`, err);
-                  })
-                )
-              );
+        const existingByCleanUrl = new Map(
+          (existingLinks || []).map((link) => [link.clean_url as string, link as {
+            id: string;
+            clean_url: string;
+            is_deleted: boolean;
+            is_archived: boolean;
+          }])
+        );
 
-              const linksAfterMetadata = await refreshCreatedLinks(
-                supabase,
-                createdLinks
-              );
-              createdLinks = linksAfterMetadata;
+        const linksToInsert: LinkInsertPayload[] = [];
+        const linksToRestore: string[] = [];
 
-              const refreshedUrlLinks = linksAfterMetadata.filter(
-                (link) => link.content_type === "url" || !link.content_type
-              );
-              const failedAiIds = await enrichUrlLinksWithAI(
-                supabase,
-                user.id,
-                refreshedUrlLinks
-              );
+        uniqueLinks.forEach((link) => {
+          const existing = existingByCleanUrl.get(link.clean_url);
+          if (!existing) {
+            linksToInsert.push(link);
+            return;
+          }
 
-              if (failedAiIds.length > 0) {
-                const fallbackTagJobs = failedAiIds.map((linkId) => ({
-                  linkId,
-                  userId: user.id,
-                }));
-                enqueueBatchAITagging(fallbackTagJobs).catch(() => {});
-              }
+          if (existing.is_deleted || existing.is_archived) {
+            linksToRestore.push(existing.id);
+            return;
+          }
 
-              const linksAfterUrlAI = await refreshCreatedLinks(
-                supabase,
-                linksAfterMetadata
-              );
-              createdLinks = linksAfterUrlAI;
-            } else {
-              enqueueBatchMetadataEnrichment(metadataJobs).catch(err => {
-                console.error("[Batch] Failed to enqueue metadata jobs:", err);
-              });
-              const aiTagJobs = urlLinks.map((link) => ({
-                linkId: link.id,
-                userId: user.id,
-              }));
-              enqueueBatchAITagging(aiTagJobs).catch(() => {});
+          duplicateCount++;
+        });
+
+        let restoredLinks: CreatedLink[] = [];
+        if (linksToRestore.length > 0) {
+          const restoreResult = await supabase
+            .from("links")
+            .update({ is_deleted: false, is_archived: false, deleted_at: null })
+            .eq("user_id", user.id)
+            .in("id", linksToRestore)
+            .select();
+
+          if (restoreResult.error) {
+            result = { data: {}, error: restoreResult.error };
+            break;
+          }
+          restoredLinks = (restoreResult.data || []) as CreatedLink[];
+        }
+
+        let insertedLinks: CreatedLink[] = [];
+        if (linksToInsert.length > 0) {
+          const insertResult = await supabase
+            .from("links")
+            .insert(linksToInsert)
+            .select();
+
+          if (insertResult.error) {
+            result = { data: {}, error: insertResult.error };
+            break;
+          }
+          insertedLinks = (insertResult.data || []) as CreatedLink[];
+        }
+
+        const createdLinks = [...restoredLinks, ...insertedLinks];
+        const restoredCount = restoredLinks.length;
+
+        result = {
+          data: {
+            links: createdLinks,
+            count: createdLinks.length,
+            duplicates: duplicateCount,
+            restored: restoredCount,
+          },
+          error: null,
+        };
+
+        if (createdLinks.length > 0) {
+          after(async () => {
+            try {
+              await scheduleEnrichment(user.id, createdLinks);
+            } catch (error) {
+              console.error("[Batch] Failed to schedule enrichment:", error);
             }
-          }
-
-          const imageLinks = createdLinks.filter(
-            (link) => link.content_type === "image"
-          );
-
-          if (imageLinks.length > 0) {
-            const visionJobs = imageLinks.map((link) => ({
-              linkId: link.id,
-              userId: user.id,
-            }));
-            enqueueBatchAIVisionTagging(visionJobs).catch(() => {});
-          }
-
-          result.data.links = createdLinks;
+          });
         }
         break;
+      }
 
       case "delete":
         // Use retry for transient failures
@@ -473,7 +446,7 @@ export async function POST(request: NextRequest) {
 
     if (result.error) {
       console.error(`Batch ${action} error:`, result.error);
-      console.error('Error details:', {
+      console.error("Error details:", {
         action,
         ids: ids || [],
         linksCount: links?.length || 0,
@@ -483,7 +456,7 @@ export async function POST(request: NextRequest) {
         hint: result.error.hint,
       });
       return NextResponse.json(
-        { 
+        {
           error: `Failed to ${action} links`,
           details: result.error.message,
         },

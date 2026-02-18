@@ -32,7 +32,7 @@ export interface SpacesResponse {
   spaces?: Space[];
 }
 
-const REQUEST_TIMEOUT_MS = 12000;
+const REQUEST_TIMEOUT_MS = 7000;
 const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
 
 function isRetryableStatus(status: number): boolean {

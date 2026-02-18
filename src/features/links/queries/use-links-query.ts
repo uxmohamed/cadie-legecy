@@ -122,6 +122,11 @@ export function useLinksQuery(
     staleTime: 5 * 60 * 1000,
     // Keep in cache for 2 hours (reduced from 24 to prevent stale data issues)
     gcTime: 2 * 60 * 60 * 1000,
+    // External writers (extension/API tokens) can change data while app is closed.
+    // Always revalidate on mount/focus/reconnect so extension saves appear immediately.
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
+    refetchOnReconnect: "always",
   });
 
   return {
@@ -170,6 +175,9 @@ export function useLinksInfiniteQuery(
     } : undefined,
     staleTime: 5 * 60 * 1000,
     gcTime: 2 * 60 * 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
+    refetchOnReconnect: "always",
   });
 
   // Flatten all pages into a single array

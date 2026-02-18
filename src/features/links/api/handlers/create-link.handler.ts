@@ -1,11 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { LinkService } from "@/features/links/services";
 import { SupabaseLinkRepository } from "@/features/links/repositories";
+import { MetadataService } from "@/features/links/services/metadata.service";
 import { authenticateRequest } from "@/lib/auth-middleware";
 import type { CreateLinkDTO } from "@/features/links/types";
 import { toAppError, ErrorCode, AppError } from "@/lib/errors";
 import { resolveColorMetadata } from "@/lib/canonicalize";
-import { enqueueMetadataEnrichment, enqueueAITagging, enqueueAIVisionTagging } from "@/lib/job-queue";
+import { enqueueMetadataEnrichment, enqueueAITagging, enqueueAIVisionTagging, isJobQueueConfigured } from "@/lib/job-queue";
 
 /**
  * Handler for POST /api/links
@@ -66,30 +67,40 @@ export class CreateLinkHandler {
 
     private async enqueueEnrichmentJobs(userId: string, link: { id: string; url: string; content_type?: string }): Promise<void> {
         const contentType = link.content_type || "url";
+        const hasQueue = isJobQueueConfigured();
 
         if (contentType === "color") {
             return;
         }
 
         if (contentType === "image") {
-            await enqueueAIVisionTagging({
-                linkId: link.id,
-                userId,
-            });
+            if (hasQueue) {
+                await enqueueAIVisionTagging({
+                    linkId: link.id,
+                    userId,
+                });
+            }
             return;
         }
 
-        await Promise.allSettled([
-            enqueueMetadataEnrichment({
-                linkId: link.id,
-                url: link.url,
-                userId,
-            }),
-            enqueueAITagging({
-                linkId: link.id,
-                userId,
-            }),
-        ]);
+        if (hasQueue) {
+            await Promise.allSettled([
+                enqueueMetadataEnrichment({
+                    linkId: link.id,
+                    url: link.url,
+                    userId,
+                }),
+                enqueueAITagging({
+                    linkId: link.id,
+                    userId,
+                }),
+            ]);
+            return;
+        }
+
+        // Local/dev fallback when queue is unavailable.
+        const metadataService = new MetadataService();
+        await metadataService.enrichLink(link.id, link.url, contentType);
     }
 
     async handle(
@@ -197,7 +208,13 @@ export class CreateLinkHandler {
             );
 
             if (!isDuplicate) {
-                await this.enqueueEnrichmentJobs(userId, link);
+                after(async () => {
+                    try {
+                        await this.enqueueEnrichmentJobs(userId, link);
+                    } catch (error) {
+                        console.error("[CreateLinkHandler] Failed to enqueue enrichment jobs:", error);
+                    }
+                });
             }
 
             return NextResponse.json(

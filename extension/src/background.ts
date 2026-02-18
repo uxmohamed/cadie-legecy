@@ -4,7 +4,7 @@
  */
 
 import { saveLink, fetchSpaces, addLinkToSpace, removeLinkFromSpace, fetchLinkSpaces } from "./lib/api-client";
-import { getApiToken, getPendingUrl, setPendingUrl, clearPendingUrl } from "./lib/storage";
+import { getApiToken, getCadieUrl, getPendingUrl, setPendingUrl, clearPendingUrl, normalizeCadieUrl } from "./lib/storage";
 
 // Track saves in progress to prevent duplicates
 const savesInProgress = new Set<string>();
@@ -59,9 +59,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   // Handle open auth page request from content script
   if (request.action === "openAuthPage") {
-    const extensionId = chrome.runtime.id;
-    chrome.tabs.create({ url: `https://cadie.app/extension/authorize?extensionId=${extensionId}` });
-    sendResponse({ success: true });
+    (async () => {
+      const extensionId = chrome.runtime.id;
+      const cadieUrl = await getCadieUrl();
+      await chrome.tabs.create({ url: `${cadieUrl}/extension/authorize?extensionId=${extensionId}` });
+      sendResponse({ success: true });
+    })().catch((error) => {
+      console.error("Failed to open auth page:", error);
+      sendResponse({ success: false, error: "Failed to open auth page" });
+    });
     return true;
   }
 
@@ -100,9 +106,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Handle authorization success from content script
   if (request.type === "CADIE_AUTH_SUCCESS" && request.data) {
     const { token, email } = request.data;
-
-    // Always use production URL for the extension
-    const cadieUrlToUse = "https://cadie.app";
+    const cadieUrlToUse = normalizeCadieUrl(request.data.cadieUrl || request.data.url);
 
     // Save API token to local storage (sensitive)
     chrome.storage.local.set({ apiToken: token }, () => {
@@ -183,8 +187,8 @@ async function saveUrl(tabId: number, url: string): Promise<void> {
     // Show loading state immediately
     showOverlayInTab(tabId, "loading");
 
-    // Save to Cadie with retry logic - will update overlay with result
-    await saveWithRetry(tabId, url, 3);
+    // Save to Cadie with retry logic - keep retries short for responsive UX
+    await saveWithRetry(tabId, url, 2);
   } finally {
     // Remove the save lock
     savesInProgress.delete(saveKey);
@@ -232,7 +236,7 @@ async function saveWithRetry(tabId: number, url: string, maxRetries: number): Pr
       lastError = error instanceof Error ? error.message : "Failed to save";
     }
 
-    // Wait before retry (exponential backoff: 500ms, 1000ms, 2000ms)
+    // Wait before retry (exponential backoff: 500ms)
     if (attempt < maxRetries) {
       await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, attempt - 1)));
     }

@@ -121,7 +121,7 @@ let currentLinkId: string | null = null;
 let isHovering = false;
 let spacesExpanded = false;
 let spacesCache: Space[] | null = null;
-let selectedSpaces: Set<string> = new Set();
+const selectedSpaces: Set<string> = new Set();
 
 // ============================================================================
 // Message Listener
@@ -621,26 +621,59 @@ function showAuthPromptOverlay() {
 
 let authProcessed = false;
 
-const ALLOWED_AUTH_ORIGINS = [
+const ALLOWED_AUTH_ORIGINS = new Set([
   "https://cadie.app",
   "https://www.cadie.app",
-];
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+]);
+
+function isAllowedAuthOrigin(origin: string): boolean {
+  if (ALLOWED_AUTH_ORIGINS.has(origin)) return true;
+  try {
+    const parsed = new URL(origin);
+    return (
+      (parsed.protocol === "http:" || parsed.protocol === "https:") &&
+      (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function isAuthorizePageLocation(): boolean {
+  const { hostname, pathname } = window.location;
+  const isCadieHost = hostname === "cadie.app" || hostname === "www.cadie.app";
+  const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+  return (isCadieHost || isLocalHost) && pathname.includes("/extension/authorize");
+}
+
+function resolveCadieOrigin(rawValue?: string): string {
+  if (!rawValue) return window.location.origin;
+  try {
+    const parsed = new URL(rawValue);
+    return parsed.origin;
+  } catch {
+    return window.location.origin;
+  }
+}
 
 window.addEventListener("message", (event: MessageEvent) => {
   if (event.source !== window) return;
-  if (!ALLOWED_AUTH_ORIGINS.includes(event.origin)) return;
-  if (!window.location.hostname.includes("cadie.app")) return;
+  if (!isAllowedAuthOrigin(event.origin)) return;
+  if (!isAuthorizePageLocation()) return;
   
   const data = event.data;
   if (data?.type === "CADIE_AUTH_SUCCESS" && data?.token && !authProcessed) {
     authProcessed = true;
+    const cadieOrigin = resolveCadieOrigin(data.cadieUrl || data.url || event.origin);
     chrome.runtime.sendMessage({
       type: "CADIE_AUTH_SUCCESS",
       data: {
         token: data.token,
         email: data.email,
-        url: "https://cadie.app",
-        cadieUrl: "https://cadie.app",
+        url: cadieOrigin,
+        cadieUrl: cadieOrigin,
         state: data.state,
       },
     }, (response) => {
@@ -648,13 +681,13 @@ window.addEventListener("message", (event: MessageEvent) => {
         console.error("Error sending auth message:", chrome.runtime.lastError);
         authProcessed = false;
       } else {
-        window.postMessage({ type: "CADIE_AUTH_ACK", success: true }, "*");
+        window.postMessage({ type: "CADIE_AUTH_ACK", success: true }, event.origin);
       }
     });
   }
 });
 
-if (window.location.hostname.includes("cadie.app") && window.location.pathname.includes("/extension/authorize")) {
+if (isAuthorizePageLocation()) {
   checkForAuthData();
 
   const pollInterval = setInterval(() => {
@@ -675,13 +708,14 @@ function checkForAuthData(): boolean {
       const authData = JSON.parse(authDataElement.getAttribute("data-auth") || "{}");
       if (authData.token) {
         authProcessed = true;
+        const cadieOrigin = resolveCadieOrigin(authData.cadieUrl || authData.url);
         chrome.runtime.sendMessage({
           type: "CADIE_AUTH_SUCCESS",
           data: {
             token: authData.token,
             email: authData.email,
-            url: "https://cadie.app",
-            cadieUrl: "https://cadie.app",
+            url: cadieOrigin,
+            cadieUrl: cadieOrigin,
             state: authData.state,
           },
         }, (response) => {
@@ -689,7 +723,7 @@ function checkForAuthData(): boolean {
             console.error("Error sending auth message:", chrome.runtime.lastError);
             authProcessed = false;
           } else {
-            window.postMessage({ type: "CADIE_AUTH_ACK", success: true }, "*");
+            window.postMessage({ type: "CADIE_AUTH_ACK", success: true }, window.location.origin);
           }
         });
         return true;

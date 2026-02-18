@@ -12,6 +12,10 @@ function getQStashClient(): Client | null {
   return qstash;
 }
 
+export function isJobQueueConfigured(): boolean {
+  return !!qstash;
+}
+
 /**
  * Job payload for metadata enrichment
  */

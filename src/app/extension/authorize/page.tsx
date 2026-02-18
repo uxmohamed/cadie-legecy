@@ -20,7 +20,6 @@ export default function ExtensionAuthorizePage() {
       
       if (!user) {
         // Redirect to login with return URL
-        const currentUrl = window.location.href;
         router.push(`/auth?redirect=${encodeURIComponent('/extension/authorize' + window.location.search)}`);
         return;
       }
@@ -33,7 +32,7 @@ export default function ExtensionAuthorizePage() {
     } catch (error) {
       console.error("Error:", error);
       // Redirect to app even on error
-      window.location.href = "https://cadie.app";
+      window.location.href = window.location.origin;
     }
   }
 
@@ -60,8 +59,7 @@ export default function ExtensionAuthorizePage() {
       const extensionId = params.get("extensionId");
       const state = params.get("state");
 
-      // Always use production URL for extension - tokens are generated against production database
-      const cadieUrl = "https://cadie.app";
+      const cadieUrl = window.location.origin;
 
       // Construct authorization response
       const authData = {
@@ -129,7 +127,7 @@ export default function ExtensionAuthorizePage() {
     } catch (error) {
       console.error("Error authorizing:", error);
       // Redirect to app even on error
-      window.location.href = "https://cadie.app";
+      window.location.href = window.location.origin;
     }
   }
 
@@ -142,4 +140,3 @@ export default function ExtensionAuthorizePage() {
     </div>
   );
 }
-

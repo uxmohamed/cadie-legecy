@@ -22,14 +22,47 @@ interface LocalSettings {
   apiToken?: string;
 }
 
-// Default to production URL
+const PROD_CADIE_URL = "https://cadie.app";
+const DEV_CADIE_URL = "http://localhost:3000";
+declare const __DEV__: boolean;
+
+function resolveDefaultCadieUrl(): string {
+  if (__DEV__) {
+    return DEV_CADIE_URL;
+  }
+  return PROD_CADIE_URL;
+}
+
+// Default to localhost in dev builds, production in prod builds
+const DEFAULT_CADIE_URL = resolveDefaultCadieUrl();
+
 export const EXTENSION_CONFIG = {
-  API_URL: "https://cadie.app/api",
-  BASE_URL: "https://cadie.app",
+  API_URL: `${DEFAULT_CADIE_URL}/api`,
+  BASE_URL: DEFAULT_CADIE_URL,
 };
 
-// Default to production URL
-const DEFAULT_CADIE_URL = EXTENSION_CONFIG.BASE_URL;
+function isAllowedCadieOrigin(url: URL): boolean {
+  const isProd =
+    url.protocol === "https:" &&
+    (url.hostname === "cadie.app" || url.hostname === "www.cadie.app");
+  const isLocalDev =
+    (url.protocol === "http:" || url.protocol === "https:") &&
+    (url.hostname === "localhost" || url.hostname === "127.0.0.1");
+  return isProd || isLocalDev;
+}
+
+export function normalizeCadieUrl(value?: string): string {
+  if (!value) return DEFAULT_CADIE_URL;
+  try {
+    const parsed = new URL(value);
+    if (isAllowedCadieOrigin(parsed)) {
+      return parsed.origin;
+    }
+  } catch {
+    // Ignore invalid values and fall back to default
+  }
+  return DEFAULT_CADIE_URL;
+}
 
 /**
  * Get extension settings from Chrome storage
@@ -48,7 +81,7 @@ export async function getSettings(): Promise<ExtensionSettings> {
         (syncItems) => {
           resolve({
             apiToken: (localItems as LocalSettings).apiToken,
-            cadieUrl: (syncItems as SyncSettings).cadieUrl,
+            cadieUrl: normalizeCadieUrl((syncItems as SyncSettings).cadieUrl),
             userEmail: (syncItems as SyncSettings).userEmail,
           });
         }
@@ -77,7 +110,7 @@ export async function saveSettings(settings: Partial<ExtensionSettings>): Promis
     // Store non-sensitive data in sync storage
     const syncSettings: SyncSettings = {};
     if (settings.cadieUrl !== undefined) {
-      syncSettings.cadieUrl = settings.cadieUrl;
+      syncSettings.cadieUrl = normalizeCadieUrl(settings.cadieUrl);
     }
     if (settings.userEmail !== undefined) {
       syncSettings.userEmail = settings.userEmail;
@@ -127,7 +160,7 @@ export async function getApiToken(): Promise<string | undefined> {
 export async function getCadieUrl(): Promise<string> {
   return new Promise((resolve) => {
     chrome.storage.sync.get({ cadieUrl: DEFAULT_CADIE_URL }, (items) => {
-      resolve((items as SyncSettings).cadieUrl || DEFAULT_CADIE_URL);
+      resolve(normalizeCadieUrl((items as SyncSettings).cadieUrl));
     });
   });
 }
@@ -164,4 +197,3 @@ export async function clearPendingUrl(): Promise<void> {
     chrome.storage.local.remove("pendingUrl", () => resolve());
   });
 }
-
