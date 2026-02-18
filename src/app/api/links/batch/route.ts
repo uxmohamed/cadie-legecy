@@ -10,6 +10,8 @@ import { batchActionSchema } from "@/lib/validation/link.schemas";
 import { withRetry, supabaseRetryPredicate } from "@/lib/retry";
 import { resolveColorMetadata } from "@/lib/canonicalize";
 import { AutoSpaceForwardingService } from "@/features/spaces/services/auto-space-forwarding.service";
+import { getBillingContext } from "@/lib/billing/context";
+import { createPlanLimitResponse } from "@/lib/billing/limit-response";
 
 /**
  * Maximum number of items per batch operation
@@ -251,9 +253,60 @@ export async function POST(request: NextRequest) {
     let result;
 
     switch (action) {
-      case "add":
+      case "add": {
+        // Enforce plan limits before inserting
+        const billingCtx = await getBillingContext(user.id);
+        const { entitlements, usage } = billingCtx;
+
+        if (entitlements.maxSavedItems !== null && usage.totalSavedItems >= entitlements.maxSavedItems) {
+          return createPlanLimitResponse({
+            plan: billingCtx.plan,
+            limitKey: "saved_items",
+            current: usage.totalSavedItems,
+            max: entitlements.maxSavedItems,
+            message: `You've reached the ${entitlements.maxSavedItems}-item limit on the ${billingCtx.plan} plan. Upgrade to save more.`,
+          });
+        }
+
+        // Cap batch size to remaining item allowance
+        const remainingItems = entitlements.maxSavedItems !== null
+          ? entitlements.maxSavedItems - usage.totalSavedItems
+          : Infinity;
+
+        const incomingLinks = links!;
+        const cappedLinks = remainingItems < incomingLinks.length
+          ? incomingLinks.slice(0, remainingItems)
+          : incomingLinks;
+
+        // Check image/document media caps
+        if (entitlements.maxImages !== null) {
+          const incomingImageCount = cappedLinks.filter((l) => l.content_type === "image").length;
+          if (incomingImageCount > 0 && usage.imagesTotal + incomingImageCount > entitlements.maxImages) {
+            return createPlanLimitResponse({
+              plan: billingCtx.plan,
+              limitKey: "images",
+              current: usage.imagesTotal,
+              max: entitlements.maxImages,
+              message: `Image limit reached on the ${billingCtx.plan} plan. Upgrade for more image uploads.`,
+            });
+          }
+        }
+
+        if (entitlements.maxDocuments !== null) {
+          const incomingDocCount = cappedLinks.filter((l) => l.content_type === "document").length;
+          if (incomingDocCount > 0 && usage.documentsTotal + incomingDocCount > entitlements.maxDocuments) {
+            return createPlanLimitResponse({
+              plan: billingCtx.plan,
+              limitKey: "documents",
+              current: usage.documentsTotal,
+              max: entitlements.maxDocuments,
+              message: `Document limit reached on the ${billingCtx.plan} plan. Upgrade for more document uploads.`,
+            });
+          }
+        }
+
         // Prepare links with clean_url for duplicate checking
-        const linksToCheck = links!.map((link) => {
+        const linksToCheck = cappedLinks.map((link) => {
           const ct = link.content_type || "url";
           const isImage = ct === "image";
           const isColor = ct === "color";
@@ -430,6 +483,7 @@ export async function POST(request: NextRequest) {
           (result.data as Record<string, unknown>).auto_forwarded_by_link_id = forwardingResult.forwardedByLinkId;
         }
         break;
+      }
 
       case "delete":
         // Use retry for transient failures

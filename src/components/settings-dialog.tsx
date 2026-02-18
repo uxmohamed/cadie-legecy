@@ -10,6 +10,7 @@ import {
   IconCapsuleHorizontalFilled,
   IconFileDownloadFilled,
   IconFileUploadFilled,
+  IconCreditCardFilled,
 } from "@tabler/icons-react";
 
 import {
@@ -35,10 +36,12 @@ import { SettingsAbout } from "@/components/settings/settings-about";
 import { SettingsExtensions } from "@/components/settings/settings-extensions";
 import { SettingsImport } from "@/components/settings/settings-import";
 import { SettingsExport } from "@/components/settings/settings-export";
+import { SettingsBilling } from "@/components/settings/settings-billing";
 
 type SettingsSection =
   | "profile"
   | "spaces"
+  | "billing"
   | "appearance"
   | "extensions"
   | "import"
@@ -48,6 +51,7 @@ type SettingsSection =
 const navItems = [
   { id: "profile" as const, name: "Profile", icon: IconUserFilled },
   { id: "spaces" as const, name: "Spaces", icon: IconCapsuleHorizontalFilled },
+  { id: "billing" as const, name: "Billing", icon: IconCreditCardFilled },
   { id: "appearance" as const, name: "Appearance", icon: IconPaletteFilled },
   { id: "extensions" as const, name: "Extensions", icon: IconPuzzleFilled },
   { id: "import" as const, name: "Import", icon: IconFileDownloadFilled },
@@ -129,6 +133,7 @@ export function SettingsDialog({ user, open, onOpenChange, onProfileUpdate }: Se
               </h2>
               {activeSection === "profile" && <SettingsProfile user={user} onProfileUpdate={onProfileUpdate} />}
               {activeSection === "spaces" && <SettingsSpaces />}
+              {activeSection === "billing" && <SettingsBilling />}
               {activeSection === "appearance" && <SettingsAppearance />}
               {activeSection === "extensions" && <SettingsExtensions />}
               {activeSection === "import" && <SettingsImport />}

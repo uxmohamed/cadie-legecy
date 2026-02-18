@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitSpaces, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 import { authenticateRequest } from "@/lib/auth-middleware";
+import { getBillingContext } from "@/lib/billing/context";
+import { createPlanLimitResponse } from "@/lib/billing/limit-response";
 
 export async function GET(request: NextRequest) {
   try {
@@ -133,6 +135,18 @@ export async function POST(request: NextRequest) {
         { error: "Name and color are required" },
         { status: 400 }
       );
+    }
+
+    // Enforce plan space limit
+    const billingCtx = await getBillingContext(userId);
+    if (billingCtx.entitlements.maxSpaces !== null && billingCtx.usage.spacesTotal >= billingCtx.entitlements.maxSpaces) {
+      return createPlanLimitResponse({
+        plan: billingCtx.plan,
+        limitKey: "spaces",
+        current: billingCtx.usage.spacesTotal,
+        max: billingCtx.entitlements.maxSpaces,
+        message: `You've reached the ${billingCtx.entitlements.maxSpaces}-space limit on the ${billingCtx.plan} plan. Upgrade to create more spaces.`,
+      });
     }
 
     // Get max sort_order to append new space at the end
