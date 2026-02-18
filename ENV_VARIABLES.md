@@ -26,6 +26,14 @@ CRON_SECRET=<your-random-secret-min-32-chars>
 # Used for secure service-to-service communication
 INTERNAL_API_SECRET=<your-random-secret-min-32-chars>
 
+# Lemon Squeezy (Billing)
+LEMON_SQUEEZY_API_KEY=<your-lemon-api-key>
+LEMON_SQUEEZY_STORE_ID=<your-lemon-store-id>
+LEMON_SQUEEZY_WEBHOOK_SECRET=<your-lemon-webhook-signing-secret>
+LEMON_VARIANT_PRO_MONTHLY=<your-pro-monthly-variant-id>
+LEMON_VARIANT_PRO_YEARLY=<your-pro-yearly-variant-id>
+LEMON_VARIANT_BELIEVER_YEARLY=<your-believer-yearly-variant-id>
+
 # Site URL (your deployed domain)
 NEXT_PUBLIC_SITE_URL=https://your-domain.com
 NEXT_PUBLIC_BASE_URL=https://your-domain.com
@@ -58,6 +66,14 @@ QSTASH_NEXT_SIGNING_KEY=<your-qstash-next-signing-key>
 # Generate with: openssl rand -base64 32
 CRON_SECRET=<generate-for-local-testing>
 INTERNAL_API_SECRET=<generate-for-local-testing>
+
+# Lemon Squeezy (Billing)
+LEMON_SQUEEZY_API_KEY=<your-lemon-api-key>
+LEMON_SQUEEZY_STORE_ID=<your-lemon-store-id>
+LEMON_SQUEEZY_WEBHOOK_SECRET=<your-lemon-webhook-signing-secret>
+LEMON_VARIANT_PRO_MONTHLY=<your-pro-monthly-variant-id>
+LEMON_VARIANT_PRO_YEARLY=<your-pro-yearly-variant-id>
+LEMON_VARIANT_BELIEVER_YEARLY=<your-believer-yearly-variant-id>
 
 # Local development URLs
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
