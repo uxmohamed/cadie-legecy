@@ -61,9 +61,11 @@ interface LandingPageProps {
 }
 
 export function LandingPage({ changelogEntries = [], pricing }: LandingPageProps) {
-  const proMonthly = pricing?.proMonthly ?? 6;
-  const proYearly = pricing?.proYearly ?? 48;
-  const yearlySavings = Math.round((1 - proYearly / (proMonthly * 12)) * 100);
+  const proMonthlyLabel = pricing?.proMonthlyFormatted ?? "$6.99";
+  const proYearlyLabel = pricing?.proYearlyFormatted ?? "$69.99";
+  const yearlySavings = pricing
+    ? Math.round((1 - pricing.proYearlyCents / (pricing.proMonthlyCents * 12)) * 100)
+    : 17;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openFaqId, setOpenFaqId] = useState<string | null>(null);
   const [pricingInterval, setPricingInterval] = useState<"month" | "year">("month");
@@ -539,7 +541,7 @@ export function LandingPage({ changelogEntries = [], pricing }: LandingPageProps
               <p className="text-sm text-fg-muted mb-4">For power users</p>
               <div className="mb-6">
                 <span className="text-3xl font-semibold text-fg">
-                  ${pricingInterval === "month" ? proMonthly : proYearly}
+                  {pricingInterval === "month" ? proMonthlyLabel : proYearlyLabel}
                 </span>
                 <span className="text-sm text-fg-muted">
                   /{pricingInterval === "month" ? "mo" : "yr"}

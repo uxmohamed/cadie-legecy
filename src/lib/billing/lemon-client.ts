@@ -52,8 +52,10 @@ async function lemonRequest(path: string, options: LemonRequestOptions = {}): Pr
 // ---------- Public pricing (server-side, cached) ----------
 
 export interface PlanPricing {
-  proMonthly: number;   // e.g. 6
-  proYearly: number;    // e.g. 48
+  proMonthlyFormatted: string;   // e.g. "$6.99"
+  proYearlyFormatted: string;    // e.g. "$69.99"
+  proMonthlyCents: number;       // e.g. 699
+  proYearlyCents: number;        // e.g. 6999
   believerYearly: number | null; // null = PWYW
 }
 
@@ -61,8 +63,19 @@ export interface PlanPricing {
  * Fetch live prices from Lemon Squeezy variants.
  * Called server-side so API key stays hidden; cached for 1 hour via Next.js.
  */
+function formatPrice(cents: number): string {
+  const dollars = cents / 100;
+  return dollars % 1 === 0 ? `$${dollars}` : `$${dollars.toFixed(2)}`;
+}
+
 export async function fetchVariantPrices(): Promise<PlanPricing> {
-  const DEFAULTS: PlanPricing = { proMonthly: 6, proYearly: 48, believerYearly: null };
+  const DEFAULTS: PlanPricing = {
+    proMonthlyFormatted: "$6.99",
+    proYearlyFormatted: "$69.99",
+    proMonthlyCents: 699,
+    proYearlyCents: 6999,
+    believerYearly: null,
+  };
 
   try {
     const apiKey = process.env.LEMONSQUEEZY_API_KEY;
@@ -71,7 +84,7 @@ export async function fetchVariantPrices(): Promise<PlanPricing> {
 
     if (!apiKey || !proMonthlyId || !proYearlyId) return DEFAULTS;
 
-    const fetchVariant = async (variantId: string): Promise<number | null> => {
+    const fetchVariantPrice = async (variantId: string): Promise<number | null> => {
       const res = await fetch(`${LEMON_API_BASE}/variants/${variantId}`, {
         headers: {
           Accept: "application/vnd.api+json",
@@ -84,18 +97,23 @@ export async function fetchVariantPrices(): Promise<PlanPricing> {
       const data = json.data as Record<string, unknown> | undefined;
       const attrs = data?.attributes as Record<string, unknown> | undefined;
       const priceCents = attrs?.price as number | undefined;
-      return typeof priceCents === "number" ? priceCents / 100 : null;
+      return typeof priceCents === "number" ? priceCents : null;
     };
 
-    const [monthly, yearly] = await Promise.all([
-      fetchVariant(proMonthlyId),
-      fetchVariant(proYearlyId),
+    const [monthlyCents, yearlyCents] = await Promise.all([
+      fetchVariantPrice(proMonthlyId),
+      fetchVariantPrice(proYearlyId),
     ]);
 
+    const mc = monthlyCents ?? DEFAULTS.proMonthlyCents;
+    const yc = yearlyCents ?? DEFAULTS.proYearlyCents;
+
     return {
-      proMonthly: monthly ?? DEFAULTS.proMonthly,
-      proYearly: yearly ?? DEFAULTS.proYearly,
-      believerYearly: null, // PWYW — no fixed price
+      proMonthlyFormatted: formatPrice(mc),
+      proYearlyFormatted: formatPrice(yc),
+      proMonthlyCents: mc,
+      proYearlyCents: yc,
+      believerYearly: null, // PWYW
     };
   } catch {
     return DEFAULTS;
@@ -143,7 +161,6 @@ export async function createLemonCheckout(input: CreateCheckoutInput): Promise<{
       media: true,
     },
     product_options: {
-      enabled_variants: [input.variantId],
       redirect_url: input.checkoutReturnUrl || undefined,
     },
   };
