@@ -493,22 +493,24 @@ export function LandingPage({ changelogEntries = [], pricing }: LandingPageProps
           </div>
 
           {/* Monthly/Yearly Toggle */}
-          <div className="flex items-center justify-center gap-3 mb-10">
-            <button
-              onClick={() => setPricingInterval("month")}
-              className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors ${pricingInterval === "month" ? "bg-bg-emphasis text-fg-inverse" : "text-fg-muted hover:text-fg"}`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setPricingInterval("year")}
-              className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors ${pricingInterval === "year" ? "bg-bg-emphasis text-fg-inverse" : "text-fg-muted hover:text-fg"}`}
-            >
-              Yearly
-            </button>
+          <div className="flex items-center justify-center mb-10">
+            <div className="flex items-center gap-1 bg-bg-muted rounded-lg p-1">
+              <button
+                onClick={() => setPricingInterval("month")}
+                className={`text-sm font-medium px-4 py-2 rounded-md transition-colors ${pricingInterval === "month" ? "bg-bg-emphasis text-fg-inverse" : "text-fg-muted hover:text-fg"}`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setPricingInterval("year")}
+                className={`text-sm font-medium px-4 py-2 rounded-md transition-colors ${pricingInterval === "year" ? "bg-bg-emphasis text-fg-inverse" : "text-fg-muted hover:text-fg"}`}
+              >
+                Yearly
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
             {/* Starter */}
             <div className="rounded-xl border border-border bg-bg-muted p-6 flex flex-col">
               <h3 className="text-lg font-medium text-fg mb-1">Starter</h3>
@@ -534,7 +536,7 @@ export function LandingPage({ changelogEntries = [], pricing }: LandingPageProps
 
             {/* Pro */}
             <div className="rounded-xl border-2 border-[var(--brand)] bg-bg-muted p-6 flex flex-col relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[var(--brand)] text-white text-xs font-medium px-3 py-1 rounded-full">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-xs font-medium px-3 py-1 rounded-full">
                 Most popular
               </div>
               <h3 className="text-lg font-medium text-fg mb-1">Pro</h3>
@@ -567,7 +569,8 @@ export function LandingPage({ changelogEntries = [], pricing }: LandingPageProps
               </ul>
             </div>
 
-            {/* Believer */}
+          {/* Believer — optional, shown below main plans */}
+          <div className="max-w-md mx-auto mt-8">
             <div className="rounded-xl border border-border bg-bg-muted p-6 flex flex-col">
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="text-lg font-medium text-fg">Believer</h3>
