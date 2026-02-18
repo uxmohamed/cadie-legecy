@@ -575,7 +575,7 @@ export function LandingPage({ changelogEntries = [], pricing }: LandingPageProps
               </div>
               <p className="text-sm text-fg-muted mb-4">Support Cadie&apos;s mission</p>
               <div className="mb-6">
-                <span className="text-3xl font-semibold text-fg">Pay what you want</span>
+                <span className="text-3xl font-semibold text-fg">$179.9</span>
                 <span className="text-sm text-fg-muted"> /yr</span>
               </div>
               <Button
