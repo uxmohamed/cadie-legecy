@@ -57,3 +57,19 @@ CREATE POLICY "Service role can insert webhook events"
   TO service_role
   USING (true)
   WITH CHECK (true);
+
+-- Auto-update updated_at on row changes
+CREATE OR REPLACE FUNCTION public.update_billing_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_user_billing_updated_at ON public.user_billing;
+CREATE TRIGGER trg_user_billing_updated_at
+  BEFORE UPDATE ON public.user_billing
+  FOR EACH ROW
+  EXECUTE FUNCTION public.update_billing_updated_at();
+

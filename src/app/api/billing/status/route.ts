@@ -27,7 +27,7 @@ export async function GET() {
         interval: context.billing?.billing_interval || null,
         current_period_end: context.billing?.current_period_end || null,
         cancel_at_period_end: context.billing?.cancel_at_period_end || false,
-        support_amount_cents: context.billing?.support_amount_cents || null,
+        support_amount_cents: context.billing?.support_amount_cents ?? null,
       },
       entitlements: context.entitlements,
       usage: context.usage,

@@ -27,12 +27,12 @@ CRON_SECRET=<your-random-secret-min-32-chars>
 INTERNAL_API_SECRET=<your-random-secret-min-32-chars>
 
 # Lemon Squeezy (Billing)
-LEMON_SQUEEZY_API_KEY=<your-lemon-api-key>
-LEMON_SQUEEZY_STORE_ID=<your-lemon-store-id>
-LEMON_SQUEEZY_WEBHOOK_SECRET=<your-lemon-webhook-signing-secret>
-LEMON_VARIANT_PRO_MONTHLY=<your-pro-monthly-variant-id>
-LEMON_VARIANT_PRO_YEARLY=<your-pro-yearly-variant-id>
-LEMON_VARIANT_BELIEVER_YEARLY=<your-believer-yearly-variant-id>
+LEMONSQUEEZY_API_KEY=<your-lemon-api-key>
+LEMONSQUEEZY_STORE_ID=<your-lemon-store-id>
+LEMONSQUEEZY_WEBHOOK_SECRET=<your-lemon-webhook-signing-secret>
+LEMONSQUEEZY_PRO_MONTHLY_VARIANT_ID=<your-pro-monthly-variant-id>
+LEMONSQUEEZY_PRO_YEARLY_VARIANT_ID=<your-pro-yearly-variant-id>
+LEMONSQUEEZY_BELIEVER_YEARLY_VARIANT_ID=<your-believer-yearly-variant-id>
 
 # Site URL (your deployed domain)
 NEXT_PUBLIC_SITE_URL=https://your-domain.com
@@ -68,12 +68,12 @@ CRON_SECRET=<generate-for-local-testing>
 INTERNAL_API_SECRET=<generate-for-local-testing>
 
 # Lemon Squeezy (Billing)
-LEMON_SQUEEZY_API_KEY=<your-lemon-api-key>
-LEMON_SQUEEZY_STORE_ID=<your-lemon-store-id>
-LEMON_SQUEEZY_WEBHOOK_SECRET=<your-lemon-webhook-signing-secret>
-LEMON_VARIANT_PRO_MONTHLY=<your-pro-monthly-variant-id>
-LEMON_VARIANT_PRO_YEARLY=<your-pro-yearly-variant-id>
-LEMON_VARIANT_BELIEVER_YEARLY=<your-believer-yearly-variant-id>
+LEMONSQUEEZY_API_KEY=<your-lemon-api-key>
+LEMONSQUEEZY_STORE_ID=<your-lemon-store-id>
+LEMONSQUEEZY_WEBHOOK_SECRET=<your-lemon-webhook-signing-secret>
+LEMONSQUEEZY_PRO_MONTHLY_VARIANT_ID=<your-pro-monthly-variant-id>
+LEMONSQUEEZY_PRO_YEARLY_VARIANT_ID=<your-pro-yearly-variant-id>
+LEMONSQUEEZY_BELIEVER_YEARLY_VARIANT_ID=<your-believer-yearly-variant-id>
 
 # Local development URLs
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
@@ -109,7 +109,7 @@ export default {
         headers: {
           Authorization: `Bearer ${env.CRON_SECRET}`,
         },
-      }
+      },
     );
 
     const result = await response.json();

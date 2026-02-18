@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/server";
 import { resolvePlanFromVariantId } from "@/lib/billing/plan-resolver";
 import type { BillingInterval, PlanTier, SubscriptionStatus } from "@/lib/billing/types";
@@ -31,6 +31,17 @@ function asString(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+/** Coerce numbers and strings to trimmed string, return null for anything else. */
+function coerceString(value: unknown): string | null {
+  if (value == null) return null;
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  return null;
+}
+
 function parseDateString(value: unknown): string | null {
   const dateValue = asString(value);
   if (!dateValue) return null;
@@ -51,7 +62,7 @@ function parseInteger(value: unknown): number | null {
 }
 
 export function verifyLemonWebhookSignature(rawBody: string, signature: string | null): boolean {
-  const secret = process.env.LEMON_SQUEEZY_WEBHOOK_SECRET;
+  const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET;
   if (!secret || !signature) return false;
 
   const digest = createHmac("sha256", secret).update(rawBody).digest("hex");
@@ -65,13 +76,12 @@ export function verifyLemonWebhookSignature(rawBody: string, signature: string |
   return timingSafeEqual(expected, received);
 }
 
-function deriveEventId(payload: LemonWebhookPayload): string {
-  const explicit = asString(payload.data?.id);
+function deriveEventId(payload: LemonWebhookPayload, rawBody: string): string {
   const eventName = asString(payload.meta?.event_name) || "unknown";
-  const subscriptionId = asString(payload.data?.attributes?.id) || asString(payload.data?.id) || "unknown";
-  const updatedAt = asString(payload.data?.attributes?.updated_at) || asString(payload.data?.attributes?.created_at) || "na";
+  const subscriptionId = coerceString(payload.data?.id) || "unknown";
+  const bodyHash = createHash("sha256").update(rawBody).digest("hex").slice(0, 16);
 
-  return explicit ? `${eventName}:${explicit}` : `${eventName}:${subscriptionId}:${updatedAt}`;
+  return `${eventName}:${subscriptionId}:${bodyHash}`;
 }
 
 function mapStatus(rawStatus: unknown, eventName: string): SubscriptionStatus {
@@ -89,10 +99,22 @@ function mapStatus(rawStatus: unknown, eventName: string): SubscriptionStatus {
 }
 
 function mapInterval(rawInterval: unknown): BillingInterval {
-  const value = String(rawInterval || "").toLowerCase();
+  if (rawInterval == null) return null;
+  const value = String(rawInterval).toLowerCase();
   if (value === "month" || value === "monthly") return "month";
   if (value === "year" || value === "yearly" || value === "annually") return "year";
   return null;
+}
+
+function deriveBillingIntervalFromVariant(variantId: string | null): BillingInterval {
+  if (!variantId) return null;
+  const plan = resolvePlanFromVariantId(variantId);
+  if (!plan) return null;
+
+  const proMonthly = process.env.LEMONSQUEEZY_PRO_MONTHLY_VARIANT_ID;
+  if (proMonthly && variantId === proMonthly) return "month";
+  // Pro yearly and Believer yearly are both "year"
+  return "year";
 }
 
 async function lookupBillingByLemonIds(customerId: string | null, subscriptionId: string | null): Promise<ExistingBillingLookup | null> {
@@ -153,7 +175,7 @@ function extractSupportAmountCents(attributes: Record<string, unknown>): number 
 export async function processLemonWebhook(rawBody: string): Promise<ProcessWebhookResult> {
   const payload = JSON.parse(rawBody) as LemonWebhookPayload;
   const eventName = asString(payload.meta?.event_name) || "unknown";
-  const eventId = deriveEventId(payload);
+  const eventId = deriveEventId(payload, rawBody);
 
   const supabase = createAdminClient();
 
@@ -176,12 +198,12 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
   }
 
   const attributes = (payload.data?.attributes || {}) as Record<string, unknown>;
-  const customerId = asString(attributes.customer_id) || asString(attributes.customer);
-  const subscriptionId = asString(payload.data?.id) || asString(attributes.subscription_id);
-  const variantId = asString(attributes.variant_id);
+  const customerId = coerceString(attributes.customer_id) || coerceString(attributes.customer);
+  const subscriptionId = coerceString(payload.data?.id) || coerceString(attributes.subscription_id);
+  const variantId = coerceString(attributes.variant_id);
 
   const customData = payload.meta?.custom_data || {};
-  const explicitUserId = asString(customData.user_id) || asString(attributes.user_id);
+  const explicitUserId = coerceString(customData.user_id) || coerceString(attributes.user_id);
 
   const existing = await lookupBillingByLemonIds(customerId, subscriptionId);
   const userId = explicitUserId || existing?.user_id;
@@ -194,7 +216,8 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
   const planTier = mappedPlan || existing?.plan_tier || "starter";
 
   const status = mapStatus(attributes.status, eventName);
-  const billingInterval = mapInterval(attributes.billing_anchor || attributes.billing_interval || attributes.interval);
+  // billing_anchor is day-of-month, not the interval — derive interval from variant mapping
+  const billingInterval = mapInterval(attributes.billing_interval || attributes.interval) || deriveBillingIntervalFromVariant(variantId);
   const currentPeriodEnd =
     parseDateString(attributes.renews_at) ||
     parseDateString(attributes.ends_at) ||
@@ -207,6 +230,7 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
 
   const supportAmountCents = extractSupportAmountCents(attributes);
 
+  const now = new Date().toISOString();
   const upsertPayload: Record<string, unknown> = {
     user_id: userId,
     plan_tier: planTier,
@@ -217,7 +241,8 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
     lemon_variant_id: variantId,
     current_period_end: currentPeriodEnd,
     cancel_at_period_end: cancelAtPeriodEnd,
-    last_webhook_event_at: new Date().toISOString(),
+    last_webhook_event_at: now,
+    updated_at: now,
   };
 
   if (supportAmountCents !== null) {

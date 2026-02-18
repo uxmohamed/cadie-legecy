@@ -25,7 +25,7 @@ function getRequiredEnv(name: string): string {
 }
 
 async function lemonRequest(path: string, options: LemonRequestOptions = {}): Promise<Record<string, unknown>> {
-  const apiKey = getRequiredEnv("LEMON_SQUEEZY_API_KEY");
+  const apiKey = getRequiredEnv("LEMONSQUEEZY_API_KEY");
 
   const response = await fetch(`${LEMON_API_BASE}${path}`, {
     method: options.method || "GET",
@@ -52,10 +52,10 @@ async function lemonRequest(path: string, options: LemonRequestOptions = {}): Pr
 export function getVariantIdForSelection(plan: PlanTier, interval: BillingInterval): string {
   if (plan === "pro") {
     if (interval === "month") {
-      return getRequiredEnv("LEMON_VARIANT_PRO_MONTHLY");
+      return getRequiredEnv("LEMONSQUEEZY_PRO_MONTHLY_VARIANT_ID");
     }
     if (interval === "year") {
-      return getRequiredEnv("LEMON_VARIANT_PRO_YEARLY");
+      return getRequiredEnv("LEMONSQUEEZY_PRO_YEARLY_VARIANT_ID");
     }
     throw new Error("Pro checkout requires month or year interval");
   }
@@ -64,14 +64,14 @@ export function getVariantIdForSelection(plan: PlanTier, interval: BillingInterv
     if (interval !== "year") {
       throw new Error("Believer plan is yearly only");
     }
-    return getRequiredEnv("LEMON_VARIANT_BELIEVER_YEARLY");
+    return getRequiredEnv("LEMONSQUEEZY_BELIEVER_YEARLY_VARIANT_ID");
   }
 
   throw new Error("Starter does not have a paid checkout variant");
 }
 
 export async function createLemonCheckout(input: CreateCheckoutInput): Promise<{ checkoutUrl: string }> {
-  const storeId = getRequiredEnv("LEMON_SQUEEZY_STORE_ID");
+  const storeId = getRequiredEnv("LEMONSQUEEZY_STORE_ID");
 
   const checkoutData: Record<string, unknown> = {
     custom: {
@@ -83,24 +83,27 @@ export async function createLemonCheckout(input: CreateCheckoutInput): Promise<{
     checkoutData.email = input.email;
   }
 
+  const checkoutAttributes: Record<string, unknown> = {
+    checkout_data: checkoutData,
+    checkout_options: {
+      embed: false,
+      media: true,
+    },
+    product_options: {
+      enabled_variants: [input.variantId],
+      redirect_url: input.checkoutReturnUrl || undefined,
+    },
+  };
+
+  // Believer PWYW: set custom_price at the attributes level
   if (typeof input.supportAmountCents === "number" && input.supportAmountCents > 0) {
-    checkoutData.requested_support_amount_cents = input.supportAmountCents;
+    checkoutAttributes.custom_price = input.supportAmountCents;
   }
 
   const body: Record<string, unknown> = {
     data: {
       type: "checkouts",
-      attributes: {
-        checkout_data: checkoutData,
-        checkout_options: {
-          embed: false,
-          media: true,
-        },
-        product_options: {
-          enabled_variants: [input.variantId],
-          redirect_url: input.checkoutReturnUrl || undefined,
-        },
-      },
+      attributes: checkoutAttributes,
       relationships: {
         store: {
           data: {
@@ -134,23 +137,16 @@ export async function createLemonCheckout(input: CreateCheckoutInput): Promise<{
   return { checkoutUrl };
 }
 
-export async function createLemonCustomerPortal(lemonCustomerId: string): Promise<{ portalUrl: string }> {
-  const payload = await lemonRequest(`/customers/${lemonCustomerId}/portal`, {
-    method: "POST",
-    body: {
-      data: {
-        type: "customer-portals",
-        attributes: {},
-      },
-    },
-  });
+export async function getCustomerPortalUrl(lemonSubscriptionId: string): Promise<{ portalUrl: string }> {
+  const payload = await lemonRequest(`/subscriptions/${lemonSubscriptionId}`);
 
   const data = payload.data as Record<string, unknown> | undefined;
   const attributes = data?.attributes as Record<string, unknown> | undefined;
-  const portalUrl = attributes?.url;
+  const urls = attributes?.urls as Record<string, unknown> | undefined;
+  const portalUrl = urls?.customer_portal;
 
   if (typeof portalUrl !== "string" || !portalUrl) {
-    throw new Error("Lemon portal URL was not returned");
+    throw new Error("Customer portal URL was not found on subscription");
   }
 
   return { portalUrl };

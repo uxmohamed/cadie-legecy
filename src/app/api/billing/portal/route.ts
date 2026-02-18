@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createLemonCustomerPortal } from "@/lib/billing/lemon-client";
+import { getCustomerPortalUrl } from "@/lib/billing/lemon-client";
 import { getUserBillingRecord } from "@/lib/billing/plan-resolver";
 
 export async function POST() {
@@ -15,11 +15,11 @@ export async function POST() {
     }
 
     const billing = await getUserBillingRecord(user.id);
-    if (!billing?.lemon_customer_id) {
-      return NextResponse.json({ error: "No Lemon customer found for this account" }, { status: 400 });
+    if (!billing?.lemon_subscription_id) {
+      return NextResponse.json({ error: "No active subscription found for this account" }, { status: 400 });
     }
 
-    const portal = await createLemonCustomerPortal(billing.lemon_customer_id);
+    const portal = await getCustomerPortalUrl(billing.lemon_subscription_id);
 
     return NextResponse.json({
       portal_url: portal.portalUrl,

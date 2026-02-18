@@ -78,9 +78,9 @@ export function resolvePlanFromVariantId(rawVariantId: unknown): PlanTier | null
   const variantId = String(rawVariantId || "").trim();
   if (!variantId) return null;
 
-  const proMonthly = process.env.LEMON_VARIANT_PRO_MONTHLY;
-  const proYearly = process.env.LEMON_VARIANT_PRO_YEARLY;
-  const believerYearly = process.env.LEMON_VARIANT_BELIEVER_YEARLY;
+  const proMonthly = process.env.LEMONSQUEEZY_PRO_MONTHLY_VARIANT_ID;
+  const proYearly = process.env.LEMONSQUEEZY_PRO_YEARLY_VARIANT_ID;
+  const believerYearly = process.env.LEMONSQUEEZY_BELIEVER_YEARLY_VARIANT_ID;
 
   if ((proMonthly && variantId === proMonthly) || (proYearly && variantId === proYearly)) {
     return "pro";
