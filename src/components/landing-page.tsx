@@ -61,8 +61,8 @@ interface LandingPageProps {
 }
 
 export function LandingPage({ changelogEntries = [], pricing }: LandingPageProps) {
-  const proMonthlyLabel = pricing?.proMonthlyFormatted ?? "$6.99";
-  const proYearlyLabel = pricing?.proYearlyFormatted ?? "$69.99";
+  const proMonthlyLabel = pricing?.proMonthlyFormatted ?? "$6.9";
+  const proYearlyLabel = pricing?.proYearlyFormatted ?? "$69.9";
   const yearlySavings = pricing
     ? Math.round((1 - pricing.proYearlyCents / (pricing.proMonthlyCents * 12)) * 100)
     : 17;
