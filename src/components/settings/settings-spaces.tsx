@@ -16,7 +16,9 @@ import {
   IconX,
   IconPlus,
   IconCapsuleHorizontalFilled,
+  IconLock,
 } from "@tabler/icons-react";
+import { Badge } from "@/components/ui/badge";
 import { SPACE_COLORS, ColorPicker } from "@/components/spaces/color-picker";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -50,6 +52,7 @@ interface SpaceItemProps {
   space: Space;
   onUpdate: (id: string, updates: { name?: string; color?: string; description?: string | null }) => Promise<boolean>;
   onDelete: (id: string) => Promise<boolean>;
+  locked?: boolean;
 }
 
 const FIELD_OPTIONS: Array<{ value: AutoForwardingField; label: string }> = [
@@ -70,7 +73,7 @@ const JOIN_OPTIONS: Array<{ value: AutoForwardingJoinOperator; label: string }> 
   { value: "AND", label: "AND" },
 ];
 
-function SpaceItem({ space, onUpdate, onDelete }: SpaceItemProps) {
+function SpaceItem({ space, onUpdate, onDelete, locked }: SpaceItemProps) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [editName, setEditName] = React.useState(space.name);
   const [editDescription, setEditDescription] = React.useState(space.description || "");
@@ -170,13 +173,14 @@ function SpaceItem({ space, onUpdate, onDelete }: SpaceItemProps) {
   }
 
   return (
-    <div className="group flex items-start gap-3 py-2 px-2 rounded-md hover:bg-bg-hover transition-colors w-full max-w-full overflow-hidden">
+    <div className={`group flex items-start gap-3 py-2 px-2 rounded-md transition-colors w-full max-w-full overflow-hidden ${locked ? "opacity-60" : "hover:bg-bg-hover"}`}>
       <Popover>
         <PopoverTrigger
           render={
             <button
               className="h-6 w-6 mt-0.5 flex items-center justify-center shrink-0 ring-2 ring-transparent hover:ring-border-hover transition-all cursor-pointer rounded-md"
               aria-label="Change color"
+              disabled={locked}
             />
           }
         >
@@ -185,63 +189,75 @@ function SpaceItem({ space, onUpdate, onDelete }: SpaceItemProps) {
             style={{ color: space.color }}
           />
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-3" align="start">
-          <ColorPicker
-            selectedColor={space.color}
-            onColorSelect={handleColorChange}
-          />
-        </PopoverContent>
+        {!locked && (
+          <PopoverContent className="w-auto p-3" align="start">
+            <ColorPicker
+              selectedColor={space.color}
+              onColorSelect={handleColorChange}
+            />
+          </PopoverContent>
+        )}
       </Popover>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-fg font-medium overflow-hidden text-ellipsis whitespace-nowrap">{space.name}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-sm text-fg font-medium overflow-hidden text-ellipsis whitespace-nowrap">{space.name}</p>
+          {locked && (
+            <Badge variant="secondary" size="sm" className="shrink-0 gap-1">
+              <IconLock className="h-2.5 w-2.5" />
+              Locked
+            </Badge>
+          )}
+        </div>
         <p className="text-xs text-fg-muted overflow-hidden text-ellipsis whitespace-nowrap">
-          {space.description || "No note added"}
+          {locked ? "Upgrade to unlock this space" : (space.description || "No note added")}
         </p>
       </div>
 
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-auto">
-        <Button
-          size="icon"
-          variant="ghost"
-          className="h-7 w-7 text-fg-subtle hover:text-fg hover:bg-bg-hover"
-          onClick={() => setIsEditing(true)}
-        >
-          <IconPencil className="h-3.5 w-3.5" />
-        </Button>
-        <AlertDialog>
-          <AlertDialogTrigger
-            render={
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7 text-fg-subtle hover:text-destructive hover:bg-destructive-muted"
-              />
-            }
+      {!locked && (
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-auto">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 text-fg-subtle hover:text-fg hover:bg-bg-hover"
+            onClick={() => setIsEditing(true)}
           >
-            <IconTrash className="h-3.5 w-3.5" />
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                Delete space &quot;<span className="inline-block max-w-[200px] truncate align-bottom">{space.name}</span>&quot;?
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. All links in this space will be permanently deleted.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-white hover:opacity-90 border-transparent"
-                onClick={() => onDelete(space.id)}
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+            <IconPencil className="h-3.5 w-3.5" />
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger
+              render={
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 text-fg-subtle hover:text-destructive hover:bg-destructive-muted"
+                />
+              }
+            >
+              <IconTrash className="h-3.5 w-3.5" />
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  Delete space &quot;<span className="inline-block max-w-[200px] truncate align-bottom">{space.name}</span>&quot;?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. All links in this space will be permanently deleted.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-white hover:opacity-90 border-transparent"
+                  onClick={() => onDelete(space.id)}
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
     </div>
   );
 }
@@ -256,6 +272,18 @@ export function SettingsSpaces() {
   const [conditions, setConditions] = React.useState<AutoForwardingCondition[]>([]);
   const [isLoadingAutoForwarding, setIsLoadingAutoForwarding] = React.useState(true);
   const [isSavingAutoForwarding, setIsSavingAutoForwarding] = React.useState(false);
+  const [lockedSpaceIds, setLockedSpaceIds] = React.useState<Set<string>>(new Set());
+
+  React.useEffect(() => {
+    fetch("/api/billing/status")
+      .then((res) => res.json())
+      .then((data: { locked_space_ids?: string[] }) => {
+        if (data.locked_space_ids && data.locked_space_ids.length > 0) {
+          setLockedSpaceIds(new Set(data.locked_space_ids));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const normalizeConditionTargets = React.useCallback((nextConditions: AutoForwardingCondition[]) => {
     const availableSpaceIds = new Set(spaces.slice(1).map((space) => space.id));
@@ -561,6 +589,7 @@ export function SettingsSpaces() {
             space={space}
             onUpdate={updateSpace}
             onDelete={deleteSpace}
+            locked={lockedSpaceIds.has(space.id)}
           />
         ))}
 

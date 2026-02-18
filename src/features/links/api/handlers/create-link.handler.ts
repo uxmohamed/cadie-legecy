@@ -11,6 +11,8 @@ import { AutoSpaceForwardingService } from "@/features/spaces/services/auto-spac
 import { createAdminClient } from "@/lib/supabase/server";
 import { extractMetadata } from "@/lib/metadata";
 import { log } from "@/lib/logger";
+import { getBillingContext } from "@/lib/billing/context";
+import { createPlanLimitResponse } from "@/lib/billing/limit-response";
 
 const EXTENSION_SOURCE_HEADER = "x-cadie-source";
 const EXTENSION_SOURCE_VALUE = "extension";
@@ -542,6 +544,20 @@ export class CreateLinkHandler {
                     },
                     { status: 401 }
                 );
+            }
+
+            // Enforce plan limits
+            const billingCtx = await getBillingContext(userId);
+            const { entitlements, usage } = billingCtx;
+
+            if (entitlements.maxSavedItems !== null && usage.totalSavedItems >= entitlements.maxSavedItems) {
+                return createPlanLimitResponse({
+                    plan: billingCtx.plan,
+                    limitKey: "saved_items",
+                    current: usage.totalSavedItems,
+                    max: entitlements.maxSavedItems,
+                    message: `You've reached the ${entitlements.maxSavedItems}-item limit on the ${billingCtx.plan} plan. Upgrade to save more.`,
+                });
             }
 
             // Use validated data if provided, otherwise fall back to old validation

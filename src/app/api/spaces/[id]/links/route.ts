@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitSpaces, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 import { authenticateRequest } from "@/lib/auth-middleware";
+import { getBillingContext } from "@/lib/billing/context";
+import { createPlanLimitResponse } from "@/lib/billing/limit-response";
 
 export async function POST(
   request: NextRequest,
@@ -64,6 +66,18 @@ export async function POST(
         { error: "Space not found" },
         { status: 404 }
       );
+    }
+
+    // Block adding links to locked overflow spaces
+    const billingCtx = await getBillingContext(userId);
+    if (billingCtx.lockedSpaceIds.has(spaceId)) {
+      return createPlanLimitResponse({
+        plan: billingCtx.plan,
+        limitKey: "locked_space",
+        current: null,
+        max: billingCtx.entitlements.maxSpaces,
+        message: "This space is locked on your current plan. Upgrade to unlock all spaces.",
+      });
     }
 
     if (linksResult.error) {
@@ -169,6 +183,18 @@ export async function DELETE(
         { error: "Space not found" },
         { status: 404 }
       );
+    }
+
+    // Block removing links from locked overflow spaces
+    const billingCtxDel = await getBillingContext(userId);
+    if (billingCtxDel.lockedSpaceIds.has(spaceId)) {
+      return createPlanLimitResponse({
+        plan: billingCtxDel.plan,
+        limitKey: "locked_space",
+        current: null,
+        max: billingCtxDel.entitlements.maxSpaces,
+        message: "This space is locked on your current plan. Upgrade to unlock all spaces.",
+      });
     }
 
     // Delete link_spaces

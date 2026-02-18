@@ -9,7 +9,7 @@ import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import { useShortcuts } from "@/components/shortcut-context";
 import { useTheme } from "@/components/theme-provider";
-import { IconMoon, IconMessage, IconSettings, IconBrandX, IconKeyboard, IconLogout, IconShip, IconExternalLink } from "@tabler/icons-react";
+import { IconMoon, IconMessage, IconSettings, IconBrandX, IconKeyboard, IconLogout, IconShip, IconExternalLink, IconCrown } from "@tabler/icons-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -49,13 +49,21 @@ export function UserMenu({ user }: UserMenuProps) {
     display_name: string | null;
     avatar_url: string | null;
   } | null>(null);
-  
+  const [isBeliever, setIsBeliever] = React.useState(false);
+
   const refetchProfile = React.useCallback(() => {
     getUserProfile(user.id).then(setProfile);
   }, [user.id]);
-  
+
   React.useEffect(() => {
     refetchProfile();
+    // Fetch believer badge status
+    fetch("/api/billing/status")
+      .then((res) => res.json())
+      .then((data: { believer_badge?: boolean }) => {
+        if (data.believer_badge) setIsBeliever(true);
+      })
+      .catch(() => {});
   }, [refetchProfile]);
 
   const handleSignOut = React.useCallback(async () => {
@@ -213,20 +221,23 @@ export function UserMenu({ user }: UserMenuProps) {
           render={
             <Button
               variant="ghost"
-              className="h-9 w-9 rounded-full p-0 hover:bg-[var(--bg-hover)]"
+              className="h-9 rounded-full p-0 hover:bg-[var(--bg-hover)] relative"
             />
           }
         >
           <Avatar className="h-9 w-9">
-            <AvatarImage 
-              src={userAvatar} 
-              alt={user.email} 
+            <AvatarImage
+              src={userAvatar}
+              alt={user.email}
               onLoadingStatusChange={handleAvatarLoadingStatusChange}
             />
             <AvatarFallback className="bg-[var(--bg-inverse)] text-[var(--fg-inverse)]">
               {userName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
+          {isBeliever && (
+            <IconCrown className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 text-warning drop-shadow-sm" />
+          )}
         </DropdownMenuTrigger>
         <DropdownMenuContent ref={menuRef} align="end" className="w-64">
           <div className="px-2 py-3">
