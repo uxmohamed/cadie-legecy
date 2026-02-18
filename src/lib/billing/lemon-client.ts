@@ -49,6 +49,59 @@ async function lemonRequest(path: string, options: LemonRequestOptions = {}): Pr
   return payload;
 }
 
+// ---------- Public pricing (server-side, cached) ----------
+
+export interface PlanPricing {
+  proMonthly: number;   // e.g. 6
+  proYearly: number;    // e.g. 48
+  believerYearly: number | null; // null = PWYW
+}
+
+/**
+ * Fetch live prices from Lemon Squeezy variants.
+ * Called server-side so API key stays hidden; cached for 1 hour via Next.js.
+ */
+export async function fetchVariantPrices(): Promise<PlanPricing> {
+  const DEFAULTS: PlanPricing = { proMonthly: 6, proYearly: 48, believerYearly: null };
+
+  try {
+    const apiKey = process.env.LEMONSQUEEZY_API_KEY;
+    const proMonthlyId = process.env.LEMONSQUEEZY_PRO_MONTHLY_VARIANT_ID;
+    const proYearlyId = process.env.LEMONSQUEEZY_PRO_YEARLY_VARIANT_ID;
+
+    if (!apiKey || !proMonthlyId || !proYearlyId) return DEFAULTS;
+
+    const fetchVariant = async (variantId: string): Promise<number | null> => {
+      const res = await fetch(`${LEMON_API_BASE}/variants/${variantId}`, {
+        headers: {
+          Accept: "application/vnd.api+json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        next: { revalidate: 3600 }, // cache for 1 hour
+      });
+      if (!res.ok) return null;
+      const json = (await res.json()) as Record<string, unknown>;
+      const data = json.data as Record<string, unknown> | undefined;
+      const attrs = data?.attributes as Record<string, unknown> | undefined;
+      const priceCents = attrs?.price as number | undefined;
+      return typeof priceCents === "number" ? priceCents / 100 : null;
+    };
+
+    const [monthly, yearly] = await Promise.all([
+      fetchVariant(proMonthlyId),
+      fetchVariant(proYearlyId),
+    ]);
+
+    return {
+      proMonthly: monthly ?? DEFAULTS.proMonthly,
+      proYearly: yearly ?? DEFAULTS.proYearly,
+      believerYearly: null, // PWYW — no fixed price
+    };
+  } catch {
+    return DEFAULTS;
+  }
+}
+
 export function getVariantIdForSelection(plan: PlanTier, interval: BillingInterval): string {
   if (plan === "pro") {
     if (interval === "month") {

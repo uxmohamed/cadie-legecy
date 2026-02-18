@@ -1,5 +1,6 @@
 "use client";
 
+import type { PlanPricing } from "@/lib/billing/lemon-client";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -56,9 +57,13 @@ function FaqItem({ question, children, isOpen, onToggle }: { question: string; c
 
 interface LandingPageProps {
   changelogEntries?: ChangelogEntry[];
+  pricing?: PlanPricing;
 }
 
-export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
+export function LandingPage({ changelogEntries = [], pricing }: LandingPageProps) {
+  const proMonthly = pricing?.proMonthly ?? 6;
+  const proYearly = pricing?.proYearly ?? 48;
+  const yearlySavings = Math.round((1 - proYearly / (proMonthly * 12)) * 100);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openFaqId, setOpenFaqId] = useState<string | null>(null);
   const [pricingInterval, setPricingInterval] = useState<"month" | "year">("month");
@@ -534,13 +539,13 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
               <p className="text-sm text-fg-muted mb-4">For power users</p>
               <div className="mb-6">
                 <span className="text-3xl font-semibold text-fg">
-                  {pricingInterval === "month" ? "$6" : "$48"}
+                  ${pricingInterval === "month" ? proMonthly : proYearly}
                 </span>
                 <span className="text-sm text-fg-muted">
                   /{pricingInterval === "month" ? "mo" : "yr"}
                 </span>
-                {pricingInterval === "year" && (
-                  <span className="ml-2 text-xs text-success font-medium">Save 33%</span>
+                {pricingInterval === "year" && yearlySavings > 0 && (
+                  <span className="ml-2 text-xs text-success font-medium">Save {yearlySavings}%</span>
                 )}
               </div>
               <Button
