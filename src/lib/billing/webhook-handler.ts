@@ -248,7 +248,12 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
 
   // 3. Process Logic based on Event Name
   // Common data extraction
-  const variantId = coerceString(attributes.variant_id);
+  // attributes.variant_id is standard for subscription events.
+  // attributes.first_order_item.variant_id is standard for order events (like Lifetime deals).
+  const variantId =
+    coerceString(attributes.variant_id) ||
+    coerceString((attributes.first_order_item as Record<string, unknown>)?.variant_id);
+    
   const mappedPlan = resolvePlanFromVariantId(variantId);
   const planTier = mappedPlan || existingBilling?.plan_tier || "starter";
   
@@ -318,18 +323,31 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
       break;
       
     case "order_created":
-        // Useful for one-time purchases (Lifetime deals) if we support them.
-        // For now, if it resolves to a Plan, we might want to activate it.
-        // Check if this variant is a "Believer" (Lifetime)
-        if (planTier === "believer") {
-             upsertPayload.plan_tier = "believer";
+        // Useful for one-time purchases (Lifetime deals) or simple orders.
+        // If it resolves to a valid Plan, we activate it.
+        if (planTier && planTier !== "starter") {
+             upsertPayload.plan_tier = planTier;
              upsertPayload.subscription_status = "active";
-             upsertPayload.billing_interval = "year"; // Treat as yearly for display or 'lifetime' if we had that enum
-             upsertPayload.current_period_end = new Date("2099-12-31").toISOString(); // Forever
+             
+             // Derive interval from variant, default to 'year' if it's the Believer plan (which is yearly)
+             // or fallback to 'month' if unknown, but better to trust the resolver.
+             // Since Believer is yearly, deriveBillingIntervalFromVariant should return 'year' if set up correctly.
+             const derivedInterval = deriveBillingIntervalFromVariant(variantId);
+             upsertPayload.billing_interval = derivedInterval || "year"; // Fallback to year as safe default for orders? Or maybe null?
+             // User said Believer is Year. Pro Yearly is Year. 
+             
+             // For orders, we don't have 'renews_at', so we default to 1 year access
+             // unless we have specific logic.
+             // We'll trust the planTier to decide if we should grant access.
+             
+             const oneYearFromNow = new Date();
+             oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+             upsertPayload.current_period_end = oneYearFromNow.toISOString();
+             
              upsertPayload.lemon_customer_id = customerId;
              upsertPayload.lemon_variant_id = variantId;
         } else {
-            // Ignore other orders for now, assume subscriptions cover it
+            // Not a recognized plan variant, ignore.
              return { processed: true, ignored: true };
         }
         break;

@@ -220,4 +220,57 @@ describe("processLemonWebhook", () => {
           expect.anything()
       );
   });
+
+  test("activates Believer plan on order_created", async () => {
+    // Mock resolvePlanFromVariantId to return 'believer' for this specific variant
+    const { resolvePlanFromVariantId } = require("@/lib/billing/plan-resolver");
+    resolvePlanFromVariantId.mockImplementation((id: string) => {
+        if (id === "variant_believer") return "believer";
+        return null;
+    });
+
+    const payload = {
+        meta: { 
+            event_name: "order_created",
+            custom_data: { user_id: "user_believer" }
+        },
+        data: {
+            id: "order_123",
+            type: "orders",
+            attributes: {
+                status: "paid",
+                total: 10000,
+                first_order_item: {
+                    variant_id: "variant_believer",
+                    product_name: "Cadie Pro (Believer)"
+                },
+                // Intentionally omitting top-level variant_id to simulate actual payload
+            }
+        }
+    };
+
+    const rawBody = JSON.stringify(payload);
+    await processLemonWebhook(rawBody);
+
+    expect(mockUpsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+            user_id: "user_believer",
+            plan_tier: "believer",
+            subscription_status: "active",
+            billing_interval: "year",
+        }),
+        expect.anything()
+    );
+    
+    // Check that current_period_end is approximately 1 year from now (not 2099)
+    const upsertCall = mockUpsert.mock.calls[0][0];
+    const expiryDate = new Date(upsertCall.current_period_end);
+    const now = new Date();
+    const nextYear = new Date();
+    nextYear.setFullYear(now.getFullYear() + 1);
+    
+    // Allow small delta (e.g. 10 seconds)
+    const diff = Math.abs(expiryDate.getTime() - nextYear.getTime());
+    expect(diff).toBeLessThan(10000); // 10s tolerance
+  });
 });
