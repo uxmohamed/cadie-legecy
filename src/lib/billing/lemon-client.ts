@@ -24,7 +24,7 @@ function getRequiredEnv(name: string): string {
   return value;
 }
 
-async function lemonRequest(path: string, options: LemonRequestOptions = {}): Promise<Record<string, unknown>> {
+export async function lemonRequest(path: string, options: LemonRequestOptions = {}): Promise<Record<string, unknown>> {
   const apiKey = getRequiredEnv("LEMONSQUEEZY_API_KEY");
 
   const response = await fetch(`${LEMON_API_BASE}${path}`, {
