@@ -509,7 +509,19 @@ export async function POST(request: NextRequest) {
         };
         break;
 
-      case "restore":
+      case "restore": {
+        // Enforce plan limit: restoring soft-deleted items counts toward the cap
+        const restoreBillingCtx = await getBillingContext(user.id);
+        const { entitlements: restoreEnt, usage: restoreUsage } = restoreBillingCtx;
+        if (restoreEnt.maxSavedItems !== null && restoreUsage.totalSavedItems + ids!.length > restoreEnt.maxSavedItems) {
+          return createPlanLimitResponse({
+            plan: restoreBillingCtx.plan,
+            limitKey: "saved_items",
+            current: restoreUsage.totalSavedItems,
+            max: restoreEnt.maxSavedItems,
+            message: `You've reached the ${restoreEnt.maxSavedItems}-item limit on the ${restoreBillingCtx.plan} plan. Upgrade to restore more items.`,
+          });
+        }
         const restoreResult = await withRetry(
           async () => {
             const supabase = await createClient();
@@ -530,6 +542,7 @@ export async function POST(request: NextRequest) {
           error: restoreResult.error,
         };
         break;
+      }
 
       case "permanent_delete":
         const permDeleteResult = await withRetry(

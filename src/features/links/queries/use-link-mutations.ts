@@ -1180,10 +1180,9 @@ export function useLinkMutations(filters: LinkFilters) {
     mutationFn: async (files: File[]) => {
       const {
         uploadImage,
-        validateImageFile,
         getUserImageCount,
         MAX_FILES_PER_UPLOAD,
-        MAX_IMAGES_PER_USER,
+        MAX_IMAGE_FILE_SIZE,
       } = await import("@/features/links/services/image-upload.service");
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
@@ -1195,21 +1194,36 @@ export function useLinkMutations(filters: LinkFilters) {
         throw new Error(`Too many files. Maximum is ${MAX_FILES_PER_UPLOAD} per upload`);
       }
 
-      // Validate all files before uploading any
+      // Fetch plan-based entitlements
+      const billingRes = await fetch("/api/billing/status");
+      const billingData = billingRes.ok
+        ? (await billingRes.json() as { entitlements?: { maxImages: number | null; maxImageFileBytes: number } })
+        : null;
+      const maxImages = billingData?.entitlements?.maxImages ?? null;
+      const maxImageFileBytes = billingData?.entitlements?.maxImageFileBytes ?? MAX_IMAGE_FILE_SIZE;
+
+      // Validate all files against plan file size limit before uploading any
       for (const file of files) {
-        const error = validateImageFile(file);
-        if (error) throw new Error(error);
+        if (!["image/jpeg","image/png","image/gif","image/webp","image/svg+xml","image/avif"].includes(file.type)) {
+          throw new Error(`"${file.name}" has unsupported type. Allowed: JPEG, PNG, GIF, WebP, SVG, AVIF`);
+        }
+        if (file.size > maxImageFileBytes) {
+          const mb = (maxImageFileBytes / (1024 * 1024)).toFixed(1);
+          throw new Error(`"${file.name}" exceeds the ${mb}MB limit for your plan`);
+        }
       }
 
-      // Check user quota
-      const currentCount = await getUserImageCount(user.id);
-      if (currentCount + files.length > MAX_IMAGES_PER_USER) {
-        const remaining = Math.max(0, MAX_IMAGES_PER_USER - currentCount);
-        throw new Error(
-          remaining === 0
-            ? `Image limit reached (${MAX_IMAGES_PER_USER}). Delete some images to upload more`
-            : `Can only upload ${remaining} more image${remaining === 1 ? "" : "s"} (limit: ${MAX_IMAGES_PER_USER})`
-        );
+      // Check user quota against plan entitlement
+      if (maxImages !== null) {
+        const currentCount = await getUserImageCount(user.id);
+        if (currentCount + files.length > maxImages) {
+          const remaining = Math.max(0, maxImages - currentCount);
+          throw new Error(
+            remaining === 0
+              ? `Image limit reached (${maxImages}). Upgrade to upload more images`
+              : `Can only upload ${remaining} more image${remaining === 1 ? "" : "s"} (limit: ${maxImages})`
+          );
+        }
       }
 
       // Upload files and collect URLs + names
@@ -1337,10 +1351,9 @@ export function useLinkMutations(filters: LinkFilters) {
     mutationFn: async (files: File[]) => {
       const {
         uploadDocument,
-        validateDocumentFile,
         getUserDocumentCount,
         MAX_DOCUMENTS_PER_UPLOAD,
-        MAX_DOCUMENTS_PER_USER,
+        MAX_DOCUMENT_FILE_SIZE,
       } = await import("@/features/links/services/document-upload.service");
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
@@ -1351,19 +1364,36 @@ export function useLinkMutations(filters: LinkFilters) {
         throw new Error(`Too many files. Maximum is ${MAX_DOCUMENTS_PER_UPLOAD} per upload`);
       }
 
+      // Fetch plan-based entitlements
+      const billingRes = await fetch("/api/billing/status");
+      const billingData = billingRes.ok
+        ? (await billingRes.json() as { entitlements?: { maxDocuments: number | null; maxDocumentFileBytes: number } })
+        : null;
+      const maxDocuments = billingData?.entitlements?.maxDocuments ?? null;
+      const maxDocumentFileBytes = billingData?.entitlements?.maxDocumentFileBytes ?? MAX_DOCUMENT_FILE_SIZE;
+
+      // Validate all files against plan file size limit before uploading any
       for (const file of files) {
-        const error = validateDocumentFile(file);
-        if (error) throw new Error(error);
+        if (file.type !== "application/pdf") {
+          throw new Error(`"${file.name}" has unsupported type. Allowed: PDF`);
+        }
+        if (file.size > maxDocumentFileBytes) {
+          const mb = (maxDocumentFileBytes / (1024 * 1024)).toFixed(1);
+          throw new Error(`"${file.name}" exceeds the ${mb}MB limit for your plan`);
+        }
       }
 
-      const currentCount = await getUserDocumentCount(user.id);
-      if (currentCount + files.length > MAX_DOCUMENTS_PER_USER) {
-        const remaining = Math.max(0, MAX_DOCUMENTS_PER_USER - currentCount);
-        throw new Error(
-          remaining === 0
-            ? `Document limit reached (${MAX_DOCUMENTS_PER_USER}). Delete some documents to upload more`
-            : `Can only upload ${remaining} more document${remaining === 1 ? "" : "s"} (limit: ${MAX_DOCUMENTS_PER_USER})`
-        );
+      // Check user quota against plan entitlement
+      if (maxDocuments !== null) {
+        const currentCount = await getUserDocumentCount(user.id);
+        if (currentCount + files.length > maxDocuments) {
+          const remaining = Math.max(0, maxDocuments - currentCount);
+          throw new Error(
+            remaining === 0
+              ? `Document limit reached (${maxDocuments}). Upgrade to upload more documents`
+              : `Can only upload ${remaining} more document${remaining === 1 ? "" : "s"} (limit: ${maxDocuments})`
+          );
+        }
       }
 
       const uploadedItems: { url: string; name: string }[] = [];

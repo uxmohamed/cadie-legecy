@@ -105,9 +105,11 @@ export function SettingsBilling() {
         body: JSON.stringify({ plan, interval }),
       });
       const data = (await res.json()) as { checkout_url?: string; error?: string };
-      if (data.checkout_url) {
-        window.open(data.checkout_url, "_blank");
+      if (!res.ok || !data.checkout_url) {
+        toast.error(data.error ?? "Failed to start checkout. Please try again.");
+        return;
       }
+      window.open(data.checkout_url, "_blank");
     } catch {
       toast.error("Failed to start checkout. Please try again.");
     } finally {
@@ -122,9 +124,11 @@ export function SettingsBilling() {
       const data = (await res.json()) as { portal_url?: string; error?: string };
       if (data.portal_url) {
         window.open(data.portal_url, "_blank");
+      } else {
+        toast.error(data.error ?? "Failed to open billing portal. Please try again.");
       }
     } catch {
-      // silently fail
+      toast.error("Failed to open billing portal. Please try again.");
     } finally {
       setIsPortalLoading(false);
     }
