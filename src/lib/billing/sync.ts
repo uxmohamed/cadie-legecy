@@ -178,32 +178,36 @@ async function upsertUserBilling(args: {
 export async function syncSubscription(userId: string, userEmail: string | null): Promise<BillingSyncResult> {
   const billing = await getUserBillingRecord(userId);
   const fallbackPlan = billing?.plan_tier || "starter";
+  let localLookupFailed = false;
 
   try {
     if (billing?.lemon_subscription_id) {
-      const payload = await lemonRequest(`/subscriptions/${billing.lemon_subscription_id}`);
-      const data = payload.data as Record<string, unknown> | undefined;
-      const candidate = data ? extractSubscriptionCandidate(data) : null;
+      try {
+        const payload = await lemonRequest(`/subscriptions/${billing.lemon_subscription_id}`);
+        const data = payload.data as Record<string, unknown> | undefined;
+        const candidate = data ? extractSubscriptionCandidate(data) : null;
 
-      if (!candidate) {
-        return {
-          synced: false,
-          source: "none",
-          reason: "no_matching_subscription",
-          message: "Subscription not found in Lemon Squeezy",
-        };
+        if (!candidate) {
+          localLookupFailed = true;
+        } else {
+          const result = await upsertUserBilling({
+            userId,
+            candidate,
+            fallbackPlan,
+          });
+
+          return {
+            ...result,
+            source: result.synced ? "local_subscription_id" : result.source,
+          };
+        }
+      } catch (err) {
+        localLookupFailed = true;
+        log.warn(`[BillingSync] Local subscription lookup failed for user ${userId}`, {
+          subscriptionId: billing.lemon_subscription_id,
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
-
-      const result = await upsertUserBilling({
-        userId,
-        candidate,
-        fallbackPlan,
-      });
-
-      return {
-        ...result,
-        source: result.synced ? "local_subscription_id" : result.source,
-      };
     }
 
     if (!userEmail) {
@@ -254,7 +258,7 @@ export async function syncSubscription(userId: string, userEmail: string | null)
     return {
       synced: false,
       source: "none",
-      reason: billing?.lemon_subscription_id ? "no_matching_subscription" : "no_local_subscription",
+      reason: localLookupFailed ? "no_matching_subscription" : "no_local_subscription",
       message: "No matching active subscription found for this account",
     };
   } catch (err) {

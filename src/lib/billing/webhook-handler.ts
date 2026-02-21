@@ -358,6 +358,17 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
       upsertPayload.billing_interval = billingInterval;
       if (currentPeriodEnd) upsertPayload.current_period_end = currentPeriodEnd;
       break;
+
+    case "subscription_payment_success":
+      upsertPayload.plan_tier = planTier;
+      upsertPayload.subscription_status = "active";
+      upsertPayload.lemon_customer_id = customerId;
+      upsertPayload.lemon_subscription_id = subscriptionId;
+      upsertPayload.lemon_variant_id = variantId;
+      upsertPayload.billing_interval = billingInterval;
+      if (currentPeriodEnd) upsertPayload.current_period_end = currentPeriodEnd;
+      if (supportAmountCents !== null) upsertPayload.support_amount_cents = supportAmountCents;
+      break;
       
     case "order_created":
         // Useful for one-time purchases (Lifetime deals) or simple orders.
