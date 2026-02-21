@@ -33,7 +33,7 @@ Pricing appears on landing and a new Billing section in settings. Webhooks are t
 1. Add `/Users/hassan/Repos/cadie/src/app/api/billing/status/route.ts` (`GET`) returning current plan, usage, limits, and subscription metadata.
 2. Add `/Users/hassan/Repos/cadie/src/app/api/billing/checkout/route.ts` (`POST`) accepting target plan + interval + optional Believer custom amount and returning checkout URL.
 3. Add `/Users/hassan/Repos/cadie/src/app/api/billing/portal/route.ts` (`POST`) returning Lemon customer portal URL.
-4. Add `/Users/hassan/Repos/cadie/src/app/api/billing/lemon/webhook/route.ts` (`POST`) with signature verification + idempotent processing.
+4. Add `/Users/hassan/Repos/cadie/src/app/api/webhooks/lemonsqueezy/route.ts` (`POST`) with signature verification + idempotent processing.
 5. Add `/Users/hassan/Repos/cadie/src/lib/billing/lemon-client.ts` and `/Users/hassan/Repos/cadie/src/lib/billing/webhook-handler.ts` for API and mapping logic.
 6. Attach internal `user_id` metadata when creating checkout so webhook events map reliably.
 
@@ -79,7 +79,7 @@ current plan, usage meters, 80/100 warning, upgrade buttons, manage subscription
 `GET /api/billing/status`
 `POST /api/billing/checkout`
 `POST /api/billing/portal`
-`POST /api/billing/lemon/webhook`
+`POST /api/webhooks/lemonsqueezy`
 2. New shared billing types in `/Users/hassan/Repos/cadie/src/lib/billing/types.ts`:
 `PlanTier`, `SubscriptionStatus`, `BillingInterval`, `Entitlements`, `UsageSnapshot`.
 3. Extended `Space` response shape to include lock status for overflow spaces on Starter (for UI disabling).

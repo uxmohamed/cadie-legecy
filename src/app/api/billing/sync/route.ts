@@ -13,13 +13,13 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const result = await syncSubscription(user.id);
+    const result = await syncSubscription(user.id, user.email ?? null);
 
     return NextResponse.json(result);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Failed to sync subscription",
+        error: "Failed to sync subscription",
       },
       { status: 500 }
     );

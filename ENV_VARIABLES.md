@@ -92,6 +92,16 @@ openssl rand -base64 32
 node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
 
+## Lemon Squeezy Local Testing Runbook
+
+When testing billing locally, Lemon Squeezy webhooks must reach a public URL.
+
+1. Set webhook URL to your deployed endpoint for reliability:
+`https://your-domain.com/api/webhooks/lemonsqueezy`
+2. If you use localhost app UI, that is fine for checkout initiation, but webhook delivery still needs a public endpoint.
+3. Only point Lemon webhooks to a tunnel URL (for example `*.loca.lt`, `ngrok`) while the tunnel is actively running.
+4. If webhook delivery fails (for example `503 Tunnel Unavailable`), subscription state will not update in `user_billing` and app will remain on Starter until webhooks are replayed or billing sync is triggered.
+
 ## Cloudflare Scheduled Cleanup Options
 
 ### Option 1: Cloudflare Workers Cron Triggers (Recommended)

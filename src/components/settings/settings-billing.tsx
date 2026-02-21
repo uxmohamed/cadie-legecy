@@ -77,22 +77,24 @@ export function SettingsBilling() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [isCheckoutLoading, setIsCheckoutLoading] = React.useState(false);
   const [isPortalLoading, setIsPortalLoading] = React.useState(false);
+  const [isSyncLoading, setIsSyncLoading] = React.useState(false);
+
+  const loadBilling = React.useCallback(async () => {
+    try {
+      const res = await fetch("/api/billing/status");
+      if (!res.ok) return;
+      const data = (await res.json()) as BillingStatus;
+      setBilling(data);
+    } catch {
+      // no-op
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   React.useEffect(() => {
-    let mounted = true;
-    fetch("/api/billing/status")
-      .then((res) => res.json())
-      .then((data: BillingStatus) => {
-        if (mounted) setBilling(data);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (mounted) setIsLoading(false);
-      });
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    void loadBilling();
+  }, [loadBilling]);
 
   const handleCheckout = async (interval: "month" | "year") => {
     setIsCheckoutLoading(true);
@@ -130,6 +132,37 @@ export function SettingsBilling() {
       toast.error("Failed to open billing portal. Please try again.");
     } finally {
       setIsPortalLoading(false);
+    }
+  };
+
+  const handleSyncBilling = async () => {
+    setIsSyncLoading(true);
+    try {
+      const res = await fetch("/api/billing/sync", { method: "POST" });
+      const data = (await res.json()) as {
+        synced?: boolean;
+        source?: "local_subscription_id" | "email_bootstrap" | "customer_bootstrap" | "none";
+        reason?: string;
+        message?: string;
+        error?: string;
+      };
+
+      if (!res.ok) {
+        toast.error(data.error ?? "Failed to refresh billing status.");
+        return;
+      }
+
+      if (data.synced) {
+        toast.success("Billing status refreshed successfully.");
+      } else {
+        toast.error(data.message ?? "No active subscription found yet. If you just paid, retry in a few seconds.");
+      }
+
+      await loadBilling();
+    } catch {
+      toast.error("Failed to refresh billing status.");
+    } finally {
+      setIsSyncLoading(false);
     }
   };
 
@@ -267,6 +300,21 @@ export function SettingsBilling() {
           <p className="text-xs text-fg-muted">
             You&apos;ll be redirected to secure checkout hosted by Lemon Squeezy. You can manage or cancel anytime from billing settings.
           </p>
+          {(atLimit || nearLimit || billing.subscription.status === "inactive") && (
+            <div className="rounded-lg border border-border p-3 space-y-2">
+              <p className="text-xs text-fg-muted">
+                Already completed checkout? Refresh billing status to unlock Pro features.
+              </p>
+              <Button
+                variant="outline"
+                className="w-full"
+                disabled={isSyncLoading}
+                onClick={handleSyncBilling}
+              >
+                {isSyncLoading ? "Refreshing..." : "Refresh billing status"}
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
