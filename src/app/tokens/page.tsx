@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { Info } from "lucide-react";
 import { SPACE_COLORS } from "@/features/spaces/constants/space-colors";
@@ -217,16 +217,14 @@ function ColorDetails({ varName, themeMode }: { varName: string, themeMode: stri
 
 export default function DesignTokensPage() {
   const { theme, setTheme } = useTheme();
-  const [effectiveTheme, setEffectiveTheme] = useState<"light" | "dark">("light");
-
-  useEffect(() => {
+  const effectiveTheme = useMemo<"light" | "dark">(() => {
     if (theme === "system") {
-      setEffectiveTheme(
-        window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-      );
-    } else {
-      setEffectiveTheme(theme);
+      if (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        return "dark";
+      }
+      return "light";
     }
+    return theme;
   }, [theme]);
 
   useEffect(() => {
@@ -292,21 +290,26 @@ export default function DesignTokensPage() {
         <SectionHeading count={FG_TOKENS.length}>Foreground / Text</SectionHeading>
         <div className="space-y-3">
           {FG_TOKENS.map((t) => (
-            <div
-              key={t.name}
-              className="flex items-center gap-4 rounded-lg border border-[var(--border)] p-4"
-              style={{ backgroundColor: t.bg ?? "transparent" }}
-            >
-              <div className="shrink-0 w-56 flex flex-col">
-                <span className="font-mono text-xs" style={{ color: t.bg ? `var(${t.name})` : "var(--fg-subtle)" }}>
-                  {t.name}
-                </span>
-                <ColorDetails varName={t.name} themeMode={effectiveTheme} />
-              </div>
-              <p className="text-base" style={{ color: `var(${t.name})` }}>
-                The quick brown fox jumps over the lazy dog
-              </p>
-            </div>
+            (() => {
+              const bg = "bg" in t ? t.bg : undefined;
+              return (
+                <div
+                  key={t.name}
+                  className="flex items-center gap-4 rounded-lg border border-[var(--border)] p-4"
+                  style={{ backgroundColor: bg ?? "transparent" }}
+                >
+                  <div className="shrink-0 w-56 flex flex-col">
+                    <span className="font-mono text-xs" style={{ color: bg ? `var(${t.name})` : "var(--fg-subtle)" }}>
+                      {t.name}
+                    </span>
+                    <ColorDetails varName={t.name} themeMode={effectiveTheme} />
+                  </div>
+                  <p className="text-base" style={{ color: `var(${t.name})` }}>
+                    The quick brown fox jumps over the lazy dog
+                  </p>
+                </div>
+              );
+            })()
           ))}
         </div>
       </section>
