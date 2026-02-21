@@ -440,9 +440,8 @@ export function SettingsSpaces() {
   };
 
   return (
-    <div className="flex flex-col gap-2 min-w-0 w-full overflow-hidden">
-      <div className="flex flex-col gap-1 min-w-0 w-full overflow-hidden">
-        <div className="rounded-md border border-border p-3 mb-2 space-y-3">
+    <div className="space-y-6 min-w-0 w-full overflow-hidden">
+      <div className="rounded-xl border border-border p-4 space-y-3">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-medium text-fg">Smart auto-forwarding</p>
@@ -457,7 +456,7 @@ export function SettingsSpaces() {
           </div>
 
           {autoForwardingEnabled && (
-            <div className="rounded-md border border-border/70 bg-bg-subtle/40 p-3 space-y-3">
+            <div className="rounded-lg bg-bg-muted p-3 space-y-3">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-xs font-medium text-fg">Advanced routing rules</p>
@@ -581,8 +580,9 @@ export function SettingsSpaces() {
               )}
             </div>
           )}
-        </div>
+      </div>
 
+      <div className="flex flex-col gap-1 min-w-0 w-full overflow-hidden">
         {spaces.map((space) => (
           <SpaceItem
             key={space.id}

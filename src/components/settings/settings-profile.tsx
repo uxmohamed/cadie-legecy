@@ -201,7 +201,7 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Avatar Section */}
       <div className="flex items-center gap-6">
         <div className="relative group">
@@ -219,10 +219,7 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploadingAvatar}
-            className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-btn-secondary text-fg-muted transition-transform hover:scale-110 hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-ring-offset disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-            style={{
-              boxShadow: 'none'
-            }}
+            className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-btn-secondary shadow-none text-fg-muted transition-transform hover:scale-110 hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-ring-offset disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             aria-label="Change avatar"
           >
             {isUploadingAvatar ? (
@@ -240,7 +237,7 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
           />
         </div>
         <div>
-          <h3 className="text-sm font-normal text-fg">Profile Photo</h3>
+          <h3 className="text-sm font-medium text-fg">Profile Photo</h3>
         </div>
       </div>
 
@@ -299,76 +296,69 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
       </div>
 
       {/* Account Actions */}
-      <div className="space-y-6">
-        <div>
-          <div className="flex flex-col gap-8">
-            <Button
-              variant="secondary"
-              onClick={handleSignOut}
-              className="w-fit justify-start"
-            >
-              <IconLogout />
-              Sign Out
-            </Button>
+      <div className="flex flex-col gap-6">
+        <Button
+          variant="secondary"
+          onClick={handleSignOut}
+          className="w-fit justify-start"
+        >
+          <IconLogout />
+          Sign Out
+        </Button>
 
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium text-fg">Danger Zone</h3>
-              <AlertDialog onOpenChange={(open) => !open && setDeleteConfirmEmail("")}>
-                <AlertDialogTrigger
-                  render={
-                    <button
-                      type="button"
-                      className="w-full text-left rounded-lg bg-bg-muted p-4 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      style={{ backgroundColor: 'rgba(255, 80, 80, 0.1)' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 80, 80, 0.14)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 80, 80, 0.1)'; }}
-                    />
-                  }
-                >
-                  <div className="text-sm font-medium text-destructive mb-3">
-                    Delete Account
-                  </div>
-                  <p className="text-sm text-fg-muted">
-                    Deleting your account will permanently delete all your data. This action cannot be undone.
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium text-fg">Danger Zone</h3>
+          <AlertDialog onOpenChange={(open) => !open && setDeleteConfirmEmail("")}>
+            <AlertDialogTrigger
+              render={
+                <button
+                  type="button"
+                  className="w-full text-left rounded-xl bg-destructive/10 hover:bg-destructive/[0.14] p-4 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
+              }
+            >
+              <div className="text-sm font-medium text-destructive mb-3">
+                Delete Account
+              </div>
+              <p className="text-sm text-fg-muted">
+                Deleting your account will permanently delete all your data. This action cannot be undone.
+              </p>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Account</AlertDialogTitle>
+                <AlertDialogDescription render={<div className="space-y-4" />}>
+                  <p>
+                    This action cannot be undone. This will permanently delete your account and all associated data.
                   </p>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Account</AlertDialogTitle>
-                    <AlertDialogDescription render={<div className="space-y-4" />}>
-                      <p>
-                        This action cannot be undone. This will permanently delete your account and all associated data.
-                      </p>
-                      <div className="space-y-2">
-                        <Label htmlFor="confirm-email" className="text-fg-muted">
-                          Type <span className="font-medium text-fg">{user.email}</span> to confirm
-                        </Label>
-                        <Input
-                          id="confirm-email"
-                          value={deleteConfirmEmail}
-                          onChange={(e) => setDeleteConfirmEmail(e.target.value)}
-                          placeholder="Enter your email"
-                          className="bg-bg-input border-transparent shadow-none before:shadow-none"
-                        />
-                      </div>
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogClose render={<Button variant="outline" />}>
-                      Cancel
-                    </AlertDialogClose>
-                    <Button
-                      variant="destructive"
-                      onClick={handleDeleteAccount}
-                      disabled={isDeleting || deleteConfirmEmail !== user.email}
-                    >
-                      {isDeleting ? "Deleting..." : "Delete My Account"}
-                    </Button>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-email" className="text-fg-muted">
+                      Type <span className="font-medium text-fg">{user.email}</span> to confirm
+                    </Label>
+                    <Input
+                      id="confirm-email"
+                      value={deleteConfirmEmail}
+                      onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      className="bg-bg-input border-transparent shadow-none before:shadow-none"
+                    />
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogClose render={<Button variant="outline" />}>
+                  Cancel
+                </AlertDialogClose>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteAccount}
+                  disabled={isDeleting || deleteConfirmEmail !== user.email}
+                >
+                  {isDeleting ? "Deleting..." : "Delete My Account"}
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </div>

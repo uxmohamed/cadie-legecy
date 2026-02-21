@@ -75,7 +75,7 @@ export function SettingsExport() {
         </p>
       </div>
 
-      <div className="rounded-lg border border-border bg-bg-muted p-4 space-y-4">
+      <div className="rounded-xl border border-border bg-bg-muted p-4 space-y-4">
         <div className="space-y-1">
           <p className="text-sm text-fg">Scope: active links only</p>
           <p className="text-xs text-fg-subtle">

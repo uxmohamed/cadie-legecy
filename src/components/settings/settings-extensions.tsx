@@ -158,7 +158,7 @@ export function SettingsExtensions() {
           {tokens.map((token) => (
             <div
               key={token.id}
-              className="flex items-center justify-between rounded-lg border border-border bg-bg-muted p-4"
+              className="flex items-center justify-between rounded-xl border border-border bg-bg-muted p-4"
             >
               <div className="flex items-center gap-3">
                 <ChromeLogo className="h-8 w-8" />

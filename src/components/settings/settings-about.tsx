@@ -8,7 +8,7 @@ import { LogoIcon } from "@/components/logo-icon";
 
 export function SettingsAbout() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* App Info */}
       <div className="flex items-center gap-4">
         <LogoIcon className="h-12 w-12" />
@@ -49,7 +49,7 @@ export function SettingsAbout() {
         <div className="grid gap-3">
           <div className="rounded-xl border border-border bg-bg-muted p-4">
             <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-black text-white">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-bg-inverse text-fg-inverse">
                 <IconBrandX className="h-5 w-5" />
               </div>
               <div>

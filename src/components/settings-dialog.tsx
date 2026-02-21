@@ -8,8 +8,7 @@ import {
   IconInfoCircleFilled,
   IconPuzzleFilled,
   IconCapsuleHorizontalFilled,
-  IconFileDownloadFilled,
-  IconFileUploadFilled,
+  IconExchangeFilled,
   IconCreditCardFilled,
 } from "@tabler/icons-react";
 
@@ -34,8 +33,7 @@ import { SettingsSpaces } from "@/components/settings/settings-spaces";
 import { SettingsAppearance } from "@/components/settings/settings-appearance";
 import { SettingsAbout } from "@/components/settings/settings-about";
 import { SettingsExtensions } from "@/components/settings/settings-extensions";
-import { SettingsImport } from "@/components/settings/settings-import";
-import { SettingsExport } from "@/components/settings/settings-export";
+import { SettingsData } from "@/components/settings/settings-data";
 import { SettingsBilling } from "@/components/settings/settings-billing";
 
 type SettingsSection =
@@ -44,8 +42,7 @@ type SettingsSection =
   | "billing"
   | "appearance"
   | "extensions"
-  | "import"
-  | "export"
+  | "data"
   | "about";
 
 const navItems = [
@@ -54,8 +51,7 @@ const navItems = [
   { id: "billing" as const, name: "Billing", icon: IconCreditCardFilled },
   { id: "appearance" as const, name: "Appearance", icon: IconPaletteFilled },
   { id: "extensions" as const, name: "Extensions", icon: IconPuzzleFilled },
-  { id: "import" as const, name: "Import", icon: IconFileDownloadFilled },
-  { id: "export" as const, name: "Export", icon: IconFileUploadFilled },
+  { id: "data" as const, name: "Data", icon: IconExchangeFilled },
   { id: "about" as const, name: "About", icon: IconInfoCircleFilled },
 ];
 
@@ -108,7 +104,7 @@ export function SettingsDialog({ user, open, onOpenChange, onProfileUpdate }: Se
           </Sidebar>
           <main className="flex h-full md:h-[620px] flex-1 flex-col overflow-hidden min-w-0">
             {/* Mobile navigation */}
-            <header className="flex h-12 shrink-0 items-center border-b border-border md:hidden">
+            <header className="relative flex h-12 shrink-0 items-center border-b border-border md:hidden">
               <nav className="no-scrollbar flex overflow-x-auto pl-4 pr-12 gap-2">
                 {navItems.map((item) => (
                   <button
@@ -125,6 +121,7 @@ export function SettingsDialog({ user, open, onOpenChange, onProfileUpdate }: Se
                   </button>
                 ))}
               </nav>
+              <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-[var(--bg-elevated)] to-transparent" />
             </header>
             {/* Content area */}
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden p-6 min-w-0">
@@ -136,8 +133,7 @@ export function SettingsDialog({ user, open, onOpenChange, onProfileUpdate }: Se
               {activeSection === "billing" && <SettingsBilling />}
               {activeSection === "appearance" && <SettingsAppearance />}
               {activeSection === "extensions" && <SettingsExtensions />}
-              {activeSection === "import" && <SettingsImport />}
-              {activeSection === "export" && <SettingsExport />}
+              {activeSection === "data" && <SettingsData />}
               {activeSection === "about" && <SettingsAbout />}
             </div>
           </main>

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { IconArrowRight, IconCrown, IconLoader2 } from "@tabler/icons-react";
+import { toast } from "sonner";
 import type { PlanTier, Entitlements } from "@/lib/billing/types";
 
 interface BillingStatus {
@@ -108,7 +109,7 @@ export function SettingsBilling() {
         window.open(data.checkout_url, "_blank");
       }
     } catch {
-      // silently fail
+      toast.error("Failed to start checkout. Please try again.");
     } finally {
       setIsCheckoutLoading(false);
     }
@@ -152,7 +153,7 @@ export function SettingsBilling() {
     billing.usage.totalSavedItems >= billing.entitlements.maxSavedItems;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Current plan */}
       <div className="rounded-xl border border-border bg-bg-muted p-4 space-y-3">
         <div className="flex items-center justify-between">

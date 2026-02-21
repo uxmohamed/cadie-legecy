@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { createHmac } from "node:crypto";
-import fetch from "node-fetch";
+// import fetch from "node-fetch"; // Use global fetch in Node 18+
 
 // Load env vars
 // Note: This script assumes you run it from project root where .env.local exists

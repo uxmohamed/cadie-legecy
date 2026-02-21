@@ -117,7 +117,7 @@ export function SettingsImport() {
         </p>
       </div>
 
-      <div className="rounded-lg border border-border bg-bg-muted p-4 space-y-4">
+      <div className="rounded-xl border border-border bg-bg-muted p-4 space-y-4">
         <div className="space-y-2">
           <Label htmlFor="bookmark-file">Bookmark HTML file</Label>
           <input
@@ -150,7 +150,7 @@ export function SettingsImport() {
       </div>
 
       {currentJob && (
-        <div className="rounded-lg border border-border bg-bg-muted p-4 space-y-3">
+        <div className="rounded-xl border border-border bg-bg-muted p-4 space-y-3">
           <div className="flex items-center gap-2">
             {currentJob.status === "completed" ? (
               <IconCircleCheck className="h-4 w-4 text-emerald-500" />
@@ -171,7 +171,7 @@ export function SettingsImport() {
             </div>
             <div className="h-2 w-full rounded-full bg-bg-surface">
               <div
-                className="h-2 rounded-full bg-primary transition-all"
+                className="h-2 rounded-full bg-accent transition-all"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>

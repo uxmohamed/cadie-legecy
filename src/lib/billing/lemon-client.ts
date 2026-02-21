@@ -163,6 +163,7 @@ export async function createLemonCheckout(input: CreateCheckoutInput): Promise<{
     product_options: {
       redirect_url: input.checkoutReturnUrl || undefined,
     },
+    test_mode: process.env.LEMONSQUEEZY_TEST_MODE === "true" || process.env.NODE_ENV === "development",
   };
 
   // Believer PWYW: set custom_price at the attributes level
