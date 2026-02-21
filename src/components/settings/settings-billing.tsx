@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { IconArrowRight, IconLoader2 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import type { PlanTier, Entitlements } from "@/lib/billing/types";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface BillingStatus {
   plan: PlanTier;
@@ -34,6 +35,17 @@ const PLAN_LABELS = {
   starter: "Starter",
   pro: "Pro",
 } as const;
+
+function formatDate(value: string | null): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
 function UsageMeter({
   label,
@@ -188,66 +200,142 @@ export function SettingsBilling() {
   const atLimit =
     billing.entitlements.maxSavedItems !== null &&
     billing.usage.totalSavedItems >= billing.entitlements.maxSavedItems;
+  const renewDate = formatDate(billing.subscription.current_period_end);
+  const hasRecoveryState = atLimit || nearLimit || billing.subscription.status === "inactive";
+  const isPastDue = billing.subscription.status === "past_due";
+  const isExpired = billing.subscription.status === "expired";
 
   return (
-    <div className="space-y-6">
-      {/* Current plan */}
-      <div className="rounded-xl border border-border bg-bg-muted p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-medium text-fg">
-              {planLabel} plan
-            </h3>
-            {isPaid && billing.subscription.interval && (
-              <Badge variant="secondary" size="sm">
-                {billing.subscription.interval === "year" ? "Yearly" : "Monthly"}
-              </Badge>
-            )}
+    <div className="space-y-5">
+      <Card className="gap-0 overflow-hidden">
+        <CardHeader className="border-b border-border pb-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <CardTitle className="text-base">{planLabel} plan</CardTitle>
+                {isPaid && billing.subscription.interval && (
+                  <Badge variant="secondary" size="sm">
+                    {billing.subscription.interval === "year" ? "Yearly billing" : "Monthly billing"}
+                  </Badge>
+                )}
+                {isPaid && (
+                  <Badge variant={isCanceling ? "warning" : "success"} size="sm">
+                    {isCanceling ? "Canceling" : "Active"}
+                  </Badge>
+                )}
+              </div>
+              <CardDescription>
+                {isStarter
+                  ? "You are on Starter. Upgrade to Pro for unlimited saved items and higher limits."
+                  : "Your subscription is active and managed securely through Lemon Squeezy."}
+              </CardDescription>
+            </div>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:min-w-52">
+              {isStarter ? (
+                <>
+                  <Button
+                    className="w-full justify-between"
+                    disabled={isCheckoutLoading}
+                    onClick={() => handleCheckout("month")}
+                  >
+                    <span>{isCheckoutLoading ? "Opening checkout..." : "Upgrade to Pro (Monthly)"}</span>
+                    <IconArrowRight className="h-4 w-4 opacity-50" />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="w-full justify-between"
+                    disabled={isCheckoutLoading}
+                    onClick={() => handleCheckout("year")}
+                  >
+                    <span>Upgrade to Pro (Yearly)</span>
+                    <IconArrowRight className="h-4 w-4 opacity-50" />
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="secondary"
+                  className="w-full justify-between"
+                  disabled={isPortalLoading}
+                  onClick={handlePortal}
+                >
+                  <span>{isPortalLoading ? "Opening billing portal..." : "Manage subscription"}</span>
+                  <IconArrowRight className="h-4 w-4 opacity-50" />
+                </Button>
+              )}
+            </div>
           </div>
-          {isPaid && (
-            <Badge
-              variant={isCanceling ? "warning" : "success"}
-              size="sm"
-            >
-              {isCanceling ? "Canceling" : "Active"}
-            </Badge>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-border bg-bg-muted p-3">
+              <p className="text-xs uppercase tracking-wide text-fg-muted">Status</p>
+              <p className="mt-1 text-sm font-medium text-fg capitalize">
+                {isStarter ? "Free tier" : billing.subscription.status.replace("_", " ")}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-bg-muted p-3">
+              <p className="text-xs uppercase tracking-wide text-fg-muted">
+                {isCanceling ? "Downgrades on" : "Next billing date"}
+              </p>
+              <p className="mt-1 text-sm font-medium text-fg">{renewDate ?? "Not scheduled"}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-bg-muted p-3">
+              <p className="text-xs uppercase tracking-wide text-fg-muted">Billing cycle</p>
+              <p className="mt-1 text-sm font-medium text-fg">
+                {billing.subscription.interval === "year"
+                  ? "Yearly"
+                  : billing.subscription.interval === "month"
+                    ? "Monthly"
+                    : "N/A"}
+              </p>
+            </div>
+          </div>
+
+          {isCanceling && renewDate && (
+            <p className="mt-3 text-xs text-warning">
+              Your subscription is set to cancel and will downgrade to Starter on {renewDate}.
+            </p>
           )}
-        </div>
 
-        {isCanceling && billing.subscription.current_period_end && (
-          <p className="text-xs text-warning">
-            Your plan will downgrade to Starter on{" "}
-            {new Date(billing.subscription.current_period_end).toLocaleDateString()}.
-          </p>
-        )}
+          {isPastDue && (
+            <p className="mt-3 text-xs text-warning">
+              We could not process your latest renewal. Open subscription management to update payment details.
+            </p>
+          )}
 
-        {isPaid && billing.subscription.current_period_end && !isCanceling && (
-          <p className="text-xs text-fg-muted">
-            Renews on{" "}
-            {new Date(billing.subscription.current_period_end).toLocaleDateString()}
-          </p>
-        )}
-      </div>
+          {isExpired && (
+            <p className="mt-3 text-xs text-destructive">
+              Your paid access has ended. Upgrade again to restore Pro features.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Warning banner */}
       {isStarter && (nearLimit || atLimit) && (
-        <div
+        <Card
           className={`rounded-xl border p-4 text-sm ${
             atLimit
               ? "border-destructive/30 bg-destructive-muted text-destructive"
               : "border-warning/30 bg-warning-muted text-warning"
           }`}
         >
-          {atLimit
-            ? `You've reached the ${billing.entitlements.maxSavedItems}-item limit. Upgrade to Pro to continue saving.`
-            : `You're approaching the ${billing.entitlements.maxSavedItems}-item limit (${billing.usage.totalSavedItems} used). Upgrade to Pro for unlimited saves.`}
-        </div>
+          <CardContent className="p-0">
+            {atLimit
+              ? `You've reached the ${billing.entitlements.maxSavedItems}-item limit. Upgrade to Pro to continue saving.`
+              : `You're approaching the ${billing.entitlements.maxSavedItems}-item limit (${billing.usage.totalSavedItems} used). Upgrade now to avoid interruptions.`}
+          </CardContent>
+        </Card>
       )}
 
-      {/* Usage */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-medium text-fg">Usage</h3>
-        <div className="space-y-3">
+      <Card className="gap-0">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base">Usage</CardTitle>
+          <CardDescription>
+            Track your current limits and plan capacity in real time.
+          </CardDescription>
+        </CardHeader>
+        <Separator />
+        <CardContent className="space-y-4 pt-4">
           <UsageMeter
             label="Saved items"
             current={billing.usage.totalSavedItems}
@@ -269,72 +357,53 @@ export function SettingsBilling() {
             current={billing.usage.documentsTotal}
             max={billing.entitlements.maxDocuments}
           />
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      <Separator />
-
-      {/* Actions */}
-      {isStarter && (
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium text-fg">Upgrade</h3>
-          <div className="grid gap-3">
-            <Button
-              className="w-full justify-between"
-              disabled={isCheckoutLoading}
-              onClick={() => handleCheckout("month")}
-            >
-              <span>Upgrade to Pro (Monthly billing)</span>
-              <IconArrowRight className="h-4 w-4 opacity-50" />
-            </Button>
-            <Button
-              variant="secondary"
-              className="w-full justify-between"
-              disabled={isCheckoutLoading}
-              onClick={() => handleCheckout("year")}
-            >
-              <span>Upgrade to Pro (Yearly billing)</span>
-              <IconArrowRight className="h-4 w-4 opacity-50" />
-            </Button>
-          </div>
-          <p className="text-xs text-fg-muted">
-            You&apos;ll be redirected to secure checkout hosted by Lemon Squeezy. You can manage or cancel anytime from billing settings.
-          </p>
-          {(atLimit || nearLimit || billing.subscription.status === "inactive") && (
-            <div className="rounded-lg border border-border p-3 space-y-2">
+      <Card className="gap-0">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base">
+            {isStarter ? "Upgrade and billing help" : "Billing management"}
+          </CardTitle>
+          <CardDescription>
+            {isStarter
+              ? "Checkout is secure and hosted by Lemon Squeezy."
+              : "Manage invoices, payment method, and cancellation from the customer portal."}
+          </CardDescription>
+        </CardHeader>
+        <Separator />
+        <CardContent className="space-y-3 pt-4">
+          {isStarter ? (
+            <>
               <p className="text-xs text-fg-muted">
-                Already completed checkout? Refresh billing status to unlock Pro features.
+                You&apos;ll be redirected to a secure checkout page. Access updates automatically after payment.
               </p>
+              {hasRecoveryState && (
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  disabled={isSyncLoading}
+                  onClick={handleSyncBilling}
+                >
+                  {isSyncLoading ? "Refreshing..." : "Refresh billing status"}
+                </Button>
+              )}
+            </>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
               <Button
-                variant="outline"
-                className="w-full"
-                disabled={isSyncLoading}
-                onClick={handleSyncBilling}
+                variant="secondary"
+                className="justify-between"
+                disabled={isPortalLoading}
+                onClick={handlePortal}
               >
-                {isSyncLoading ? "Refreshing..." : "Refresh billing status"}
+                <span>{isPortalLoading ? "Opening portal..." : "Open billing portal"}</span>
+                <IconArrowRight className="h-4 w-4 opacity-50" />
               </Button>
             </div>
           )}
-        </div>
-      )}
-
-      {isPaid && (
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium text-fg">Manage subscription</h3>
-          <Button
-            variant="secondary"
-            className="w-full justify-between"
-            disabled={isPortalLoading}
-            onClick={handlePortal}
-          >
-            <span>{isPortalLoading ? "Opening portal..." : "Manage subscription"}</span>
-            <IconArrowRight className="h-4 w-4 opacity-50" />
-          </Button>
-          <p className="text-xs text-fg-muted">
-            Manage payment method, invoices, and cancellation in Lemon Squeezy&apos;s customer portal.
-          </p>
-        </div>
-      )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
