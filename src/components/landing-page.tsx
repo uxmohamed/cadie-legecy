@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
-import { IconMenu, IconX, IconConfettiFilled, IconChevronDown, IconArrowRight, IconCheck, IconCrown } from "@tabler/icons-react";
+import { IconMenu, IconX, IconConfettiFilled, IconChevronDown, IconArrowRight, IconCheck } from "@tabler/icons-react";
 import {
   Sheet,
   SheetContent,
@@ -569,40 +569,6 @@ export function LandingPage({ changelogEntries = [], pricing }: LandingPageProps
               </ul>
             </div>
 
-            {/* Believer — compact banner below main plans */}
-            <div className="col-span-1 md:col-span-2 mt-2">
-              <div className="rounded-xl border border-border bg-bg-muted p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6">
-                {/* Left: title + price */}
-                <div className="flex flex-col sm:min-w-[160px] shrink-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <h3 className="text-lg font-medium text-fg">Believer</h3>
-                    <IconCrown className="size-4 text-warning" />
-                  </div>
-                  <p className="text-sm text-fg-muted mb-2">Support Cadie&apos;s mission</p>
-                  <div>
-                    <span className="text-2xl font-semibold text-fg">$179.9</span>
-                    <span className="text-sm text-fg-muted"> /yr</span>
-                  </div>
-                </div>
-
-                {/* Middle: features in compact grid */}
-                <ul className="flex-1 grid grid-cols-1 xs:grid-cols-2 gap-x-6 gap-y-1.5 text-sm text-fg-muted">
-                  <li className="flex items-center gap-2"><IconCheck className="size-4 shrink-0 text-warning" /> Everything in Pro</li>
-                  <li className="flex items-center gap-2"><IconCheck className="size-4 shrink-0 text-warning" /> Believer badge</li>
-                  <li className="flex items-center gap-2"><IconCheck className="size-4 shrink-0 text-warning" /> Support indie development</li>
-                  <li className="flex items-center gap-2"><IconCheck className="size-4 shrink-0 text-warning" /> Early access to new features</li>
-                </ul>
-
-                {/* Right: CTA button */}
-                <Button
-                  variant="secondary"
-                  className="shrink-0 w-full sm:w-auto"
-                  render={<Link href="/auth" />}
-                >
-                  Become a Believer
-                </Button>
-              </div>
-            </div>
           </div>
         </div>
       </section>

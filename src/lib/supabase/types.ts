@@ -27,6 +27,76 @@ export interface Database {
           updated_at?: string;
         };
       };
+      user_billing: {
+        Row: {
+          user_id: string;
+          plan_tier: "starter" | "pro" | "believer";
+          subscription_status: "inactive" | "active" | "past_due" | "canceled" | "expired";
+          billing_interval: "month" | "year" | null;
+          lemon_customer_id: string | null;
+          lemon_subscription_id: string | null;
+          lemon_variant_id: string | null;
+          current_period_end: string | null;
+          cancel_at_period_end: boolean;
+          support_amount_cents: number | null;
+          last_webhook_event_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          plan_tier?: "starter" | "pro" | "believer";
+          subscription_status?: "inactive" | "active" | "past_due" | "canceled" | "expired";
+          billing_interval?: "month" | "year" | null;
+          lemon_customer_id?: string | null;
+          lemon_subscription_id?: string | null;
+          lemon_variant_id?: string | null;
+          current_period_end?: string | null;
+          cancel_at_period_end?: boolean;
+          support_amount_cents?: number | null;
+          last_webhook_event_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          plan_tier?: "starter" | "pro" | "believer";
+          subscription_status?: "inactive" | "active" | "past_due" | "canceled" | "expired";
+          billing_interval?: "month" | "year" | null;
+          lemon_customer_id?: string | null;
+          lemon_subscription_id?: string | null;
+          lemon_variant_id?: string | null;
+          current_period_end?: string | null;
+          cancel_at_period_end?: boolean;
+          support_amount_cents?: number | null;
+          last_webhook_event_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      billing_webhook_events: {
+        Row: {
+          id: number;
+          event_id: string;
+          event_name: string;
+          payload: Record<string, unknown>;
+          processed_at: string;
+        };
+        Insert: {
+          id?: number;
+          event_id: string;
+          event_name: string;
+          payload: Record<string, unknown>;
+          processed_at?: string;
+        };
+        Update: {
+          id?: number;
+          event_id?: string;
+          event_name?: string;
+          payload?: Record<string, unknown>;
+          processed_at?: string;
+        };
+      };
       spaces: {
         Row: {
           id: string;

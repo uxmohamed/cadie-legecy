@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCustomerPortalUrl } from "@/lib/billing/lemon-client";
 import { getUserBillingRecord } from "@/lib/billing/plan-resolver";
+import { log } from "@/lib/logger";
 
 export async function POST() {
   try {
@@ -25,9 +26,10 @@ export async function POST() {
       portal_url: portal.portalUrl,
     });
   } catch (error) {
+    log.error("[Billing] Failed to create portal session", error);
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Failed to create billing portal session",
+        error: "Failed to open billing portal. Please try again in a moment.",
       },
       { status: 500 }
     );

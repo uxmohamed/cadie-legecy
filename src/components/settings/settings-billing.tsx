@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { IconArrowRight, IconCrown, IconLoader2 } from "@tabler/icons-react";
+import { IconArrowRight, IconLoader2 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import type { PlanTier, Entitlements } from "@/lib/billing/types";
 
@@ -28,14 +28,12 @@ interface BillingStatus {
   warnings: {
     near_starter_saved_items_limit: boolean;
   };
-  believer_badge: boolean;
 }
 
-const PLAN_LABELS: Record<PlanTier, string> = {
+const PLAN_LABELS = {
   starter: "Starter",
   pro: "Pro",
-  believer: "Believer",
-};
+} as const;
 
 function UsageMeter({
   label,
@@ -96,20 +94,21 @@ export function SettingsBilling() {
     };
   }, []);
 
-  const handleCheckout = async (plan: PlanTier, interval: "month" | "year") => {
+  const handleCheckout = async (interval: "month" | "year") => {
     setIsCheckoutLoading(true);
     try {
+      const returnUrl = typeof window !== "undefined" ? window.location.href : undefined;
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, interval }),
+        body: JSON.stringify({ plan: "pro", interval, return_url: returnUrl }),
       });
       const data = (await res.json()) as { checkout_url?: string; error?: string };
       if (!res.ok || !data.checkout_url) {
         toast.error(data.error ?? "Failed to start checkout. Please try again.");
         return;
       }
-      window.open(data.checkout_url, "_blank");
+      window.location.assign(data.checkout_url);
     } catch {
       toast.error("Failed to start checkout. Please try again.");
     } finally {
@@ -123,7 +122,7 @@ export function SettingsBilling() {
       const res = await fetch("/api/billing/portal", { method: "POST" });
       const data = (await res.json()) as { portal_url?: string; error?: string };
       if (data.portal_url) {
-        window.open(data.portal_url, "_blank");
+        window.location.assign(data.portal_url);
       } else {
         toast.error(data.error ?? "Failed to open billing portal. Please try again.");
       }
@@ -149,7 +148,8 @@ export function SettingsBilling() {
   }
 
   const isStarter = billing.plan === "starter";
-  const isPaid = billing.plan === "pro" || billing.plan === "believer";
+  const isPaid = billing.plan !== "starter";
+  const planLabel = isStarter ? PLAN_LABELS.starter : PLAN_LABELS.pro;
   const isCanceling = billing.subscription.cancel_at_period_end;
   const nearLimit = billing.warnings.near_starter_saved_items_limit;
   const atLimit =
@@ -163,14 +163,8 @@ export function SettingsBilling() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-medium text-fg">
-              {PLAN_LABELS[billing.plan]} plan
+              {planLabel} plan
             </h3>
-            {billing.believer_badge && (
-              <Badge variant="warning" size="sm">
-                <IconCrown className="h-3 w-3" />
-                Believer
-              </Badge>
-            )}
             {isPaid && billing.subscription.interval && (
               <Badge variant="secondary" size="sm">
                 {billing.subscription.interval === "year" ? "Yearly" : "Monthly"}
@@ -255,30 +249,24 @@ export function SettingsBilling() {
             <Button
               className="w-full justify-between"
               disabled={isCheckoutLoading}
-              onClick={() => handleCheckout("pro", "month")}
+              onClick={() => handleCheckout("month")}
             >
-              <span>Upgrade to Pro (Monthly)</span>
+              <span>Upgrade to Pro (Monthly billing)</span>
               <IconArrowRight className="h-4 w-4 opacity-50" />
             </Button>
             <Button
               variant="secondary"
               className="w-full justify-between"
               disabled={isCheckoutLoading}
-              onClick={() => handleCheckout("pro", "year")}
+              onClick={() => handleCheckout("year")}
             >
-              <span>Upgrade to Pro (Yearly)</span>
+              <span>Upgrade to Pro (Yearly billing)</span>
               <IconArrowRight className="h-4 w-4 opacity-50" />
             </Button>
-            <Button
-              variant="outline"
-              className="w-full justify-between"
-              disabled={isCheckoutLoading}
-              onClick={() => handleCheckout("believer", "year")}
-            >
-              <span>Become a Believer (Yearly)</span>
-              <IconCrown className="h-4 w-4 opacity-50" />
-            </Button>
           </div>
+          <p className="text-xs text-fg-muted">
+            You&apos;ll be redirected to secure checkout hosted by Lemon Squeezy. You can manage or cancel anytime from billing settings.
+          </p>
         </div>
       )}
 
@@ -294,6 +282,9 @@ export function SettingsBilling() {
             <span>{isPortalLoading ? "Opening portal..." : "Manage subscription"}</span>
             <IconArrowRight className="h-4 w-4 opacity-50" />
           </Button>
+          <p className="text-xs text-fg-muted">
+            Manage payment method, invoices, and cancellation in Lemon Squeezy&apos;s customer portal.
+          </p>
         </div>
       )}
     </div>

@@ -66,15 +66,46 @@ export function verifyLemonWebhookSignature(rawBody: string, signature: string |
   const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET;
   if (!secret || !signature) return false;
 
+  const normalizedSignature = signature.trim().replace(/^sha256=/i, "").toLowerCase();
+  if (!/^[a-f0-9]{64}$/.test(normalizedSignature)) {
+    return false;
+  }
+
   const digest = createHmac("sha256", secret).update(rawBody).digest("hex");
-  const expected = Buffer.from(digest);
-  const received = Buffer.from(signature);
+  const expected = Buffer.from(digest, "hex");
+  const received = Buffer.from(normalizedSignature, "hex");
 
   if (expected.length !== received.length) {
     return false;
   }
 
   return timingSafeEqual(expected, received);
+}
+
+async function lookupUserIdByEmail(
+  supabase: ReturnType<typeof createAdminClient>,
+  email: string
+): Promise<string | null> {
+  const targetEmail = email.toLowerCase();
+  const perPage = 200;
+
+  for (let page = 1; page <= 50; page += 1) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+    if (error || !data?.users?.length) {
+      return null;
+    }
+
+    const match = data.users.find((candidate) => candidate.email?.toLowerCase() === targetEmail);
+    if (match) {
+      return match.id;
+    }
+
+    if (data.users.length < perPage) {
+      return null;
+    }
+  }
+
+  return null;
 }
 
 function deriveEventId(payload: LemonWebhookPayload, rawBody: string): string {
@@ -231,13 +262,7 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
 
   // Safety net: look up by email if we still don't have a userId and we have an email
   if (!userId && userEmail) {
-      const { data: { users }, error } = await supabase.auth.admin.listUsers();
-      if (!error && users) {
-          const user = users.find(u => u.email?.toLowerCase() === userEmail.toLowerCase());
-          if (user) {
-              userId = user.id;
-          }
-      }
+    userId = await lookupUserIdByEmail(supabase, userEmail);
   }
 
   if (!userId) {
@@ -307,6 +332,10 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
       // OR it could be immediate. LemonSqueezy differentiates "cancelled" vs "expired".
       // "cancelled" usually means "won't renew".
       upsertPayload.subscription_status = status; // likely 'active' or 'cancelled' depending on API
+      upsertPayload.lemon_customer_id = customerId;
+      upsertPayload.lemon_subscription_id = subscriptionId;
+      upsertPayload.lemon_variant_id = variantId;
+      upsertPayload.billing_interval = billingInterval;
       // Ensure we mark the flag
       upsertPayload.cancel_at_period_end = true;
       if (currentPeriodEnd) upsertPayload.current_period_end = currentPeriodEnd;
@@ -315,11 +344,19 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
 
     case "subscription_expired":
       upsertPayload.subscription_status = "expired";
+      upsertPayload.lemon_customer_id = customerId;
+      upsertPayload.lemon_subscription_id = subscriptionId;
+      upsertPayload.lemon_variant_id = variantId;
       // Access revoked
       break;
 
     case "subscription_payment_failed":
       upsertPayload.subscription_status = "past_due";
+      upsertPayload.lemon_customer_id = customerId;
+      upsertPayload.lemon_subscription_id = subscriptionId;
+      upsertPayload.lemon_variant_id = variantId;
+      upsertPayload.billing_interval = billingInterval;
+      if (currentPeriodEnd) upsertPayload.current_period_end = currentPeriodEnd;
       break;
       
     case "order_created":
@@ -329,20 +366,16 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
              upsertPayload.plan_tier = planTier;
              upsertPayload.subscription_status = "active";
              
-             // Derive interval from variant, default to 'year' if it's the Believer plan (which is yearly)
-             // or fallback to 'month' if unknown, but better to trust the resolver.
-             // Since Believer is yearly, deriveBillingIntervalFromVariant should return 'year' if set up correctly.
              const derivedInterval = deriveBillingIntervalFromVariant(variantId);
-             upsertPayload.billing_interval = derivedInterval || "year"; // Fallback to year as safe default for orders? Or maybe null?
-             // User said Believer is Year. Pro Yearly is Year. 
+             upsertPayload.billing_interval = derivedInterval || "year";
              
-             // For orders, we don't have 'renews_at', so we default to 1 year access
-             // unless we have specific logic.
-             // We'll trust the planTier to decide if we should grant access.
-             
-             const oneYearFromNow = new Date();
-             oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
-             upsertPayload.current_period_end = oneYearFromNow.toISOString();
+             const periodEnd = new Date();
+             if (derivedInterval === "month") {
+               periodEnd.setMonth(periodEnd.getMonth() + 1);
+             } else {
+               periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+             }
+             upsertPayload.current_period_end = periodEnd.toISOString();
              
              upsertPayload.lemon_customer_id = customerId;
              upsertPayload.lemon_variant_id = variantId;

@@ -52,8 +52,8 @@ export async function lemonRequest(path: string, options: LemonRequestOptions = 
 // ---------- Public pricing (server-side, cached) ----------
 
 export interface PlanPricing {
-  proMonthlyFormatted: string;   // e.g. "$7.9"
-  proYearlyFormatted: string;    // e.g. "$79.9"
+  proMonthlyFormatted: string;   // e.g. "$7.90"
+  proYearlyFormatted: string;    // e.g. "$79.90"
   proMonthlyCents: number;       // e.g. 790
   proYearlyCents: number;        // e.g. 7990
   believerYearly: number | null; // null = PWYW
@@ -70,8 +70,8 @@ function formatPrice(cents: number): string {
 
 export async function fetchVariantPrices(): Promise<PlanPricing> {
   const DEFAULTS: PlanPricing = {
-    proMonthlyFormatted: "$7.9",
-    proYearlyFormatted: "$79.9",
+    proMonthlyFormatted: "$7.90",
+    proYearlyFormatted: "$79.90",
     proMonthlyCents: 790,
     proYearlyCents: 7990,
     believerYearly: null,
