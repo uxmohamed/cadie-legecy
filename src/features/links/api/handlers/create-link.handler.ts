@@ -635,6 +635,26 @@ export class CreateLinkHandler {
                 };
             }
 
+            if (createLinkDTO.content_type === "image" && entitlements.maxImages !== null && usage.imagesTotal >= entitlements.maxImages) {
+                return createPlanLimitResponse({
+                    plan: billingCtx.plan,
+                    limitKey: "images",
+                    current: usage.imagesTotal,
+                    max: entitlements.maxImages,
+                    message: `Image limit reached on the ${billingCtx.plan} plan. Upgrade for more image uploads.`,
+                });
+            }
+
+            if (createLinkDTO.content_type === "document" && entitlements.maxDocuments !== null && usage.documentsTotal >= entitlements.maxDocuments) {
+                return createPlanLimitResponse({
+                    plan: billingCtx.plan,
+                    limitKey: "documents",
+                    current: usage.documentsTotal,
+                    max: entitlements.maxDocuments,
+                    message: `Document limit reached on the ${billingCtx.plan} plan. Upgrade for more document uploads.`,
+                });
+            }
+
             // Validate Link (only if it's a URL type)
             // Note: title is guaranteed to be set above (either from input or extracted from domain)
             if (createLinkDTO.content_type === 'url') {
