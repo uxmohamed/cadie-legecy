@@ -38,6 +38,11 @@ interface ExistingUserBillingRow {
   lemon_last_event_at: string | null;
 }
 
+interface ProcessingCapabilities {
+  webhookLifecycle: boolean;
+  lemonLastEventAt: boolean;
+}
+
 const REFUND_EVENT_NAMES = new Set([
   "order_refunded",
   "subscription_refunded",
@@ -99,6 +104,12 @@ function isRefundEvent(eventName: string): boolean {
 function isOlderEvent(incomingAt: string | null, existingAt: string | null): boolean {
   if (!incomingAt || !existingAt) return false;
   return new Date(incomingAt).getTime() < new Date(existingAt).getTime();
+}
+
+function isMissingColumnError(message: string | undefined, column: string): boolean {
+  if (!message) return false;
+  const normalized = message.toLowerCase();
+  return normalized.includes(`column "${column.toLowerCase()}" does not exist`);
 }
 
 export function verifyLemonWebhookSignature(rawBody: string, signature: string | null): boolean {
@@ -197,6 +208,23 @@ async function lookupBillingByLemonIds(
   return null;
 }
 
+async function lookupUserIdByEmail(
+  supabase: ReturnType<typeof createAdminClient>,
+  email: string | null
+): Promise<string | null> {
+  if (!email) return null;
+
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return null;
+
+  const { data, error } = await supabase.from("users").select("id").eq("email", normalized).maybeSingle();
+  if (error) {
+    throw new Error(`Failed to lookup user by exact email match: ${error.message}`);
+  }
+
+  return data?.id ? String(data.id) : null;
+}
+
 function extractSupportAmountCents(attributes: Record<string, unknown>): number | null {
   const candidates = [
     attributes.support_amount_cents,
@@ -216,6 +244,41 @@ function extractSupportAmountCents(attributes: Record<string, unknown>): number 
   return null;
 }
 
+async function detectProcessingCapabilities(
+  supabase: ReturnType<typeof createAdminClient>
+): Promise<ProcessingCapabilities> {
+  const capabilities: ProcessingCapabilities = {
+    webhookLifecycle: true,
+    lemonLastEventAt: true,
+  };
+
+  const webhookColumnsCheck = await supabase
+    .from("billing_webhook_events")
+    .select("id, processing_status, attempt_count");
+
+  if (webhookColumnsCheck.error) {
+    if (
+      isMissingColumnError(webhookColumnsCheck.error.message, "processing_status") ||
+      isMissingColumnError(webhookColumnsCheck.error.message, "attempt_count")
+    ) {
+      capabilities.webhookLifecycle = false;
+    } else {
+      throw new Error(`Failed to inspect billing webhook event columns: ${webhookColumnsCheck.error.message}`);
+    }
+  }
+
+  const billingColumnsCheck = await supabase.from("user_billing").select("lemon_last_event_at");
+  if (billingColumnsCheck.error) {
+    if (isMissingColumnError(billingColumnsCheck.error.message, "lemon_last_event_at")) {
+      capabilities.lemonLastEventAt = false;
+    } else {
+      throw new Error(`Failed to inspect user_billing columns: ${billingColumnsCheck.error.message}`);
+    }
+  }
+
+  return capabilities;
+}
+
 async function getOrCreateWebhookEvent(
   supabase: ReturnType<typeof createAdminClient>,
   input: {
@@ -223,8 +286,46 @@ async function getOrCreateWebhookEvent(
     providerEventId: string | null;
     eventName: string;
     payload: LemonWebhookPayload;
+    capabilities: ProcessingCapabilities;
   }
 ): Promise<WebhookEventRow> {
+  if (!input.capabilities.webhookLifecycle) {
+    const existingLegacy = await supabase.from("billing_webhook_events").select("id").eq("event_id", input.eventId).maybeSingle();
+    if (existingLegacy.error) {
+      throw new Error(`Failed to load legacy webhook event record: ${existingLegacy.error.message}`);
+    }
+
+    if (existingLegacy.data) {
+      return {
+        id: Number(existingLegacy.data.id),
+        processing_status: "processed",
+        attempt_count: 1,
+      };
+    }
+
+    const insertedLegacy = await supabase
+      .from("billing_webhook_events")
+      .insert({
+        event_id: input.eventId,
+        event_name: input.eventName,
+        payload: input.payload,
+      })
+      .select("id")
+      .single();
+
+    if (insertedLegacy.error || !insertedLegacy.data) {
+      throw new Error(
+        `Failed to create legacy webhook event record: ${insertedLegacy.error?.message || "Unknown error"}`
+      );
+    }
+
+    return {
+      id: Number(insertedLegacy.data.id),
+      processing_status: "pending",
+      attempt_count: 0,
+    };
+  }
+
   const existing = await supabase
     .from("billing_webhook_events")
     .select("id, processing_status, attempt_count")
@@ -273,12 +374,14 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
   const providerEventId = getProviderEventId(payload);
   const eventId = deriveEventId(providerEventId, rawBody);
   const supabase = createAdminClient();
+  const capabilities = await detectProcessingCapabilities(supabase);
 
   const eventRow = await getOrCreateWebhookEvent(supabase, {
     eventId,
     providerEventId,
     eventName,
     payload,
+    capabilities,
   });
 
   if (eventRow.processing_status === "processed") {
@@ -288,21 +391,55 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
   const attemptCount = eventRow.attempt_count + 1;
   const attemptAt = new Date().toISOString();
 
-  const markAttempt = await supabase
-    .from("billing_webhook_events")
-    .update({
-      event_name: eventName,
-      payload,
-      provider_event_id: providerEventId,
-      processing_status: "pending",
-      attempt_count: attemptCount,
-      last_attempt_at: attemptAt,
-    })
-    .eq("id", eventRow.id);
+  if (capabilities.webhookLifecycle) {
+    const markAttempt = await supabase
+      .from("billing_webhook_events")
+      .update({
+        event_name: eventName,
+        payload,
+        provider_event_id: providerEventId,
+        processing_status: "pending",
+        attempt_count: attemptCount,
+        last_attempt_at: attemptAt,
+      })
+      .eq("id", eventRow.id);
 
-  if (markAttempt.error) {
-    throw new Error(`Failed to update webhook attempt metadata: ${markAttempt.error.message}`);
+    if (markAttempt.error) {
+      throw new Error(`Failed to update webhook attempt metadata: ${markAttempt.error.message}`);
+    }
   }
+
+  const markEventProcessed = async (): Promise<void> => {
+    if (!capabilities.webhookLifecycle) return;
+    const processedAt = new Date().toISOString();
+    const result = await supabase
+      .from("billing_webhook_events")
+      .update({
+        processing_status: "processed",
+        processed_at: processedAt,
+        last_error: null,
+        last_attempt_at: attemptAt,
+      })
+      .eq("id", eventRow.id);
+    if (result.error) {
+      throw new Error(`Failed to mark webhook event as processed: ${result.error.message}`);
+    }
+  };
+
+  const markEventFailed = async (errorMessage: string): Promise<void> => {
+    if (!capabilities.webhookLifecycle) return;
+    const result = await supabase
+      .from("billing_webhook_events")
+      .update({
+        processing_status: "failed",
+        last_error: errorMessage,
+        last_attempt_at: new Date().toISOString(),
+      })
+      .eq("id", eventRow.id);
+    if (result.error) {
+      log.error("[Billing] Failed to mark webhook event as failed", result.error);
+    }
+  };
 
   try {
     const attributes = (payload.data?.attributes || {}) as Record<string, unknown>;
@@ -320,6 +457,11 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
     }
 
     if (!userId) {
+      const userEmail = coerceString(attributes.user_email);
+      userId = await lookupUserIdByEmail(supabase, userEmail);
+    }
+
+    if (!userId) {
       log.warn("[Billing] Could not identify user for webhook event", {
         eventId,
         eventName,
@@ -328,25 +470,16 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
         subscriptionId,
         reason: "ids_only_matching_failed",
       });
-      const processedAt = new Date().toISOString();
-      const markUnknownUser = await supabase
-        .from("billing_webhook_events")
-        .update({
-          processing_status: "processed",
-          processed_at: processedAt,
-          last_error: null,
-          last_attempt_at: attemptAt,
-        })
-        .eq("id", eventRow.id);
-      if (markUnknownUser.error) {
-        throw new Error(`Failed to mark unmatched webhook event as processed: ${markUnknownUser.error.message}`);
-      }
+      await markEventProcessed();
       return { processed: true, ignored: true };
     }
 
+    const existingBillingSelect = capabilities.lemonLastEventAt
+      ? "current_period_end, lemon_last_event_at"
+      : "current_period_end";
     const existingBillingResult = await supabase
       .from("user_billing")
-      .select("current_period_end, lemon_last_event_at")
+      .select(existingBillingSelect)
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -356,7 +489,7 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
 
     const existingBilling = (existingBillingResult.data || null) as ExistingUserBillingRow | null;
 
-    if (isOlderEvent(providerEventAt, existingBilling?.lemon_last_event_at || null)) {
+    if (capabilities.lemonLastEventAt && isOlderEvent(providerEventAt, existingBilling?.lemon_last_event_at || null)) {
       log.info("[Billing] Ignoring stale webhook event", {
         eventId,
         eventName,
@@ -364,19 +497,7 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
         existingEventAt: existingBilling?.lemon_last_event_at,
         userId,
       });
-      const processedAt = new Date().toISOString();
-      const markStale = await supabase
-        .from("billing_webhook_events")
-        .update({
-          processing_status: "processed",
-          processed_at: processedAt,
-          last_error: null,
-          last_attempt_at: attemptAt,
-        })
-        .eq("id", eventRow.id);
-      if (markStale.error) {
-        throw new Error(`Failed to mark stale webhook event as processed: ${markStale.error.message}`);
-      }
+      await markEventProcessed();
       return { processed: true, ignored: true };
     }
 
@@ -408,9 +529,11 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
     const upsertPayload: Record<string, unknown> = {
       user_id: userId,
       last_webhook_event_at: now,
-      lemon_last_event_at: providerEventAt || now,
       updated_at: now,
     };
+    if (capabilities.lemonLastEventAt) {
+      upsertPayload.lemon_last_event_at = providerEventAt || now;
+    }
 
     switch (eventName) {
       case "subscription_created":
@@ -425,21 +548,7 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
             variantId,
             subscriptionId,
           });
-          const processedAt = new Date().toISOString();
-          const markUnmappedPaid = await supabase
-            .from("billing_webhook_events")
-            .update({
-              processing_status: "processed",
-              processed_at: processedAt,
-              last_error: null,
-              last_attempt_at: attemptAt,
-            })
-            .eq("id", eventRow.id);
-          if (markUnmappedPaid.error) {
-            throw new Error(
-              `Failed to mark unmapped paid webhook event as processed: ${markUnmappedPaid.error.message}`
-            );
-          }
+          await markEventProcessed();
           return { processed: true, ignored: true };
         }
 
@@ -490,21 +599,7 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
             variantId,
             subscriptionId,
           });
-          const processedAt = new Date().toISOString();
-          const markUnmappedPayment = await supabase
-            .from("billing_webhook_events")
-            .update({
-              processing_status: "processed",
-              processed_at: processedAt,
-              last_error: null,
-              last_attempt_at: attemptAt,
-            })
-            .eq("id", eventRow.id);
-          if (markUnmappedPayment.error) {
-            throw new Error(
-              `Failed to mark unmapped payment success webhook event as processed: ${markUnmappedPayment.error.message}`
-            );
-          }
+          await markEventProcessed();
           return { processed: true, ignored: true };
         }
 
@@ -524,19 +619,7 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
           userId,
           eventId,
         });
-        const processedAtOrder = new Date().toISOString();
-        const markOrderIgnored = await supabase
-          .from("billing_webhook_events")
-          .update({
-            processing_status: "processed",
-            processed_at: processedAtOrder,
-            last_error: null,
-            last_attempt_at: attemptAt,
-          })
-          .eq("id", eventRow.id);
-        if (markOrderIgnored.error) {
-          throw new Error(`Failed to mark order_created webhook event as processed: ${markOrderIgnored.error.message}`);
-        }
+        await markEventProcessed();
         return { processed: true, ignored: true };
 
       default:
@@ -556,19 +639,7 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
           eventName,
           eventId,
         });
-        const processedAtUnhandled = new Date().toISOString();
-        const markUnhandled = await supabase
-          .from("billing_webhook_events")
-          .update({
-            processing_status: "processed",
-            processed_at: processedAtUnhandled,
-            last_error: null,
-            last_attempt_at: attemptAt,
-          })
-          .eq("id", eventRow.id);
-        if (markUnhandled.error) {
-          throw new Error(`Failed to mark unhandled webhook event as processed: ${markUnhandled.error.message}`);
-        }
+        await markEventProcessed();
         return { processed: true, ignored: true };
     }
 
@@ -580,36 +651,12 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
       throw new Error(`Failed to upsert billing row for ${eventName}: ${upsertError.message}`);
     }
 
-    const processedAt = new Date().toISOString();
-    const markProcessed = await supabase
-      .from("billing_webhook_events")
-      .update({
-        processing_status: "processed",
-        processed_at: processedAt,
-        last_error: null,
-        last_attempt_at: attemptAt,
-      })
-      .eq("id", eventRow.id);
-
-    if (markProcessed.error) {
-      throw new Error(`Failed to mark webhook event as processed: ${markProcessed.error.message}`);
-    }
+    await markEventProcessed();
 
     return { processed: true };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    const markFailed = await supabase
-      .from("billing_webhook_events")
-      .update({
-        processing_status: "failed",
-        last_error: errorMessage,
-        last_attempt_at: new Date().toISOString(),
-      })
-      .eq("id", eventRow.id);
-
-    if (markFailed.error) {
-      log.error("[Billing] Failed to mark webhook event as failed", markFailed.error);
-    }
+    await markEventFailed(errorMessage);
 
     throw error;
   }
