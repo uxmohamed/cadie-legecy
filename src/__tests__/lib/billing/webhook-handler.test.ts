@@ -124,6 +124,28 @@ describe("processLemonWebhook", () => {
     );
   });
 
+  test("ignores subscription activation events when variant is unmapped", async () => {
+    const { resolvePlanFromVariantId } = require("@/lib/billing/plan-resolver");
+    resolvePlanFromVariantId.mockReturnValueOnce(null);
+
+    const payload = {
+      ...basePayload,
+      data: {
+        ...basePayload.data,
+        attributes: {
+          ...basePayload.data.attributes,
+          variant_id: "unknown_variant",
+        },
+      },
+    };
+
+    const rawBody = JSON.stringify(payload);
+    const result = await processLemonWebhook(rawBody);
+
+    expect(result).toEqual({ processed: true, ignored: true });
+    expect(mockUpsert).not.toHaveBeenCalled();
+  });
+
   test("ignores duplicates (idempotency)", async () => {
     // Mock insert error for duplicate
     mockSingle.mockResolvedValueOnce({

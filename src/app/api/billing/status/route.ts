@@ -20,15 +20,26 @@ export async function GET() {
       context.usage.totalSavedItems >= LIMIT_WARNING_THRESHOLD &&
       context.usage.totalSavedItems < (context.entitlements.maxSavedItems || 100);
 
+    const effectiveSubscription =
+      context.plan === "starter"
+        ? {
+            status: "inactive",
+            interval: null,
+            current_period_end: null,
+            cancel_at_period_end: false,
+            support_amount_cents: null,
+          }
+        : {
+            status: context.billing?.subscription_status || "inactive",
+            interval: context.billing?.billing_interval || null,
+            current_period_end: context.billing?.current_period_end || null,
+            cancel_at_period_end: context.billing?.cancel_at_period_end || false,
+            support_amount_cents: context.billing?.support_amount_cents ?? null,
+          };
+
     return NextResponse.json({
       plan: context.plan,
-      subscription: {
-        status: context.billing?.subscription_status || "inactive",
-        interval: context.billing?.billing_interval || null,
-        current_period_end: context.billing?.current_period_end || null,
-        cancel_at_period_end: context.billing?.cancel_at_period_end || false,
-        support_amount_cents: context.billing?.support_amount_cents ?? null,
-      },
+      subscription: effectiveSubscription,
       entitlements: context.entitlements,
       usage: context.usage,
       warnings: {

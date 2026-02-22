@@ -278,9 +278,9 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
   const variantId =
     coerceString(attributes.variant_id) ||
     coerceString((attributes.first_order_item as Record<string, unknown>)?.variant_id);
-    
+
   const mappedPlan = resolvePlanFromVariantId(variantId);
-  const planTier = mappedPlan || existingBilling?.plan_tier || "starter";
+  const hasMappedPaidPlan = mappedPlan === "pro" || mappedPlan === "believer";
   
   // Default parsing for subscription dates/status
   // Note: some events might not have all attributes, so we default carefully.
@@ -316,7 +316,15 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
     case "subscription_updated":
     case "subscription_resumed":
     case "subscription_unpaused":
-      upsertPayload.plan_tier = planTier;
+      // Fail closed: never activate paid access unless variant is explicitly mapped.
+      if (!hasMappedPaidPlan) {
+        log.warn(`[Billing] Ignoring ${eventName} with unmapped variant for user ${userId}`, {
+          variantId,
+          subscriptionId,
+        });
+        return { processed: true, ignored: true };
+      }
+      upsertPayload.plan_tier = mappedPlan;
       upsertPayload.subscription_status = status;
       upsertPayload.billing_interval = billingInterval;
       upsertPayload.lemon_customer_id = customerId;
@@ -339,7 +347,7 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
       // Ensure we mark the flag
       upsertPayload.cancel_at_period_end = true;
       if (currentPeriodEnd) upsertPayload.current_period_end = currentPeriodEnd;
-      if (planTier) upsertPayload.plan_tier = planTier;
+      if (hasMappedPaidPlan) upsertPayload.plan_tier = mappedPlan;
       break;
 
     case "subscription_expired":
@@ -360,7 +368,14 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
       break;
 
     case "subscription_payment_success":
-      upsertPayload.plan_tier = planTier;
+      if (!hasMappedPaidPlan) {
+        log.warn(`[Billing] Ignoring subscription_payment_success with unmapped variant for user ${userId}`, {
+          variantId,
+          subscriptionId,
+        });
+        return { processed: true, ignored: true };
+      }
+      upsertPayload.plan_tier = mappedPlan;
       upsertPayload.subscription_status = "active";
       upsertPayload.lemon_customer_id = customerId;
       upsertPayload.lemon_subscription_id = subscriptionId;
@@ -373,8 +388,8 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
     case "order_created":
         // Useful for one-time purchases (Lifetime deals) or simple orders.
         // If it resolves to a valid Plan, we activate it.
-        if (planTier && planTier !== "starter") {
-             upsertPayload.plan_tier = planTier;
+        if (hasMappedPaidPlan) {
+             upsertPayload.plan_tier = mappedPlan;
              upsertPayload.subscription_status = "active";
              
              const derivedInterval = deriveBillingIntervalFromVariant(variantId);

@@ -210,6 +210,35 @@ describe("syncSubscription", () => {
     expect(mockSupabase.from).not.toHaveBeenCalled();
   });
 
+  test("does not preserve paid fallback when existing row is pro but variant is unmapped", async () => {
+    (resolvePlanFromVariantId as jest.Mock).mockReturnValue(null);
+    (getUserBillingRecord as jest.Mock).mockResolvedValue({
+      user_id: "user_123",
+      plan_tier: "pro",
+      lemon_subscription_id: "sub_123",
+    });
+    (lemonRequest as jest.Mock).mockResolvedValue({
+      data: {
+        id: "sub_123",
+        attributes: {
+          variant_id: "unknown_variant",
+          status: "active",
+          renews_at: "2026-05-01T00:00:00Z",
+        },
+      },
+    });
+
+    const result = await syncSubscription("user_123", "test@example.com");
+
+    expect(result).toEqual({
+      synced: false,
+      source: "none",
+      reason: "unmapped_variant",
+      message: "Subscription found but variant is not mapped to an app plan",
+    });
+    expect(mockSupabase.from).not.toHaveBeenCalled();
+  });
+
   test("returns no_local_subscription when no matching subscription can be found", async () => {
     (getUserBillingRecord as jest.Mock).mockResolvedValue({
       user_id: "user_123",

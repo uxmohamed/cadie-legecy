@@ -80,8 +80,20 @@ describe("resolvePlanFromVariantId", () => {
 });
 
 describe("resolvePlanForUser", () => {
+  const originalEnv = process.env;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env = {
+      ...originalEnv,
+      LEMONSQUEEZY_PRO_MONTHLY_VARIANT_ID: "pro_monthly_id",
+      LEMONSQUEEZY_PRO_YEARLY_VARIANT_ID: "pro_yearly_id",
+      LEMONSQUEEZY_BELIEVER_YEARLY_VARIANT_ID: "believer_yearly_id",
+    };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
   });
 
   it("returns 'starter' when no billing record exists", async () => {
@@ -116,6 +128,36 @@ describe("resolvePlanForUser", () => {
 
     const { plan } = await resolvePlanForUser("user_123");
     expect(plan).toBe("believer");
+  });
+
+  it("fails closed to starter when paid row has no verifiable Lemon linkage", async () => {
+    const record = makeBillingRecord({
+      plan_tier: "pro",
+      subscription_status: "active",
+      lemon_subscription_id: null,
+      lemon_variant_id: null,
+      current_period_end: null,
+    });
+    const supabase = makeMockSupabase(record);
+    (createAdminClient as jest.Mock).mockReturnValue(supabase);
+
+    const { plan } = await resolvePlanForUser("user_123");
+    expect(plan).toBe("starter");
+  });
+
+  it("grants access when paid row has mapped variant even without subscription id", async () => {
+    const record = makeBillingRecord({
+      plan_tier: "pro",
+      subscription_status: "active",
+      lemon_subscription_id: null,
+      lemon_variant_id: "pro_monthly_id",
+      current_period_end: null,
+    });
+    const supabase = makeMockSupabase(record);
+    (createAdminClient as jest.Mock).mockReturnValue(supabase);
+
+    const { plan } = await resolvePlanForUser("user_123");
+    expect(plan).toBe("pro");
   });
 
   it("returns 'starter' when subscription is expired", async () => {

@@ -38,6 +38,23 @@ function parseDate(value: string | null): Date | null {
   return date;
 }
 
+function hasVerifiablePaidSource(record: UserBillingRecord): boolean {
+  if (record.plan_tier === "starter") return true;
+
+  // A subscription ID is the strongest signal that paid access is tied to Lemon.
+  if (record.lemon_subscription_id) return true;
+
+  // Fallback: allow paid rows backed by a mapped paid variant.
+  if (record.lemon_variant_id) {
+    const mappedPlan = resolvePlanFromVariantId(record.lemon_variant_id);
+    if (mappedPlan === record.plan_tier) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function normalizeBillingRow(row: Record<string, unknown>): UserBillingRecord {
   return {
     user_id: String(row.user_id),
@@ -109,6 +126,11 @@ export async function resolvePlanForUser(userId: string): Promise<{ plan: PlanTi
   const billing = await getUserBillingRecord(userId);
   if (!billing) {
     return { plan: "starter", billing: null };
+  }
+
+  // Fail-closed guard: never grant paid access from rows that cannot be tied back to Lemon data.
+  if (!hasVerifiablePaidSource(billing)) {
+    return { plan: "starter", billing };
   }
 
   const plan = hasPaidAccess(billing, new Date()) ? billing.plan_tier : "starter";

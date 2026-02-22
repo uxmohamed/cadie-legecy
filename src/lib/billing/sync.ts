@@ -3,7 +3,6 @@ import { resolvePlanFromVariantId, getUserBillingRecord } from "@/lib/billing/pl
 import { lemonRequest } from "@/lib/billing/lemon-client";
 import { mapStatus, mapInterval, deriveBillingIntervalFromVariant } from "@/lib/billing/webhook-handler";
 import { log } from "@/lib/logger";
-import type { PlanTier } from "@/lib/billing/types";
 
 export type BillingSyncSource = "local_subscription_id" | "email_bootstrap" | "customer_bootstrap" | "none";
 export type BillingSyncReason =
@@ -112,20 +111,16 @@ function selectBestCandidate(candidates: LemonSubscriptionCandidate[]): LemonSub
   return eligible[0] || null;
 }
 
-function toPlanTier(variantId: string | null, fallbackPlan: PlanTier): PlanTier | null {
-  const mapped = resolvePlanFromVariantId(variantId);
-  if (mapped) return mapped;
-  if (fallbackPlan !== "starter") return fallbackPlan;
-  return null;
+function toPlanTier(variantId: string | null) {
+  return resolvePlanFromVariantId(variantId);
 }
 
 async function upsertUserBilling(args: {
   userId: string;
   candidate: LemonSubscriptionCandidate;
-  fallbackPlan: PlanTier;
 }): Promise<BillingSyncResult> {
-  const { userId, candidate, fallbackPlan } = args;
-  const planTier = toPlanTier(candidate.variantId, fallbackPlan);
+  const { userId, candidate } = args;
+  const planTier = toPlanTier(candidate.variantId);
   if (!planTier) {
     return {
       synced: false,
@@ -177,7 +172,6 @@ async function upsertUserBilling(args: {
  */
 export async function syncSubscription(userId: string, userEmail: string | null): Promise<BillingSyncResult> {
   const billing = await getUserBillingRecord(userId);
-  const fallbackPlan = billing?.plan_tier || "starter";
   let localLookupFailed = false;
 
   try {
@@ -193,7 +187,6 @@ export async function syncSubscription(userId: string, userEmail: string | null)
           const result = await upsertUserBilling({
             userId,
             candidate,
-            fallbackPlan,
           });
 
           return {
@@ -225,7 +218,6 @@ export async function syncSubscription(userId: string, userEmail: string | null)
       const result = await upsertUserBilling({
         userId,
         candidate: selectedByEmail,
-        fallbackPlan,
       });
       return {
         ...result,
@@ -243,7 +235,6 @@ export async function syncSubscription(userId: string, userEmail: string | null)
         const result = await upsertUserBilling({
           userId,
           candidate: selectedByCustomer,
-          fallbackPlan,
         });
 
         return {
