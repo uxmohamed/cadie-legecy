@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 import { getCustomerPortalUrl } from "@/lib/billing/lemon-client";
 import { getUserBillingRecord } from "@/lib/billing/plan-resolver";
 import { syncSubscription } from "@/lib/billing/sync";
 import { log } from "@/lib/logger";
 import { rateLimitBilling, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 
-export async function POST(request: NextRequest = new Request("http://localhost") as unknown as NextRequest) {
+export async function POST(request: Request) {
   try {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();

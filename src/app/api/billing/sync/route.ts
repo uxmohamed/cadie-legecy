@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { syncSubscription } from "@/lib/billing/sync";
 import { rateLimitBilling, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 
-export async function POST(request: NextRequest = new Request("http://localhost") as unknown as NextRequest) {
+export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     const {
