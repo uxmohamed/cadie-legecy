@@ -23,8 +23,9 @@ interface CommandProps extends React.ComponentPropsWithoutRef<"div"> {
 }
 
 const Command = React.forwardRef<HTMLDivElement, CommandProps>(
-  ({ className, value: controlledValue, onValueChange, ...props }, ref) => {
+  ({ className, value: controlledValue, onValueChange, onKeyDown, ...props }, ref) => {
     const [uncontrolledValue, setUncontrolledValue] = React.useState("")
+    const rootRef = React.useRef<HTMLDivElement | null>(null)
     const isControlled = controlledValue !== undefined
     const value = isControlled ? controlledValue : uncontrolledValue
 
@@ -43,14 +44,90 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
       [value, handleValueChange]
     )
 
+    const setRefs = React.useCallback(
+      (node: HTMLDivElement | null) => {
+        rootRef.current = node
+        if (!ref) return
+        if (typeof ref === "function") {
+          ref(node)
+          return
+        }
+        ref.current = node
+      },
+      [ref]
+    )
+
+    const getVisibleItems = React.useCallback(() => {
+      if (!rootRef.current) return []
+      return Array.from(
+        rootRef.current.querySelectorAll<HTMLButtonElement>("[data-command-item='true']:not([disabled])")
+      )
+    }, [])
+
+    const handleKeyDown = React.useCallback(
+      (event: React.KeyboardEvent<HTMLDivElement>) => {
+        onKeyDown?.(event)
+        if (event.defaultPrevented) return
+
+        const target = event.target
+        const isCommandInput =
+          target instanceof HTMLInputElement &&
+          target.getAttribute("data-command-input") === "true"
+
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          const items = getVisibleItems()
+          if (items.length === 0) return
+
+          event.preventDefault()
+          const currentIndex = items.findIndex((item) => item === document.activeElement)
+
+          if (currentIndex === -1) {
+            if (event.key === "ArrowDown") {
+              items[0]?.focus()
+            } else {
+              items[items.length - 1]?.focus()
+            }
+            return
+          }
+
+          const nextIndex =
+            event.key === "ArrowDown"
+              ? (currentIndex + 1) % items.length
+              : (currentIndex - 1 + items.length) % items.length
+
+          items[nextIndex]?.focus()
+          return
+        }
+
+        if (
+          event.key === "Enter" &&
+          isCommandInput &&
+          !event.metaKey &&
+          !event.ctrlKey &&
+          !event.altKey &&
+          !event.shiftKey
+        ) {
+          const items = getVisibleItems()
+          if (items.length === 0) return
+
+          event.preventDefault()
+          const activeItem = items.find((item) => item === document.activeElement)
+          ;(activeItem ?? items[0])?.click()
+        }
+      },
+      [getVisibleItems, onKeyDown]
+    )
+
     return (
       <CommandContext.Provider value={contextValue}>
         <div
-          ref={ref}
+          ref={setRefs}
+          data-command-root="true"
           className={cn(
             "flex h-full w-full flex-col overflow-hidden rounded-md bg-bg-surface text-fg",
             className
           )}
+          onKeyDown={handleKeyDown}
           {...props}
         />
       </CommandContext.Provider>
@@ -83,7 +160,7 @@ const CommandDialog = ({ children, commandProps, ...props }: CommandDialogProps)
 const CommandInput = React.forwardRef<
   HTMLInputElement,
   React.ComponentPropsWithoutRef<"input">
->(({ className, onChange, autoFocus, ...props }, ref) => {
+>(({ className, onChange, onKeyDown, autoFocus, ...props }, ref) => {
   const context = useCommandContext()
 
   const handleChange = React.useCallback(
@@ -94,11 +171,62 @@ const CommandInput = React.forwardRef<
     [context, onChange]
   )
 
+  const handleKeyDown = React.useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      onKeyDown?.(event)
+      if (event.defaultPrevented) return
+
+      const isEnter = event.key === "Enter"
+      const isArrow = event.key === "ArrowDown" || event.key === "ArrowUp"
+      if (!isEnter && !isArrow) return
+
+      if (isEnter && (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey)) {
+        return
+      }
+
+      const root = event.currentTarget.closest<HTMLElement>("[data-command-root='true']")
+      if (!root) return
+
+      const items = Array.from(
+        root.querySelectorAll<HTMLButtonElement>("[data-command-item='true']:not([disabled])")
+      )
+
+      if (items.length === 0) return
+
+      if (isArrow) {
+        event.preventDefault()
+        const currentIndex = items.findIndex((item) => item === document.activeElement)
+        if (currentIndex === -1) {
+          if (event.key === "ArrowDown") {
+            items[0]?.focus()
+          } else {
+            items[items.length - 1]?.focus()
+          }
+          return
+        }
+
+        const nextIndex =
+          event.key === "ArrowDown"
+            ? (currentIndex + 1) % items.length
+            : (currentIndex - 1 + items.length) % items.length
+
+        items[nextIndex]?.focus()
+        return
+      }
+
+      event.preventDefault()
+      const activeItem = items.find((item) => item === document.activeElement)
+      ;(activeItem ?? items[0])?.click()
+    },
+    [onKeyDown]
+  )
+
   return (
     <div className="flex items-center border-b px-3" data-slot="command-input-wrapper">
       <IconSearch className="mr-2 h-4 w-4 shrink-0 opacity-50" />
       <input
         ref={ref}
+        data-command-input="true"
         className={cn(
           "flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-fg-subtle disabled:cursor-not-allowed disabled:opacity-50",
           className
@@ -106,6 +234,7 @@ const CommandInput = React.forwardRef<
         autoFocus={autoFocus ?? true}
         value={context?.value ?? ""}
         onChange={handleChange}
+        onKeyDown={handleKeyDown}
         {...props}
       />
     </div>
@@ -127,7 +256,7 @@ const CommandList = React.forwardRef<
       const list = event.currentTarget
       const items = Array.from(
         list.querySelectorAll<HTMLButtonElement>("[data-command-item='true']:not([disabled])")
-      ).filter((item) => item.offsetParent !== null)
+      )
 
       if (items.length === 0) return
 
@@ -234,7 +363,7 @@ const CommandItem = React.forwardRef<
       type="button"
       data-command-item="true"
       className={cn(
-        "relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm text-left outline-none hover:bg-bg-selected/70 focus-visible:bg-bg-selected focus-visible:text-fg disabled:pointer-events-none disabled:opacity-50",
+        "relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm text-left outline-none hover:bg-bg-hover focus:bg-bg-selected focus:text-fg focus-visible:bg-bg-selected focus-visible:text-fg disabled:pointer-events-none disabled:opacity-50",
         className
       )}
       onClick={handleClick}

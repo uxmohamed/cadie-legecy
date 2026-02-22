@@ -41,8 +41,8 @@ interface GlobalCommandMenuProps {
   onUploadClick?: () => void;
   onCreateNote?: () => void;
   onCreateSpace?: () => void;
-  searchQuery: string;
-  onSearchChange: (value: string) => void;
+  initialSearchQuery?: string;
+  onCommitSearch: (value: string) => void;
 }
 
 export function GlobalCommandMenu({
@@ -60,19 +60,18 @@ export function GlobalCommandMenu({
   onUploadClick,
   onCreateNote,
   onCreateSpace,
-  searchQuery,
-  onSearchChange,
+  initialSearchQuery,
+  onCommitSearch,
 }: GlobalCommandMenuProps) {
-  const [query, setQuery] = React.useState(searchQuery);
+  const [query, setQuery] = React.useState("");
 
   React.useEffect(() => {
     if (!open) {
-      setQuery(searchQuery);
+      setQuery("");
       return;
     }
-
-    setQuery(searchQuery);
-  }, [open, searchQuery]);
+    setQuery("");
+  }, [open]);
 
   const runCommand = React.useCallback(
     (action: () => void) => {
@@ -85,12 +84,13 @@ export function GlobalCommandMenu({
   const handleValueChange = React.useCallback(
     (value: string) => {
       setQuery(value);
-      onSearchChange(value);
     },
-    [onSearchChange]
+    []
   );
 
   const normalizedQuery = query.trim().toLowerCase();
+  const initialCommittedQuery = initialSearchQuery?.trim() ?? "";
+  const committedSearchValue = query.trim() || initialCommittedQuery;
   const hasQuery = normalizedQuery.length > 0;
 
   const matchesQuery = React.useCallback(
@@ -101,7 +101,7 @@ export function GlobalCommandMenu({
     [hasQuery, normalizedQuery]
   );
 
-  const showSearchAction = hasQuery;
+  const showSearchAction = committedSearchValue.length > 0 && (hasQuery || initialCommittedQuery.length > 0);
   const showCreateLink = !isTrashView && matchesQuery("link", "add link", "create link", "new link", "n");
   const showUpload = !isTrashView && Boolean(onUploadClick) && matchesQuery("upload", "upload image", "upload pdf", "upload document", "image", "pdf", "document");
   const showCreateColor = !isTrashView && matchesQuery("color", "add color", "create color");
@@ -143,9 +143,9 @@ export function GlobalCommandMenu({
 
         {showSearchAction && (
           <CommandGroup heading="Search">
-            <CommandItem onSelect={() => runCommand(() => onSearchChange(query))}>
+            <CommandItem onSelect={() => runCommand(() => onCommitSearch(committedSearchValue))}>
               <IconSearch className="mr-2 h-4 w-4" />
-              Search for “{query}”
+              Search for “{committedSearchValue}”
               <CommandShortcut>↵</CommandShortcut>
             </CommandItem>
           </CommandGroup>

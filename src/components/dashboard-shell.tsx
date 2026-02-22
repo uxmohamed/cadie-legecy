@@ -755,8 +755,8 @@ export function DashboardShell({
         onUploadClick={onUploadImages || onUploadDocuments ? () => uploadInputRef.current?.click() : undefined}
         onCreateNote={onCreateNote}
         onCreateSpace={onCreateSpace}
-        searchQuery={searchQuery}
-        onSearchChange={(value) => {
+        initialSearchQuery={searchQuery}
+        onCommitSearch={(value) => {
           onSearchChange(value);
           updateUrl(value);
         }}
