@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { validateUUID } from "@/lib/validation/validate";
 import { BookmarkImportService } from "@/features/imports/services/bookmark-import.service";
+import { resolvePlanForUser } from "@/lib/billing/plan-resolver";
+import { getEntitlements } from "@/lib/billing/entitlements";
+import { createPlanLimitResponse } from "@/lib/billing/limit-response";
 
 const service = new BookmarkImportService();
 
@@ -21,6 +24,19 @@ export async function POST(
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Block Starter users from starting imports
+    const { plan } = await resolvePlanForUser(user.id);
+    const entitlements = getEntitlements(plan);
+    if (!entitlements.bookmarkImportEnabled) {
+      return createPlanLimitResponse({
+        plan,
+        limitKey: "imports",
+        current: null,
+        max: null,
+        message: "Bookmark import is available on the Pro plan. Upgrade to import your bookmarks.",
+      });
     }
 
     const { id } = await params;

@@ -11,6 +11,8 @@ import { AutoSpaceForwardingService } from "@/features/spaces/services/auto-spac
 import { createAdminClient } from "@/lib/supabase/server";
 import { extractMetadata } from "@/lib/metadata";
 import { log } from "@/lib/logger";
+import { getBillingContext } from "@/lib/billing/context";
+import { createPlanLimitResponse } from "@/lib/billing/limit-response";
 
 const EXTENSION_SOURCE_HEADER = "x-cadie-source";
 const EXTENSION_SOURCE_VALUE = "extension";
@@ -544,6 +546,20 @@ export class CreateLinkHandler {
                 );
             }
 
+            // Enforce plan limits
+            const billingCtx = await getBillingContext(userId);
+            const { entitlements, usage } = billingCtx;
+
+            if (entitlements.maxSavedItems !== null && usage.totalSavedItems >= entitlements.maxSavedItems) {
+                return createPlanLimitResponse({
+                    plan: billingCtx.plan,
+                    limitKey: "saved_items",
+                    current: usage.totalSavedItems,
+                    max: entitlements.maxSavedItems,
+                    message: `You've reached the ${entitlements.maxSavedItems}-item limit on the ${billingCtx.plan} plan. Upgrade to save more.`,
+                });
+            }
+
             // Use validated data if provided, otherwise fall back to old validation
             let createLinkDTO: CreateLinkDTO;
             
@@ -617,6 +633,26 @@ export class CreateLinkHandler {
                     notes: notes || null,
                     content_text: content_text || null,
                 };
+            }
+
+            if (createLinkDTO.content_type === "image" && entitlements.maxImages !== null && usage.imagesTotal >= entitlements.maxImages) {
+                return createPlanLimitResponse({
+                    plan: billingCtx.plan,
+                    limitKey: "images",
+                    current: usage.imagesTotal,
+                    max: entitlements.maxImages,
+                    message: `Image limit reached on the ${billingCtx.plan} plan. Upgrade for more image uploads.`,
+                });
+            }
+
+            if (createLinkDTO.content_type === "document" && entitlements.maxDocuments !== null && usage.documentsTotal >= entitlements.maxDocuments) {
+                return createPlanLimitResponse({
+                    plan: billingCtx.plan,
+                    limitKey: "documents",
+                    current: usage.documentsTotal,
+                    max: entitlements.maxDocuments,
+                    message: `Document limit reached on the ${billingCtx.plan} plan. Upgrade for more document uploads.`,
+                });
             }
 
             // Validate Link (only if it's a URL type)

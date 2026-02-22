@@ -1,10 +1,11 @@
 "use client";
 
+import type { PlanPricing } from "@/lib/billing/lemon-client";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
-import { IconMenu, IconX, IconConfettiFilled, IconChevronDown, IconArrowRight } from "@tabler/icons-react";
+import { IconMenu, IconX, IconConfettiFilled, IconChevronDown, IconArrowRight, IconCheck } from "@tabler/icons-react";
 import {
   Sheet,
   SheetContent,
@@ -56,11 +57,18 @@ function FaqItem({ question, children, isOpen, onToggle }: { question: string; c
 
 interface LandingPageProps {
   changelogEntries?: ChangelogEntry[];
+  pricing?: PlanPricing;
 }
 
-export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
+export function LandingPage({ changelogEntries = [], pricing }: LandingPageProps) {
+  const proMonthlyLabel = pricing?.proMonthlyFormatted ?? "$7.9";
+  const proYearlyLabel = pricing?.proYearlyFormatted ?? "$79.9";
+  const yearlySavings = pricing
+    ? Math.round((1 - pricing.proYearlyCents / (pricing.proMonthlyCents * 12)) * 100)
+    : 17;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openFaqId, setOpenFaqId] = useState<string | null>(null);
+  const [pricingInterval, setPricingInterval] = useState<"month" | "year">("month");
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(
     () =>
       typeof window !== "undefined" &&
@@ -98,6 +106,13 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
             
             {/* Desktop Navigation - Centered */}
             <nav className="hidden md:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
+              <Button
+                variant="ghost"
+                className="text-fg-muted hover:text-fg"
+                render={<a href="#pricing" />}
+              >
+                Pricing
+              </Button>
               <Button
                 variant="ghost"
                 className="text-fg-muted hover:text-fg"
@@ -465,6 +480,99 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
         </section>
       )}
 
+      {/* Pricing Section */}
+      <section id="pricing" className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl sm:text-4xl font-medium text-fg mb-4 font-custom">
+              Simple pricing
+            </h2>
+            <p className="text-base text-fg-muted max-w-md mx-auto">
+              Start free, upgrade when you need more.
+            </p>
+          </div>
+
+          {/* Monthly/Yearly Toggle */}
+          <div className="flex items-center justify-center mb-10">
+            <div className="flex items-center gap-1 bg-bg-muted rounded-lg p-1">
+              <button
+                onClick={() => setPricingInterval("month")}
+                className={`text-sm font-medium px-4 py-2 rounded-md transition-colors ${pricingInterval === "month" ? "bg-bg-emphasis text-fg-inverse" : "text-fg-muted hover:text-fg"}`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setPricingInterval("year")}
+                className={`text-sm font-medium px-4 py-2 rounded-md transition-colors ${pricingInterval === "year" ? "bg-bg-emphasis text-fg-inverse" : "text-fg-muted hover:text-fg"}`}
+              >
+                Yearly
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+            {/* Starter */}
+            <div className="rounded-xl border border-border bg-bg-muted p-6 flex flex-col">
+              <h3 className="text-lg font-medium text-fg mb-1">Starter</h3>
+              <p className="text-sm text-fg-muted mb-4">For getting started</p>
+              <div className="mb-6">
+                <span className="text-3xl font-semibold text-fg">Free</span>
+              </div>
+              <Button
+                variant="secondary"
+                className="w-full mb-6"
+                render={<Link href="/auth" />}
+              >
+                Get Started
+              </Button>
+              <ul className="space-y-2.5 text-sm text-fg-muted">
+                <li className="flex items-start gap-2"><IconCheck className="size-4 mt-0.5 shrink-0 text-fg-subtle" /> 100 saved items</li>
+                <li className="flex items-start gap-2"><IconCheck className="size-4 mt-0.5 shrink-0 text-fg-subtle" /> 3 spaces</li>
+                <li className="flex items-start gap-2"><IconCheck className="size-4 mt-0.5 shrink-0 text-fg-subtle" /> 25 images, 25 documents</li>
+                <li className="flex items-start gap-2"><IconCheck className="size-4 mt-0.5 shrink-0 text-fg-subtle" /> 10 MB file uploads</li>
+                <li className="flex items-start gap-2"><IconCheck className="size-4 mt-0.5 shrink-0 text-fg-subtle" /> Chrome extension</li>
+              </ul>
+            </div>
+
+            {/* Pro */}
+            <div className="rounded-xl border-2 border-[var(--brand)] bg-bg-muted p-6 flex flex-col relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-xs font-medium px-3 py-1 rounded-full">
+                Most popular
+              </div>
+              <h3 className="text-lg font-medium text-fg mb-1">Pro</h3>
+              <p className="text-sm text-fg-muted mb-4">For power users</p>
+              <div className="mb-6">
+                <span className="text-3xl font-semibold text-fg">
+                  {pricingInterval === "month" ? proMonthlyLabel : proYearlyLabel}
+                </span>
+                <span className="text-sm text-fg-muted">
+                  /{pricingInterval === "month" ? "mo" : "yr"}
+                </span>
+                {pricingInterval === "year" && yearlySavings > 0 && (
+                  <span className="ml-2 text-xs text-success font-medium">Save {yearlySavings}%</span>
+                )}
+              </div>
+              <Button
+                className="w-full mb-6"
+                render={<Link href="/auth" />}
+              >
+                Upgrade to Pro
+              </Button>
+              <ul className="space-y-2.5 text-sm text-fg-muted">
+                <li className="flex items-start gap-2"><IconCheck className="size-4 mt-0.5 shrink-0 text-[var(--brand)]" /> Unlimited saved items</li>
+                <li className="flex items-start gap-2"><IconCheck className="size-4 mt-0.5 shrink-0 text-[var(--brand)]" /> Unlimited spaces</li>
+                <li className="flex items-start gap-2"><IconCheck className="size-4 mt-0.5 shrink-0 text-[var(--brand)]" /> 2,000 images, 2,000 documents</li>
+                <li className="flex items-start gap-2"><IconCheck className="size-4 mt-0.5 shrink-0 text-[var(--brand)]" /> 25 MB file uploads</li>
+                <li className="flex items-start gap-2"><IconCheck className="size-4 mt-0.5 shrink-0 text-[var(--brand)]" /> Bookmark import</li>
+                <li className="flex items-start gap-2 text-fg-subtle"><IconCheck className="size-4 mt-0.5 shrink-0 text-fg-subtle" /> AI search <span className="text-xs">(Coming soon)</span></li>
+                <li className="flex items-start gap-2 text-fg-subtle"><IconCheck className="size-4 mt-0.5 shrink-0 text-fg-subtle" /> Sharing &amp; publishing <span className="text-xs">(Coming soon)</span></li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
       {/* FAQ Section */}
       <section className="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
@@ -474,12 +582,12 @@ export function LandingPage({ changelogEntries = [] }: LandingPageProps) {
             </h2>
           </div>
           <div className="max-w-[500px] mx-auto flex flex-col gap-1">
-            <FaqItem 
-              question="Is Cadie free to use?" 
-              isOpen={openFaqId === 'free'} 
+            <FaqItem
+              question="Is Cadie free to use?"
+              isOpen={openFaqId === 'free'}
               onToggle={() => setOpenFaqId(openFaqId === 'free' ? null : 'free')}
             >
-              Yes! Cadie is completely free during the beta period. We&apos;re focused on building the best link-saving experience before introducing any paid features.
+              Yes! The Starter plan is free forever with up to 100 saved items and 3 spaces. Upgrade to Pro for unlimited saves, bookmark imports, and more.
             </FaqItem>
             <FaqItem 
               question="How do I save links?" 

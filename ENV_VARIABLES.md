@@ -26,6 +26,14 @@ CRON_SECRET=<your-random-secret-min-32-chars>
 # Used for secure service-to-service communication
 INTERNAL_API_SECRET=<your-random-secret-min-32-chars>
 
+# Lemon Squeezy (Billing)
+LEMONSQUEEZY_API_KEY=<your-lemon-api-key>
+LEMONSQUEEZY_STORE_ID=<your-lemon-store-id>
+LEMONSQUEEZY_WEBHOOK_SECRET=<your-lemon-webhook-signing-secret>
+LEMONSQUEEZY_PRO_MONTHLY_VARIANT_ID=<your-pro-monthly-variant-id>
+LEMONSQUEEZY_PRO_YEARLY_VARIANT_ID=<your-pro-yearly-variant-id>
+LEMONSQUEEZY_BELIEVER_YEARLY_VARIANT_ID=<your-believer-yearly-variant-id>
+
 # Site URL (your deployed domain)
 NEXT_PUBLIC_SITE_URL=https://your-domain.com
 NEXT_PUBLIC_BASE_URL=https://your-domain.com
@@ -59,6 +67,14 @@ QSTASH_NEXT_SIGNING_KEY=<your-qstash-next-signing-key>
 CRON_SECRET=<generate-for-local-testing>
 INTERNAL_API_SECRET=<generate-for-local-testing>
 
+# Lemon Squeezy (Billing)
+LEMONSQUEEZY_API_KEY=<your-lemon-api-key>
+LEMONSQUEEZY_STORE_ID=<your-lemon-store-id>
+LEMONSQUEEZY_WEBHOOK_SECRET=<your-lemon-webhook-signing-secret>
+LEMONSQUEEZY_PRO_MONTHLY_VARIANT_ID=<your-pro-monthly-variant-id>
+LEMONSQUEEZY_PRO_YEARLY_VARIANT_ID=<your-pro-yearly-variant-id>
+LEMONSQUEEZY_BELIEVER_YEARLY_VARIANT_ID=<your-believer-yearly-variant-id>
+
 # Local development URLs
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
@@ -75,6 +91,16 @@ openssl rand -base64 32
 # Using Node.js
 node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
+
+## Lemon Squeezy Local Testing Runbook
+
+When testing billing locally, Lemon Squeezy webhooks must reach a public URL.
+
+1. Set webhook URL to your deployed endpoint for reliability:
+`https://your-domain.com/api/webhooks/lemonsqueezy`
+2. If you use localhost app UI, that is fine for checkout initiation, but webhook delivery still needs a public endpoint.
+3. Only point Lemon webhooks to a tunnel URL (for example `*.loca.lt`, `ngrok`) while the tunnel is actively running.
+4. If webhook delivery fails (for example `503 Tunnel Unavailable`), subscription state will not update in `user_billing` and app will remain on Starter until webhooks are replayed or billing sync is triggered.
 
 ## Cloudflare Scheduled Cleanup Options
 
@@ -93,7 +119,7 @@ export default {
         headers: {
           Authorization: `Bearer ${env.CRON_SECRET}`,
         },
-      }
+      },
     );
 
     const result = await response.json();

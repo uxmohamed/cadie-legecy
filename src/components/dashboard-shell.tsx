@@ -10,6 +10,7 @@ import type { Link } from "@/features/links/types";
 import type { Space } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCircleCheckFilled, IconLayoutList, IconLayoutGrid, IconPhoto, IconUpload, IconPalette, IconFileTypePdf, IconNotes, IconAlertTriangle } from "@tabler/icons-react";
 import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCircleCheckFilled, IconLayoutList, IconLayoutGrid, IconUpload, IconPalette, IconNotes, IconFolder } from "@tabler/icons-react";
 import { Kbd } from "@/components/ui/kbd";
 import {
@@ -96,6 +97,35 @@ export function DashboardShell({
   const isTrashView = selectedCategoryId === "trash";
   const selectedSpace = spaces?.find(s => s.id === selectedCategoryId);
   const [isDraggingFiles, setIsDraggingFiles] = React.useState(false);
+
+  // Billing usage warning
+  const [billingWarning, setBillingWarning] = React.useState<{
+    nearLimit: boolean;
+    atLimit: boolean;
+    current: number;
+    max: number;
+  } | null>(null);
+
+  React.useEffect(() => {
+    fetch("/api/billing/status")
+      .then((res) => res.json())
+      .then((data: {
+        plan?: string;
+        entitlements?: { maxSavedItems: number | null };
+        usage?: { totalSavedItems: number };
+        warnings?: { near_starter_saved_items_limit: boolean };
+      }) => {
+        if (data.plan !== "starter" || !data.entitlements?.maxSavedItems) return;
+        const max = data.entitlements.maxSavedItems;
+        const current = data.usage?.totalSavedItems ?? 0;
+        const nearLimit = data.warnings?.near_starter_saved_items_limit ?? false;
+        const atLimit = current >= max;
+        if (nearLimit || atLimit) {
+          setBillingWarning({ nearLimit, atLimit, current, max });
+        }
+      })
+      .catch(() => {});
+  }, []);
   const dragCounterRef = React.useRef(0);
   const uploadInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -497,6 +527,28 @@ export function DashboardShell({
           <div className="flex-1" />
           <UserMenu user={user} />
         </header>
+
+        {/* Usage warning banner */}
+        {billingWarning && (
+          <div
+            className={`mx-auto w-full max-w-4xl px-4 sm:px-6 md:px-8 ${billingWarning.atLimit ? "" : ""}`}
+          >
+            <div
+              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${
+                billingWarning.atLimit
+                  ? "bg-destructive-muted text-destructive"
+                  : "bg-warning-muted text-warning"
+              }`}
+            >
+              <IconAlertTriangle className="h-4 w-4 shrink-0" />
+              <span className="flex-1">
+                {billingWarning.atLimit
+                  ? `You've reached the ${billingWarning.max}-item limit. Upgrade to Pro to keep saving.`
+                  : `${billingWarning.current} of ${billingWarning.max} items used. Upgrade to Pro for unlimited saves.`}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Control Bar */}
         <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 md:px-8">

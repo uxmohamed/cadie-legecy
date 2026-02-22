@@ -49,11 +49,11 @@ export function UserMenu({ user }: UserMenuProps) {
     display_name: string | null;
     avatar_url: string | null;
   } | null>(null);
-  
+
   const refetchProfile = React.useCallback(() => {
     getUserProfile(user.id).then(setProfile);
   }, [user.id]);
-  
+
   React.useEffect(() => {
     refetchProfile();
   }, [refetchProfile]);
@@ -213,14 +213,14 @@ export function UserMenu({ user }: UserMenuProps) {
           render={
             <Button
               variant="ghost"
-              className="h-9 w-9 rounded-full p-0 hover:bg-[var(--bg-hover)]"
+              className="h-9 rounded-full p-0 hover:bg-[var(--bg-hover)] relative"
             />
           }
         >
           <Avatar className="h-9 w-9">
-            <AvatarImage 
-              src={userAvatar} 
-              alt={user.email} 
+            <AvatarImage
+              src={userAvatar}
+              alt={user.email}
               onLoadingStatusChange={handleAvatarLoadingStatusChange}
             />
             <AvatarFallback className="bg-[var(--bg-inverse)] text-[var(--fg-inverse)]">

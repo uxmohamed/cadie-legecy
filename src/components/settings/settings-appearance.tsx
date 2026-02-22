@@ -15,6 +15,7 @@ export function SettingsAppearance() {
 
   return (
     <div className="space-y-6">
+      <p className="text-sm text-fg-muted">Choose how Cadie looks to you.</p>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {themeOptions.map((option) => (
           <button
