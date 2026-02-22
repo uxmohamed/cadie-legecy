@@ -15,16 +15,17 @@ export async function POST() {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const authUser = user;
 
     let syncAttempted = false;
     let syncReason: string | undefined;
-    let billing = await getUserBillingRecord(user.id);
+    let billing = await getUserBillingRecord(authUser.id);
 
     async function syncAndReload() {
-      const syncResult = await syncSubscription(user.id, user.email ?? null);
+      const syncResult = await syncSubscription(authUser.id, authUser.email ?? null);
       syncAttempted = true;
       syncReason = syncResult.reason;
-      billing = await getUserBillingRecord(user.id);
+      billing = await getUserBillingRecord(authUser.id);
     }
 
     if (!billing?.lemon_subscription_id) {
