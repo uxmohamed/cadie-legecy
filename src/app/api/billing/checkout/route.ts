@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { createLemonCheckout, getVariantIdForSelection } from "@/lib/billing/lemon-client";
 import type { BillingInterval, PlanTier } from "@/lib/billing/types";
 import { log } from "@/lib/logger";
@@ -12,6 +13,7 @@ interface CheckoutBody {
 
 const DEFAULT_BILLING_RETURN_PATH = "/?settings=billing";
 const MAX_SUPPORT_AMOUNT_CENTS = 1_000_000; // $10,000 upper guardrail
+const INVALID_PUBLIC_HOSTS = new Set(["0.0.0.0", "::", "::1", "localhost", "127.0.0.1"]);
 
 function normalizePlan(value: unknown): PlanTier | null {
   if (value === "pro" || value === "believer" || value === "starter") {
@@ -25,6 +27,58 @@ function normalizeIntervalForPlan(plan: Exclude<PlanTier, "starter">, value: unk
   if (value === "month" || value === "year") return value;
   if (value == null) return "month";
   return null;
+}
+
+function toHttpOrigin(rawUrl: string | null | undefined): string | null {
+  if (!rawUrl) return null;
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return null;
+    }
+    return parsed.origin;
+  } catch {
+    return null;
+  }
+}
+
+function isInvalidPublicHost(origin: string): boolean {
+  try {
+    const hostname = new URL(origin).hostname.toLowerCase();
+    return INVALID_PUBLIC_HOSTS.has(hostname);
+  } catch {
+    return true;
+  }
+}
+
+function resolveCheckoutOrigin(request: NextRequest): string {
+  const requestOrigin = toHttpOrigin(request.nextUrl.origin);
+  if (requestOrigin && !isInvalidPublicHost(requestOrigin)) {
+    return requestOrigin;
+  }
+
+  const envOriginCandidates = [
+    toHttpOrigin(process.env.NEXT_PUBLIC_SITE_URL),
+    toHttpOrigin(process.env.NEXT_PUBLIC_BASE_URL),
+    toHttpOrigin(
+      process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : null
+    ),
+    toHttpOrigin(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null),
+  ];
+
+  for (const origin of envOriginCandidates) {
+    if (origin && !isInvalidPublicHost(origin)) {
+      return origin;
+    }
+  }
+
+  if (requestOrigin) {
+    return requestOrigin;
+  }
+
+  return "http://localhost:3000";
 }
 
 function normalizeReturnUrl(rawUrl: unknown, origin: string): string {
@@ -76,7 +130,8 @@ export async function POST(request: NextRequest) {
     }
 
     const supportAmountCents = normalizeSupportAmount(plan, body.support_amount_cents);
-    const checkoutReturnUrl = normalizeReturnUrl(body.return_url, request.nextUrl.origin);
+    const checkoutOrigin = resolveCheckoutOrigin(request);
+    const checkoutReturnUrl = normalizeReturnUrl(body.return_url, checkoutOrigin);
 
     const variantId = getVariantIdForSelection(plan, interval);
     const checkout = await createLemonCheckout({
