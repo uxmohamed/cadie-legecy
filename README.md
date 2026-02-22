@@ -59,6 +59,12 @@ npm run extension:dev
 npm run extension:build
 ```
 
+## Maintenance scripts
+
+- Billing recovery: `pnpm ts-node scripts/recover-billing-state.ts --mode=all` (dry-run)
+- Apply billing recovery: `pnpm ts-node scripts/recover-billing-state.ts --mode=all --apply`
+- Deprecated and removed: `upgrade.ts` (unsafe mass-upgrade script)
+
 ## Docs
 
 - Env vars: `/Users/hassan/Repos/cadie/ENV_VARIABLES.md`

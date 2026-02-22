@@ -134,10 +134,30 @@ export function SettingsBilling() {
     setIsPortalLoading(true);
     try {
       const res = await fetch("/api/billing/portal", { method: "POST" });
-      const data = (await res.json()) as { portal_url?: string; error?: string };
+      const data = (await res.json()) as {
+        portal_url?: string;
+        error?: string;
+        recoverable?: boolean;
+        sync_attempted?: boolean;
+        reason?: string;
+      };
       if (data.portal_url) {
         window.location.assign(data.portal_url);
       } else {
+        if (data.sync_attempted) {
+          await loadBilling();
+        }
+
+        if (data.reason === "no_user_email") {
+          toast.error("No account email is available for billing sync. Contact support if this persists.");
+          return;
+        }
+
+        if (data.recoverable && data.sync_attempted) {
+          toast.error("We couldn't match an active Lemon subscription yet. If you just paid, retry in a few seconds.");
+          return;
+        }
+
         toast.error(data.error ?? "Failed to open billing portal. Please try again.");
       }
     } catch {
