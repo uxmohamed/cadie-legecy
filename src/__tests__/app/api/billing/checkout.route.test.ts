@@ -1,6 +1,7 @@
 const mockCreateLemonCheckout = jest.fn();
 const mockGetVariantIdForSelection = jest.fn();
 const mockCreateClient = jest.fn();
+const mockRateLimitBillingLimit = jest.fn();
 
 jest.mock("next/server", () => {
   class MockNextResponse {
@@ -53,6 +54,14 @@ jest.mock("@/lib/logger", () => ({
   },
 }));
 
+jest.mock("@/lib/rate-limit", () => ({
+  rateLimitBilling: {
+    limit: (...args: unknown[]) => mockRateLimitBillingLimit(...args),
+  },
+  getIdentifier: jest.fn(() => "user:user_1"),
+  getRateLimitHeaders: jest.fn(() => ({ "X-RateLimit-Limit": "20" })),
+}));
+
 import { POST } from "@/app/api/billing/checkout/route";
 
 function makeRequest(body: unknown, origin: string) {
@@ -77,6 +86,12 @@ describe("POST /api/billing/checkout", () => {
           data: { user: { id: "user_1", email: "user@example.com" } },
         }),
       },
+    });
+    mockRateLimitBillingLimit.mockResolvedValue({
+      success: true,
+      limit: 20,
+      remaining: 19,
+      reset: Date.now() + 60_000,
     });
     mockGetVariantIdForSelection.mockReturnValue("variant_pro_month");
     mockCreateLemonCheckout.mockResolvedValue({ checkoutUrl: "https://checkout.example/session_123" });
@@ -150,5 +165,30 @@ describe("POST /api/billing/checkout", () => {
         checkoutReturnUrl: "https://cadie.app/?settings=billing",
       })
     );
+  });
+
+  it("returns 429 when billing rate limit is exceeded", async () => {
+    mockRateLimitBillingLimit.mockResolvedValueOnce({
+      success: false,
+      limit: 20,
+      remaining: 0,
+      reset: Date.now() + 60_000,
+    });
+
+    const request = makeRequest(
+      {
+        plan: "pro",
+        interval: "month",
+      },
+      "https://cadie.app"
+    );
+
+    const response = await POST(request as never);
+
+    expect(response.status).toBe(429);
+    await expect(response.json()).resolves.toEqual({
+      error: "Too many billing requests. Please try again shortly.",
+    });
+    expect(mockCreateLemonCheckout).not.toHaveBeenCalled();
   });
 });

@@ -5,6 +5,8 @@ export type SubscriptionStatus =
   | "active"
   | "past_due"
   | "canceled"
+  | "paused"
+  | "unpaid"
   | "expired";
 
 export type BillingInterval = "month" | "year" | null;
@@ -49,6 +51,7 @@ export interface UserBillingRecord {
   cancel_at_period_end: boolean;
   support_amount_cents: number | null;
   last_webhook_event_at: string | null;
+  lemon_last_event_at: string | null;
   created_at: string;
   updated_at: string;
 }

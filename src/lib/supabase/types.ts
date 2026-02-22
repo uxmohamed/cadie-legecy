@@ -31,7 +31,7 @@ export interface Database {
         Row: {
           user_id: string;
           plan_tier: "starter" | "pro" | "believer";
-          subscription_status: "inactive" | "active" | "past_due" | "canceled" | "expired";
+          subscription_status: "inactive" | "active" | "past_due" | "canceled" | "paused" | "unpaid" | "expired";
           billing_interval: "month" | "year" | null;
           lemon_customer_id: string | null;
           lemon_subscription_id: string | null;
@@ -40,13 +40,14 @@ export interface Database {
           cancel_at_period_end: boolean;
           support_amount_cents: number | null;
           last_webhook_event_at: string | null;
+          lemon_last_event_at: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           user_id: string;
           plan_tier?: "starter" | "pro" | "believer";
-          subscription_status?: "inactive" | "active" | "past_due" | "canceled" | "expired";
+          subscription_status?: "inactive" | "active" | "past_due" | "canceled" | "paused" | "unpaid" | "expired";
           billing_interval?: "month" | "year" | null;
           lemon_customer_id?: string | null;
           lemon_subscription_id?: string | null;
@@ -55,13 +56,14 @@ export interface Database {
           cancel_at_period_end?: boolean;
           support_amount_cents?: number | null;
           last_webhook_event_at?: string | null;
+          lemon_last_event_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           user_id?: string;
           plan_tier?: "starter" | "pro" | "believer";
-          subscription_status?: "inactive" | "active" | "past_due" | "canceled" | "expired";
+          subscription_status?: "inactive" | "active" | "past_due" | "canceled" | "paused" | "unpaid" | "expired";
           billing_interval?: "month" | "year" | null;
           lemon_customer_id?: string | null;
           lemon_subscription_id?: string | null;
@@ -70,6 +72,7 @@ export interface Database {
           cancel_at_period_end?: boolean;
           support_amount_cents?: number | null;
           last_webhook_event_at?: string | null;
+          lemon_last_event_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -78,23 +81,38 @@ export interface Database {
         Row: {
           id: number;
           event_id: string;
+          provider_event_id: string | null;
           event_name: string;
           payload: Record<string, unknown>;
-          processed_at: string;
+          processing_status: "pending" | "processed" | "failed";
+          attempt_count: number;
+          last_error: string | null;
+          last_attempt_at: string | null;
+          processed_at: string | null;
         };
         Insert: {
           id?: number;
           event_id: string;
+          provider_event_id?: string | null;
           event_name: string;
           payload: Record<string, unknown>;
-          processed_at?: string;
+          processing_status?: "pending" | "processed" | "failed";
+          attempt_count?: number;
+          last_error?: string | null;
+          last_attempt_at?: string | null;
+          processed_at?: string | null;
         };
         Update: {
           id?: number;
           event_id?: string;
+          provider_event_id?: string | null;
           event_name?: string;
           payload?: Record<string, unknown>;
-          processed_at?: string;
+          processing_status?: "pending" | "processed" | "failed";
+          attempt_count?: number;
+          last_error?: string | null;
+          last_attempt_at?: string | null;
+          processed_at?: string | null;
         };
       };
       spaces: {

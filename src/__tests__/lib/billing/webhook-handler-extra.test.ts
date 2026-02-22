@@ -64,12 +64,24 @@ describe("mapStatus", () => {
     expect(mapStatus("past_due", "subscription_updated")).toBe("past_due");
   });
 
-  it("maps 'unpaid' to 'past_due'", () => {
-    expect(mapStatus("unpaid", "subscription_updated")).toBe("past_due");
+  it("maps 'unpaid' to 'unpaid'", () => {
+    expect(mapStatus("unpaid", "subscription_updated")).toBe("unpaid");
+  });
+
+  it("maps 'paused' to 'paused'", () => {
+    expect(mapStatus("paused", "subscription_updated")).toBe("paused");
   });
 
   it("maps 'cancelled' to 'canceled'", () => {
     expect(mapStatus("cancelled", "subscription_cancelled")).toBe("canceled");
+  });
+
+  it("forces 'canceled' for subscription_cancelled event when status is missing", () => {
+    expect(mapStatus(undefined, "subscription_cancelled")).toBe("canceled");
+  });
+
+  it("forces 'active' for subscription_unpaused event when status is missing", () => {
+    expect(mapStatus(undefined, "subscription_unpaused")).toBe("active");
   });
 
   it("maps 'expired' to 'expired'", () => {

@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { createLemonCheckout, getVariantIdForSelection } from "@/lib/billing/lemon-client";
 import type { BillingInterval, PlanTier } from "@/lib/billing/types";
 import { log } from "@/lib/logger";
+import { rateLimitBilling, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 
 interface CheckoutBody {
   plan: PlanTier;
@@ -116,6 +117,15 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const identifier = getIdentifier(request, user.id);
+    const { success, limit, remaining, reset } = await rateLimitBilling.limit(identifier);
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many billing requests. Please try again shortly." },
+        { status: 429, headers: getRateLimitHeaders(limit, remaining, reset) }
+      );
     }
 
     const body = (await request.json().catch(() => ({}))) as CheckoutBody;

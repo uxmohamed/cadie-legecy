@@ -380,50 +380,32 @@ export function SettingsBilling() {
         </CardContent>
       </Card>
 
-      <Card className="gap-0">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base">
-            {isStarter ? "Upgrade and billing help" : "Billing management"}
-          </CardTitle>
-          <CardDescription>
-            {isStarter
-              ? "Checkout is secure and hosted by Lemon Squeezy."
-              : "Manage invoices, payment method, and cancellation from the customer portal."}
-          </CardDescription>
-        </CardHeader>
-        <Separator />
-        <CardContent className="space-y-3 pt-4">
-          {isStarter ? (
-            <>
-              <p className="text-xs text-fg-muted">
-                You&apos;ll be redirected to a secure checkout page. Access updates automatically after payment.
-              </p>
-              {hasRecoveryState && (
-                <Button
-                  variant="outline"
-                  className="w-full sm:w-auto"
-                  disabled={isSyncLoading}
-                  onClick={handleSyncBilling}
-                >
-                  {isSyncLoading ? "Refreshing..." : "Refresh billing status"}
-                </Button>
-              )}
-            </>
-          ) : (
-            <div className="flex flex-wrap items-center gap-2">
+      {isStarter && (
+        <Card className="gap-0">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base">Upgrade and billing help</CardTitle>
+            <CardDescription>
+              Checkout is secure and hosted by Lemon Squeezy.
+            </CardDescription>
+          </CardHeader>
+          <Separator />
+          <CardContent className="space-y-3 pt-4">
+            <p className="text-xs text-fg-muted">
+              You&apos;ll be redirected to a secure checkout page. Access updates automatically after payment.
+            </p>
+            {hasRecoveryState && (
               <Button
-                variant="secondary"
-                className="justify-between"
-                disabled={isPortalLoading}
-                onClick={handlePortal}
+                variant="outline"
+                className="w-full sm:w-auto"
+                disabled={isSyncLoading}
+                onClick={handleSyncBilling}
               >
-                <span>{isPortalLoading ? "Opening portal..." : "Open billing portal"}</span>
-                <IconArrowRight className="h-4 w-4 opacity-50" />
+                {isSyncLoading ? "Refreshing..." : "Refresh billing status"}
               </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

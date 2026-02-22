@@ -6,7 +6,13 @@ import type {
   UserBillingRecord,
 } from "@/lib/billing/types";
 
-const ACTIVE_STATUSES = new Set<SubscriptionStatus>(["active", "past_due", "canceled"]);
+const ACTIVE_STATUSES = new Set<SubscriptionStatus>([
+  "active",
+  "past_due",
+  "canceled",
+  "paused",
+  "unpaid",
+]);
 
 function asString(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -20,7 +26,14 @@ function toPlanTier(value: unknown): PlanTier {
 }
 
 function toSubscriptionStatus(value: unknown): SubscriptionStatus {
-  if (value === "active" || value === "past_due" || value === "canceled" || value === "expired") {
+  if (
+    value === "active" ||
+    value === "past_due" ||
+    value === "canceled" ||
+    value === "paused" ||
+    value === "unpaid" ||
+    value === "expired"
+  ) {
     return value;
   }
   return "inactive";
@@ -73,6 +86,7 @@ function normalizeBillingRow(row: Record<string, unknown>): UserBillingRecord {
           ? null
           : Number(row.support_amount_cents),
     last_webhook_event_at: asString(row.last_webhook_event_at),
+    lemon_last_event_at: asString(row.lemon_last_event_at),
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
   };

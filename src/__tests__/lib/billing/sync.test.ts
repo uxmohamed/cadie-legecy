@@ -124,7 +124,7 @@ describe("syncSubscription", () => {
     const result = await syncSubscription("user_123", "mo73426+2@gmail.com");
 
     expect(lemonRequest).toHaveBeenCalledWith(
-      "/subscriptions?filter[user_email]=mo73426%2B2%40gmail.com&page[size]=100"
+      "/subscriptions?filter[user_email]=mo73426%2B2%40gmail.com&page[size]=100&page[number]=1"
     );
     expect(result).toEqual({
       synced: true,
@@ -133,6 +133,56 @@ describe("syncSubscription", () => {
     expect(mockUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
         lemon_subscription_id: "sub_new",
+      }),
+      { onConflict: "user_id" }
+    );
+  });
+
+  test("prefers mapped eligible candidate over newer unmapped subscription", async () => {
+    (resolvePlanFromVariantId as jest.Mock).mockImplementation((variantId: string | null) =>
+      variantId === "mapped_variant" ? "pro" : null
+    );
+    (getUserBillingRecord as jest.Mock).mockResolvedValue({
+      user_id: "user_123",
+      plan_tier: "starter",
+      lemon_subscription_id: null,
+    });
+
+    (lemonRequest as jest.Mock).mockResolvedValueOnce({
+      data: [
+        {
+          id: "sub_unmapped_newer",
+          attributes: {
+            variant_id: "unknown_variant",
+            status: "active",
+            renews_at: "2026-05-20T00:00:00Z",
+            customer_id: "7861817",
+            updated_at: "2026-02-22T10:00:00Z",
+          },
+        },
+        {
+          id: "sub_mapped_older",
+          attributes: {
+            variant_id: "mapped_variant",
+            status: "active",
+            renews_at: "2026-05-19T00:00:00Z",
+            customer_id: "7861817",
+            updated_at: "2026-02-22T09:00:00Z",
+          },
+        },
+      ],
+    });
+
+    const result = await syncSubscription("user_123", "mo73426+2@gmail.com");
+
+    expect(result).toEqual({
+      synced: true,
+      source: "email_bootstrap",
+    });
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        lemon_subscription_id: "sub_mapped_older",
+        lemon_variant_id: "mapped_variant",
       }),
       { onConflict: "user_id" }
     );
@@ -169,11 +219,11 @@ describe("syncSubscription", () => {
 
     expect(lemonRequest).toHaveBeenNthCalledWith(
       2,
-      "/customers?filter[email]=mo73426%2B2%40gmail.com&page[size]=100"
+      "/customers?filter[email]=mo73426%2B2%40gmail.com&page[size]=100&page[number]=1"
     );
     expect(lemonRequest).toHaveBeenNthCalledWith(
       3,
-      "/subscriptions?filter[customer_id]=7861817&page[size]=100"
+      "/subscriptions?filter[customer_id]=7861817&page[size]=100&page[number]=1"
     );
     expect(result).toEqual({
       synced: true,
@@ -204,8 +254,8 @@ describe("syncSubscription", () => {
     expect(result).toEqual({
       synced: false,
       source: "none",
-      reason: "unmapped_variant",
-      message: "Subscription found but variant is not mapped to an app plan",
+      reason: "no_mapped_candidate",
+      message: "Subscriptions were found but none matched configured paid variants",
     });
     expect(mockSupabase.from).not.toHaveBeenCalled();
   });
@@ -233,8 +283,8 @@ describe("syncSubscription", () => {
     expect(result).toEqual({
       synced: false,
       source: "none",
-      reason: "unmapped_variant",
-      message: "Subscription found but variant is not mapped to an app plan",
+      reason: "no_mapped_candidate",
+      message: "Subscriptions were found but none matched configured paid variants",
     });
     expect(mockSupabase.from).not.toHaveBeenCalled();
   });

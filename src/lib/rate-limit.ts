@@ -110,6 +110,18 @@ export const rateLimitExports = new Ratelimit({
 });
 
 /**
+ * Rate limiter for billing endpoints
+ * Limit: 20 requests per minute
+ * Used for: /api/billing/checkout, /api/billing/portal, /api/billing/sync
+ */
+export const rateLimitBilling = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(20, "1 m"),
+  analytics: true,
+  prefix: "ratelimit:billing",
+});
+
+/**
  * Helper to get identifier for rate limiting
  * Uses user ID if authenticated, otherwise IP address
  */

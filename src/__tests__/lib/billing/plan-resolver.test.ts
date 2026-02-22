@@ -3,7 +3,7 @@
  * Tests hasPaidAccess, resolvePlanForUser, and resolvePlanFromVariantId.
  */
 
-import { resolvePlanForUser, getUserBillingRecord, resolvePlanFromVariantId } from "@/lib/billing/plan-resolver";
+import { resolvePlanForUser, resolvePlanFromVariantId } from "@/lib/billing/plan-resolver";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { UserBillingRecord } from "@/lib/billing/types";
 
@@ -24,6 +24,7 @@ function makeBillingRecord(overrides: Partial<UserBillingRecord> = {}): UserBill
     cancel_at_period_end: false,
     support_amount_cents: null,
     last_webhook_event_at: null,
+    lemon_last_event_at: null,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
@@ -244,6 +245,36 @@ describe("resolvePlanForUser", () => {
 
     const { plan } = await resolvePlanForUser("user_123");
     expect(plan).toBe("starter");
+  });
+
+  it("grants access while 'paused' and current period has not ended", async () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 7);
+    const record = makeBillingRecord({
+      plan_tier: "pro",
+      subscription_status: "paused",
+      current_period_end: future.toISOString(),
+    });
+    const supabase = makeMockSupabase(record);
+    (createAdminClient as jest.Mock).mockReturnValue(supabase);
+
+    const { plan } = await resolvePlanForUser("user_123");
+    expect(plan).toBe("pro");
+  });
+
+  it("grants access while 'unpaid' and current period has not ended", async () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 2);
+    const record = makeBillingRecord({
+      plan_tier: "pro",
+      subscription_status: "unpaid",
+      current_period_end: future.toISOString(),
+    });
+    const supabase = makeMockSupabase(record);
+    (createAdminClient as jest.Mock).mockReturnValue(supabase);
+
+    const { plan } = await resolvePlanForUser("user_123");
+    expect(plan).toBe("pro");
   });
 
   it("grants access when active with no current_period_end (indefinite)", async () => {

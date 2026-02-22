@@ -1,6 +1,7 @@
 const mockGetUserBillingRecord = jest.fn();
 const mockGetCustomerPortalUrl = jest.fn();
 const mockSyncSubscription = jest.fn();
+const mockRateLimitBillingLimit = jest.fn();
 
 jest.mock("next/server", () => {
   class MockNextResponse {
@@ -56,14 +57,34 @@ jest.mock("@/lib/logger", () => ({
   },
 }));
 
+jest.mock("@/lib/rate-limit", () => ({
+  rateLimitBilling: {
+    limit: (...args: unknown[]) => mockRateLimitBillingLimit(...args),
+  },
+  getIdentifier: jest.fn(() => "user:user_1"),
+  getRateLimitHeaders: jest.fn(() => ({ "X-RateLimit-Limit": "20" })),
+}));
+
 import { createClient } from "@/lib/supabase/server";
 import { POST } from "@/app/api/billing/portal/route";
+
+function makeRequest() {
+  return {
+    headers: new Headers(),
+  };
+}
 
 describe("POST /api/billing/portal", () => {
   const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockRateLimitBillingLimit.mockResolvedValue({
+      success: true,
+      limit: 20,
+      remaining: 19,
+      reset: Date.now() + 60_000,
+    });
     mockCreateClient.mockResolvedValue({
       auth: {
         getUser: jest.fn().mockResolvedValue({
@@ -82,7 +103,7 @@ describe("POST /api/billing/portal", () => {
       },
     } as never);
 
-    const response = await POST();
+    const response = await POST(makeRequest() as never);
 
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({ error: "Unauthorized" });
@@ -92,7 +113,7 @@ describe("POST /api/billing/portal", () => {
     mockGetUserBillingRecord.mockResolvedValue({ lemon_subscription_id: "sub_123" });
     mockGetCustomerPortalUrl.mockResolvedValue({ portalUrl: "https://portal.example/sub_123" });
 
-    const response = await POST();
+    const response = await POST(makeRequest() as never);
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ portal_url: "https://portal.example/sub_123" });
@@ -106,7 +127,7 @@ describe("POST /api/billing/portal", () => {
     mockSyncSubscription.mockResolvedValue({ synced: true, source: "email_bootstrap" });
     mockGetCustomerPortalUrl.mockResolvedValue({ portalUrl: "https://portal.example/sub_new" });
 
-    const response = await POST();
+    const response = await POST(makeRequest() as never);
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ portal_url: "https://portal.example/sub_new" });
@@ -124,7 +145,7 @@ describe("POST /api/billing/portal", () => {
       message: "No matching active subscription found for this account",
     });
 
-    const response = await POST();
+    const response = await POST(makeRequest() as never);
 
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toEqual({
@@ -144,7 +165,7 @@ describe("POST /api/billing/portal", () => {
       .mockResolvedValueOnce({ portalUrl: "https://portal.example/sub_new" });
     mockSyncSubscription.mockResolvedValue({ synced: true, source: "customer_bootstrap" });
 
-    const response = await POST();
+    const response = await POST(makeRequest() as never);
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ portal_url: "https://portal.example/sub_new" });
@@ -157,11 +178,28 @@ describe("POST /api/billing/portal", () => {
     mockGetUserBillingRecord.mockResolvedValue({ lemon_subscription_id: null });
     mockSyncSubscription.mockRejectedValue(new Error("sync crashed"));
 
-    const response = await POST();
+    const response = await POST(makeRequest() as never);
 
     expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({
       error: "Failed to open billing portal. Please try again in a moment.",
     });
+  });
+
+  it("returns 429 when billing rate limit is exceeded", async () => {
+    mockRateLimitBillingLimit.mockResolvedValueOnce({
+      success: false,
+      limit: 20,
+      remaining: 0,
+      reset: Date.now() + 60_000,
+    });
+
+    const response = await POST(makeRequest() as never);
+
+    expect(response.status).toBe(429);
+    await expect(response.json()).resolves.toEqual({
+      error: "Too many billing requests. Please try again shortly.",
+    });
+    expect(mockGetCustomerPortalUrl).not.toHaveBeenCalled();
   });
 });

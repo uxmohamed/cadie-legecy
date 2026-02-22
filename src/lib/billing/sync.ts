@@ -10,6 +10,7 @@ export type BillingSyncReason =
   | "no_user_email"
   | "no_matching_subscription"
   | "unmapped_variant"
+  | "no_mapped_candidate"
   | "lemon_error"
   | "database_error";
 
@@ -30,6 +31,15 @@ interface LemonSubscriptionCandidate {
   cancelAtPeriodEnd: boolean;
   updatedAt: string | null;
 }
+
+interface CandidateSelection {
+  candidate: LemonSubscriptionCandidate | null;
+  hasEligible: boolean;
+  hasMappedEligible: boolean;
+}
+
+const PAGE_SIZE = 100;
+const MAX_PAGES = 10;
 
 function asString(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -73,7 +83,13 @@ function compareCandidates(a: LemonSubscriptionCandidate, b: LemonSubscriptionCa
 
 function isEligibleCandidate(candidate: LemonSubscriptionCandidate): boolean {
   const normalizedStatus = String(candidate.status || "").toLowerCase();
-  if (normalizedStatus === "active" || normalizedStatus === "on_trial" || normalizedStatus === "past_due") {
+  if (
+    normalizedStatus === "active" ||
+    normalizedStatus === "on_trial" ||
+    normalizedStatus === "past_due" ||
+    normalizedStatus === "paused" ||
+    normalizedStatus === "unpaid"
+  ) {
     return true;
   }
 
@@ -85,42 +101,71 @@ function isEligibleCandidate(candidate: LemonSubscriptionCandidate): boolean {
   return false;
 }
 
+function isMappedCandidate(candidate: LemonSubscriptionCandidate): boolean {
+  return resolvePlanFromVariantId(candidate.variantId) !== null;
+}
+
 async function fetchSubscriptionsByFilter(
   key: "user_email" | "customer_id",
   value: string
 ): Promise<LemonSubscriptionCandidate[]> {
-  const query = `/subscriptions?filter[${key}]=${encodeURIComponent(value)}&page[size]=100`;
-  const payload = await lemonRequest(query);
-  const rows = Array.isArray(payload.data) ? payload.data : [];
+  const results: LemonSubscriptionCandidate[] = [];
 
-  return rows
-    .map((row) => (typeof row === "object" && row ? extractSubscriptionCandidate(row as Record<string, unknown>) : null))
-    .filter((row): row is LemonSubscriptionCandidate => Boolean(row));
+  for (let page = 1; page <= MAX_PAGES; page += 1) {
+    const query = `/subscriptions?filter[${key}]=${encodeURIComponent(value)}&page[size]=${PAGE_SIZE}&page[number]=${page}`;
+    const payload = await lemonRequest(query);
+    const rows = Array.isArray(payload.data) ? payload.data : [];
+
+    for (const row of rows) {
+      if (typeof row !== "object" || !row) continue;
+      const candidate = extractSubscriptionCandidate(row as Record<string, unknown>);
+      if (candidate) results.push(candidate);
+    }
+
+    if (rows.length < PAGE_SIZE) break;
+  }
+
+  return results;
 }
 
 async function fetchCustomerIdsByEmail(email: string): Promise<string[]> {
-  const payload = await lemonRequest(`/customers?filter[email]=${encodeURIComponent(email)}&page[size]=100`);
-  const rows = Array.isArray(payload.data) ? payload.data : [];
-  return rows
-    .map((row) => (typeof row === "object" && row ? asString((row as Record<string, unknown>).id) : null))
-    .filter((id): id is string => Boolean(id));
+  const ids = new Set<string>();
+
+  for (let page = 1; page <= MAX_PAGES; page += 1) {
+    const query = `/customers?filter[email]=${encodeURIComponent(email)}&page[size]=${PAGE_SIZE}&page[number]=${page}`;
+    const payload = await lemonRequest(query);
+    const rows = Array.isArray(payload.data) ? payload.data : [];
+
+    for (const row of rows) {
+      if (typeof row !== "object" || !row) continue;
+      const id = asString((row as Record<string, unknown>).id);
+      if (id) ids.add(id);
+    }
+
+    if (rows.length < PAGE_SIZE) break;
+  }
+
+  return [...ids];
 }
 
-function selectBestCandidate(candidates: LemonSubscriptionCandidate[]): LemonSubscriptionCandidate | null {
-  const eligible = candidates.filter(isEligibleCandidate).sort(compareCandidates);
-  return eligible[0] || null;
-}
+function selectBestCandidate(candidates: LemonSubscriptionCandidate[]): CandidateSelection {
+  const eligible = candidates.filter(isEligibleCandidate);
+  const mappedEligible = eligible.filter(isMappedCandidate).sort(compareCandidates);
 
-function toPlanTier(variantId: string | null) {
-  return resolvePlanFromVariantId(variantId);
+  return {
+    candidate: mappedEligible[0] || null,
+    hasEligible: eligible.length > 0,
+    hasMappedEligible: mappedEligible.length > 0,
+  };
 }
 
 async function upsertUserBilling(args: {
   userId: string;
   candidate: LemonSubscriptionCandidate;
+  existingCurrentPeriodEnd: string | null;
 }): Promise<BillingSyncResult> {
-  const { userId, candidate } = args;
-  const planTier = toPlanTier(candidate.variantId);
+  const { userId, candidate, existingCurrentPeriodEnd } = args;
+  const planTier = resolvePlanFromVariantId(candidate.variantId);
   if (!planTier) {
     return {
       synced: false,
@@ -138,12 +183,13 @@ async function upsertUserBilling(args: {
       plan_tier: planTier,
       subscription_status: mapStatus(candidate.status, "sync"),
       billing_interval: candidate.billingInterval || deriveBillingIntervalFromVariant(candidate.variantId),
-      current_period_end: candidate.currentPeriodEnd,
+      current_period_end: candidate.currentPeriodEnd || existingCurrentPeriodEnd,
       cancel_at_period_end: candidate.cancelAtPeriodEnd,
       lemon_customer_id: candidate.customerId,
       lemon_subscription_id: candidate.subscriptionId,
       lemon_variant_id: candidate.variantId,
       last_webhook_event_at: now,
+      lemon_last_event_at: now,
       updated_at: now,
     },
     {
@@ -166,13 +212,10 @@ async function upsertUserBilling(args: {
   };
 }
 
-/**
- * Sync local billing state with Lemon Squeezy.
- * Uses local subscription ID when present, otherwise bootstraps from email.
- */
 export async function syncSubscription(userId: string, userEmail: string | null): Promise<BillingSyncResult> {
   const billing = await getUserBillingRecord(userId);
   let localLookupFailed = false;
+  let foundEligibleUnmapped = false;
 
   try {
     if (billing?.lemon_subscription_id) {
@@ -181,18 +224,21 @@ export async function syncSubscription(userId: string, userEmail: string | null)
         const data = payload.data as Record<string, unknown> | undefined;
         const candidate = data ? extractSubscriptionCandidate(data) : null;
 
-        if (!candidate) {
+        if (!candidate || !isEligibleCandidate(candidate)) {
           localLookupFailed = true;
-        } else {
+        } else if (isMappedCandidate(candidate)) {
           const result = await upsertUserBilling({
             userId,
             candidate,
+            existingCurrentPeriodEnd: billing.current_period_end,
           });
-
           return {
             ...result,
             source: result.synced ? "local_subscription_id" : result.source,
           };
+        } else {
+          foundEligibleUnmapped = true;
+          localLookupFailed = true;
         }
       } catch (err) {
         localLookupFailed = true;
@@ -213,28 +259,38 @@ export async function syncSubscription(userId: string, userEmail: string | null)
     }
 
     const byEmail = await fetchSubscriptionsByFilter("user_email", userEmail);
-    const selectedByEmail = selectBestCandidate(byEmail);
-    if (selectedByEmail) {
+    const emailSelection = selectBestCandidate(byEmail);
+    if (emailSelection.candidate) {
       const result = await upsertUserBilling({
         userId,
-        candidate: selectedByEmail,
+        candidate: emailSelection.candidate,
+        existingCurrentPeriodEnd: billing?.current_period_end || null,
       });
       return {
         ...result,
         source: result.synced ? "email_bootstrap" : result.source,
       };
     }
+    if (emailSelection.hasEligible && !emailSelection.hasMappedEligible) {
+      foundEligibleUnmapped = true;
+    }
 
     const customerIds = await fetchCustomerIdsByEmail(userEmail);
     for (const customerId of customerIds) {
       try {
         const subscriptions = await fetchSubscriptionsByFilter("customer_id", customerId);
-        const selectedByCustomer = selectBestCandidate(subscriptions);
-        if (!selectedByCustomer) continue;
+        const customerSelection = selectBestCandidate(subscriptions);
+        if (!customerSelection.candidate) {
+          if (customerSelection.hasEligible && !customerSelection.hasMappedEligible) {
+            foundEligibleUnmapped = true;
+          }
+          continue;
+        }
 
         const result = await upsertUserBilling({
           userId,
-          candidate: selectedByCustomer,
+          candidate: customerSelection.candidate,
+          existingCurrentPeriodEnd: billing?.current_period_end || null,
         });
 
         return {
@@ -244,6 +300,15 @@ export async function syncSubscription(userId: string, userEmail: string | null)
       } catch {
         // Continue attempting remaining customers; some Lemon accounts may not support this filter.
       }
+    }
+
+    if (foundEligibleUnmapped) {
+      return {
+        synced: false,
+        source: "none",
+        reason: "no_mapped_candidate",
+        message: "Subscriptions were found but none matched configured paid variants",
+      };
     }
 
     return {

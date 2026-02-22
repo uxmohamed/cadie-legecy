@@ -7,6 +7,7 @@ import { log } from "@/lib/logger";
 interface LemonWebhookPayload {
   meta?: {
     event_name?: string;
+    webhook_id?: string;
     custom_data?: Record<string, unknown>;
   };
   data?: {
@@ -26,13 +27,30 @@ interface ExistingBillingLookup {
   plan_tier: PlanTier;
 }
 
+interface WebhookEventRow {
+  id: number;
+  processing_status: "pending" | "processed" | "failed";
+  attempt_count: number;
+}
+
+interface ExistingUserBillingRow {
+  current_period_end: string | null;
+  lemon_last_event_at: string | null;
+}
+
+const REFUND_EVENT_NAMES = new Set([
+  "order_refunded",
+  "subscription_refunded",
+  "subscription_payment_refunded",
+  "charge_refunded",
+]);
+
 function asString(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
 }
 
-/** Coerce numbers and strings to trimmed string, return null for anything else. */
 function coerceString(value: unknown): string | null {
   if (value == null) return null;
   if (typeof value === "number" && Number.isFinite(value)) return String(value);
@@ -62,6 +80,27 @@ function parseInteger(value: unknown): number | null {
   return null;
 }
 
+function getProviderEventId(payload: LemonWebhookPayload): string | null {
+  return coerceString(payload.meta?.webhook_id);
+}
+
+function deriveEventId(providerEventId: string | null, rawBody: string): string {
+  if (providerEventId) {
+    return `provider:${providerEventId}`;
+  }
+
+  return `sha256:${createHash("sha256").update(rawBody).digest("hex")}`;
+}
+
+function isRefundEvent(eventName: string): boolean {
+  return REFUND_EVENT_NAMES.has(eventName);
+}
+
+function isOlderEvent(incomingAt: string | null, existingAt: string | null): boolean {
+  if (!incomingAt || !existingAt) return false;
+  return new Date(incomingAt).getTime() < new Date(existingAt).getTime();
+}
+
 export function verifyLemonWebhookSignature(rawBody: string, signature: string | null): boolean {
   const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET;
   if (!secret || !signature) return false;
@@ -82,53 +121,20 @@ export function verifyLemonWebhookSignature(rawBody: string, signature: string |
   return timingSafeEqual(expected, received);
 }
 
-async function lookupUserIdByEmail(
-  supabase: ReturnType<typeof createAdminClient>,
-  email: string
-): Promise<string | null> {
-  const targetEmail = email.toLowerCase();
-  const perPage = 200;
-
-  for (let page = 1; page <= 50; page += 1) {
-    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
-    if (error || !data?.users?.length) {
-      return null;
-    }
-
-    const match = data.users.find((candidate) => candidate.email?.toLowerCase() === targetEmail);
-    if (match) {
-      return match.id;
-    }
-
-    if (data.users.length < perPage) {
-      return null;
-    }
-  }
-
-  return null;
-}
-
-function deriveEventId(payload: LemonWebhookPayload, rawBody: string): string {
-  const eventName = asString(payload.meta?.event_name) || "unknown";
-  const subscriptionId = coerceString(payload.data?.id) || "unknown";
-  const bodyHash = createHash("sha256").update(rawBody).digest("hex").slice(0, 16);
-
-  return `${eventName}:${subscriptionId}:${bodyHash}`;
-}
-
 export function mapStatus(rawStatus: unknown, eventName: string): SubscriptionStatus {
   const status = String(rawStatus || "").toLowerCase();
 
-  // Explicit event overrides
-  if (eventName === "subscription_expired") return "expired";
+  if (isRefundEvent(eventName) || eventName === "subscription_expired") return "expired";
+  if (eventName === "subscription_cancelled") return "canceled";
+  if (eventName === "subscription_payment_success") return "active";
   if (eventName === "subscription_payment_failed") return "past_due";
-  // For cancellation, we only set the status to 'canceled' if the subscription is actually canceled right now,
-  // but usually it is 'active' with 'cancel_at_period_end' set to true.
-  // However, if the event is 'subscription_cancelled', LemonSqueezy might mean "cancelled immediately".
-  // We'll rely on the status from the payload mostly, but specific events can signal state changes.
+  if (eventName === "subscription_resumed" || eventName === "subscription_unpaused") return "active";
+  if (eventName === "subscription_paused") return "paused";
 
   if (status === "active" || status === "on_trial") return "active";
-  if (status === "past_due" || status === "unpaid") return "past_due";
+  if (status === "paused") return "paused";
+  if (status === "past_due") return "past_due";
+  if (status === "unpaid") return "unpaid";
   if (status === "cancelled" || status === "canceled") return "canceled";
   if (status === "expired") return "expired";
 
@@ -150,13 +156,14 @@ export function deriveBillingIntervalFromVariant(variantId: string | null): Bill
 
   const proMonthly = process.env.LEMONSQUEEZY_PRO_MONTHLY_VARIANT_ID;
   if (proMonthly && variantId === proMonthly) return "month";
-  // Pro yearly and Believer yearly are both "year"
   return "year";
 }
 
-async function lookupBillingByLemonIds(customerId: string | null, subscriptionId: string | null): Promise<ExistingBillingLookup | null> {
-  const supabase = createAdminClient();
-
+async function lookupBillingByLemonIds(
+  supabase: ReturnType<typeof createAdminClient>,
+  customerId: string | null,
+  subscriptionId: string | null
+): Promise<ExistingBillingLookup | null> {
   if (subscriptionId) {
     const { data } = await supabase
       .from("user_billing")
@@ -190,13 +197,6 @@ async function lookupBillingByLemonIds(customerId: string | null, subscriptionId
   return null;
 }
 
-// Exported for testing or future use
-export async function lookupUserByEmail(email: string | null): Promise<string | null> {
-  if (!email) return null;
-  // Note: Unused for now but kept for future reference or if auth.admin needs to be used
-  return null; 
-}
-
 function extractSupportAmountCents(attributes: Record<string, unknown>): number | null {
   const candidates = [
     attributes.support_amount_cents,
@@ -216,219 +216,401 @@ function extractSupportAmountCents(attributes: Record<string, unknown>): number 
   return null;
 }
 
+async function getOrCreateWebhookEvent(
+  supabase: ReturnType<typeof createAdminClient>,
+  input: {
+    eventId: string;
+    providerEventId: string | null;
+    eventName: string;
+    payload: LemonWebhookPayload;
+  }
+): Promise<WebhookEventRow> {
+  const existing = await supabase
+    .from("billing_webhook_events")
+    .select("id, processing_status, attempt_count")
+    .eq("event_id", input.eventId)
+    .maybeSingle();
+
+  if (existing.error) {
+    throw new Error(`Failed to load webhook event record: ${existing.error.message}`);
+  }
+
+  if (existing.data) {
+    return {
+      id: Number(existing.data.id),
+      processing_status: existing.data.processing_status as WebhookEventRow["processing_status"],
+      attempt_count: Number(existing.data.attempt_count || 0),
+    };
+  }
+
+  const inserted = await supabase
+    .from("billing_webhook_events")
+    .insert({
+      event_id: input.eventId,
+      provider_event_id: input.providerEventId,
+      event_name: input.eventName,
+      payload: input.payload,
+      processing_status: "pending",
+      attempt_count: 0,
+    })
+    .select("id, processing_status, attempt_count")
+    .single();
+
+  if (inserted.error || !inserted.data) {
+    throw new Error(`Failed to create webhook event record: ${inserted.error?.message || "Unknown error"}`);
+  }
+
+  return {
+    id: Number(inserted.data.id),
+    processing_status: inserted.data.processing_status as WebhookEventRow["processing_status"],
+    attempt_count: Number(inserted.data.attempt_count || 0),
+  };
+}
+
 export async function processLemonWebhook(rawBody: string): Promise<ProcessWebhookResult> {
   const payload = JSON.parse(rawBody) as LemonWebhookPayload;
   const eventName = asString(payload.meta?.event_name) || "unknown";
-  
-  // Helper to extract attributes safely
-  const attributes = (payload.data?.attributes || {}) as Record<string, unknown>;
-  const customData = payload.meta?.custom_data || {};
-  
-  // 1. Deduplication using Event ID
-  const eventId = deriveEventId(payload, rawBody);
+  const providerEventId = getProviderEventId(payload);
+  const eventId = deriveEventId(providerEventId, rawBody);
   const supabase = createAdminClient();
 
-  const eventInsert = await supabase
+  const eventRow = await getOrCreateWebhookEvent(supabase, {
+    eventId,
+    providerEventId,
+    eventName,
+    payload,
+  });
+
+  if (eventRow.processing_status === "processed") {
+    return { processed: true, ignored: true };
+  }
+
+  const attemptCount = eventRow.attempt_count + 1;
+  const attemptAt = new Date().toISOString();
+
+  const markAttempt = await supabase
     .from("billing_webhook_events")
-    .insert({
-      event_id: eventId,
+    .update({
       event_name: eventName,
       payload,
+      provider_event_id: providerEventId,
+      processing_status: "pending",
+      attempt_count: attemptCount,
+      last_attempt_at: attemptAt,
     })
-    .select("id")
-    .single();
+    .eq("id", eventRow.id);
 
-  if (eventInsert.error && eventInsert.error.code === "23505") { // Unique violation
-    return { processed: true, ignored: true };
+  if (markAttempt.error) {
+    throw new Error(`Failed to update webhook attempt metadata: ${markAttempt.error.message}`);
   }
 
-  if (eventInsert.error) {
-    throw new Error(`Failed to persist webhook event: ${eventInsert.error.message}`);
-  }
+  try {
+    const attributes = (payload.data?.attributes || {}) as Record<string, unknown>;
+    const customData = payload.meta?.custom_data || {};
 
-  // 2. Identify User
-  const customerId = coerceString(attributes.customer_id) || coerceString(attributes.customer);
-  const subscriptionId = coerceString(payload.data?.id) || coerceString(attributes.subscription_id);
-  const explicitUserId = coerceString(customData.user_id) || coerceString(attributes.user_id);
-  const userEmail = coerceString(attributes.user_email) || coerceString(attributes.email);
+    const customerId = coerceString(attributes.customer_id) || coerceString(attributes.customer);
+    const subscriptionId = coerceString(payload.data?.id) || coerceString(attributes.subscription_id);
+    const explicitUserId = coerceString(customData.user_id) || coerceString(attributes.user_id);
+    const providerEventAt = parseDateString(attributes.updated_at) || parseDateString(attributes.created_at);
 
-  let userId = explicitUserId;
-  let existingBilling: ExistingBillingLookup | null = null;
+    let userId = explicitUserId;
+    if (!userId) {
+      const existingBillingByIds = await lookupBillingByLemonIds(supabase, customerId, subscriptionId);
+      userId = existingBillingByIds?.user_id || null;
+    }
 
-  if (!userId) {
-    existingBilling = await lookupBillingByLemonIds(customerId, subscriptionId);
-    userId = existingBilling?.user_id || null;
-  }
-
-  // Safety net: look up by email if we still don't have a userId and we have an email
-  if (!userId && userEmail) {
-    userId = await lookupUserIdByEmail(supabase, userEmail);
-  }
-
-  if (!userId) {
-    // If we can't match a user, we can't process the billing update.
-    log.warn(`[Billing] Could not identify user for event ${eventId} (customer: ${customerId}, sub: ${subscriptionId})`);
-    return { processed: true, ignored: true };
-  }
-
-  // 3. Process Logic based on Event Name
-  // Common data extraction
-  // attributes.variant_id is standard for subscription events.
-  // attributes.first_order_item.variant_id is standard for order events (like Lifetime deals).
-  const variantId =
-    coerceString(attributes.variant_id) ||
-    coerceString((attributes.first_order_item as Record<string, unknown>)?.variant_id);
-
-  const mappedPlan = resolvePlanFromVariantId(variantId);
-  const hasMappedPaidPlan = mappedPlan === "pro" || mappedPlan === "believer";
-  
-  // Default parsing for subscription dates/status
-  // Note: some events might not have all attributes, so we default carefully.
-  const rawStatus = attributes.status;
-  const status = mapStatus(rawStatus, eventName);
-  const billingInterval = mapInterval(attributes.billing_interval || attributes.interval) || deriveBillingIntervalFromVariant(variantId);
-  
-  const currentPeriodEnd =
-    parseDateString(attributes.renews_at) ||
-    parseDateString(attributes.ends_at) ||
-    parseDateString(attributes.trial_ends_at);
-
-  const cancelAtPeriodEnd =
-    Boolean(attributes.cancel_at_period_end) ||
-    Boolean(attributes.cancelled) ||
-    eventName === "subscription_cancelled"; // Explicit event check
-
-  const supportAmountCents = extractSupportAmountCents(attributes);
-
-  const now = new Date().toISOString();
-  
-  // Construct the payload for DB update
-  // We only update fields that are safely derivable.
-  const upsertPayload: Record<string, unknown> = {
-    user_id: userId,
-    last_webhook_event_at: now,
-    updated_at: now,
-  };
-
-  // Logic switch
-  switch (eventName) {
-    case "subscription_created":
-    case "subscription_updated":
-    case "subscription_resumed":
-    case "subscription_unpaused":
-      // Fail closed: never activate paid access unless variant is explicitly mapped.
-      if (!hasMappedPaidPlan) {
-        log.warn(`[Billing] Ignoring ${eventName} with unmapped variant for user ${userId}`, {
-          variantId,
-          subscriptionId,
-        });
-        return { processed: true, ignored: true };
+    if (!userId) {
+      log.warn("[Billing] Could not identify user for webhook event", {
+        eventId,
+        eventName,
+        providerEventId,
+        customerId,
+        subscriptionId,
+        reason: "ids_only_matching_failed",
+      });
+      const processedAt = new Date().toISOString();
+      const markUnknownUser = await supabase
+        .from("billing_webhook_events")
+        .update({
+          processing_status: "processed",
+          processed_at: processedAt,
+          last_error: null,
+          last_attempt_at: attemptAt,
+        })
+        .eq("id", eventRow.id);
+      if (markUnknownUser.error) {
+        throw new Error(`Failed to mark unmatched webhook event as processed: ${markUnknownUser.error.message}`);
       }
-      upsertPayload.plan_tier = mappedPlan;
-      upsertPayload.subscription_status = status;
-      upsertPayload.billing_interval = billingInterval;
-      upsertPayload.lemon_customer_id = customerId;
-      upsertPayload.lemon_subscription_id = subscriptionId;
-      upsertPayload.lemon_variant_id = variantId;
-      upsertPayload.current_period_end = currentPeriodEnd;
-      upsertPayload.cancel_at_period_end = cancelAtPeriodEnd;
-      if (supportAmountCents !== null) upsertPayload.support_amount_cents = supportAmountCents;
-      break;
+      return { processed: true, ignored: true };
+    }
 
-    case "subscription_cancelled":
-      // When explicitly cancelled, usually it means "cancel at period end" in SaaS, 
-      // OR it could be immediate. LemonSqueezy differentiates "cancelled" vs "expired".
-      // "cancelled" usually means "won't renew".
-      upsertPayload.subscription_status = status; // likely 'active' or 'cancelled' depending on API
-      upsertPayload.lemon_customer_id = customerId;
-      upsertPayload.lemon_subscription_id = subscriptionId;
-      upsertPayload.lemon_variant_id = variantId;
-      upsertPayload.billing_interval = billingInterval;
-      // Ensure we mark the flag
-      upsertPayload.cancel_at_period_end = true;
-      if (currentPeriodEnd) upsertPayload.current_period_end = currentPeriodEnd;
-      if (hasMappedPaidPlan) upsertPayload.plan_tier = mappedPlan;
-      break;
+    const existingBillingResult = await supabase
+      .from("user_billing")
+      .select("current_period_end, lemon_last_event_at")
+      .eq("user_id", userId)
+      .maybeSingle();
 
-    case "subscription_expired":
-      upsertPayload.subscription_status = "expired";
-      upsertPayload.lemon_customer_id = customerId;
-      upsertPayload.lemon_subscription_id = subscriptionId;
-      upsertPayload.lemon_variant_id = variantId;
-      // Access revoked
-      break;
+    if (existingBillingResult.error) {
+      throw new Error(`Failed to read existing billing row: ${existingBillingResult.error.message}`);
+    }
 
-    case "subscription_payment_failed":
-      upsertPayload.subscription_status = "past_due";
-      upsertPayload.lemon_customer_id = customerId;
-      upsertPayload.lemon_subscription_id = subscriptionId;
-      upsertPayload.lemon_variant_id = variantId;
-      upsertPayload.billing_interval = billingInterval;
-      if (currentPeriodEnd) upsertPayload.current_period_end = currentPeriodEnd;
-      break;
+    const existingBilling = (existingBillingResult.data || null) as ExistingUserBillingRow | null;
 
-    case "subscription_payment_success":
-      if (!hasMappedPaidPlan) {
-        log.warn(`[Billing] Ignoring subscription_payment_success with unmapped variant for user ${userId}`, {
-          variantId,
-          subscriptionId,
-        });
-        return { processed: true, ignored: true };
+    if (isOlderEvent(providerEventAt, existingBilling?.lemon_last_event_at || null)) {
+      log.info("[Billing] Ignoring stale webhook event", {
+        eventId,
+        eventName,
+        providerEventAt,
+        existingEventAt: existingBilling?.lemon_last_event_at,
+        userId,
+      });
+      const processedAt = new Date().toISOString();
+      const markStale = await supabase
+        .from("billing_webhook_events")
+        .update({
+          processing_status: "processed",
+          processed_at: processedAt,
+          last_error: null,
+          last_attempt_at: attemptAt,
+        })
+        .eq("id", eventRow.id);
+      if (markStale.error) {
+        throw new Error(`Failed to mark stale webhook event as processed: ${markStale.error.message}`);
       }
-      upsertPayload.plan_tier = mappedPlan;
-      upsertPayload.subscription_status = "active";
-      upsertPayload.lemon_customer_id = customerId;
-      upsertPayload.lemon_subscription_id = subscriptionId;
-      upsertPayload.lemon_variant_id = variantId;
-      upsertPayload.billing_interval = billingInterval;
-      if (currentPeriodEnd) upsertPayload.current_period_end = currentPeriodEnd;
-      if (supportAmountCents !== null) upsertPayload.support_amount_cents = supportAmountCents;
-      break;
-      
-    case "order_created":
-        // Useful for one-time purchases (Lifetime deals) or simple orders.
-        // If it resolves to a valid Plan, we activate it.
-        if (hasMappedPaidPlan) {
-             upsertPayload.plan_tier = mappedPlan;
-             upsertPayload.subscription_status = "active";
-             
-             const derivedInterval = deriveBillingIntervalFromVariant(variantId);
-             upsertPayload.billing_interval = derivedInterval || "year";
-             
-             const periodEnd = new Date();
-             if (derivedInterval === "month") {
-               periodEnd.setMonth(periodEnd.getMonth() + 1);
-             } else {
-               periodEnd.setFullYear(periodEnd.getFullYear() + 1);
-             }
-             upsertPayload.current_period_end = periodEnd.toISOString();
-             
-             upsertPayload.lemon_customer_id = customerId;
-             upsertPayload.lemon_variant_id = variantId;
-        } else {
-            // Not a recognized plan variant, ignore.
-             return { processed: true, ignored: true };
+      return { processed: true, ignored: true };
+    }
+
+    const variantId =
+      coerceString(attributes.variant_id) ||
+      coerceString((attributes.first_order_item as Record<string, unknown>)?.variant_id);
+
+    const mappedPlan = resolvePlanFromVariantId(variantId);
+    const hasMappedPaidPlan = mappedPlan === "pro" || mappedPlan === "believer";
+
+    const status = mapStatus(attributes.status, eventName);
+    const billingInterval =
+      mapInterval(attributes.billing_interval || attributes.interval) || deriveBillingIntervalFromVariant(variantId);
+
+    const incomingCurrentPeriodEnd =
+      parseDateString(attributes.renews_at) ||
+      parseDateString(attributes.ends_at) ||
+      parseDateString(attributes.trial_ends_at);
+    const resolvedCurrentPeriodEnd = incomingCurrentPeriodEnd || existingBilling?.current_period_end || null;
+
+    const cancelAtPeriodEnd =
+      Boolean(attributes.cancel_at_period_end) ||
+      Boolean(attributes.cancelled) ||
+      eventName === "subscription_cancelled";
+
+    const supportAmountCents = extractSupportAmountCents(attributes);
+    const now = new Date().toISOString();
+
+    const upsertPayload: Record<string, unknown> = {
+      user_id: userId,
+      last_webhook_event_at: now,
+      lemon_last_event_at: providerEventAt || now,
+      updated_at: now,
+    };
+
+    switch (eventName) {
+      case "subscription_created":
+      case "subscription_updated":
+      case "subscription_resumed":
+      case "subscription_unpaused":
+      case "subscription_paused":
+        if (!hasMappedPaidPlan) {
+          log.warn("[Billing] Ignoring paid subscription event with unmapped variant", {
+            eventName,
+            userId,
+            variantId,
+            subscriptionId,
+          });
+          const processedAt = new Date().toISOString();
+          const markUnmappedPaid = await supabase
+            .from("billing_webhook_events")
+            .update({
+              processing_status: "processed",
+              processed_at: processedAt,
+              last_error: null,
+              last_attempt_at: attemptAt,
+            })
+            .eq("id", eventRow.id);
+          if (markUnmappedPaid.error) {
+            throw new Error(
+              `Failed to mark unmapped paid webhook event as processed: ${markUnmappedPaid.error.message}`
+            );
+          }
+          return { processed: true, ignored: true };
         }
+
+        upsertPayload.plan_tier = mappedPlan;
+        upsertPayload.subscription_status = status;
+        upsertPayload.billing_interval = billingInterval;
+        upsertPayload.cancel_at_period_end = cancelAtPeriodEnd;
+        upsertPayload.lemon_customer_id = customerId;
+        upsertPayload.lemon_subscription_id = subscriptionId;
+        upsertPayload.lemon_variant_id = variantId;
+        if (resolvedCurrentPeriodEnd) upsertPayload.current_period_end = resolvedCurrentPeriodEnd;
+        if (supportAmountCents !== null) upsertPayload.support_amount_cents = supportAmountCents;
         break;
 
-    default:
-      // Other events like 'subscription_paused', 'license_key_created' etc.
-      // We can generic update if we have enough info, or ignore.
-      // Better to log and ignore to avoid polluting DB with partial data.
-      log.info(`[Billing] Unhandled event type: ${eventName}`);
-      return { processed: true, ignored: true };
-  }
+      case "subscription_cancelled":
+        upsertPayload.subscription_status = status;
+        upsertPayload.cancel_at_period_end = true;
+        upsertPayload.lemon_customer_id = customerId;
+        upsertPayload.lemon_subscription_id = subscriptionId;
+        upsertPayload.lemon_variant_id = variantId;
+        if (billingInterval) upsertPayload.billing_interval = billingInterval;
+        if (resolvedCurrentPeriodEnd) upsertPayload.current_period_end = resolvedCurrentPeriodEnd;
+        if (hasMappedPaidPlan) upsertPayload.plan_tier = mappedPlan;
+        break;
 
-  // Execute Upsert
-  const { error: upsertError } = await supabase
-    .from("user_billing")
-    .upsert(upsertPayload, {
+      case "subscription_expired":
+        upsertPayload.subscription_status = "expired";
+        upsertPayload.lemon_customer_id = customerId;
+        upsertPayload.lemon_subscription_id = subscriptionId;
+        upsertPayload.lemon_variant_id = variantId;
+        if (resolvedCurrentPeriodEnd) upsertPayload.current_period_end = resolvedCurrentPeriodEnd;
+        break;
+
+      case "subscription_payment_failed":
+        upsertPayload.subscription_status = "past_due";
+        upsertPayload.lemon_customer_id = customerId;
+        upsertPayload.lemon_subscription_id = subscriptionId;
+        upsertPayload.lemon_variant_id = variantId;
+        if (billingInterval) upsertPayload.billing_interval = billingInterval;
+        if (resolvedCurrentPeriodEnd) upsertPayload.current_period_end = resolvedCurrentPeriodEnd;
+        break;
+
+      case "subscription_payment_success":
+        if (!hasMappedPaidPlan) {
+          log.warn("[Billing] Ignoring subscription payment success with unmapped variant", {
+            eventName,
+            userId,
+            variantId,
+            subscriptionId,
+          });
+          const processedAt = new Date().toISOString();
+          const markUnmappedPayment = await supabase
+            .from("billing_webhook_events")
+            .update({
+              processing_status: "processed",
+              processed_at: processedAt,
+              last_error: null,
+              last_attempt_at: attemptAt,
+            })
+            .eq("id", eventRow.id);
+          if (markUnmappedPayment.error) {
+            throw new Error(
+              `Failed to mark unmapped payment success webhook event as processed: ${markUnmappedPayment.error.message}`
+            );
+          }
+          return { processed: true, ignored: true };
+        }
+
+        upsertPayload.plan_tier = mappedPlan;
+        upsertPayload.subscription_status = "active";
+        upsertPayload.cancel_at_period_end = cancelAtPeriodEnd;
+        upsertPayload.lemon_customer_id = customerId;
+        upsertPayload.lemon_subscription_id = subscriptionId;
+        upsertPayload.lemon_variant_id = variantId;
+        upsertPayload.billing_interval = billingInterval;
+        if (resolvedCurrentPeriodEnd) upsertPayload.current_period_end = resolvedCurrentPeriodEnd;
+        if (supportAmountCents !== null) upsertPayload.support_amount_cents = supportAmountCents;
+        break;
+
+      case "order_created":
+        log.info("[Billing] Ignoring order_created for subscriptions-only billing mode", {
+          userId,
+          eventId,
+        });
+        const processedAtOrder = new Date().toISOString();
+        const markOrderIgnored = await supabase
+          .from("billing_webhook_events")
+          .update({
+            processing_status: "processed",
+            processed_at: processedAtOrder,
+            last_error: null,
+            last_attempt_at: attemptAt,
+          })
+          .eq("id", eventRow.id);
+        if (markOrderIgnored.error) {
+          throw new Error(`Failed to mark order_created webhook event as processed: ${markOrderIgnored.error.message}`);
+        }
+        return { processed: true, ignored: true };
+
+      default:
+        if (isRefundEvent(eventName)) {
+          upsertPayload.plan_tier = "starter";
+          upsertPayload.subscription_status = "expired";
+          upsertPayload.cancel_at_period_end = false;
+          upsertPayload.current_period_end = now;
+          upsertPayload.lemon_customer_id = customerId;
+          upsertPayload.lemon_subscription_id = subscriptionId;
+          upsertPayload.lemon_variant_id = variantId;
+          if (billingInterval) upsertPayload.billing_interval = billingInterval;
+          break;
+        }
+
+        log.info("[Billing] Unhandled webhook event type", {
+          eventName,
+          eventId,
+        });
+        const processedAtUnhandled = new Date().toISOString();
+        const markUnhandled = await supabase
+          .from("billing_webhook_events")
+          .update({
+            processing_status: "processed",
+            processed_at: processedAtUnhandled,
+            last_error: null,
+            last_attempt_at: attemptAt,
+          })
+          .eq("id", eventRow.id);
+        if (markUnhandled.error) {
+          throw new Error(`Failed to mark unhandled webhook event as processed: ${markUnhandled.error.message}`);
+        }
+        return { processed: true, ignored: true };
+    }
+
+    const { error: upsertError } = await supabase.from("user_billing").upsert(upsertPayload, {
       onConflict: "user_id",
     });
 
-  if (upsertError) {
-    throw new Error(`Failed to upsert billing row for ${eventName}: ${upsertError.message}`);
-  }
+    if (upsertError) {
+      throw new Error(`Failed to upsert billing row for ${eventName}: ${upsertError.message}`);
+    }
 
-  return { processed: true };
+    const processedAt = new Date().toISOString();
+    const markProcessed = await supabase
+      .from("billing_webhook_events")
+      .update({
+        processing_status: "processed",
+        processed_at: processedAt,
+        last_error: null,
+        last_attempt_at: attemptAt,
+      })
+      .eq("id", eventRow.id);
+
+    if (markProcessed.error) {
+      throw new Error(`Failed to mark webhook event as processed: ${markProcessed.error.message}`);
+    }
+
+    return { processed: true };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const markFailed = await supabase
+      .from("billing_webhook_events")
+      .update({
+        processing_status: "failed",
+        last_error: errorMessage,
+        last_attempt_at: new Date().toISOString(),
+      })
+      .eq("id", eventRow.id);
+
+    if (markFailed.error) {
+      log.error("[Billing] Failed to mark webhook event as failed", markFailed.error);
+    }
+
+    throw error;
+  }
 }
