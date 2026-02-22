@@ -145,11 +145,15 @@ interface CommandDialogProps
 const CommandDialog = ({ children, commandProps, ...props }: CommandDialogProps) => {
   return (
     <Dialog {...props}>
-      <DialogContent className="overflow-hidden p-0 shadow-lg">
+      <DialogContent className="overflow-hidden p-0 shadow-2xl sm:max-w-2xl">
         <Command
-          className="py-1"
+          className="relative overflow-hidden rounded-[1.25rem] border border-border/70 bg-bg-elevated/95 py-2 backdrop-blur-xl"
           {...commandProps}
         >
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-accent/12 via-accent/4 to-transparent"
+          />
           {children}
         </Command>
       </DialogContent>
@@ -222,13 +226,18 @@ const CommandInput = React.forwardRef<
   )
 
   return (
-    <div className="flex items-center border-b px-3" data-slot="command-input-wrapper">
-      <IconSearch className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+    <div
+      className="sticky top-0 z-10 flex items-center gap-2 border-b border-border/70 bg-bg-elevated/95 px-3 py-2 backdrop-blur-xl"
+      data-slot="command-input-wrapper"
+    >
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-bg-muted/80 text-fg-subtle">
+        <IconSearch className="h-4 w-4" />
+      </span>
       <input
         ref={ref}
         data-command-input="true"
         className={cn(
-          "flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-fg-subtle disabled:cursor-not-allowed disabled:opacity-50",
+          "flex h-12 w-full rounded-xl bg-bg-muted/60 px-3 py-3 text-[15px] text-fg outline-none ring-1 ring-transparent transition-[background-color,box-shadow] placeholder:text-fg-subtle focus:bg-bg-surface focus:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-50",
           className
         )}
         autoFocus={autoFocus ?? true}
@@ -280,7 +289,7 @@ const CommandList = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
+      className={cn("max-h-[420px] overflow-y-auto overflow-x-hidden px-2 pb-2 pt-1", className)}
       onKeyDown={handleKeyDown}
       {...props}
     />
@@ -312,11 +321,11 @@ const CommandGroup = React.forwardRef<
 >(({ className, heading, children, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("overflow-hidden p-1 text-fg", className)}
+    className={cn("overflow-hidden rounded-xl border border-transparent p-1 text-fg", className)}
     {...props}
   >
     {heading && (
-      <div className="px-2 py-1.5 text-xs font-medium text-fg-muted">
+      <div className="px-2 py-1.5 text-[11px] font-semibold tracking-[0.14em] text-fg-muted uppercase">
         {heading}
       </div>
     )}
@@ -332,7 +341,7 @@ const CommandSeparator = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("-mx-1 h-px bg-border", className)}
+    className={cn("mx-1 my-1 h-px bg-gradient-to-r from-transparent via-border to-transparent", className)}
     {...props}
   />
 ))
@@ -363,7 +372,7 @@ const CommandItem = React.forwardRef<
       type="button"
       data-command-item="true"
       className={cn(
-        "relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm text-left outline-none hover:bg-bg-hover focus:bg-bg-selected focus:text-fg focus-visible:bg-bg-selected focus-visible:text-fg disabled:pointer-events-none disabled:opacity-50",
+        "group/item relative my-0.5 flex w-full cursor-pointer select-none items-center rounded-lg border border-transparent px-3 py-2.5 text-sm font-medium text-left text-fg outline-none transition-[background-color,border-color,transform] duration-150 hover:border-border/80 hover:bg-bg-hover focus:border-accent/35 focus:bg-bg-selected focus:text-fg focus-visible:border-accent/35 focus-visible:bg-bg-selected focus-visible:text-fg data-[active=true]:border-accent/35 data-[active=true]:bg-bg-selected disabled:pointer-events-none disabled:opacity-50",
         className
       )}
       onClick={handleClick}
@@ -381,7 +390,7 @@ const CommandShortcut = ({
   return (
     <span
       className={cn(
-        "ml-auto text-xs tracking-widest text-fg-muted",
+        "ml-auto rounded-md border border-border/80 bg-bg-muted/70 px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.08em] text-fg-muted",
         className
       )}
       {...props}
