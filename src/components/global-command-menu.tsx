@@ -11,8 +11,8 @@ import {
   IconArrowsSort,
   IconFolder,
   IconPalette,
-  IconPhoto,
-  IconFileTypePdf,
+  IconUpload,
+  IconNotes,
 } from "@tabler/icons-react";
 import {
   CommandDialog,
@@ -38,10 +38,11 @@ interface GlobalCommandMenuProps {
   onViewModeChange: (mode: "list" | "grid") => void;
   onSortChange: (sortBy: "date" | "title") => void;
   onToggleHelp: () => void;
-  onUploadImagesClick?: () => void;
-  onUploadDocumentsClick?: () => void;
-  searchQuery: string;
-  onSearchChange: (value: string) => void;
+  onUploadClick?: () => void;
+  onCreateNote?: () => void;
+  onCreateSpace?: () => void;
+  initialSearchQuery?: string;
+  onCommitSearch: (value: string) => void;
 }
 
 export function GlobalCommandMenu({
@@ -56,21 +57,21 @@ export function GlobalCommandMenu({
   onViewModeChange,
   onSortChange,
   onToggleHelp,
-  onUploadImagesClick,
-  onUploadDocumentsClick,
-  searchQuery,
-  onSearchChange,
+  onUploadClick,
+  onCreateNote,
+  onCreateSpace,
+  initialSearchQuery,
+  onCommitSearch,
 }: GlobalCommandMenuProps) {
-  const [query, setQuery] = React.useState(searchQuery);
+  const [query, setQuery] = React.useState("");
 
   React.useEffect(() => {
     if (!open) {
-      setQuery(searchQuery);
+      setQuery("");
       return;
     }
-
-    setQuery(searchQuery);
-  }, [open, searchQuery]);
+    setQuery("");
+  }, [open]);
 
   const runCommand = React.useCallback(
     (action: () => void) => {
@@ -83,12 +84,13 @@ export function GlobalCommandMenu({
   const handleValueChange = React.useCallback(
     (value: string) => {
       setQuery(value);
-      onSearchChange(value);
     },
-    [onSearchChange]
+    []
   );
 
   const normalizedQuery = query.trim().toLowerCase();
+  const initialCommittedQuery = initialSearchQuery?.trim() ?? "";
+  const committedSearchValue = query.trim() || initialCommittedQuery;
   const hasQuery = normalizedQuery.length > 0;
 
   const matchesQuery = React.useCallback(
@@ -99,13 +101,13 @@ export function GlobalCommandMenu({
     [hasQuery, normalizedQuery]
   );
 
-  const showSearchAction = hasQuery;
-  const showCreateLink = !isTrashView && matchesQuery("add link", "create link", "new link", "n");
-  const showCreateColor = !isTrashView && matchesQuery("add color", "create color");
-  const showUploadImage = !isTrashView && Boolean(onUploadImagesClick) && matchesQuery("upload image", "image");
-  const showUploadDocument =
-    !isTrashView && Boolean(onUploadDocumentsClick) && matchesQuery("upload pdf", "upload document", "document", "pdf");
-  const showCreateGroup = showCreateLink || showCreateColor || showUploadImage || showUploadDocument;
+  const showSearchAction = committedSearchValue.length > 0 && (hasQuery || initialCommittedQuery.length > 0);
+  const showCreateLink = !isTrashView && matchesQuery("link", "add link", "create link", "new link", "n");
+  const showUpload = !isTrashView && Boolean(onUploadClick) && matchesQuery("upload", "upload image", "upload pdf", "upload document", "image", "pdf", "document");
+  const showCreateColor = !isTrashView && matchesQuery("color", "add color", "create color");
+  const showCreateNote = !isTrashView && Boolean(onCreateNote) && matchesQuery("note", "add note", "create note");
+  const showCreateSpace = !isTrashView && Boolean(onCreateSpace) && matchesQuery("space", "add space", "create space");
+  const showCreateGroup = showCreateLink || showUpload || showCreateColor || showCreateNote || showCreateSpace;
 
   const showToggleView = matchesQuery("toggle view", "grid", "list", "view", "v");
   const showShortcuts = matchesQuery("keyboard shortcuts", "help", "shortcuts", "cmd/");
@@ -141,9 +143,9 @@ export function GlobalCommandMenu({
 
         {showSearchAction && (
           <CommandGroup heading="Search">
-            <CommandItem onSelect={() => runCommand(() => onSearchChange(query))}>
+            <CommandItem onSelect={() => runCommand(() => onCommitSearch(committedSearchValue))}>
               <IconSearch className="mr-2 h-4 w-4" />
-              Search for “{query}”
+              Search for “{committedSearchValue}”
               <CommandShortcut>↵</CommandShortcut>
             </CommandItem>
           </CommandGroup>
@@ -154,26 +156,32 @@ export function GlobalCommandMenu({
             {showCreateLink && (
               <CommandItem onSelect={() => runCommand(() => onOpenAddMode(query || undefined))}>
                 <IconPlus className="mr-2 h-4 w-4" />
-                Add link
+                Link
                 <CommandShortcut>N</CommandShortcut>
+              </CommandItem>
+            )}
+            {showUpload && onUploadClick && (
+              <CommandItem onSelect={() => runCommand(onUploadClick)}>
+                <IconUpload className="mr-2 h-4 w-4" />
+                Upload
               </CommandItem>
             )}
             {showCreateColor && (
               <CommandItem onSelect={() => runCommand(() => onOpenAddMode(query || undefined))}>
                 <IconPalette className="mr-2 h-4 w-4" />
-                Add color
+                Color
               </CommandItem>
             )}
-            {showUploadImage && onUploadImagesClick && (
-              <CommandItem onSelect={() => runCommand(onUploadImagesClick)}>
-                <IconPhoto className="mr-2 h-4 w-4" />
-                Upload image
+            {showCreateNote && onCreateNote && (
+              <CommandItem onSelect={() => runCommand(onCreateNote)}>
+                <IconNotes className="mr-2 h-4 w-4" />
+                Note
               </CommandItem>
             )}
-            {showUploadDocument && onUploadDocumentsClick && (
-              <CommandItem onSelect={() => runCommand(onUploadDocumentsClick)}>
-                <IconFileTypePdf className="mr-2 h-4 w-4" />
-                Upload PDF
+            {showCreateSpace && onCreateSpace && (
+              <CommandItem onSelect={() => runCommand(onCreateSpace)}>
+                <IconFolder className="mr-2 h-4 w-4" />
+                Space
               </CommandItem>
             )}
           </CommandGroup>

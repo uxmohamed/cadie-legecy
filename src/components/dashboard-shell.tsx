@@ -11,6 +11,7 @@ import type { Space } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCircleCheckFilled, IconLayoutList, IconLayoutGrid, IconPhoto, IconUpload, IconPalette, IconFileTypePdf, IconNotes, IconAlertTriangle } from "@tabler/icons-react";
+import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCircleCheckFilled, IconLayoutList, IconLayoutGrid, IconUpload, IconPalette, IconNotes, IconFolder } from "@tabler/icons-react";
 import { Kbd } from "@/components/ui/kbd";
 import {
   DropdownMenu,
@@ -127,7 +128,6 @@ export function DashboardShell({
   }, []);
   const dragCounterRef = React.useRef(0);
   const uploadInputRef = React.useRef<HTMLInputElement>(null);
-  const uploadDocumentInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     document.body.dataset.commandMenuOpen = isCommandMenuOpen ? "true" : "false";
@@ -138,31 +138,20 @@ export function DashboardShell({
 
   const handleUploadInputChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(e.target.files || []).filter((file) =>
-        file.type.startsWith("image/")
-      );
+      const files = Array.from(e.target.files || []);
+      const imageFiles = files.filter((file) => file.type.startsWith("image/"));
+      const pdfFiles = files.filter((file) => file.type === "application/pdf");
 
-      if (files.length > 0) {
-        onUploadImages?.(files);
+      if (imageFiles.length > 0) {
+        onUploadImages?.(imageFiles);
+      }
+      if (pdfFiles.length > 0) {
+        onUploadDocuments?.(pdfFiles);
       }
 
       e.target.value = "";
     },
-    [onUploadImages]
-  );
-
-  
-  const handleDocumentUploadInputChange = React.useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(e.target.files || []).filter((file) => file.type === "application/pdf");
-
-      if (files.length > 0) {
-        onUploadDocuments?.(files);
-      }
-
-      e.target.value = "";
-    },
-    [onUploadDocuments]
+    [onUploadImages, onUploadDocuments]
   );
 // Update URL immediately using history API (no navigation, instant URL update)
   const updateUrl = React.useCallback((value: string) => {
@@ -587,28 +576,26 @@ export function DashboardShell({
                       disabled={isAddingItem}
                     >
                       <IconPlus className="h-4 w-4 text-fg-on-overlay-muted" />
-                      Add links
+                      Link
                     </DropdownMenuItem>
+                    {(onUploadImages || onUploadDocuments) && (
+                      <DropdownMenuItem onClick={() => uploadInputRef.current?.click()}>
+                        <IconUpload className="h-4 w-4 text-fg-on-overlay-muted" />
+                        Upload
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => onOpenAddMode()} disabled={isAddingItem}>
                       <IconPalette className="h-4 w-4 text-fg-on-overlay-muted" />
-                      Add color
+                      Color
                     </DropdownMenuItem>
-                    {onUploadImages && (
-                      <DropdownMenuItem onClick={() => uploadInputRef.current?.click()}>
-                        <IconPhoto className="h-4 w-4 text-fg-on-overlay-muted" />
-                        Upload images
-                      </DropdownMenuItem>
-                    )}
                     <DropdownMenuItem onClick={() => onCreateNote?.()} disabled={!onCreateNote}>
                       <IconNotes className="h-4 w-4 text-fg-on-overlay-muted" />
-                      Add note
+                      Note
                     </DropdownMenuItem>
-                    {onUploadDocuments && (
-                      <DropdownMenuItem onClick={() => uploadDocumentInputRef.current?.click()}>
-                        <IconFileTypePdf className="h-4 w-4 text-fg-on-overlay-muted" />
-                        Upload PDF
-                      </DropdownMenuItem>
-                    )}
+                    <DropdownMenuItem onClick={() => onCreateSpace?.()} disabled={!onCreateSpace}>
+                      <IconFolder className="h-4 w-4 text-fg-on-overlay-muted" />
+                      Space
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
@@ -817,10 +804,11 @@ export function DashboardShell({
         onViewModeChange={onViewModeChange}
         onSortChange={handleSortChange}
         onToggleHelp={toggleHelp}
-        onUploadImagesClick={onUploadImages ? () => uploadInputRef.current?.click() : undefined}
-        onUploadDocumentsClick={onUploadDocuments ? () => uploadDocumentInputRef.current?.click() : undefined}
-        searchQuery={searchQuery}
-        onSearchChange={(value) => {
+        onUploadClick={onUploadImages || onUploadDocuments ? () => uploadInputRef.current?.click() : undefined}
+        onCreateNote={onCreateNote}
+        onCreateSpace={onCreateSpace}
+        initialSearchQuery={searchQuery}
+        onCommitSearch={(value) => {
           onSearchChange(value);
           updateUrl(value);
         }}
@@ -829,19 +817,10 @@ export function DashboardShell({
       <input
         ref={uploadInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,application/pdf"
         multiple
         className="hidden"
         onChange={handleUploadInputChange}
-        tabIndex={-1}
-        aria-hidden="true"
-      />
-      <input
-        ref={uploadDocumentInputRef}
-        type="file"
-        accept="application/pdf"
-        className="hidden"
-        onChange={handleDocumentUploadInputChange}
         tabIndex={-1}
         aria-hidden="true"
       />

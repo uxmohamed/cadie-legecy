@@ -168,8 +168,17 @@ export function ShortcutProvider({ children }: { children: React.ReactNode }) {
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
         target.isContentEditable;
+      const isInCommandInput =
+        target instanceof Element &&
+        target.closest("[data-command-input='true']") !== null;
 
       const combo = getEventCombo(event);
+      const hasModifier = event.metaKey || event.ctrlKey || event.altKey;
+
+      // Never let single-key shortcuts consume command input typing.
+      if (isInCommandInput && combo !== "Escape" && !hasModifier) {
+        return;
+      }
 
       if (isHelpOpen && combo === "Escape") {
         event.preventDefault();
