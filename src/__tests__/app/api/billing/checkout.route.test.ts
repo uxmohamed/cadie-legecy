@@ -162,7 +162,7 @@ describe("POST /api/billing/checkout", () => {
     expect(response.status).toBe(200);
     expect(mockCreateLemonCheckout).toHaveBeenCalledWith(
       expect.objectContaining({
-        checkoutReturnUrl: "https://cadie.app/?settings=billing",
+        checkoutReturnUrl: "https://cadie.app/?settings=billing&billing_success=1",
       })
     );
   });

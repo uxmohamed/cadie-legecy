@@ -10,8 +10,15 @@ import type { Link } from "@/features/links/types";
 import type { Space } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCircleCheckFilled, IconLayoutList, IconLayoutGrid, IconPhoto, IconUpload, IconPalette, IconFileTypePdf, IconNotes, IconAlertTriangle, IconFolder } from "@tabler/icons-react";
+import { IconPlus, IconSearch, IconDots, IconArrowUp, IconArrowDown, IconCircleCheckFilled, IconLayoutList, IconLayoutGrid, IconUpload, IconPalette, IconNotes, IconAlertTriangle, IconFolder } from "@tabler/icons-react";
 import { Kbd } from "@/components/ui/kbd";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,6 +60,14 @@ interface DashboardShellProps {
   onUploadImages?: (files: File[]) => void;
   onUploadDocuments?: (files: File[]) => void;
   onCreateNote?: () => void;
+}
+
+interface BillingStatusResponse {
+  plan?: string;
+  subscription?: {
+    status?: string;
+    current_period_end?: string | null;
+  };
 }
 
 export function DashboardShell({
@@ -104,6 +119,7 @@ export function DashboardShell({
     current: number;
     max: number;
   } | null>(null);
+  const [isSubscriptionCelebrationOpen, setIsSubscriptionCelebrationOpen] = React.useState(false);
 
   React.useEffect(() => {
     fetch("/api/billing/status")
@@ -125,6 +141,56 @@ export function DashboardShell({
       })
       .catch(() => {});
   }, []);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const url = new URL(window.location.href);
+    const billingSuccess = url.searchParams.get("billing_success");
+    if (billingSuccess !== "1") return;
+
+    let cancelled = false;
+
+    const clearSuccessParam = () => {
+      const nextUrl = new URL(window.location.href);
+      nextUrl.searchParams.delete("billing_success");
+      const query = nextUrl.searchParams.toString();
+      const cleanUrl = `${nextUrl.pathname}${query ? `?${query}` : ""}${nextUrl.hash}`;
+      window.history.replaceState(null, "", cleanUrl);
+    };
+
+    const maybeCelebrateUpgrade = async () => {
+      try {
+        // Trigger an on-demand sync first in case webhook delivery lags behind redirect.
+        await fetch("/api/billing/sync", { method: "POST" }).catch(() => null);
+
+        const res = await fetch("/api/billing/status", { cache: "no-store" });
+        if (!res.ok) return;
+
+        const data = (await res.json()) as BillingStatusResponse;
+        if (!data.plan || data.plan === "starter") return;
+
+        const status = data.subscription?.status || "unknown";
+        const periodEnd = data.subscription?.current_period_end || "none";
+        const celebrationKey = `billing_celebrated:${user.id}:${data.plan}:${status}:${periodEnd}`;
+
+        if (window.localStorage.getItem(celebrationKey) === "1") return;
+        window.localStorage.setItem(celebrationKey, "1");
+
+        if (!cancelled) {
+          setIsSubscriptionCelebrationOpen(true);
+        }
+      } finally {
+        clearSuccessParam();
+      }
+    };
+
+    void maybeCelebrateUpgrade();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user.id]);
   const dragCounterRef = React.useRef(0);
   const uploadInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -823,6 +889,23 @@ export function DashboardShell({
         tabIndex={-1}
         aria-hidden="true"
       />
+
+      <Dialog open={isSubscriptionCelebrationOpen} onOpenChange={setIsSubscriptionCelebrationOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <IconCircleCheckFilled className="h-5 w-5 text-success" />
+              You are subscribed
+            </DialogTitle>
+            <DialogDescription>
+              Your upgrade is active now. Paid features are unlocked and ready to use.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end">
+            <Button onClick={() => setIsSubscriptionCelebrationOpen(false)}>Let&apos;s go</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

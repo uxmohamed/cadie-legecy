@@ -12,7 +12,7 @@ interface CheckoutBody {
   return_url?: string;
 }
 
-const DEFAULT_BILLING_RETURN_PATH = "/?settings=billing";
+const DEFAULT_BILLING_RETURN_PATH = "/?settings=billing&billing_success=1";
 const MAX_SUPPORT_AMOUNT_CENTS = 1_000_000; // $10,000 upper guardrail
 const INVALID_PUBLIC_HOSTS = new Set(["0.0.0.0", "::", "::1", "localhost", "127.0.0.1"]);
 

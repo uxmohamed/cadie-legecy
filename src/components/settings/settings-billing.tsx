@@ -111,7 +111,15 @@ export function SettingsBilling() {
   const handleCheckout = async (interval: "month" | "year") => {
     setIsCheckoutLoading(true);
     try {
-      const returnUrl = typeof window !== "undefined" ? window.location.href : undefined;
+      const returnUrl =
+        typeof window !== "undefined"
+          ? (() => {
+              const url = new URL(window.location.href);
+              url.searchParams.set("settings", "billing");
+              url.searchParams.set("billing_success", "1");
+              return url.toString();
+            })()
+          : undefined;
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
