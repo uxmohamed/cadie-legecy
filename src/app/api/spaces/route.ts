@@ -5,6 +5,12 @@ import { authenticateRequest } from "@/lib/auth-middleware";
 import { getBillingContext } from "@/lib/billing/context";
 import { createPlanLimitResponse } from "@/lib/billing/limit-response";
 
+function isMissingSpacesDescriptionColumn(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const message = "message" in error ? String((error as { message?: unknown }).message ?? "") : "";
+  return message.includes("'description' column of 'spaces'") || message.includes("column \"description\" of relation \"spaces\"");
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Use authenticateRequest to support both Bearer token (extension) and session auth (web)
@@ -162,24 +168,47 @@ export async function POST(request: NextRequest) {
     const newSortOrder = sort_order ?? maxSortOrder + 1;
 
     const normalizedDescription = typeof description === "string" ? description.trim().slice(0, 240) : null;
+    const insertPayload: {
+      user_id: string;
+      name: string;
+      color: string;
+      sort_order: number;
+      description?: string | null;
+    } = {
+      user_id: userId,
+      name,
+      color,
+      sort_order: newSortOrder,
+    };
 
-    const { data, error } = await supabase
+    if (normalizedDescription) {
+      insertPayload.description = normalizedDescription;
+    }
+
+    let { data, error } = await supabase
       .from("spaces")
-      .insert({
-        user_id: userId,
-        name,
-        color,
-        sort_order: newSortOrder,
-        description: normalizedDescription || null,
-      })
+      .insert(insertPayload)
       .select()
       .single();
+
+    if (error && insertPayload.description !== undefined && isMissingSpacesDescriptionColumn(error)) {
+      ({ data, error } = await supabase
+        .from("spaces")
+        .insert({
+          user_id: userId,
+          name,
+          color,
+          sort_order: newSortOrder,
+        })
+        .select()
+        .single());
+    }
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ space: { ...data, link_count: 0 } }, { status: 201 });
+    return NextResponse.json({ space: { ...data, description: data?.description ?? null, link_count: 0 } }, { status: 201 });
   } catch (error) {
     console.error("Error creating space:", error);
     return NextResponse.json(

@@ -65,6 +65,12 @@ function getDomain(url: string): string {
   }
 }
 
+function isMissingSpacesDescriptionColumn(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const message = "message" in error ? String((error as { message?: unknown }).message ?? "") : "";
+  return message.includes("'description' column of 'spaces'") || message.includes("column \"description\" of relation \"spaces\"");
+}
+
 export class AutoSpaceForwardingService {
   private openAIClient: OpenAI | null = null;
 
@@ -179,13 +185,34 @@ export class AutoSpaceForwardingService {
 
   private async getUserSpaces(userId: string): Promise<SpaceRow[]> {
     const supabase = await createClient();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("spaces")
       .select("id, name, description, sort_order")
       .eq("user_id", userId)
       .order("sort_order", { ascending: true });
 
-    return (data || []) as SpaceRow[];
+    if (error && isMissingSpacesDescriptionColumn(error)) {
+      const fallback = await supabase
+        .from("spaces")
+        .select("id, name, sort_order")
+        .eq("user_id", userId)
+        .order("sort_order", { ascending: true });
+
+      if (fallback.error || !fallback.data) {
+        return [];
+      }
+
+      return fallback.data.map((space) => ({
+        ...space,
+        description: null,
+      })) as SpaceRow[];
+    }
+
+    if (error || !data) {
+      return [];
+    }
+
+    return data as SpaceRow[];
   }
 
   private pickHeuristicSpace(link: ForwardableLink, spaces: SpaceRow[]): SpaceRow | null {

@@ -218,11 +218,11 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
     setSpaceModalOpen(true);
   }, []);
   
-  const handleSaveSpace = React.useCallback(async (name: string, color: string) => {
+  const handleSaveSpace = React.useCallback(async (name: string, color: string, description: string) => {
     if (editingSpace) {
-      await updateSpace(editingSpace.id, { name, color });
+      await updateSpace(editingSpace.id, { name, color, description: description || null });
     } else {
-      await createSpace(name, color);
+      await createSpace(name, color, description || undefined);
     }
   }, [editingSpace, createSpace, updateSpace]);
   

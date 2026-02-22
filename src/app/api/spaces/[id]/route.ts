@@ -5,6 +5,12 @@ import { authenticateRequest } from "@/lib/auth-middleware";
 import { getBillingContext } from "@/lib/billing/context";
 import { createPlanLimitResponse } from "@/lib/billing/limit-response";
 
+function isMissingSpacesDescriptionColumn(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const message = "message" in error ? String((error as { message?: unknown }).message ?? "") : "";
+  return message.includes("'description' column of 'spaces'") || message.includes("column \"description\" of relation \"spaces\"");
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -75,7 +81,7 @@ export async function PATCH(
     if (sort_order !== undefined) updateData.sort_order = sort_order;
     if (description !== undefined) updateData.description = typeof description === "string" ? description.trim().slice(0, 240) : null;
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("spaces")
       .update(updateData)
       .eq("id", id)
@@ -83,11 +89,23 @@ export async function PATCH(
       .select()
       .single();
 
+    if (error && updateData.description !== undefined && isMissingSpacesDescriptionColumn(error)) {
+      const fallbackUpdateData = { ...updateData };
+      delete fallbackUpdateData.description;
+      ({ data, error } = await supabase
+        .from("spaces")
+        .update(fallbackUpdateData)
+        .eq("id", id)
+        .eq("user_id", userId)
+        .select()
+        .single());
+    }
+
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ space: data });
+    return NextResponse.json({ space: { ...data, description: data?.description ?? null } });
   } catch (error) {
     console.error("Error updating space:", error);
     return NextResponse.json(

@@ -9,8 +9,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ColorPicker, SPACE_COLORS, type SpaceColor } from "./color-picker";
+import { ColorPicker, SPACE_COLORS } from "./color-picker";
 import type { Space } from "@/types";
 import { IconTrash } from "@tabler/icons-react";
 
@@ -18,7 +19,7 @@ interface SpaceModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   space?: Space | null;
-  onSave: (name: string, color: string) => Promise<void>;
+  onSave: (name: string, color: string, description: string) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
 }
 
@@ -30,6 +31,7 @@ export function SpaceModal({
   onDelete,
 }: SpaceModalProps) {
   const [name, setName] = React.useState("");
+  const [description, setDescription] = React.useState("");
   const [color, setColor] = React.useState(SPACE_COLORS.blue.cssVar);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -41,9 +43,11 @@ export function SpaceModal({
     if (open) {
       if (space) {
         setName(space.name);
+        setDescription(space.description ?? "");
         setColor(space.color);
       } else {
         setName("");
+        setDescription("");
         setColor(SPACE_COLORS.blue.cssVar);
       }
     }
@@ -54,7 +58,7 @@ export function SpaceModal({
 
     setIsSaving(true);
     try {
-      await onSave(name.trim(), color);
+      await onSave(name.trim(), color, description.trim());
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving space:", error);
@@ -111,6 +115,24 @@ export function SpaceModal({
               placeholder="Enter space name"
               autoFocus
               maxLength={100}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label
+              htmlFor="space-description"
+              className="text-sm font-[470] text-fg"
+            >
+              Description
+            </label>
+            <Textarea
+              id="space-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Optional note about this space"
+              maxLength={240}
+              rows={3}
+              className="min-h-[88px]"
             />
           </div>
 
