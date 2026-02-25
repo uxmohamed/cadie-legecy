@@ -118,12 +118,12 @@ export function useLinksQuery(
     filters.content_type,
   ]);
 
-  const normalizedSearchQuery = searchQuery?.trim() || "";
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: [...queryKeys.links.list(stableFilters), "q", normalizedSearchQuery, "limit", limit],
-    queryFn: () => fetchLinks(stableFilters, 0, normalizedSearchQuery, limit),
+    queryKey: queryKeys.links.list(stableFilters),
+    // Keep list cache independent from transient search text.
+    queryFn: () => fetchLinks(stableFilters, 0, undefined, limit),
     enabled,
     initialData,
     placeholderData: (previousData) => previousData,

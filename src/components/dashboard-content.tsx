@@ -3,7 +3,7 @@
 import * as React from "react";
 import { LinkList } from "@/components/link-list";
 import { LinkListSkeleton } from "@/components/skeletons";
-import { useLinksInfiniteQuery } from "@/features/links/queries/use-links-query";
+import { useLinksQuery } from "@/features/links/queries/use-links-query";
 import { useSearchLinks } from "@/features/links/hooks/use-search-links";
 import { useLinkMutations, useCopyUrl } from "@/features/links/queries/use-link-mutations";
 import { useSpaces } from "@/features/spaces/queries";
@@ -80,10 +80,7 @@ export function DashboardContent({
     links: allLinks,
     isLoading,
     isFetching,
-    isFetchingNextPage,
-    hasMore,
-    fetchNextPage,
-  } = useLinksInfiniteQuery(filters, !!user, undefined, searchQuery, PAGE_SIZE);
+  } = useLinksQuery(filters, !!user, undefined, searchQuery, PAGE_SIZE);
 
   // Client-side instant search — filters in memory, no network round-trip
   const links = useSearchLinks(allLinks, searchQuery, spaces, linkSpacesMap);
@@ -373,13 +370,9 @@ export function DashboardContent({
       onAddInputChange={onAddInputChange}
       onAddSubmit={handleInlineAddSubmit}
       onAddCancel={onAddCancel}
-      hasMore={hasMore}
-      onLoadMore={() => {
-        if (!isFetchingNextPage && hasMore) {
-          void fetchNextPage();
-        }
-      }}
-      isLoadingMore={isFetchingNextPage}
+      hasMore={false}
+      onLoadMore={() => {}}
+      isLoadingMore={false}
       onSelectionChange={onSelectionChange}
       spaces={spaces}
       linkSpacesMap={linkSpacesMap}
