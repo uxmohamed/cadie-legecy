@@ -16,31 +16,13 @@ export class SupabaseLinkRepository implements ILinkRepository {
     async findAll(userId: string, filters?: LinkFilters, limit?: number, offset?: number, searchQuery?: string): Promise<{ links: Link[], total: number }> {
         const supabase = await createClient();
 
-        // If filtering by space, we need to join with link_spaces
+        // Space filter via relational join avoids the expensive "fetch IDs then IN (...)" pattern.
         if (filters?.space_id) {
-            // First, get link IDs in this space
-            const { data: linkSpaces, error: linkSpacesError } = await supabase
-                .from("link_spaces")
-                .select("link_id")
-                .eq("space_id", filters.space_id);
-
-            if (linkSpacesError) {
-                console.error("Error fetching link_spaces:", linkSpacesError);
-                return { links: [], total: 0 };
-            }
-
-            const linkIds = linkSpaces?.map(ls => ls.link_id) || [];
-            
-            if (linkIds.length === 0) {
-                return { links: [], total: 0 };
-            }
-
-            // Now query links with those IDs
             let query = supabase
                 .from("links")
-                .select("*", { count: 'exact' })
+                .select("*, link_spaces!inner(space_id)", { count: 'exact' })
                 .eq("user_id", userId)
-                .in("id", linkIds);
+                .eq("link_spaces.space_id", filters.space_id);
 
             if (filters?.is_archived !== undefined) {
                 query = query.eq("is_archived", filters.is_archived);
@@ -76,11 +58,16 @@ export class SupabaseLinkRepository implements ILinkRepository {
             const { data, error, count } = await query;
 
             if (error) {
-                console.error("Error fetching links by space:", error);
+                console.error("Error fetching links by space join:", error);
                 return { links: [], total: 0 };
             }
 
-            return { links: (data as Link[]) || [], total: count || 0 };
+            const normalized = (data as Array<Link & { link_spaces?: unknown }> | null)?.map((row) => {
+                const { link_spaces: _linkSpaces, ...link } = row;
+                return link as Link;
+            }) || [];
+
+            return { links: normalized, total: count || 0 };
         }
 
         // Standard query without space filter

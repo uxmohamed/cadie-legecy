@@ -13,6 +13,7 @@ import { extractMetadata } from "@/lib/metadata";
 import { log } from "@/lib/logger";
 import { getBillingContext } from "@/lib/billing/context";
 import { createPlanLimitResponse } from "@/lib/billing/limit-response";
+import { getIdempotentResponse, setIdempotentResponse } from "@/lib/idempotency";
 
 const EXTENSION_SOURCE_HEADER = "x-cadie-source";
 const EXTENSION_SOURCE_VALUE = "extension";
@@ -49,6 +50,18 @@ interface RecoveryLink {
     og_image_url: string | null;
     ai_tags: string[] | null;
     fetch_status: string | null;
+}
+
+interface CreateLinkResponseBody {
+    link: {
+        id: string;
+        [key: string]: unknown;
+    };
+    duplicate: boolean;
+    restored: boolean;
+    auto_forwarded_to: string | null;
+    auto_forwarded_spaces: string[];
+    processing_state: "queued" | "completed";
 }
 
 /**
@@ -530,9 +543,18 @@ export class CreateLinkHandler {
         validatedData?: CreateLinkDTO,
         authenticatedUserId?: string
     ): Promise<NextResponse> {
+        const requestStartedAt = Date.now();
+        let userId: string | null = null;
+        let authMs = 0;
+        let billingMs = 0;
+        let createMs = 0;
+        const idempotencyKey = request.headers.get("Idempotency-Key")?.trim() || null;
+
         try {
             // Authenticate
-            const userId = authenticatedUserId || await authenticateRequest(request);
+            const authStartedAt = Date.now();
+            userId = authenticatedUserId || await authenticateRequest(request);
+            authMs = Date.now() - authStartedAt;
             if (!userId) {
                 return NextResponse.json(
                     {
@@ -546,8 +568,19 @@ export class CreateLinkHandler {
                 );
             }
 
+            if (idempotencyKey) {
+                const cached = await getIdempotentResponse("links:create", userId, idempotencyKey);
+                if (cached) {
+                    const replayResponse = NextResponse.json(cached.body, { status: cached.status });
+                    replayResponse.headers.set("X-Idempotent-Replay", "true");
+                    return replayResponse;
+                }
+            }
+
             // Enforce plan limits
+            const billingStartedAt = Date.now();
             const billingCtx = await getBillingContext(userId);
+            billingMs = Date.now() - billingStartedAt;
             const { entitlements, usage } = billingCtx;
 
             if (entitlements.maxSavedItems !== null && usage.totalSavedItems >= entitlements.maxSavedItems) {
@@ -662,41 +695,110 @@ export class CreateLinkHandler {
             }
 
             // Create link using service
+            const createStartedAt = Date.now();
             const { link, isDuplicate, isRestored } = await this.linkService.createLink(
                 userId,
                 createLinkDTO
             );
+            createMs = Date.now() - createStartedAt;
 
             const isExtensionSave = this.isExtensionSource(request);
             const callbackBaseUrl = request.nextUrl.origin;
 
-            if (!isDuplicate) {
-                await this.enqueueEnrichmentJobs(userId, link, callbackBaseUrl);
-            }
+            const shouldQueueProcessing = !isDuplicate && !isRestored;
 
-            if (isExtensionSave && !isDuplicate && !isRestored) {
+            if (shouldQueueProcessing) {
                 after(async () => {
-                    await this.runExtensionRecovery(link.id, userId);
+                    const asyncStartedAt = Date.now();
+                    let enqueueMs = 0;
+                    let forwardingMs = 0;
+                    let recoveryMs = 0;
+
+                    try {
+                        const enqueueStartedAt = Date.now();
+                        await this.enqueueEnrichmentJobs(userId!, link, callbackBaseUrl);
+                        enqueueMs = Date.now() - enqueueStartedAt;
+                    } catch (error) {
+                        log.warn("[LinkCreateAsync] Failed to enqueue enrichment jobs", {
+                            linkId: link.id,
+                            source: isExtensionSave ? EXTENSION_SOURCE_VALUE : "web",
+                            error: error instanceof Error ? error.message : String(error),
+                        });
+                    }
+
+                    try {
+                        const forwardingStartedAt = Date.now();
+                        await this.autoForwardingService.forwardLinks(userId!, [link]);
+                        forwardingMs = Date.now() - forwardingStartedAt;
+                    } catch (error) {
+                        log.warn("[LinkCreateAsync] Failed to auto-forward link", {
+                            linkId: link.id,
+                            source: isExtensionSave ? EXTENSION_SOURCE_VALUE : "web",
+                            error: error instanceof Error ? error.message : String(error),
+                        });
+                    }
+
+                    if (isExtensionSave) {
+                        try {
+                            const recoveryStartedAt = Date.now();
+                            await this.runExtensionRecovery(link.id, userId!);
+                            recoveryMs = Date.now() - recoveryStartedAt;
+                        } catch (error) {
+                            log.warn("[LinkCreateAsync] Extension recovery failed", {
+                                linkId: link.id,
+                                error: error instanceof Error ? error.message : String(error),
+                            });
+                        }
+                    }
+
+                    log.info("[LinkCreateAsyncPerf]", {
+                        linkId: link.id,
+                        source: isExtensionSave ? EXTENSION_SOURCE_VALUE : "web",
+                        enqueueMs,
+                        forwardingMs,
+                        recoveryMs,
+                        totalAsyncMs: Date.now() - asyncStartedAt,
+                    });
                 });
             }
 
-            const forwardingResult = (!isDuplicate && !isRestored)
-                ? await this.autoForwardingService.forwardLinks(userId, [link])
-                : { forwardedSpaceNames: [], forwardedByLinkId: {} };
+            const responseBody: CreateLinkResponseBody = {
+                link: link as unknown as CreateLinkResponseBody["link"],
+                duplicate: isDuplicate,
+                restored: isRestored,
+                auto_forwarded_to: null,
+                auto_forwarded_spaces: [],
+                processing_state: shouldQueueProcessing ? "queued" : "completed",
+            };
 
-            const autoForwardedTo = forwardingResult.forwardedByLinkId[link.id] ?? null;
+            const status = isDuplicate ? 200 : 201;
 
-            return NextResponse.json(
-                {
-                    link,
-                    duplicate: isDuplicate,
-                    restored: isRestored,
-                    auto_forwarded_to: autoForwardedTo,
-                    auto_forwarded_spaces: forwardingResult.forwardedSpaceNames,
-                },
-                { status: isDuplicate ? 200 : 201 }
-            );
+            if (idempotencyKey && userId) {
+                await setIdempotentResponse("links:create", userId, idempotencyKey, {
+                    status,
+                    body: responseBody,
+                });
+            }
+
+            log.info("[LinkCreatePerf]", {
+                source: isExtensionSave ? EXTENSION_SOURCE_VALUE : "web",
+                userId,
+                duplicate: isDuplicate,
+                restored: isRestored,
+                processingState: responseBody.processing_state,
+                authMs,
+                billingMs,
+                createMs,
+                totalMs: Date.now() - requestStartedAt,
+            });
+
+            return NextResponse.json(responseBody, { status });
         } catch (error) {
+            log.warn("[LinkCreatePerf] Request failed", {
+                userId: userId || undefined,
+                totalMs: Date.now() - requestStartedAt,
+                error: error instanceof Error ? error.message : String(error),
+            });
             const appError = toAppError(error);
             return NextResponse.json(
                 {

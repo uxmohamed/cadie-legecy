@@ -6,7 +6,7 @@
  * - Handle authorization flow for extension connection
  */
 
-import type { Space, SpacesResponse, LinkSpacesResponse } from "./lib/api-client";
+import type { Space, LinkContextResponse } from "./lib/api-client";
 
 // ============================================================================
 // Tabler Icons (inline SVGs)
@@ -61,18 +61,6 @@ const TABLER_ICONS = {
 // Background Script Communication
 // ============================================================================
 
-async function fetchSpacesViaBackground(): Promise<SpacesResponse> {
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage({ action: "fetchSpaces" }, (response) => {
-      if (chrome.runtime.lastError) {
-        resolve({ success: false, error: chrome.runtime.lastError.message });
-      } else {
-        resolve(response || { success: false, error: "No response" });
-      }
-    });
-  });
-}
-
 async function addLinkToSpaceViaBackground(spaceId: string, linkId: string): Promise<{ success: boolean; error?: string }> {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage({ action: "addLinkToSpace", spaceId, linkId }, (response) => {
@@ -97,10 +85,9 @@ async function removeLinkFromSpaceViaBackground(spaceId: string, linkId: string)
   });
 }
 
-// Fetch link spaces via background script
-async function fetchLinkSpacesViaBackground(linkId: string): Promise<LinkSpacesResponse> {
+async function fetchLinkContextViaBackground(linkId: string): Promise<LinkContextResponse> {
   return new Promise((resolve) => {
-    chrome.runtime.sendMessage({ action: "fetchLinkSpaces", linkId }, (response) => {
+    chrome.runtime.sendMessage({ action: "fetchLinkContext", linkId }, (response) => {
       if (chrome.runtime.lastError) {
         resolve({ success: false, error: chrome.runtime.lastError.message });
       } else {
@@ -122,6 +109,8 @@ let isHovering = false;
 let spacesExpanded = false;
 let spacesCache: Space[] | null = null;
 const selectedSpaces: Set<string> = new Set();
+const linkContextCache = new Map<string, { spaces: Space[]; selectedSpaceIds: string[]; cachedAt: number }>();
+const LINK_CONTEXT_TTL_MS = 30_000;
 
 // ============================================================================
 // Message Listener
@@ -139,9 +128,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       showOverlay("Saving to Cadie...", "loading", false);
     } else if (state === "success") {
       showOverlay("Saved to Cadie", "success", true);
+      if (linkId) {
+        void prefetchLinkContext(linkId);
+      }
       startHideTimer(2500);
     } else if (state === "duplicate") {
       showOverlay("Already in Cadie", "duplicate", true);
+      if (linkId) {
+        void prefetchLinkContext(linkId);
+      }
       startHideTimer(2500);
     } else if (state === "error") {
       showOverlay(message || "Failed to save", "error", false);
@@ -154,6 +149,45 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   return true;
 });
+
+async function prefetchLinkContext(linkId: string): Promise<void> {
+  const response = await fetchLinkContextViaBackground(linkId);
+  if (!response.success || !response.spaces) {
+    return;
+  }
+
+  linkContextCache.set(linkId, {
+    spaces: response.spaces as Space[],
+    selectedSpaceIds: response.selected_space_ids || [],
+    cachedAt: Date.now(),
+  });
+}
+
+function getCachedLinkContext(linkId: string): { spaces: Space[]; selectedSpaceIds: string[] } | null {
+  const cached = linkContextCache.get(linkId);
+  if (!cached) return null;
+  if (Date.now() - cached.cachedAt > LINK_CONTEXT_TTL_MS) {
+    linkContextCache.delete(linkId);
+    return null;
+  }
+  return { spaces: cached.spaces, selectedSpaceIds: cached.selectedSpaceIds };
+}
+
+function showSpaceActionError(container: HTMLElement, message: string) {
+  const existing = container.querySelector(".cadie-spaces-error");
+  if (existing) {
+    existing.remove();
+  }
+
+  const error = document.createElement("div");
+  error.className = "cadie-spaces-error";
+  error.textContent = message;
+  container.appendChild(error);
+
+  window.setTimeout(() => {
+    error.remove();
+  }, 2200);
+}
 
 // ============================================================================
 // Timer Management
@@ -377,34 +411,43 @@ function createSpacesRow(): HTMLElement {
       // Setup click-outside handler when expanded
       setupClickOutsideHandler();
 
-      // Fetch spaces list if not cached
-      if (!spacesCache) {
-        const response = await fetchSpacesViaBackground();
-        if (response.success && response.spaces) {
-          spacesCache = response.spaces;
-        } else {
-          spacesCache = [];
-        }
-      }
-
-      // Fetch current link's spaces to show selected state
-      if (currentLinkId) {
-        const linkSpacesResponse = await fetchLinkSpacesViaBackground(currentLinkId);
-        if (linkSpacesResponse.success && linkSpacesResponse.space_ids) {
-          // Populate selectedSpaces with fetched space IDs
-          selectedSpaces.clear();
-          linkSpacesResponse.space_ids.forEach((spaceId) => {
-            selectedSpaces.add(spaceId);
-          });
-        } else {
-          // If fetch fails, clear selection
-          selectedSpaces.clear();
-        }
-      } else {
+      if (!currentLinkId) {
         selectedSpaces.clear();
+        renderSpaceList(expandable, spacesCache || []);
+        return;
       }
 
-      renderSpaceList(expandable, spacesCache);
+      const cachedContext = getCachedLinkContext(currentLinkId);
+      if (cachedContext) {
+        spacesCache = cachedContext.spaces;
+        selectedSpaces.clear();
+        cachedContext.selectedSpaceIds.forEach((spaceId) => {
+          selectedSpaces.add(spaceId);
+        });
+        renderSpaceList(expandable, spacesCache);
+      }
+
+      const contextResponse = await fetchLinkContextViaBackground(currentLinkId);
+      if (contextResponse.success && contextResponse.spaces) {
+        const freshSpaces = contextResponse.spaces as Space[];
+        const selectedIds = contextResponse.selected_space_ids || [];
+
+        spacesCache = freshSpaces;
+        selectedSpaces.clear();
+        selectedIds.forEach((spaceId) => selectedSpaces.add(spaceId));
+
+        linkContextCache.set(currentLinkId, {
+          spaces: freshSpaces,
+          selectedSpaceIds: selectedIds,
+          cachedAt: Date.now(),
+        });
+
+        renderSpaceList(expandable, freshSpaces);
+      } else if (!cachedContext) {
+        selectedSpaces.clear();
+        spacesCache = [];
+        renderSpaceList(expandable, spacesCache);
+      }
     } else {
       // Remove click-outside handler when collapsed
       removeClickOutsideHandler();
@@ -471,30 +514,94 @@ function renderSpaceList(container: HTMLElement, spaces: Space[]) {
     // Toggle selection on click
     item.addEventListener("click", async () => {
       if (!currentLinkId) return;
+      if (item.classList.contains("cadie-loading")) return;
 
       const wasSelected = selectedSpaces.has(space.id);
+      const nextSelected = !wasSelected;
 
-      if (wasSelected) {
-        item.classList.add("cadie-loading");
-        const response = await removeLinkFromSpaceViaBackground(space.id, currentLinkId);
-        item.classList.remove("cadie-loading");
+      // Optimistic UI update for instant feel.
+      if (nextSelected) {
+        selectedSpaces.add(space.id);
+        item.classList.add("cadie-selected");
+        checkContainer.innerHTML = TABLER_ICONS.check;
+      } else {
+        selectedSpaces.delete(space.id);
+        item.classList.remove("cadie-selected");
+        checkContainer.innerHTML = "";
+      }
 
-        if (response.success) {
+      if (currentLinkId) {
+        const cached = getCachedLinkContext(currentLinkId);
+        if (cached) {
+          const updatedSelection = new Set(cached.selectedSpaceIds);
+          if (nextSelected) {
+            updatedSelection.add(space.id);
+          } else {
+            updatedSelection.delete(space.id);
+          }
+          linkContextCache.set(currentLinkId, {
+            spaces: cached.spaces,
+            selectedSpaceIds: [...updatedSelection],
+            cachedAt: Date.now(),
+          });
+        }
+      }
+
+      item.classList.add("cadie-loading");
+      const actionStartedAt = performance.now();
+      const response = nextSelected
+        ? await addLinkToSpaceViaBackground(space.id, currentLinkId)
+        : await removeLinkFromSpaceViaBackground(space.id, currentLinkId);
+      item.classList.remove("cadie-loading");
+
+      if (!response.success) {
+        // Roll back optimistic update on failure.
+        if (nextSelected) {
           selectedSpaces.delete(space.id);
           item.classList.remove("cadie-selected");
           checkContainer.innerHTML = "";
-        }
-      } else {
-        item.classList.add("cadie-loading");
-        const response = await addLinkToSpaceViaBackground(space.id, currentLinkId);
-        item.classList.remove("cadie-loading");
-
-        if (response.success) {
+        } else {
           selectedSpaces.add(space.id);
           item.classList.add("cadie-selected");
           checkContainer.innerHTML = TABLER_ICONS.check;
         }
+
+        if (currentLinkId) {
+          const cached = getCachedLinkContext(currentLinkId);
+          if (cached) {
+            const rollbackSelection = new Set(cached.selectedSpaceIds);
+            if (nextSelected) {
+              rollbackSelection.delete(space.id);
+            } else {
+              rollbackSelection.add(space.id);
+            }
+            linkContextCache.set(currentLinkId, {
+              spaces: cached.spaces,
+              selectedSpaceIds: [...rollbackSelection],
+              cachedAt: Date.now(),
+            });
+          }
+        }
+
+        showSpaceActionError(
+          container,
+          response.error || "Couldn’t update this space. Please try again."
+        );
+        console.info("[CadieExtPerf]", {
+          event: "space_toggle_failed",
+          action: nextSelected ? "add" : "remove",
+          spaceId: space.id,
+          durationMs: Math.round(performance.now() - actionStartedAt),
+        });
+        return;
       }
+
+      console.info("[CadieExtPerf]", {
+        event: "space_toggle_complete",
+        action: nextSelected ? "add" : "remove",
+        spaceId: space.id,
+        durationMs: Math.round(performance.now() - actionStartedAt),
+      });
     });
 
     list.appendChild(item);

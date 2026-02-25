@@ -1,9 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { canonicalizeUrl } from "@/lib/canonicalize";
 import { enqueueBatchMetadataEnrichment, enqueueBatchAITagging, enqueueBatchAIVisionTagging } from "@/lib/job-queue";
-import { MetadataService } from "@/features/links/services/metadata.service";
-import { AITaggingService } from "@/features/links/services/ai-tagging.service";
 import { rateLimitLinks, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 import { validateRequestBody } from "@/lib/validation/validate";
 import { batchActionSchema } from "@/lib/validation/link.schemas";
@@ -12,14 +10,13 @@ import { resolveColorMetadata } from "@/lib/canonicalize";
 import { AutoSpaceForwardingService } from "@/features/spaces/services/auto-space-forwarding.service";
 import { getBillingContext } from "@/lib/billing/context";
 import { createPlanLimitResponse } from "@/lib/billing/limit-response";
+import { log } from "@/lib/logger";
 
 /**
  * Maximum number of items per batch operation
  * Prevents resource exhaustion and ensures reasonable response times
  */
 const MAX_BATCH_SIZE = 100;
-const EAGER_ENRICHMENT_LIMIT = 40;
-const AI_ENRICHMENT_CONCURRENCY = 4;
 const autoSpaceForwardingService = new AutoSpaceForwardingService();
 
 /**
@@ -68,96 +65,6 @@ interface LinkInsertPayload {
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
-async function runWithConcurrency<T>(
-  items: T[],
-  limit: number,
-  worker: (item: T) => Promise<void>
-): Promise<void> {
-  if (items.length === 0) return;
-
-  const queue = [...items];
-  const workers = Array.from(
-    { length: Math.min(limit, items.length) },
-    async () => {
-      while (queue.length > 0) {
-        const next = queue.shift();
-        if (!next) return;
-        await worker(next);
-      }
-    }
-  );
-
-  await Promise.all(workers);
-}
-
-async function refreshCreatedLinks(
-  supabase: SupabaseServerClient,
-  links: CreatedLink[]
-): Promise<CreatedLink[]> {
-  if (links.length === 0) return links;
-
-  const ids = links.map((link) => link.id);
-  const { data: freshLinks } = await supabase
-    .from("links")
-    .select("*")
-    .in("id", ids);
-
-  if (!freshLinks || freshLinks.length === 0) {
-    return links;
-  }
-
-  const freshMap = new Map(freshLinks.map((link) => [link.id, link as CreatedLink]));
-  return links.map((link) => freshMap.get(link.id) || link);
-}
-
-async function enrichUrlLinksWithAI(
-  supabase: SupabaseServerClient,
-  userId: string,
-  links: CreatedLink[]
-): Promise<string[]> {
-  const taggingService = new AITaggingService();
-  const failedIds = new Set<string>();
-
-  await runWithConcurrency(links, AI_ENRICHMENT_CONCURRENCY, async (link) => {
-    if (link.ai_tags && link.ai_tags.length > 0) {
-      return;
-    }
-
-    try {
-      const result = await taggingService.generateTags({
-        title: link.title || link.url,
-        description: link.description,
-        domain: link.domain || extractDomain(link.url),
-        site_name: link.site_name || null,
-        url: link.url,
-        content: link.content_text || null,
-      });
-
-      if (!result) {
-        failedIds.add(link.id);
-        return;
-      }
-
-      const { error } = await supabase
-        .from("links")
-        .update({
-          ai_tags: result.tags,
-          ai_key_themes: { category: result.category },
-        })
-        .eq("id", link.id)
-        .eq("user_id", userId);
-
-      if (error) {
-        failedIds.add(link.id);
-      }
-    } catch {
-      failedIds.add(link.id);
-    }
-  });
-
-  return [...failedIds];
-}
-
 async function insertLinksWithFallback(
   supabase: SupabaseServerClient,
   linksToInsert: LinkInsertPayload[]
@@ -191,6 +98,7 @@ async function insertLinksWithFallback(
  * Perform atomic batch operations on links
  */
 export async function POST(request: NextRequest) {
+  const requestStartedAt = Date.now();
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -254,6 +162,7 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case "add": {
+        const addStartedAt = Date.now();
         // Enforce plan limits before inserting
         const billingCtx = await getBillingContext(user.id);
         const { entitlements, usage } = billingCtx;
@@ -386,101 +295,77 @@ export async function POST(request: NextRequest) {
         }
 
         if (!result.error && result.data?.links) {
-          let createdLinks = result.data.links as CreatedLink[];
-          const urlLinks = createdLinks.filter(
-            (link) => link.content_type === "url" || !link.content_type
-          );
+          const createdLinks = (result.data.links as CreatedLink[]) || [];
+          const shouldQueueProcessing = createdLinks.length > 0;
 
-          if (urlLinks.length > 0) {
-            const metadataJobs = urlLinks.map((link) => ({
-              linkId: link.id,
-              url: link.url,
-              userId: user.id,
-            }));
+          (result.data as Record<string, unknown>).processing_state = shouldQueueProcessing ? "queued" : "completed";
+          (result.data as Record<string, unknown>).auto_forwarded_spaces = [];
+          (result.data as Record<string, unknown>).auto_forwarded_by_link_id = {};
 
-            if (urlLinks.length <= EAGER_ENRICHMENT_LIMIT) {
-              const metadataService = new MetadataService();
-              await Promise.allSettled(
-                urlLinks.map(link => 
-                  metadataService.enrichLink(link.id, link.url).catch(err => {
-                    console.error(`[Batch] Metadata enrichment failed for ${link.url}:`, err);
-                  })
-                )
-              );
-
-              const linksAfterMetadata = await refreshCreatedLinks(
-                supabase,
-                createdLinks
-              );
-              createdLinks = linksAfterMetadata;
-
-              const refreshedUrlLinks = linksAfterMetadata.filter(
+          if (shouldQueueProcessing) {
+            after(async () => {
+              const asyncStartedAt = Date.now();
+              const urlLinks = createdLinks.filter(
                 (link) => link.content_type === "url" || !link.content_type
               );
-              const failedAiIds = await enrichUrlLinksWithAI(
-                supabase,
-                user.id,
-                refreshedUrlLinks
-              );
+              const imageLinks = createdLinks.filter((link) => link.content_type === "image");
+              const documentLinks = createdLinks.filter((link) => link.content_type === "document");
 
-              if (failedAiIds.length > 0) {
-                const fallbackTagJobs = failedAiIds.map((linkId) => ({
-                  linkId,
+              if (urlLinks.length > 0) {
+                const metadataJobs = urlLinks.map((link) => ({
+                  linkId: link.id,
+                  url: link.url,
                   userId: user.id,
                 }));
-                enqueueBatchAITagging(fallbackTagJobs, { baseUrl: callbackBaseUrl }).catch(() => {});
+                const aiTagJobs = urlLinks.map((link) => ({
+                  linkId: link.id,
+                  userId: user.id,
+                }));
+
+                enqueueBatchMetadataEnrichment(metadataJobs, { baseUrl: callbackBaseUrl }).catch(() => {});
+                enqueueBatchAITagging(aiTagJobs, { baseUrl: callbackBaseUrl }).catch(() => {});
               }
 
-              const linksAfterUrlAI = await refreshCreatedLinks(
-                supabase,
-                linksAfterMetadata
-              );
-              createdLinks = linksAfterUrlAI;
-            } else {
-              enqueueBatchMetadataEnrichment(metadataJobs, { baseUrl: callbackBaseUrl }).catch(err => {
-                console.error("[Batch] Failed to enqueue metadata jobs:", err);
-              });
-              const aiTagJobs = urlLinks.map((link) => ({
-                linkId: link.id,
+              if (imageLinks.length > 0) {
+                const visionJobs = imageLinks.map((link) => ({
+                  linkId: link.id,
+                  userId: user.id,
+                }));
+                enqueueBatchAIVisionTagging(visionJobs, { baseUrl: callbackBaseUrl }).catch(() => {});
+              }
+
+              if (documentLinks.length > 0) {
+                const docTagJobs = documentLinks.map((link) => ({
+                  linkId: link.id,
+                  userId: user.id,
+                }));
+                enqueueBatchAITagging(docTagJobs, { baseUrl: callbackBaseUrl }).catch(() => {});
+              }
+
+              try {
+                await autoSpaceForwardingService.forwardLinks(user.id, createdLinks);
+              } catch (error) {
+                log.warn("[BatchAddAsync] Auto-forwarding failed", {
+                  userId: user.id,
+                  error: error instanceof Error ? error.message : String(error),
+                });
+              }
+
+              log.info("[BatchAddAsyncPerf]", {
                 userId: user.id,
-              }));
-              enqueueBatchAITagging(aiTagJobs, { baseUrl: callbackBaseUrl }).catch(() => {});
-            }
+                createdLinks: createdLinks.length,
+                totalAsyncMs: Date.now() - asyncStartedAt,
+              });
+            });
           }
 
-          const imageLinks = createdLinks.filter(
-            (link) => link.content_type === "image"
-          );
-
-          if (imageLinks.length > 0) {
-            const visionJobs = imageLinks.map((link) => ({
-              linkId: link.id,
-              userId: user.id,
-            }));
-            enqueueBatchAIVisionTagging(visionJobs, { baseUrl: callbackBaseUrl }).catch(() => {});
-          }
-
-          const documentLinks = createdLinks.filter(
-            (link) => link.content_type === "document"
-          );
-
-          if (documentLinks.length > 0) {
-            const docTagJobs = documentLinks.map((link) => ({
-              linkId: link.id,
-              userId: user.id,
-            }));
-            enqueueBatchAITagging(docTagJobs, { baseUrl: callbackBaseUrl }).catch(() => {});
-          }
-
-          result.data.links = createdLinks;
-
-          const forwardingResult = await autoSpaceForwardingService.forwardLinks(
-            user.id,
-            createdLinks
-          );
-
-          (result.data as Record<string, unknown>).auto_forwarded_spaces = forwardingResult.forwardedSpaceNames;
-          (result.data as Record<string, unknown>).auto_forwarded_by_link_id = forwardingResult.forwardedByLinkId;
+          log.info("[BatchAddPerf]", {
+            userId: user.id,
+            requested: links?.length ?? 0,
+            created: (result.data.links as CreatedLink[]).length,
+            duplicates: (result.data as { duplicates?: number }).duplicates ?? 0,
+            totalMs: Date.now() - addStartedAt,
+          });
         }
         break;
       }
@@ -644,6 +529,10 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error in POST /api/links/batch:", error);
+    log.warn("[BatchRoutePerf] Request failed", {
+      totalMs: Date.now() - requestStartedAt,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

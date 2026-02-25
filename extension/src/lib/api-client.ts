@@ -23,7 +23,7 @@ export interface Space {
   id: string;
   name: string;
   color: string;
-  link_count: number;
+  link_count?: number;
 }
 
 export interface SpacesResponse {
@@ -32,7 +32,15 @@ export interface SpacesResponse {
   spaces?: Space[];
 }
 
+export interface LinkContextResponse {
+  success: boolean;
+  error?: string;
+  spaces?: Pick<Space, "id" | "name" | "color">[];
+  selected_space_ids?: string[];
+}
+
 const REQUEST_TIMEOUT_MS = 12000;
+const SAVE_REQUEST_TIMEOUT_MS = 4500;
 const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
 
 function isRetryableStatus(status: number): boolean {
@@ -75,7 +83,10 @@ async function parseApiError(response: Response): Promise<string> {
 /**
  * Save a link to Cadie
  */
-export async function saveLink(request: SaveLinkRequest): Promise<SaveLinkResponse> {
+export async function saveLink(
+  request: SaveLinkRequest,
+  options?: { idempotencyKey?: string }
+): Promise<SaveLinkResponse> {
   try {
     const token = await getApiToken();
     const cadieUrl = await getCadieUrl();
@@ -90,9 +101,10 @@ export async function saveLink(request: SaveLinkRequest): Promise<SaveLinkRespon
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
         "X-Cadie-Source": "extension",
+        ...(options?.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : {}),
       },
       body: JSON.stringify(request),
-    });
+    }, SAVE_REQUEST_TIMEOUT_MS);
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -146,10 +158,11 @@ export async function fetchSpaces(): Promise<SpacesResponse> {
       return { success: false, error: "Not connected" };
     }
 
-    const response = await fetchWithTimeout(`${cadieUrl}/api/spaces`, {
+    const response = await fetchWithTimeout(`${cadieUrl}/api/spaces?lite=1`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
+        "X-Cadie-Source": "extension",
       },
     });
 
@@ -185,6 +198,7 @@ export async function addLinkToSpace(spaceId: string, linkId: string): Promise<{
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
+        "X-Cadie-Source": "extension",
       },
       body: JSON.stringify({ link_ids: [linkId] }),
     });
@@ -220,6 +234,7 @@ export async function removeLinkFromSpace(spaceId: string, linkId: string): Prom
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
+        "X-Cadie-Source": "extension",
       },
       body: JSON.stringify({ link_ids: [linkId] }),
     });
@@ -270,6 +285,48 @@ export async function fetchLinkSpaces(linkId: string): Promise<LinkSpacesRespons
 
     const data = await response.json();
     return { success: true, space_ids: data.space_ids || [] };
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      return { success: false, error: "Request timed out" };
+    }
+    return { success: false, error: "Network error" };
+  }
+}
+
+/**
+ * Fetch spaces + selected space IDs for a link in one request (extension fast path)
+ */
+export async function fetchLinkContext(linkId: string): Promise<LinkContextResponse> {
+  try {
+    const token = await getApiToken();
+    const cadieUrl = await getCadieUrl();
+
+    if (!token || token.length < 32) {
+      return { success: false, error: "Not connected" };
+    }
+
+    const response = await fetchWithTimeout(
+      `${cadieUrl}/api/extension/link-context?linkId=${encodeURIComponent(linkId)}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "X-Cadie-Source": "extension",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorMsg = await parseApiError(response);
+      return { success: false, error: errorMsg };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      spaces: data.spaces || [],
+      selected_space_ids: data.selected_space_ids || [],
+    };
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
       return { success: false, error: "Request timed out" };

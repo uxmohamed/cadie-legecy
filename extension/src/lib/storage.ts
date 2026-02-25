@@ -20,6 +20,7 @@ interface SyncSettings {
 // Sensitive settings stored in local storage (not synced across devices)
 interface LocalSettings {
   apiToken?: string;
+  pendingUrl?: string;
 }
 
 // Default to production URL
@@ -30,6 +31,33 @@ export const EXTENSION_CONFIG = {
 
 // Default to production URL
 const DEFAULT_CADIE_URL = EXTENSION_CONFIG.BASE_URL;
+
+let cachedApiToken: string | undefined;
+let isApiTokenLoaded = false;
+let cachedCadieUrl: string = DEFAULT_CADIE_URL;
+let isCadieUrlLoaded = false;
+let cachedPendingUrl: string | undefined;
+let isPendingUrlLoaded = false;
+
+if (typeof chrome !== "undefined" && chrome.storage?.onChanged) {
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === "local") {
+      if (changes.apiToken) {
+        cachedApiToken = (changes.apiToken.newValue as string | undefined) || undefined;
+        isApiTokenLoaded = true;
+      }
+      if (changes.pendingUrl) {
+        cachedPendingUrl = (changes.pendingUrl.newValue as string | undefined) || undefined;
+        isPendingUrlLoaded = true;
+      }
+    }
+
+    if (areaName === "sync" && changes.cadieUrl) {
+      cachedCadieUrl = (changes.cadieUrl.newValue as string | undefined) || DEFAULT_CADIE_URL;
+      isCadieUrlLoaded = true;
+    }
+  });
+}
 
 /**
  * Get extension settings from Chrome storage
@@ -67,6 +95,8 @@ export async function saveSettings(settings: Partial<ExtensionSettings>): Promis
     
     // Store sensitive data in local storage (not synced across devices)
     if (settings.apiToken !== undefined) {
+      cachedApiToken = settings.apiToken || undefined;
+      isApiTokenLoaded = true;
       promises.push(
         new Promise<void>((res) => {
           chrome.storage.local.set({ apiToken: settings.apiToken }, () => res());
@@ -77,6 +107,8 @@ export async function saveSettings(settings: Partial<ExtensionSettings>): Promis
     // Store non-sensitive data in sync storage
     const syncSettings: SyncSettings = {};
     if (settings.cadieUrl !== undefined) {
+      cachedCadieUrl = settings.cadieUrl || DEFAULT_CADIE_URL;
+      isCadieUrlLoaded = true;
       syncSettings.cadieUrl = settings.cadieUrl;
     }
     if (settings.userEmail !== undefined) {
@@ -101,6 +133,12 @@ export async function saveSettings(settings: Partial<ExtensionSettings>): Promis
  */
 export async function clearSettings(): Promise<void> {
   return new Promise((resolve) => {
+    cachedApiToken = undefined;
+    isApiTokenLoaded = true;
+    cachedCadieUrl = DEFAULT_CADIE_URL;
+    isCadieUrlLoaded = true;
+    cachedPendingUrl = undefined;
+    isPendingUrlLoaded = true;
     // Clear both storage areas
     chrome.storage.local.clear(() => {
       chrome.storage.sync.clear(() => {
@@ -114,9 +152,15 @@ export async function clearSettings(): Promise<void> {
  * Get API token from local storage (not synced)
  */
 export async function getApiToken(): Promise<string | undefined> {
+  if (isApiTokenLoaded) {
+    return cachedApiToken;
+  }
+
   return new Promise((resolve) => {
     chrome.storage.local.get({ apiToken: "" }, (items) => {
-      resolve((items as LocalSettings).apiToken || undefined);
+      cachedApiToken = (items as LocalSettings).apiToken || undefined;
+      isApiTokenLoaded = true;
+      resolve(cachedApiToken);
     });
   });
 }
@@ -125,9 +169,15 @@ export async function getApiToken(): Promise<string | undefined> {
  * Get Cadie URL from sync storage
  */
 export async function getCadieUrl(): Promise<string> {
+  if (isCadieUrlLoaded) {
+    return cachedCadieUrl;
+  }
+
   return new Promise((resolve) => {
     chrome.storage.sync.get({ cadieUrl: DEFAULT_CADIE_URL }, (items) => {
-      resolve((items as SyncSettings).cadieUrl || DEFAULT_CADIE_URL);
+      cachedCadieUrl = (items as SyncSettings).cadieUrl || DEFAULT_CADIE_URL;
+      isCadieUrlLoaded = true;
+      resolve(cachedCadieUrl);
     });
   });
 }
@@ -140,9 +190,15 @@ export async function getCadieUrl(): Promise<string> {
  * Get pending URL to save after authentication
  */
 export async function getPendingUrl(): Promise<string | undefined> {
+  if (isPendingUrlLoaded) {
+    return cachedPendingUrl;
+  }
+
   return new Promise((resolve) => {
     chrome.storage.local.get({ pendingUrl: "" }, (items) => {
-      resolve(items.pendingUrl || undefined);
+      cachedPendingUrl = (items as LocalSettings).pendingUrl || undefined;
+      isPendingUrlLoaded = true;
+      resolve(cachedPendingUrl);
     });
   });
 }
@@ -151,6 +207,8 @@ export async function getPendingUrl(): Promise<string | undefined> {
  * Set pending URL to save after authentication
  */
 export async function setPendingUrl(url: string): Promise<void> {
+  cachedPendingUrl = url;
+  isPendingUrlLoaded = true;
   return new Promise((resolve) => {
     chrome.storage.local.set({ pendingUrl: url }, () => resolve());
   });
@@ -160,8 +218,9 @@ export async function setPendingUrl(url: string): Promise<void> {
  * Clear pending URL after it has been saved
  */
 export async function clearPendingUrl(): Promise<void> {
+  cachedPendingUrl = undefined;
+  isPendingUrlLoaded = true;
   return new Promise((resolve) => {
     chrome.storage.local.remove("pendingUrl", () => resolve());
   });
 }
-

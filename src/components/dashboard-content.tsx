@@ -3,7 +3,7 @@
 import * as React from "react";
 import { LinkList } from "@/components/link-list";
 import { LinkListSkeleton } from "@/components/skeletons";
-import { useLinksQuery } from "@/features/links/queries/use-links-query";
+import { useLinksInfiniteQuery } from "@/features/links/queries/use-links-query";
 import { useSearchLinks } from "@/features/links/hooks/use-search-links";
 import { useLinkMutations, useCopyUrl } from "@/features/links/queries/use-link-mutations";
 import { useSpaces } from "@/features/spaces/queries";
@@ -59,6 +59,7 @@ export function DashboardContent({
   onDocumentUploadReady,
   onCreateNoteReady,
 }: DashboardContentProps) {
+  const PAGE_SIZE = 100;
   const { spaces, addLinksToSpace, removeLinksFromSpace } = useSpaces(!!user);
   const [linkSpacesMap, setLinkSpacesMap] = React.useState<Map<string, string[]>>(new Map());
 
@@ -79,7 +80,10 @@ export function DashboardContent({
     links: allLinks,
     isLoading,
     isFetching,
-  } = useLinksQuery(filters, !!user);
+    isFetchingNextPage,
+    hasMore,
+    fetchNextPage,
+  } = useLinksInfiniteQuery(filters, !!user, undefined, searchQuery, PAGE_SIZE);
 
   // Client-side instant search — filters in memory, no network round-trip
   const links = useSearchLinks(allLinks, searchQuery, spaces, linkSpacesMap);
@@ -121,39 +125,53 @@ export function DashboardContent({
     onCreateNoteReady?.(addNote);
   }, [onCreateNoteReady, addNote]);
 
-  // Stable key that only changes when the set of link IDs changes
-  // (not when link data like titles/descriptions are updated)
-  const linkIdsKey = React.useMemo(() => {
-    if (allLinks.length === 0) return "";
-    return allLinks.map(l => l.id).sort().join(",");
-  }, [allLinks]);
+  const linksContextKey = React.useMemo(
+    () => JSON.stringify({ selectedCategoryId, q: searchQuery.trim() }),
+    [selectedCategoryId, searchQuery]
+  );
+  const fetchedLinkSpaceIdsRef = React.useRef<Set<string>>(new Set());
 
-  // Fetch link-space mappings using the FULL link set (not the filtered one)
-  // so that space-name search works correctly for all links
   React.useEffect(() => {
-    if (!user || linkIdsKey === "") return;
+    fetchedLinkSpaceIdsRef.current = new Set();
+    setLinkSpacesMap(new Map());
+  }, [linksContextKey]);
+
+  // Incrementally fetch link-space mappings only for links not yet fetched in the current view/search context.
+  React.useEffect(() => {
+    if (!user || allLinks.length === 0) return;
 
     const fetchLinkSpaces = async () => {
       const supabase = createClient();
-      const linkIds = linkIdsKey.split(",");
+      const pendingLinkIds = allLinks
+        .map((link) => link.id)
+        .filter((id) => !fetchedLinkSpaceIdsRef.current.has(id));
+
+      if (pendingLinkIds.length === 0) return;
+
+      const nextBatch = pendingLinkIds.slice(0, 200);
+      nextBatch.forEach((id) => fetchedLinkSpaceIdsRef.current.add(id));
 
       const { data } = await supabase
         .from("link_spaces")
         .select("link_id, space_id")
-        .in("link_id", linkIds);
+        .in("link_id", nextBatch);
 
       if (data) {
-        const map = new Map<string, string[]>();
-        data.forEach((ls) => {
-          const existing = map.get(ls.link_id) || [];
-          map.set(ls.link_id, [...existing, ls.space_id]);
+        setLinkSpacesMap((prev) => {
+          const map = new Map(prev);
+          data.forEach((ls) => {
+            const existing = map.get(ls.link_id) || [];
+            if (!existing.includes(ls.space_id)) {
+              map.set(ls.link_id, [...existing, ls.space_id]);
+            }
+          });
+          return map;
         });
-        setLinkSpacesMap(map);
       }
     };
 
     fetchLinkSpaces();
-  }, [user, linkIdsKey]);
+  }, [user, allLinks]);
 
   const handleAddToSpace = React.useCallback(async (linkId: string, spaceId: string) => {
     await addLinksToSpace(spaceId, [linkId]);
@@ -355,9 +373,13 @@ export function DashboardContent({
       onAddInputChange={onAddInputChange}
       onAddSubmit={handleInlineAddSubmit}
       onAddCancel={onAddCancel}
-      isLoadingMore={false} // Never show bottom skeleton - background updates are silent
-      hasMore={false} // TODO: Implement infinite scroll with useLinksInfiniteQuery
-      onLoadMore={() => {}} // TODO: Implement infinite scroll
+      hasMore={hasMore}
+      onLoadMore={() => {
+        if (!isFetchingNextPage && hasMore) {
+          void fetchNextPage();
+        }
+      }}
+      isLoadingMore={isFetchingNextPage}
       onSelectionChange={onSelectionChange}
       spaces={spaces}
       linkSpacesMap={linkSpacesMap}

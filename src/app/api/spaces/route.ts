@@ -31,6 +31,32 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const liteMode = request.nextUrl.searchParams.get("lite") === "1";
+
+    // Lightweight mode for extension/quick pickers: skip link_count aggregation.
+    if (liteMode) {
+      const supabase = await createClient();
+      const { data: liteSpaces, error: liteError } = await supabase
+        .from("spaces")
+        .select("id, name, color")
+        .eq("user_id", userId)
+        .order("sort_order", { ascending: true });
+
+      if (liteError) {
+        return NextResponse.json(
+          { error: liteError.message },
+          { status: 500 }
+        );
+      }
+
+      const response = NextResponse.json({ spaces: liteSpaces || [] });
+      response.headers.set(
+        "Cache-Control",
+        "private, max-age=60, stale-while-revalidate=120"
+      );
+      return response;
+    }
+
     // Get spaces and active link IDs in parallel
     const supabase = await createClient();
     const [spacesResult, activeLinksResult] = await Promise.all([

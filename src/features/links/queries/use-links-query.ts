@@ -6,11 +6,9 @@ import type { Link, LinkFilters } from "@/features/links/types";
 import { queryKeys } from "@/lib/query/keys";
 
 /**
- * Fetch all links for client-side search.
- * A bookmark manager typically holds hundreds to low-thousands of items,
- * so fetching everything and filtering in-memory is both fast and correct.
+ * Page size for incremental link loading.
  */
-const PAGE_SIZE = 5000;
+const PAGE_SIZE = 100;
 
 /**
  * Response type from the links API
@@ -26,6 +24,7 @@ interface LinksResponse {
 function buildQueryString(
   filters: LinkFilters,
   offset: number,
+  searchQuery?: string,
   limit: number = PAGE_SIZE
 ): string {
   const params = new URLSearchParams();
@@ -53,6 +52,11 @@ function buildQueryString(
   params.append("limit", String(limit));
   params.append("offset", String(offset));
 
+  const normalizedSearchQuery = searchQuery?.trim();
+  if (normalizedSearchQuery) {
+    params.append("q", normalizedSearchQuery);
+  }
+
   return `/api/links?${params.toString()}`;
 }
 
@@ -62,9 +66,10 @@ function buildQueryString(
 async function fetchLinks(
   filters: LinkFilters,
   offset: number = 0,
+  searchQuery?: string,
   limit: number = PAGE_SIZE
 ): Promise<LinksResponse> {
-  const url = buildQueryString(filters, offset, limit);
+  const url = buildQueryString(filters, offset, searchQuery, limit);
   const response = await fetch(url);
 
   if (!response.ok) {
@@ -100,7 +105,9 @@ async function fetchLinks(
 export function useLinksQuery(
   filters: LinkFilters,
   enabled: boolean = true,
-  initialData?: LinksResponse
+  initialData?: LinksResponse,
+  searchQuery?: string,
+  limit: number = PAGE_SIZE
 ) {
   // Memoize filters to prevent unnecessary re-renders
   const stableFilters = useMemo(() => filters, [
@@ -111,13 +118,15 @@ export function useLinksQuery(
     filters.content_type,
   ]);
 
+  const normalizedSearchQuery = searchQuery?.trim() || "";
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: queryKeys.links.list(stableFilters),
-    queryFn: () => fetchLinks(stableFilters),
+    queryKey: [...queryKeys.links.list(stableFilters), "q", normalizedSearchQuery, "limit", limit],
+    queryFn: () => fetchLinks(stableFilters, 0, normalizedSearchQuery, limit),
     enabled,
     initialData,
+    placeholderData: (previousData) => previousData,
     // Allow realtime to handle updates for 5 minutes before considering stale
     staleTime: 5 * 60 * 1000,
     // Keep in cache for 2 hours (reduced from 24 to prevent stale data issues)
@@ -142,7 +151,9 @@ export function useLinksQuery(
 export function useLinksInfiniteQuery(
   filters: LinkFilters,
   enabled: boolean = true,
-  initialData?: LinksResponse
+  initialData?: LinksResponse,
+  searchQuery?: string,
+  limit: number = PAGE_SIZE
 ) {
   const stableFilters = useMemo(() => filters, [
     filters.space_id,
@@ -152,9 +163,11 @@ export function useLinksInfiniteQuery(
     filters.content_type,
   ]);
 
+  const normalizedSearchQuery = searchQuery?.trim() || "";
+
   const query = useInfiniteQuery({
-    queryKey: [...queryKeys.links.list(stableFilters), "infinite"],
-    queryFn: ({ pageParam = 0 }) => fetchLinks(stableFilters, pageParam, PAGE_SIZE),
+    queryKey: [...queryKeys.links.list(stableFilters), "infinite", "q", normalizedSearchQuery, "limit", limit],
+    queryFn: ({ pageParam = 0 }) => fetchLinks(stableFilters, pageParam, normalizedSearchQuery, limit),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
       const loadedCount = allPages.reduce((acc, page) => acc + page.links.length, 0);

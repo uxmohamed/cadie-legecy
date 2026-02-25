@@ -4,6 +4,41 @@ import { rateLimitSpaces, getIdentifier, getRateLimitHeaders } from "@/lib/rate-
 import { authenticateRequest } from "@/lib/auth-middleware";
 import { getBillingContext } from "@/lib/billing/context";
 import { createPlanLimitResponse } from "@/lib/billing/limit-response";
+import type { PlanTier } from "@/lib/billing/types";
+
+const LOCKED_SPACE_CACHE_TTL_MS = 30_000;
+const EXTENSION_SOURCE_HEADER = "x-cadie-source";
+const EXTENSION_SOURCE_VALUE = "extension";
+
+type LockedSpaceCacheEntry = {
+  expiresAt: number;
+  plan: PlanTier;
+  maxSpaces: number | null;
+  lockedSpaceIds: Set<string>;
+};
+
+const lockedSpaceCache = new Map<string, LockedSpaceCacheEntry>();
+
+function isExtensionRequest(request: NextRequest): boolean {
+  return request.headers.get(EXTENSION_SOURCE_HEADER)?.toLowerCase() === EXTENSION_SOURCE_VALUE;
+}
+
+async function getLockedSpaceAccess(userId: string): Promise<LockedSpaceCacheEntry> {
+  const cached = lockedSpaceCache.get(userId);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached;
+  }
+
+  const billingCtx = await getBillingContext(userId);
+  const entry: LockedSpaceCacheEntry = {
+    expiresAt: Date.now() + LOCKED_SPACE_CACHE_TTL_MS,
+    plan: billingCtx.plan,
+    maxSpaces: billingCtx.entitlements.maxSpaces,
+    lockedSpaceIds: billingCtx.lockedSpaceIds,
+  };
+  lockedSpaceCache.set(userId, entry);
+  return entry;
+}
 
 export async function POST(
   request: NextRequest,
@@ -45,7 +80,9 @@ export async function POST(
       );
     }
 
-    // Verify space belongs to user AND all links belong to user in parallel
+    const singleLinkExtensionRequest = isExtensionRequest(request) && link_ids.length === 1;
+
+    // Verify space belongs to user and optionally validate full link set.
     const supabase = await createClient();
     const [spaceResult, linksResult] = await Promise.all([
       supabase
@@ -54,11 +91,13 @@ export async function POST(
         .eq("id", spaceId)
         .eq("user_id", userId)
         .single(),
-      supabase
-        .from("links")
-        .select("id")
-        .eq("user_id", userId)
-        .in("id", link_ids),
+      singleLinkExtensionRequest
+        ? Promise.resolve({ data: null, error: null })
+        : supabase
+            .from("links")
+            .select("id")
+            .eq("user_id", userId)
+            .in("id", link_ids),
     ]);
 
     if (spaceResult.error || !spaceResult.data) {
@@ -69,29 +108,53 @@ export async function POST(
     }
 
     // Block adding links to locked overflow spaces
-    const billingCtx = await getBillingContext(userId);
-    if (billingCtx.lockedSpaceIds.has(spaceId)) {
+    const lockedAccess = await getLockedSpaceAccess(userId);
+    if (lockedAccess.lockedSpaceIds.has(spaceId)) {
       return createPlanLimitResponse({
-        plan: billingCtx.plan,
+        plan: lockedAccess.plan,
         limitKey: "locked_space",
         current: null,
-        max: billingCtx.entitlements.maxSpaces,
+        max: lockedAccess.maxSpaces,
         message: "This space is locked on your current plan. Upgrade to unlock all spaces.",
       });
     }
 
-    if (linksResult.error) {
-      return NextResponse.json(
-        { error: linksResult.error.message },
-        { status: 500 }
-      );
-    }
+    if (singleLinkExtensionRequest) {
+      const singleLinkId = link_ids[0];
+      const { data: singleLink, error: singleLinkError } = await supabase
+        .from("links")
+        .select("id")
+        .eq("id", singleLinkId)
+        .eq("user_id", userId)
+        .maybeSingle();
 
-    if (!linksResult.data || linksResult.data.length !== link_ids.length) {
-      return NextResponse.json(
-        { error: "One or more links not found" },
-        { status: 404 }
-      );
+      if (singleLinkError) {
+        return NextResponse.json(
+          { error: singleLinkError.message },
+          { status: 500 }
+        );
+      }
+
+      if (!singleLink) {
+        return NextResponse.json(
+          { error: "One or more links not found" },
+          { status: 404 }
+        );
+      }
+    } else {
+      if (linksResult.error) {
+        return NextResponse.json(
+          { error: linksResult.error.message },
+          { status: 500 }
+        );
+      }
+
+      if (!linksResult.data || linksResult.data.length !== link_ids.length) {
+        return NextResponse.json(
+          { error: "One or more links not found" },
+          { status: 404 }
+        );
+      }
     }
 
     // Insert link_spaces (ignore duplicates)
@@ -186,13 +249,13 @@ export async function DELETE(
     }
 
     // Block removing links from locked overflow spaces
-    const billingCtxDel = await getBillingContext(userId);
-    if (billingCtxDel.lockedSpaceIds.has(spaceId)) {
+    const lockedAccess = await getLockedSpaceAccess(userId);
+    if (lockedAccess.lockedSpaceIds.has(spaceId)) {
       return createPlanLimitResponse({
-        plan: billingCtxDel.plan,
+        plan: lockedAccess.plan,
         limitKey: "locked_space",
         current: null,
-        max: billingCtxDel.entitlements.maxSpaces,
+        max: lockedAccess.maxSpaces,
         message: "This space is locked on your current plan. Upgrade to unlock all spaces.",
       });
     }

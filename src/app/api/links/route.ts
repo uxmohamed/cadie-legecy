@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
   }
   
   // Continue with handler
-  const response = await getLinksHandler.handle(request);
+  const response = await getLinksHandler.handle(request, userId || undefined);
   
   // Add rate limit headers to response
   const headers = getRateLimitHeaders(limit, remaining, reset);

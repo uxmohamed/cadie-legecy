@@ -1,0 +1,18 @@
+{
+  "name": "Cadie – Design System",
+  "id": "cadie-design-system",
+  "api": "1.0.0",
+  "main": "code.js",
+  "editorType": ["figma"],
+  "menu": [
+    { "name": "Create Color Variables",      "command": "create"  },
+    { "name": "Bind Variables to Selection", "command": "bind"    },
+    { "name": "Create Text Styles",          "command": "text"    },
+    { "name": "Create Button Components",    "command": "buttons" },
+    { "name": "Create Tier 1 Components",    "command": "tier1"   },
+    { "name": "Create Tier 2 App Components","command": "tier2"   },
+    { "name": "Create Onboarding Flow Screens","command": "onboarding" },
+    { "name": "Create Home Mirror Screens",  "command": "home" },
+    { "name": "Create Settings Mirror Screens", "command": "settings" }
+  ]
+}

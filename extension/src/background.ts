@@ -3,7 +3,14 @@
  * Handles context menus, keyboard shortcuts, and saving links
  */
 
-import { saveLink, fetchSpaces, addLinkToSpace, removeLinkFromSpace, fetchLinkSpaces } from "./lib/api-client";
+import {
+  saveLink,
+  fetchSpaces,
+  addLinkToSpace,
+  removeLinkFromSpace,
+  fetchLinkSpaces,
+  fetchLinkContext,
+} from "./lib/api-client";
 import { getApiToken, getPendingUrl, setPendingUrl, clearPendingUrl } from "./lib/storage";
 
 // Track saves in progress to prevent duplicates
@@ -97,6 +104,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Keep message channel open for async response
   }
 
+  // Handle fetchLinkContext request from content script (single round-trip)
+  if (request.action === "fetchLinkContext") {
+    fetchLinkContext(request.linkId).then((response) => {
+      sendResponse(response);
+    });
+    return true;
+  }
+
   // Handle authorization success from content script
   if (request.type === "CADIE_AUTH_SUCCESS" && request.data) {
     const { token, email } = request.data;
@@ -148,6 +163,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
  * @param url - The URL to save
  */
 async function saveUrl(tabId: number, url: string): Promise<void> {
+  const startedAt = performance.now();
+  const idempotencyKey = `ext-save-${crypto.randomUUID()}`;
   // Create a unique key for this save operation
   const saveKey = url;
 
@@ -184,7 +201,7 @@ async function saveUrl(tabId: number, url: string): Promise<void> {
     showOverlayInTab(tabId, "loading");
 
     // Save to Cadie with retry logic - will update overlay with result
-    await saveWithRetry(tabId, url, 3);
+    await saveWithRetry(tabId, url, 2, startedAt, idempotencyKey);
   } finally {
     // Remove the save lock
     savesInProgress.delete(saveKey);
@@ -197,12 +214,18 @@ async function saveUrl(tabId: number, url: string): Promise<void> {
  * @param url - URL to save
  * @param maxRetries - Maximum number of retry attempts
  */
-async function saveWithRetry(tabId: number, url: string, maxRetries: number): Promise<void> {
+async function saveWithRetry(
+  tabId: number,
+  url: string,
+  maxRetries: number,
+  startedAt: number,
+  idempotencyKey: string
+): Promise<void> {
   let lastError: string | undefined;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const response = await saveLink({ url });
+      const response = await saveLink({ url }, { idempotencyKey });
 
       if (response.success) {
         // Show appropriate result with linkId for space assignment
@@ -211,6 +234,12 @@ async function saveWithRetry(tabId: number, url: string, maxRetries: number): Pr
         } else {
           showOverlayInTab(tabId, "success", undefined, response.linkId);
         }
+        console.info("[CadieExtPerf]", {
+          event: "save_complete",
+          duplicate: response.duplicate === true,
+          attempts: attempt,
+          durationMs: Math.round(performance.now() - startedAt),
+        });
         return;
       }
 
@@ -234,12 +263,18 @@ async function saveWithRetry(tabId: number, url: string, maxRetries: number): Pr
 
     // Wait before retry (exponential backoff: 500ms, 1000ms, 2000ms)
     if (attempt < maxRetries) {
-      await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, attempt - 1)));
+      await new Promise(resolve => setTimeout(resolve, 250 * Math.pow(2, attempt - 1)));
     }
   }
 
   // All retries failed - show error to user
   console.error(`Failed to save URL after ${maxRetries} attempts:`, lastError);
+  console.info("[CadieExtPerf]", {
+    event: "save_failed",
+    attempts: maxRetries,
+    durationMs: Math.round(performance.now() - startedAt),
+    error: lastError || "Failed to save",
+  });
   showOverlayInTab(tabId, "error", lastError || "Failed to save");
 }
 

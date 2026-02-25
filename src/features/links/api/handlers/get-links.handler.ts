@@ -16,10 +16,10 @@ export class GetLinksHandler {
         this.linkService = new LinkService(repository);
     }
 
-    async handle(request: NextRequest): Promise<NextResponse> {
+    async handle(request: NextRequest, authenticatedUserId?: string): Promise<NextResponse> {
         try {
             // Authenticate
-            const userId = await authenticateRequest(request);
+            const userId = authenticatedUserId || await authenticateRequest(request);
             if (!userId) {
                 return NextResponse.json(
                     {

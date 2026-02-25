@@ -1075,7 +1075,7 @@ export function useLinkMutations(filters: LinkFilters) {
         addLinksToCache(queryClient, filters, optimisticLinks);
       }
 
-      return { tempIds, previousAll, previousCurrent };
+      return { tempIds, previousAll, previousCurrent, pendingLinkIds: [] as string[] };
     },
     onSuccess: (data, items, context) => {
       const createdLinks = data.links ?? [];
@@ -1091,6 +1091,12 @@ export function useLinkMutations(filters: LinkFilters) {
         if (isCustomFilter(filters)) {
           swapLinksInCache(queryClient, filters, context.tempIds, createdLinks);
         }
+      }
+
+      if (context) {
+        context.pendingLinkIds = createdLinks
+          .filter((link) => link.fetch_status === "pending" || link.fetch_status === "fetching")
+          .map((link) => link.id);
       }
 
       const itemLabel = (type: string) =>
@@ -1156,20 +1162,24 @@ export function useLinkMutations(filters: LinkFilters) {
       }
       toast.error(err instanceof Error ? err.message : "Failed to save");
     },
-    onSettled: () => {
-      // Staggered fallback invalidation — safety net for realtime gaps
-      const delays = [5000, 10000, 15000, 25000];
-      delays.forEach((delay) => {
-        setTimeout(() => {
-          const current = queryClient.getQueryData<LinksResponse>(queryKeys.links.list(ALL_FILTERS));
-          const hasPending = current?.links.some(
-            (l) => l.fetch_status === "pending" || l.fetch_status === "fetching"
-          );
-          if (hasPending) {
-            queryClient.invalidateQueries({ queryKey: queryKeys.links.all, refetchType: "active" });
-          }
-        }, delay);
-      });
+    onSettled: (_data, _error, _items, context) => {
+      // Single bounded reconciliation poll to avoid refetch storms.
+      const pendingIds = context?.pendingLinkIds || [];
+      if (pendingIds.length === 0) return;
+
+      setTimeout(() => {
+        const current = queryClient.getQueryData<LinksResponse>(queryKeys.links.list(ALL_FILTERS));
+        const pendingIdSet = new Set(pendingIds);
+        const hasTrackedPending = current?.links.some(
+          (link) =>
+            pendingIdSet.has(link.id) &&
+            (link.fetch_status === "pending" || link.fetch_status === "fetching")
+        );
+
+        if (hasTrackedPending) {
+          queryClient.invalidateQueries({ queryKey: queryKeys.links.all, refetchType: "active" });
+        }
+      }, 4000);
     },
   });
 

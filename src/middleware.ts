@@ -53,7 +53,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Protected routes (except root, changelog, auth pages, theme-debug, button-debug, typography-debug, terms, privacy, homepage, and onboarding-debug)
-    const publicRoutes = ['/', '/changelog', '/theme-debug', '/button-debug', '/typography-debug', '/terms', '/privacy', '/homepage', '/onboarding-debug']
+    const publicRoutes = ['/', '/changelog', '/theme-debug', '/button-debug', '/typography-debug', '/terms', '/privacy', '/homepage', '/onboarding-debug', '/tokens', '/settings-preview']
     const isPublicRoute = publicRoutes.includes(request.nextUrl.pathname) ||
       request.nextUrl.pathname.startsWith('/auth') ||
       request.nextUrl.pathname.startsWith('/api')
