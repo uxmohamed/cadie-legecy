@@ -180,7 +180,7 @@ export async function getUserImageCount(userId: string): Promise<number> {
 
   if (error) {
     console.error("Failed to count user images:", error);
-    return 0;
+    throw new Error(`Unable to verify image quota: ${error.message}`);
   }
   return count ?? 0;
 }

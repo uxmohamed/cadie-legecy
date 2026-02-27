@@ -48,7 +48,7 @@ export async function getUserDocumentCount(userId: string): Promise<number> {
 
   if (error) {
     console.error("Failed to count user documents:", error);
-    return 0;
+    throw new Error(`Unable to verify document quota: ${error.message}`);
   }
   return count ?? 0;
 }
