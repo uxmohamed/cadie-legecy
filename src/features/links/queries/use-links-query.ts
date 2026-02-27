@@ -67,10 +67,11 @@ async function fetchLinks(
   filters: LinkFilters,
   offset: number = 0,
   searchQuery?: string,
-  limit: number = PAGE_SIZE
+  limit: number = PAGE_SIZE,
+  signal?: AbortSignal
 ): Promise<LinksResponse> {
   const url = buildQueryString(filters, offset, searchQuery, limit);
-  const response = await fetch(url);
+  const response = await fetch(url, { signal });
 
   if (!response.ok) {
     let errorMessage = "Failed to fetch links";
@@ -132,7 +133,7 @@ export function useLinksQuery(
   const query = useQuery({
     queryKey: queryKeys.links.list(stableFilters),
     // Keep list cache independent from transient search text.
-    queryFn: () => fetchLinks(stableFilters, 0, undefined, limit),
+    queryFn: ({ signal }) => fetchLinks(stableFilters, 0, undefined, limit, signal),
     enabled,
     initialData,
     placeholderData: (previousData) => previousData,
@@ -185,7 +186,8 @@ export function useLinksInfiniteQuery(
 
   const query = useInfiniteQuery({
     queryKey: [...queryKeys.links.list(stableFilters), "infinite", "q", normalizedSearchQuery, "limit", limit],
-    queryFn: ({ pageParam = 0 }) => fetchLinks(stableFilters, pageParam, normalizedSearchQuery, limit),
+    queryFn: ({ pageParam = 0, signal }) =>
+      fetchLinks(stableFilters, pageParam, normalizedSearchQuery, limit, signal),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
       const loadedCount = allPages.reduce((acc, page) => acc + page.links.length, 0);
