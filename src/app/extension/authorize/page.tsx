@@ -9,35 +9,7 @@ export default function ExtensionAuthorizePage() {
   const router = useRouter();
   const hasAuthorized = React.useRef(false);
 
-  React.useEffect(() => {
-    checkAuthAndAuthorize();
-  }, []);
-
-  async function checkAuthAndAuthorize() {
-    try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        // Redirect to login with return URL
-        const currentUrl = window.location.href;
-        router.push(`/auth?redirect=${encodeURIComponent('/extension/authorize' + window.location.search)}`);
-        return;
-      }
-
-      // Auto-authorize immediately
-      if (!hasAuthorized.current) {
-        hasAuthorized.current = true;
-        await performAuthorization(user);
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      // Redirect to app even on error
-      window.location.href = "https://cadie.app";
-    }
-  }
-
-  async function performAuthorization(currentUser: User) {
+  const performAuthorization = React.useCallback(async (currentUser: User) => {
     try {
       // Call API to generate token
       const response = await fetch("/api/extension/authorize", {
@@ -131,7 +103,34 @@ export default function ExtensionAuthorizePage() {
       // Redirect to app even on error
       window.location.href = "https://cadie.app";
     }
-  }
+  }, []);
+
+  const checkAuthAndAuthorize = React.useCallback(async () => {
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        // Redirect to login with return URL
+        router.push(`/auth?redirect=${encodeURIComponent("/extension/authorize" + window.location.search)}`);
+        return;
+      }
+
+      // Auto-authorize immediately
+      if (!hasAuthorized.current) {
+        hasAuthorized.current = true;
+        await performAuthorization(user);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      // Redirect to app even on error
+      window.location.href = "https://cadie.app";
+    }
+  }, [performAuthorization, router]);
+
+  React.useEffect(() => {
+    void checkAuthAndAuthorize();
+  }, [checkAuthAndAuthorize]);
 
   // Minimal loading state
   return (
@@ -142,4 +141,3 @@ export default function ExtensionAuthorizePage() {
     </div>
   );
 }
-

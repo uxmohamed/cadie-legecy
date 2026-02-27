@@ -110,13 +110,22 @@ export function useLinksQuery(
   limit: number = PAGE_SIZE
 ) {
   // Memoize filters to prevent unnecessary re-renders
-  const stableFilters = useMemo(() => filters, [
-    filters.space_id,
-    filters.is_archived,
-    filters.is_deleted,
-    filters.is_pinned,
-    filters.content_type,
-  ]);
+  const stableFilters = useMemo(
+    () => ({
+      space_id: filters.space_id,
+      is_archived: filters.is_archived,
+      is_deleted: filters.is_deleted,
+      is_pinned: filters.is_pinned,
+      content_type: filters.content_type,
+    }),
+    [
+      filters.space_id,
+      filters.is_archived,
+      filters.is_deleted,
+      filters.is_pinned,
+      filters.content_type,
+    ]
+  );
 
   const queryClient = useQueryClient();
 
@@ -155,13 +164,22 @@ export function useLinksInfiniteQuery(
   searchQuery?: string,
   limit: number = PAGE_SIZE
 ) {
-  const stableFilters = useMemo(() => filters, [
-    filters.space_id,
-    filters.is_archived,
-    filters.is_deleted,
-    filters.is_pinned,
-    filters.content_type,
-  ]);
+  const stableFilters = useMemo(
+    () => ({
+      space_id: filters.space_id,
+      is_archived: filters.is_archived,
+      is_deleted: filters.is_deleted,
+      is_pinned: filters.is_pinned,
+      content_type: filters.content_type,
+    }),
+    [
+      filters.space_id,
+      filters.is_archived,
+      filters.is_deleted,
+      filters.is_pinned,
+      filters.content_type,
+    ]
+  );
 
   const normalizedSearchQuery = searchQuery?.trim() || "";
 

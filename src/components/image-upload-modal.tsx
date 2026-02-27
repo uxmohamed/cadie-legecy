@@ -55,7 +55,7 @@ export function ImageUploadModal({
       setPreviewFiles([]);
       setDragOver(false);
     }
-  }, [open]);
+  }, [open, previewFiles]);
 
   const addFiles = React.useCallback((files: FileList | File[]) => {
     const file = Array.from(files)[0];
