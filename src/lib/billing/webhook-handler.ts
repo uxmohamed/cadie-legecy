@@ -531,6 +531,11 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
       last_webhook_event_at: now,
       updated_at: now,
     };
+    const assignLemonIdsIfPresent = () => {
+      if (customerId) upsertPayload.lemon_customer_id = customerId;
+      if (subscriptionId) upsertPayload.lemon_subscription_id = subscriptionId;
+      if (variantId) upsertPayload.lemon_variant_id = variantId;
+    };
     if (capabilities.lemonLastEventAt) {
       upsertPayload.lemon_last_event_at = providerEventAt || now;
     }
@@ -556,9 +561,7 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
         upsertPayload.subscription_status = status;
         upsertPayload.billing_interval = billingInterval;
         upsertPayload.cancel_at_period_end = cancelAtPeriodEnd;
-        upsertPayload.lemon_customer_id = customerId;
-        upsertPayload.lemon_subscription_id = subscriptionId;
-        upsertPayload.lemon_variant_id = variantId;
+        assignLemonIdsIfPresent();
         if (resolvedCurrentPeriodEnd) upsertPayload.current_period_end = resolvedCurrentPeriodEnd;
         if (supportAmountCents !== null) upsertPayload.support_amount_cents = supportAmountCents;
         break;
@@ -566,9 +569,7 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
       case "subscription_cancelled":
         upsertPayload.subscription_status = status;
         upsertPayload.cancel_at_period_end = true;
-        upsertPayload.lemon_customer_id = customerId;
-        upsertPayload.lemon_subscription_id = subscriptionId;
-        upsertPayload.lemon_variant_id = variantId;
+        assignLemonIdsIfPresent();
         if (billingInterval) upsertPayload.billing_interval = billingInterval;
         if (resolvedCurrentPeriodEnd) upsertPayload.current_period_end = resolvedCurrentPeriodEnd;
         if (hasMappedPaidPlan) upsertPayload.plan_tier = mappedPlan;
@@ -576,17 +577,13 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
 
       case "subscription_expired":
         upsertPayload.subscription_status = "expired";
-        upsertPayload.lemon_customer_id = customerId;
-        upsertPayload.lemon_subscription_id = subscriptionId;
-        upsertPayload.lemon_variant_id = variantId;
+        assignLemonIdsIfPresent();
         if (resolvedCurrentPeriodEnd) upsertPayload.current_period_end = resolvedCurrentPeriodEnd;
         break;
 
       case "subscription_payment_failed":
         upsertPayload.subscription_status = "past_due";
-        upsertPayload.lemon_customer_id = customerId;
-        upsertPayload.lemon_subscription_id = subscriptionId;
-        upsertPayload.lemon_variant_id = variantId;
+        assignLemonIdsIfPresent();
         if (billingInterval) upsertPayload.billing_interval = billingInterval;
         if (resolvedCurrentPeriodEnd) upsertPayload.current_period_end = resolvedCurrentPeriodEnd;
         break;
@@ -606,9 +603,7 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
         upsertPayload.plan_tier = mappedPlan;
         upsertPayload.subscription_status = "active";
         upsertPayload.cancel_at_period_end = cancelAtPeriodEnd;
-        upsertPayload.lemon_customer_id = customerId;
-        upsertPayload.lemon_subscription_id = subscriptionId;
-        upsertPayload.lemon_variant_id = variantId;
+        assignLemonIdsIfPresent();
         upsertPayload.billing_interval = billingInterval;
         if (resolvedCurrentPeriodEnd) upsertPayload.current_period_end = resolvedCurrentPeriodEnd;
         if (supportAmountCents !== null) upsertPayload.support_amount_cents = supportAmountCents;
@@ -628,9 +623,7 @@ export async function processLemonWebhook(rawBody: string): Promise<ProcessWebho
           upsertPayload.subscription_status = "expired";
           upsertPayload.cancel_at_period_end = false;
           upsertPayload.current_period_end = now;
-          upsertPayload.lemon_customer_id = customerId;
-          upsertPayload.lemon_subscription_id = subscriptionId;
-          upsertPayload.lemon_variant_id = variantId;
+          assignLemonIdsIfPresent();
           if (billingInterval) upsertPayload.billing_interval = billingInterval;
           break;
         }

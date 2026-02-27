@@ -360,6 +360,97 @@ describe("processLemonWebhook", () => {
     );
   });
 
+  it("preserves existing Lemon IDs on subscription_cancelled when webhook omits them", async () => {
+    state.billingByUserId.set("user_123", {
+      user_id: "user_123",
+      plan_tier: "pro",
+      lemon_customer_id: "cust_existing",
+      lemon_subscription_id: "sub_existing",
+      lemon_variant_id: "variant_pro_monthly",
+      subscription_status: "active",
+      current_period_end: "2026-04-01T00:00:00Z",
+    });
+
+    const payload = {
+      meta: {
+        event_name: "subscription_cancelled",
+        webhook_id: "wh_cancel_missing_ids",
+        custom_data: { user_id: "user_123" },
+      },
+      data: {
+        id: null,
+        type: "subscriptions",
+        attributes: {
+          status: "cancelled",
+          renews_at: "2026-04-01T00:00:00Z",
+          updated_at: "2026-02-25T00:00:00Z",
+        },
+      },
+    };
+
+    const result = await processLemonWebhook(JSON.stringify(payload));
+
+    expect(result).toEqual({ processed: true });
+    expect(state.upsertPayloads[0]).not.toHaveProperty("lemon_customer_id");
+    expect(state.upsertPayloads[0]).not.toHaveProperty("lemon_subscription_id");
+    expect(state.upsertPayloads[0]).not.toHaveProperty("lemon_variant_id");
+
+    const billingRow = state.billingByUserId.get("user_123");
+    expect(billingRow).toEqual(
+      expect.objectContaining({
+        lemon_customer_id: "cust_existing",
+        lemon_subscription_id: "sub_existing",
+        lemon_variant_id: "variant_pro_monthly",
+        subscription_status: "canceled",
+      })
+    );
+  });
+
+  it("preserves existing Lemon IDs on refund events when webhook omits them", async () => {
+    state.billingByUserId.set("user_123", {
+      user_id: "user_123",
+      plan_tier: "pro",
+      lemon_customer_id: "cust_existing",
+      lemon_subscription_id: "sub_existing",
+      lemon_variant_id: "variant_pro_monthly",
+      subscription_status: "active",
+      current_period_end: "2026-04-01T00:00:00Z",
+    });
+
+    const payload = {
+      meta: {
+        event_name: "order_refunded",
+        webhook_id: "wh_refund_missing_ids",
+        custom_data: { user_id: "user_123" },
+      },
+      data: {
+        id: null,
+        type: "orders",
+        attributes: {
+          updated_at: "2026-02-25T10:00:00Z",
+        },
+      },
+    };
+
+    const result = await processLemonWebhook(JSON.stringify(payload));
+
+    expect(result).toEqual({ processed: true });
+    expect(state.upsertPayloads[0]).not.toHaveProperty("lemon_customer_id");
+    expect(state.upsertPayloads[0]).not.toHaveProperty("lemon_subscription_id");
+    expect(state.upsertPayloads[0]).not.toHaveProperty("lemon_variant_id");
+
+    const billingRow = state.billingByUserId.get("user_123");
+    expect(billingRow).toEqual(
+      expect.objectContaining({
+        lemon_customer_id: "cust_existing",
+        lemon_subscription_id: "sub_existing",
+        lemon_variant_id: "variant_pro_monthly",
+        plan_tier: "starter",
+        subscription_status: "expired",
+      })
+    );
+  });
+
   it("ignores unmatched events when custom user id and Lemon IDs cannot map a user", async () => {
     const payload = {
       meta: {
