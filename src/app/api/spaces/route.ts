@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createDataClientForRequest } from "@/lib/supabase/server";
 import { rateLimitSpaces, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 import { authenticateRequest } from "@/lib/auth-middleware";
 import { getBillingContext } from "@/lib/billing/context";
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
 
     // Lightweight mode for extension/quick pickers: skip link_count aggregation.
     if (liteMode) {
-      const supabase = await createClient();
+      const supabase = await createDataClientForRequest(request);
       const { data: liteSpaces, error: liteError } = await supabase
         .from("spaces")
         .select("id, name, color")
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get spaces and active link IDs in parallel
-    const supabase = await createClient();
+    const supabase = await createDataClientForRequest(request);
     const [spacesResult, activeLinksResult] = await Promise.all([
       supabase
         .from("spaces")
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get max sort_order to append new space at the end
-    const supabase = await createClient();
+    const supabase = await createDataClientForRequest(request);
     const { data: existingSpaces } = await supabase
       .from("spaces")
       .select("sort_order")

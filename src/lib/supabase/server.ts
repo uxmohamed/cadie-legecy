@@ -1,3 +1,4 @@
+import { NextRequest } from 'next/server'
 import { cache } from 'react'
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
@@ -63,4 +64,20 @@ export function createAdminClient() {
       }
     }
   )
+}
+
+/**
+ * Use a session-bound client for normal web requests, but switch to a
+ * service-role client for already-authenticated API token requests.
+ *
+ * This should only be called after authenticateRequest() has returned a userId,
+ * and every query must still be explicitly scoped by that userId.
+ */
+export async function createDataClientForRequest(request: Pick<NextRequest, 'headers'>) {
+  const authHeader = request.headers.get('authorization')
+  if (authHeader?.startsWith('Bearer ')) {
+    return createAdminClient()
+  }
+
+  return createClient()
 }

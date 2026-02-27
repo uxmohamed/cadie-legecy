@@ -53,6 +53,10 @@ function makeLink(overrides: Partial<Link> = {}): Link {
 }
 
 describe("useLinksQuery", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("bypasses the browser HTTP cache for list fetches", async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
@@ -89,6 +93,118 @@ describe("useLinksQuery", () => {
 
     await waitFor(() => {
       expect(result.current.links).toHaveLength(1);
+    });
+
+    queryClient.clear();
+  });
+
+  it("refetches on mount even when initial data is still fresh", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: Infinity },
+      },
+    });
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        links: [makeLink({ id: "fresh-link" })],
+        total: 1,
+      }),
+    });
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+
+    const initialData = {
+      links: [makeLink({ id: "cached-link" })],
+      total: 1,
+    };
+
+    const { result } = renderHook(
+      () => useLinksQuery({ is_deleted: false, is_archived: false }, true, initialData),
+      { wrapper }
+    );
+
+    expect(result.current.links[0]?.id).toBe("cached-link");
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        "/api/links?is_deleted=false&is_archived=false&limit=100&offset=0",
+        expect.objectContaining({
+          cache: "no-store",
+          signal: expect.any(Object),
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.links[0]?.id).toBe("fresh-link");
+    });
+
+    queryClient.clear();
+  });
+
+  it("loads every page when the account has more than 100 links", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: Infinity },
+      },
+    });
+
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          links: Array.from({ length: 100 }, (_, index) =>
+            makeLink({ id: `link-${index + 1}` })
+          ),
+          total: 101,
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          links: [makeLink({ id: "link-101" })],
+          total: 101,
+        }),
+      });
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+
+    const { result } = renderHook(
+      () => useLinksQuery({ is_deleted: false, is_archived: false }, true),
+      { wrapper }
+    );
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenNthCalledWith(
+        1,
+        "/api/links?is_deleted=false&is_archived=false&limit=100&offset=0",
+        expect.objectContaining({
+          cache: "no-store",
+          signal: expect.any(Object),
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenNthCalledWith(
+        2,
+        "/api/links?is_deleted=false&is_archived=false&limit=100&offset=100",
+        expect.objectContaining({
+          cache: "no-store",
+          signal: expect.any(Object),
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.links).toHaveLength(101);
+      expect(result.current.total).toBe(101);
     });
 
     queryClient.clear();

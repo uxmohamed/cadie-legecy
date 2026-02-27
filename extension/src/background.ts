@@ -15,6 +15,7 @@ import { getApiToken, getPendingUrl, setPendingUrl, clearPendingUrl } from "./li
 
 // Track saves in progress to prevent duplicates
 const savesInProgress = new Set<string>();
+const LOADING_OVERLAY_DELAY_MS = 450;
 
 // ============================================================================
 // EVENT LISTENERS - Register at top level for persistence across SW lifecycle
@@ -165,6 +166,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 async function saveUrl(tabId: number, url: string): Promise<void> {
   const startedAt = performance.now();
   const idempotencyKey = `ext-save-${crypto.randomUUID()}`;
+  let loadingOverlayTimeout: ReturnType<typeof setTimeout> | null = null;
   // Create a unique key for this save operation
   const saveKey = url;
 
@@ -197,12 +199,18 @@ async function saveUrl(tabId: number, url: string): Promise<void> {
       return;
     }
 
-    // Show loading state immediately
-    showOverlayInTab(tabId, "loading");
+    // Avoid flashing a spinner for fast saves. Only show loading if the request
+    // is genuinely taking long enough that the user would otherwise see nothing.
+    loadingOverlayTimeout = setTimeout(() => {
+      showOverlayInTab(tabId, "loading");
+    }, LOADING_OVERLAY_DELAY_MS);
 
     // Save to Cadie with retry logic - will update overlay with result
     await saveWithRetry(tabId, url, 2, startedAt, idempotencyKey);
   } finally {
+    if (loadingOverlayTimeout) {
+      clearTimeout(loadingOverlayTimeout);
+    }
     // Remove the save lock
     savesInProgress.delete(saveKey);
   }

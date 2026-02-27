@@ -1,20 +1,28 @@
 import type { ILinkRepository } from "./link.repository.interface";
 import type { Link, CreateLinkDTO, UpdateLinkDTO, LinkFilters } from "../types/link.types";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { canonicalizeUrl } from "@/lib/canonicalize";
 import { AppError, ErrorCode } from "@/lib/errors";
 import { withRetry, supabaseRetryPredicate } from "@/lib/retry";
+
+type SupabaseRepositoryClient =
+    | Awaited<ReturnType<typeof createClient>>
+    | ReturnType<typeof createAdminClient>;
 
 /**
  * Supabase implementation of the Link Repository
  * Following Single Responsibility Principle - handles only data access
  */
 export class SupabaseLinkRepository implements ILinkRepository {
+    constructor(
+        private readonly getSupabaseClient: () => Promise<SupabaseRepositoryClient> = createClient
+    ) {}
+
     /**
      * Find all links for a user with optional filters and pagination
      */
     async findAll(userId: string, filters?: LinkFilters, limit?: number, offset?: number, searchQuery?: string): Promise<{ links: Link[], total: number }> {
-        const supabase = await createClient();
+        const supabase = await this.getSupabaseClient();
 
         // Space filter via relational join avoids the expensive "fetch IDs then IN (...)" pattern.
         if (filters?.space_id) {
@@ -63,7 +71,8 @@ export class SupabaseLinkRepository implements ILinkRepository {
             }
 
             const normalized = (data as Array<Link & { link_spaces?: unknown }> | null)?.map((row) => {
-                const { link_spaces: _linkSpaces, ...link } = row;
+                const link = { ...row } as Link & { link_spaces?: unknown };
+                delete link.link_spaces;
                 return link as Link;
             }) || [];
 
@@ -123,7 +132,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
      * Find a single link by ID
      */
     async findById(id: string, userId: string): Promise<Link | null> {
-        const supabase = await createClient();
+        const supabase = await this.getSupabaseClient();
 
         const { data, error } = await supabase
             .from("links")
@@ -152,7 +161,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
      * Create a new link
      */
     async create(userId: string, data: CreateLinkDTO): Promise<Link> {
-        const supabase = await createClient();
+        const supabase = await this.getSupabaseClient();
 
         // Extract domain from URL
         let domain = "";
@@ -228,7 +237,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
     async update(id: string, userId: string, data: UpdateLinkDTO): Promise<Link> {
         return withRetry(
             async () => {
-                const supabase = await createClient();
+                const supabase = await this.getSupabaseClient();
 
                 const { data: links, error } = await supabase
                     .from("links")
@@ -273,7 +282,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
     async delete(id: string, userId: string): Promise<void> {
         return withRetry(
             async () => {
-                const supabase = await createClient();
+                const supabase = await this.getSupabaseClient();
 
                 const { data, error } = await supabase
                     .from("links")
@@ -317,7 +326,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
      * Uses clean_url index for fast lookup instead of fetching all links
      */
     async exists(userId: string, url: string): Promise<Link | null> {
-        const supabase = await createClient();
+        const supabase = await this.getSupabaseClient();
         const cleanUrl = canonicalizeUrl(url);
 
         // Query by clean_url directly in the database
@@ -349,7 +358,7 @@ export class SupabaseLinkRepository implements ILinkRepository {
      * Uses clean_url index for fast lookup instead of fetching all links
      */
     async findByUrl(userId: string, url: string): Promise<{ link: Link; isInTrash: boolean } | null> {
-        const supabase = await createClient();
+        const supabase = await this.getSupabaseClient();
         const cleanUrl = canonicalizeUrl(url);
 
         // Query by clean_url directly in the database

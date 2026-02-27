@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createDataClientForRequest } from "@/lib/supabase/server";
 import { rateLimitLinks, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 import { authenticateRequest } from "@/lib/auth-middleware";
 import { validateUUID } from "@/lib/validation/validate";
@@ -37,7 +37,7 @@ export async function GET(
       );
     }
 
-    const supabase = await createClient();
+    const supabase = await createDataClientForRequest(request);
 
     // Verify link belongs to user
     const { data: link, error: linkError } = await supabase

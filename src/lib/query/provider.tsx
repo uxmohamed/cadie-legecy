@@ -13,7 +13,7 @@ import { createIDBPersister } from "./persister";
  * - Needing to force all users to refetch fresh data
  * - Fixing bugs caused by stale cached data
  */
-const CACHE_BUSTER = "v2";
+const CACHE_BUSTER = "v3";
 
 /**
  * QueryProvider with IndexedDB persistence

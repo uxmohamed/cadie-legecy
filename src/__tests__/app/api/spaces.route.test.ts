@@ -1,5 +1,6 @@
 const mockAuthenticateRequest = jest.fn();
 const mockRateLimitSpacesLimit = jest.fn();
+const mockCreateDataClientForRequest = jest.fn();
 
 jest.mock("next/server", () => {
   class MockNextResponse {
@@ -48,12 +49,13 @@ jest.mock("@/lib/rate-limit", () => ({
   getRateLimitHeaders: jest.fn(() => ({ "X-RateLimit-Limit": "30" })),
 }));
 
-import { createClient } from "@/lib/supabase/server";
+jest.mock("@/lib/supabase/server", () => ({
+  createDataClientForRequest: (...args: unknown[]) => mockCreateDataClientForRequest(...args),
+}));
+
 import { GET } from "@/app/api/spaces/route";
 
 describe("GET /api/spaces", () => {
-  const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>;
-
   beforeEach(() => {
     jest.clearAllMocks();
     mockAuthenticateRequest.mockResolvedValue("user_1");
@@ -77,7 +79,7 @@ describe("GET /api/spaces", () => {
       return { select };
     });
 
-    mockCreateClient.mockResolvedValue({ from } as never);
+    mockCreateDataClientForRequest.mockResolvedValue({ from } as never);
 
     const response = await GET({
       headers: new Headers(),

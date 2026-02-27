@@ -193,44 +193,91 @@
   stroke: var(--accent-blue-primary) !important;
 }
 
-.cadie-auth-content .cadie-overlay-card {
-  gap: 10px !important;
+.cadie-auth-content {
+  width: 312px !important;
+  padding: 4px !important;
+}
+
+.cadie-auth-content .cadie-overlay-inner {
+  padding: 0 !important;
+}
+
+.cadie-auth-card {
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 12px !important;
+}
+
+.cadie-auth-copy {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+.cadie-auth-title {
+  font-size: 13.9px !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  color: #2b2b34 !important;
+  white-space: nowrap !important;
+}
+
+.cadie-auth-controls {
+  display: flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  flex-shrink: 0 !important;
 }
 
 .cadie-connect-btn {
-  background: var(--cta-primary-default) !important;
-  color: white !important;
-  border: none !important;
-  border-radius: 20px !important;
-  padding: 8px 16px !important;
-  font-size: 13px !important;
-  font-weight: 500 !important;
+  appearance: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 36px !important;
+  padding: 0 15px !important;
+  border-radius: 11px !important;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  border: 1px solid rgba(37, 99, 235, 0.14) !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  letter-spacing: 0 !important;
   cursor: pointer !important;
-  transition: background 0.15s ease !important;
+  box-shadow: none !important;
+  transition: background 0.15s ease, transform 0.15s ease !important;
   white-space: nowrap !important;
   font-family: inherit !important;
 }
 
 .cadie-connect-btn:hover {
-  background: var(--cta-primary-hover) !important;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
 }
 
 .cadie-connect-btn:active {
-  background: var(--cta-primary-active) !important;
+  transform: scale(0.98) !important;
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+}
+
+.cadie-connect-btn:focus-visible {
+  outline: 3px solid rgba(59, 130, 246, 0.18) !important;
+  outline-offset: 2px !important;
 }
 
 .cadie-close-btn {
   background: transparent !important;
   border: none !important;
-  padding: 4px !important;
+  padding: 2px !important;
   cursor: pointer !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   color: #2b2b34 !important;
-  opacity: 0.5 !important;
+  opacity: 0.42 !important;
   transition: opacity 0.15s ease !important;
-  margin-left: 4px !important;
+  margin-left: 0 !important;
+  margin-top: 0 !important;
 }
 
 .cadie-close-btn:hover {

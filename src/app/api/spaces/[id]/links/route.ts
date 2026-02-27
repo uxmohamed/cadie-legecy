@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createDataClientForRequest } from "@/lib/supabase/server";
 import { rateLimitSpaces, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 import { authenticateRequest } from "@/lib/auth-middleware";
 import { getBillingContext } from "@/lib/billing/context";
@@ -83,7 +83,7 @@ export async function POST(
     const singleLinkExtensionRequest = isExtensionRequest(request) && link_ids.length === 1;
 
     // Verify space belongs to user and optionally validate full link set.
-    const supabase = await createClient();
+    const supabase = await createDataClientForRequest(request);
     const [spaceResult, linksResult] = await Promise.all([
       supabase
         .from("spaces")
@@ -233,7 +233,7 @@ export async function DELETE(
     }
 
     // Verify space belongs to user
-    const supabase = await createClient();
+    const supabase = await createDataClientForRequest(request);
     const { data: space, error: spaceError } = await supabase
       .from("spaces")
       .select("id")

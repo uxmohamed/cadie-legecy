@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import type {
   AutoForwardingCondition,
   AutoForwardingField,
@@ -28,6 +28,9 @@ interface ForwardingPreferences {
 }
 
 const AI_TIMEOUT_MS = 3500;
+
+type SupabaseDataClient = Awaited<ReturnType<typeof createClient>> | ReturnType<typeof createAdminClient>;
+type SupabaseClientFactory = () => Promise<SupabaseDataClient> | SupabaseDataClient;
 
 const SOCIAL_DOMAIN_SPACE_HINTS: Record<string, string[]> = {
   "twitter.com": ["twitter", "x", "tweets", "tweet"],
@@ -73,14 +76,16 @@ function isMissingSpacesDescriptionColumn(error: unknown): boolean {
 
 export class AutoSpaceForwardingService {
   private openAIClient: OpenAI | null = null;
+  private getSupabaseClient: SupabaseClientFactory;
 
-  constructor() {
+  constructor(getSupabaseClient: SupabaseClientFactory = createClient) {
     const apiKey = process.env.OPENAI_API_KEY;
     this.openAIClient = apiKey ? new OpenAI({ apiKey }) : null;
+    this.getSupabaseClient = getSupabaseClient;
   }
 
   private async getForwardingPreferences(userId: string): Promise<ForwardingPreferences> {
-    const supabase = await createClient();
+    const supabase = await this.getSupabaseClient();
     const { data } = await supabase
       .from("users")
       .select("preferences")
@@ -184,7 +189,7 @@ export class AutoSpaceForwardingService {
   }
 
   private async getUserSpaces(userId: string): Promise<SpaceRow[]> {
-    const supabase = await createClient();
+    const supabase = await this.getSupabaseClient();
     const { data, error } = await supabase
       .from("spaces")
       .select("id, name, description, sort_order")
@@ -327,7 +332,7 @@ export class AutoSpaceForwardingService {
       return { forwardedSpaceNames: [], forwardedByLinkId: {} };
     }
 
-    const supabase = await createClient();
+    const supabase = await this.getSupabaseClient();
     const insertedSpaceNames = new Set<string>();
     const forwardedByLinkId: Record<string, string | undefined> = {};
 

@@ -69,13 +69,18 @@ interface CreateLinkResponseBody {
  * Creates a new link for the authenticated user
  */
 export class CreateLinkHandler {
-    private linkService: LinkService;
-    private autoForwardingService: AutoSpaceForwardingService;
+    private createLinkService(usePrivilegedClient: boolean): LinkService {
+        const repository = usePrivilegedClient
+            ? new SupabaseLinkRepository(async () => createAdminClient())
+            : new SupabaseLinkRepository();
 
-    constructor() {
-        const repository = new SupabaseLinkRepository();
-        this.linkService = new LinkService(repository);
-        this.autoForwardingService = new AutoSpaceForwardingService();
+        return new LinkService(repository);
+    }
+
+    private createAutoForwardingService(usePrivilegedClient: boolean): AutoSpaceForwardingService {
+        return usePrivilegedClient
+            ? new AutoSpaceForwardingService(() => createAdminClient())
+            : new AutoSpaceForwardingService();
     }
 
     private async validateLink(url: string, title: string): Promise<void> {
@@ -694,15 +699,16 @@ export class CreateLinkHandler {
                 await this.validateLink(createLinkDTO.url, createLinkDTO.title!);
             }
 
+            const isExtensionSave = this.isExtensionSource(request);
+            const linkService = this.createLinkService(isExtensionSave);
+
             // Create link using service
             const createStartedAt = Date.now();
-            const { link, isDuplicate, isRestored } = await this.linkService.createLink(
+            const { link, isDuplicate, isRestored } = await linkService.createLink(
                 userId,
                 createLinkDTO
             );
             createMs = Date.now() - createStartedAt;
-
-            const isExtensionSave = this.isExtensionSource(request);
             const callbackBaseUrl = request.nextUrl.origin;
 
             const shouldQueueProcessing = !isDuplicate && !isRestored;
@@ -713,13 +719,14 @@ export class CreateLinkHandler {
                     let enqueueMs = 0;
                     let forwardingMs = 0;
                     let recoveryMs = 0;
+                    const autoForwardingService = this.createAutoForwardingService(isExtensionSave);
 
                     try {
-                        const enqueueStartedAt = Date.now();
-                        await this.enqueueEnrichmentJobs(userId!, link, callbackBaseUrl);
-                        enqueueMs = Date.now() - enqueueStartedAt;
+                        const forwardingStartedAt = Date.now();
+                        await autoForwardingService.forwardLinks(userId!, [link]);
+                        forwardingMs = Date.now() - forwardingStartedAt;
                     } catch (error) {
-                        log.warn("[LinkCreateAsync] Failed to enqueue enrichment jobs", {
+                        log.warn("[LinkCreateAsync] Failed to auto-forward link", {
                             linkId: link.id,
                             source: isExtensionSave ? EXTENSION_SOURCE_VALUE : "web",
                             error: error instanceof Error ? error.message : String(error),
@@ -727,11 +734,11 @@ export class CreateLinkHandler {
                     }
 
                     try {
-                        const forwardingStartedAt = Date.now();
-                        await this.autoForwardingService.forwardLinks(userId!, [link]);
-                        forwardingMs = Date.now() - forwardingStartedAt;
+                        const enqueueStartedAt = Date.now();
+                        await this.enqueueEnrichmentJobs(userId!, link, callbackBaseUrl);
+                        enqueueMs = Date.now() - enqueueStartedAt;
                     } catch (error) {
-                        log.warn("[LinkCreateAsync] Failed to auto-forward link", {
+                        log.warn("[LinkCreateAsync] Failed to enqueue enrichment jobs", {
                             linkId: link.id,
                             source: isExtensionSave ? EXTENSION_SOURCE_VALUE : "web",
                             error: error instanceof Error ? error.message : String(error),

@@ -675,20 +675,24 @@ function showAuthPromptOverlay() {
   inner.className = "cadie-overlay-inner";
 
   const card = document.createElement("div");
-  card.className = "cadie-overlay-card";
+  card.className = "cadie-overlay-card cadie-auth-card";
 
-  // Icon
-  const icon = document.createElement("div");
-  icon.className = "cadie-overlay-icon";
-  icon.setAttribute("data-state", "auth");
-  icon.innerHTML = TABLER_ICONS.login;
+  const copy = document.createElement("div");
+  copy.className = "cadie-auth-copy";
 
-  // Text
-  const textEl = document.createElement("div");
-  textEl.className = "cadie-overlay-text";
-  textEl.textContent = "Connect to Cadie";
+  const title = document.createElement("div");
+  title.className = "cadie-auth-title";
+  title.textContent = "Connect to Cadie";
+  copy.appendChild(title);
 
-  // Connect button
+  const controls = document.createElement("div");
+  controls.className = "cadie-auth-controls";
+
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "cadie-close-btn";
+  closeBtn.innerHTML = TABLER_ICONS.x;
+  closeBtn.addEventListener("click", () => hideOverlay());
+
   const connectBtn = document.createElement("button");
   connectBtn.className = "cadie-connect-btn";
   connectBtn.textContent = "Connect";
@@ -697,16 +701,11 @@ function showAuthPromptOverlay() {
     hideOverlay();
   });
 
-  // Close button
-  const closeBtn = document.createElement("button");
-  closeBtn.className = "cadie-close-btn";
-  closeBtn.innerHTML = TABLER_ICONS.x;
-  closeBtn.addEventListener("click", () => hideOverlay());
+  controls.appendChild(connectBtn);
+  controls.appendChild(closeBtn);
 
-  card.appendChild(icon);
-  card.appendChild(textEl);
-  card.appendChild(connectBtn);
-  card.appendChild(closeBtn);
+  card.appendChild(copy);
+  card.appendChild(controls);
   inner.appendChild(card);
   content.appendChild(inner);
   overlayElement.appendChild(content);

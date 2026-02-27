@@ -97,6 +97,38 @@ async function fetchLinks(
 }
 
 /**
+ * Fetches the complete dataset for a given filter set by paging through
+ * the API in fixed-size chunks.
+ */
+async function fetchAllLinks(
+  filters: LinkFilters,
+  searchQuery?: string,
+  pageSize: number = PAGE_SIZE,
+  signal?: AbortSignal
+): Promise<LinksResponse> {
+  const normalizedPageSize = Math.max(1, pageSize);
+  const firstPage = await fetchLinks(filters, 0, searchQuery, normalizedPageSize, signal);
+
+  if (firstPage.links.length >= firstPage.total) {
+    return firstPage;
+  }
+
+  const remainingOffsets: number[] = [];
+  for (let offset = normalizedPageSize; offset < firstPage.total; offset += normalizedPageSize) {
+    remainingOffsets.push(offset);
+  }
+
+  const remainingPages = await Promise.all(
+    remainingOffsets.map((offset) => fetchLinks(filters, offset, searchQuery, normalizedPageSize, signal))
+  );
+
+  return {
+    links: [...firstPage.links, ...remainingPages.flatMap((page) => page.links)],
+    total: firstPage.total,
+  };
+}
+
+/**
  * Hook to fetch links using TanStack Query
  *
  * Search is handled client-side via useSearchLinks — this hook always
@@ -138,10 +170,16 @@ export function useLinksQuery(
   const query = useQuery({
     queryKey: queryKeys.links.list(stableFilters),
     // Keep list cache independent from transient search text.
-    queryFn: ({ signal }) => fetchLinks(stableFilters, 0, undefined, limit, signal),
+    queryFn: ({ signal }) => fetchAllLinks(stableFilters, undefined, limit, signal),
     enabled,
     initialData,
     placeholderData: (previousData) => previousData,
+    // Persisted cache can hydrate "fresh" data after extension saves happen in
+    // another tab or browser context, so always reconcile on mount.
+    refetchOnMount: "always",
+    // When the user comes back to the app after saving from the extension,
+    // force an immediate refresh instead of waiting for staleTime to expire.
+    refetchOnWindowFocus: "always",
     // Allow realtime to handle updates for 5 minutes before considering stale
     staleTime: 5 * 60 * 1000,
     // Keep in cache for 2 hours (reduced from 24 to prevent stale data issues)
@@ -206,6 +244,8 @@ export function useLinksInfiniteQuery(
       pages: [initialData],
       pageParams: [0],
     } : undefined,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
     staleTime: 5 * 60 * 1000,
     gcTime: 2 * 60 * 60 * 1000,
   });
