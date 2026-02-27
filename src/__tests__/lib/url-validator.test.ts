@@ -18,6 +18,7 @@ describe('URL Validator', () => {
           const result = validateUrlSafety(url);
           // Note: 2001:db8::/32 might be blocked as documentation range in production
           // but we're testing format validation here
+          expect(result.isValid).toBe(true);
         });
       });
     });
@@ -134,6 +135,9 @@ describe('URL Validator', () => {
           'http://[::ffff:127.0.0.1]/test',
           'http://[::ffff:192.168.1.1]/test',
           'http://[::ffff:10.0.0.1]/test',
+          'http://[::ffff:10.1.2.3]/test',
+          'http://[::ffff:10.128.0.1]/test',
+          'http://[::ffff:10.255.255.255]/test',
         ];
         
         ipv4MappedUrls.forEach(url => {

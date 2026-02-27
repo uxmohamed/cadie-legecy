@@ -191,7 +191,7 @@ function isPrivateIPv6(ip: string): boolean {
       // Check if it's in the private range by converting hex to IP
       // For simplicity, we know ::ffff: prefix maps IPv4, and most private IPs will be caught
       // Common patterns: ::ffff:7f00::/104 is 127.0.0.0/8
-      //                 ::ffff:a00::/104 is 10.0.0.0/8
+      //                 ::ffff:a00::/104 through ::ffff:aff:ffff is 10.0.0.0/8
       //                 ::ffff:c0a8::/112 is 192.168.0.0/16
       //                 ::ffff:ac10::/108 is 172.16.0.0/12
       
@@ -201,7 +201,7 @@ function isPrivateIPv6(ip: string): boolean {
         return true;
       }
       // 10.0.0.0/8 -> 0a00:0000 to 0aff:ffff
-      if (/^0?a00:/i.test(lastTwo.join(':'))) {
+      if (/^0?a[0-9a-f]{2}:/i.test(lastTwo.join(':'))) {
         return true;
       }
       // 192.168.0.0/16 -> c0a8:0000 to c0a8:ffff
