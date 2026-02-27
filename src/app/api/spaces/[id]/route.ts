@@ -64,6 +64,20 @@ export async function PATCH(
 
     // Block mutations on locked overflow spaces
     const billingCtx = await getBillingContext(userId);
+    if (
+      sort_order !== undefined &&
+      billingCtx.entitlements.maxSpaces !== null &&
+      billingCtx.usage.spacesTotal > billingCtx.entitlements.maxSpaces
+    ) {
+      return createPlanLimitResponse({
+        plan: billingCtx.plan,
+        limitKey: "locked_space",
+        current: null,
+        max: billingCtx.entitlements.maxSpaces,
+        message: "Reordering spaces is unavailable on your current plan while you have locked spaces.",
+      });
+    }
+
     if (billingCtx.lockedSpaceIds.has(id)) {
       return createPlanLimitResponse({
         plan: billingCtx.plan,
