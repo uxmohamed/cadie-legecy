@@ -1,5 +1,4 @@
 import { load } from "cheerio";
-import type { Element } from "domhandler";
 import type { BookmarkImportLink, BookmarkPreview } from "@/features/imports/types/import.types";
 
 interface ParseAccumulator {
@@ -38,7 +37,7 @@ function normalizeTitle(input: string, fallbackUrl: string): string {
   return cleaned || fallbackUrl;
 }
 
-function isTagElement(node: unknown): node is Element {
+function isTagElement(node: unknown): boolean {
   return typeof node === "object" && node !== null && (node as { type?: string }).type === "tag";
 }
 
@@ -55,12 +54,12 @@ function processContainer(
 
   for (let i = 0; i < children.length; i++) {
     const node = children[i];
-    const tag = node.name?.toLowerCase();
+    const tag = $(node as never).prop("tagName")?.toLowerCase();
 
     if (!tag) continue;
 
     if (tag === "dt") {
-      const dt = $(node);
+      const dt = $(node as never);
       const anchor = dt.children("a").first();
       const folderHeading = dt.children("h3").first();
 
@@ -99,7 +98,7 @@ function processContainer(
         }
 
         const next = children[i + 1];
-        const nextTag = next?.name?.toLowerCase();
+        const nextTag = next ? $(next as never).prop("tagName")?.toLowerCase() : undefined;
 
         if (next && (nextTag === "dl" || nextTag === "p")) {
           processContainer($, next, [...folderStack, folderName], acc);
