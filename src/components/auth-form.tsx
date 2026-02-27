@@ -44,7 +44,19 @@ function GoogleLogo() {
   );
 }
 
-export function AuthForm() {
+interface AuthFormProps {
+  nextPath?: string | null;
+}
+
+function buildCallbackUrl(siteUrl: string, nextPath?: string | null): string {
+  const callbackUrl = new URL("/auth/callback", siteUrl);
+  if (nextPath) {
+    callbackUrl.searchParams.set("next", nextPath);
+  }
+  return callbackUrl.toString();
+}
+
+export function AuthForm({ nextPath = null }: AuthFormProps) {
   const { theme } = useTheme();
   const [email, setEmail] = React.useState("");
   const [sentToEmail, setSentToEmail] = React.useState("");
@@ -108,7 +120,7 @@ export function AuthForm() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${siteUrl}/auth/callback`,
+          emailRedirectTo: buildCallbackUrl(siteUrl, nextPath),
         },
       });
 
@@ -145,7 +157,7 @@ export function AuthForm() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${siteUrl}/auth/callback`,
+          redirectTo: buildCallbackUrl(siteUrl, nextPath),
         },
       });
 

@@ -39,8 +39,8 @@ function FaqItem({ question, children, isOpen, onToggle }: { question: string; c
         className="w-full flex items-center justify-between text-left gap-4 px-5 py-4 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
         <span className="text-sm font-medium text-fg">{question}</span>
-        <IconChevronDown 
-          className={`size-5 text-[var(--brand)] shrink-0 transition-transform duration-200 ease-out motion-reduce:transition-none ${isOpen ? 'rotate-180' : ''}`} 
+        <IconChevronDown
+          className={`size-5 text-accent shrink-0 transition-transform duration-200 ease-out motion-reduce:transition-none ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
       <div
@@ -92,7 +92,7 @@ export function LandingPage({ changelogEntries = [], pricing }: LandingPageProps
   }, []);
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg selection:bg-brand/10 selection:text-brand">
+    <div className="flex min-h-screen flex-col bg-bg selection:bg-accent-muted selection:text-accent">
       {/* Header */}
       <header className={`sticky top-0 z-50 transition-[background-color,backdrop-filter,border-color] duration-200 ease-out motion-reduce:transition-none ${isScrolled ? "bg-bg/90 backdrop-blur-md border-b border-border" : "bg-transparent"}`}>
         <div className="max-w-5xl mx-auto relative">
@@ -280,7 +280,7 @@ export function LandingPage({ changelogEntries = [], pricing }: LandingPageProps
               >
                 Watch demo
               </DialogTrigger>
-              <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-black border-none">
+              <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-bg-overlay border-none">
                 <DialogTitle className="sr-only">Cadie Demo Video</DialogTitle>
                 <div className="aspect-video w-full">
                   <iframe
@@ -344,7 +344,7 @@ export function LandingPage({ changelogEntries = [], pricing }: LandingPageProps
                 href="https://chromewebstore.google.com/detail/cadie/efcdfndkolpokgobbejhcegfgodfepdd"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-medium text-[var(--brand)] hover:text-[var(--brand-hover)] transition-colors mt-2"
+                className="inline-flex items-center gap-2 text-sm font-medium text-accent hover:text-accent-hover transition-colors mt-2"
               >
                 Get extension
                 <IconArrowRight className="size-4" />
@@ -535,8 +535,8 @@ export function LandingPage({ changelogEntries = [], pricing }: LandingPageProps
             </div>
 
             {/* Pro */}
-            <div className="rounded-xl border-2 border-[var(--brand)] bg-bg-muted p-6 flex flex-col relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-xs font-medium px-3 py-1 rounded-full">
+            <div className="rounded-xl border-2 border-accent bg-bg-muted p-6 flex flex-col relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-btn-primary text-fg-on-accent text-xs font-medium px-3 py-1 rounded-full">
                 Most popular
               </div>
               <h3 className="text-lg font-medium text-fg mb-1">Pro</h3>
@@ -559,11 +559,11 @@ export function LandingPage({ changelogEntries = [], pricing }: LandingPageProps
                 Upgrade to Pro
               </Button>
               <ul className="space-y-2.5 text-sm text-fg-muted">
-                <li className="flex items-start gap-2"><IconCheck className="size-4 mt-0.5 shrink-0 text-[var(--brand)]" /> Unlimited saved items</li>
-                <li className="flex items-start gap-2"><IconCheck className="size-4 mt-0.5 shrink-0 text-[var(--brand)]" /> Unlimited spaces</li>
-                <li className="flex items-start gap-2"><IconCheck className="size-4 mt-0.5 shrink-0 text-[var(--brand)]" /> 2,000 images, 2,000 documents</li>
-                <li className="flex items-start gap-2"><IconCheck className="size-4 mt-0.5 shrink-0 text-[var(--brand)]" /> 25 MB file uploads</li>
-                <li className="flex items-start gap-2"><IconCheck className="size-4 mt-0.5 shrink-0 text-[var(--brand)]" /> Bookmark import</li>
+                <li className="flex items-start gap-2"><IconCheck className="size-4 mt-0.5 shrink-0 text-accent" /> Unlimited saved items</li>
+                <li className="flex items-start gap-2"><IconCheck className="size-4 mt-0.5 shrink-0 text-accent" /> Unlimited spaces</li>
+                <li className="flex items-start gap-2"><IconCheck className="size-4 mt-0.5 shrink-0 text-accent" /> 2,000 images, 2,000 documents</li>
+                <li className="flex items-start gap-2"><IconCheck className="size-4 mt-0.5 shrink-0 text-accent" /> 25 MB file uploads</li>
+                <li className="flex items-start gap-2"><IconCheck className="size-4 mt-0.5 shrink-0 text-accent" /> Bookmark import</li>
                 <li className="flex items-start gap-2 text-fg-subtle"><IconCheck className="size-4 mt-0.5 shrink-0 text-fg-subtle" /> AI search <span className="text-xs">(Coming soon)</span></li>
                 <li className="flex items-start gap-2 text-fg-subtle"><IconCheck className="size-4 mt-0.5 shrink-0 text-fg-subtle" /> Sharing &amp; publishing <span className="text-xs">(Coming soon)</span></li>
               </ul>

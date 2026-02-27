@@ -33,12 +33,13 @@ const animationConfig = {
 interface OnboardingFlowProps {
   user: User;
   onComplete: () => void;
+  forcedStep?: OnboardingStep;
 }
 
-export function OnboardingFlow({ user, onComplete }: OnboardingFlowProps) {
+export function OnboardingFlow({ user, onComplete, forcedStep }: OnboardingFlowProps) {
   const { complete } = useOnboarding(user);
   const { theme } = useTheme();
-  const [currentStep, setCurrentStep] = React.useState<OnboardingStep>("welcome");
+  const [currentStep, setCurrentStep] = React.useState<OnboardingStep>(forcedStep ?? "welcome");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
 
@@ -106,6 +107,11 @@ export function OnboardingFlow({ user, onComplete }: OnboardingFlowProps) {
     displayName: string;
     avatarUrl: string;
   } | null>(null);
+
+  React.useEffect(() => {
+    if (!forcedStep) return;
+    setCurrentStep(forcedStep);
+  }, [forcedStep]);
 
   const handleAuthComplete = React.useCallback(() => {
     setCurrentStep("welcome");

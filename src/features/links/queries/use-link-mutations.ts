@@ -50,6 +50,15 @@ interface LinksResponse {
   total: number;
 }
 
+interface AddLinksResponse {
+  links?: Link[];
+  count?: number;
+  restored?: number;
+  duplicates?: number;
+  auto_forwarded_spaces?: string[];
+  auto_forwarded_by_link_id?: Record<string, string>;
+}
+
 /**
  * Standard filter sets for cross-cache updates
  */
@@ -973,7 +982,7 @@ export function useLinkMutations(filters: LinkFilters) {
         throw new Error(errorData.details ?? errorData.error ?? "Failed to add links");
       }
 
-      return response.json() as Promise<{ links?: Link[]; count?: number; restored?: number; duplicates?: number; auto_forwarded_spaces?: string[]; auto_forwarded_by_link_id?: Record<string, string>; }>;
+      return response.json() as Promise<AddLinksResponse>;
     },
     onMutate: async (items) => {
       // Cancel outgoing queries to prevent overwrites
@@ -1077,7 +1086,7 @@ export function useLinkMutations(filters: LinkFilters) {
 
       return { tempIds, previousAll, previousCurrent, pendingLinkIds: [] as string[] };
     },
-    onSuccess: (data, items, context) => {
+    onSuccess: async (data, items, context) => {
       const createdLinks = data.links ?? [];
       const count = data.count ?? createdLinks.length;
       const restored = data.restored ?? 0;
@@ -1097,6 +1106,36 @@ export function useLinkMutations(filters: LinkFilters) {
         context.pendingLinkIds = createdLinks
           .filter((link) => link.fetch_status === "pending" || link.fetch_status === "fetching")
           .map((link) => link.id);
+      }
+
+      // When adding from a space view, persist those newly created links into
+      // the active space immediately so they don't disappear on reconciliation.
+      if (isSpaceFilter(filters) && filters.space_id && createdLinks.length > 0) {
+        const createdIds = createdLinks.map((link) => link.id);
+
+        try {
+          const response = await fetch(`/api/spaces/${filters.space_id}/links`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ link_ids: createdIds }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(
+              () => ({}) as { error?: string }
+            );
+            const message = errorData.error ?? "Saved the item, but couldn't add it to this space.";
+            throw new Error(message);
+          }
+        } catch (error) {
+          // Keep space-scoped cache consistent with server when assignment fails.
+          removeLinksFromCache(queryClient, filters, createdIds);
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.links.list(filters),
+            refetchType: "active",
+          });
+          toast.error(error instanceof Error ? error.message : "Saved the item, but couldn't add it to this space.");
+        }
       }
 
       const itemLabel = (type: string) =>

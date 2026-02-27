@@ -8,7 +8,6 @@ import { NextResponse } from "next/server";
 const ALLOWED_REDIRECT_PATHS = new Set([
   '/',
   '/extension',
-  '/settings',
   '/homepage',
 ]);
 
@@ -17,7 +16,6 @@ const ALLOWED_REDIRECT_PATHS = new Set([
  */
 const ALLOWED_PATH_PREFIXES = [
   '/extension/',
-  '/settings/',
   '/homepage/',
   '/space/',
   '/trash',
@@ -122,4 +120,3 @@ export async function GET(request: Request) {
   
   return NextResponse.redirect(authUrl);
 }
-
