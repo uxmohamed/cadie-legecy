@@ -33,6 +33,19 @@ export async function getUsageSnapshot(userId: string): Promise<UsageSnapshot> {
       .eq("content_type", "document"),
   ]);
 
+  if (itemsResult.error) {
+    throw new Error(`Failed to fetch links usage: ${itemsResult.error.message}`);
+  }
+  if (spacesResult.error) {
+    throw new Error(`Failed to fetch spaces usage: ${spacesResult.error.message}`);
+  }
+  if (imagesResult.error) {
+    throw new Error(`Failed to fetch images usage: ${imagesResult.error.message}`);
+  }
+  if (documentsResult.error) {
+    throw new Error(`Failed to fetch documents usage: ${documentsResult.error.message}`);
+  }
+
   return {
     totalSavedItems: itemsResult.count ?? 0,
     spacesTotal: spacesResult.count ?? 0,
@@ -47,11 +60,15 @@ export async function getSpaceAccess(userId: string, entitlements: Entitlements)
   lockedSpaceIds: Set<string>;
 }> {
   const supabase = createAdminClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("spaces")
     .select("id, sort_order")
     .eq("user_id", userId)
     .order("sort_order", { ascending: true });
+
+  if (error) {
+    throw new Error(`Failed to fetch space access: ${error.message}`);
+  }
 
   const orderedSpaces = ((data || []) as SpaceRow[]).map((space) => ({
     id: String(space.id),
