@@ -8,6 +8,10 @@ interface ParseAccumulator {
   topLevelFolders: Set<string>;
 }
 
+interface ParsedNode {
+  tagName?: string;
+}
+
 const SAMPLE_LINK_LIMIT = 20;
 
 export interface ParsedBookmarkHtml {
@@ -49,7 +53,7 @@ function processContainer(
     .filter((node) => (node as { type?: string }).type === "tag");
 
   for (let i = 0; i < children.length; i++) {
-    const node = children[i] as any;
+    const node = children[i] as ParsedNode;
     const tag = node.tagName?.toLowerCase();
 
     if (!tag) continue;
@@ -93,7 +97,7 @@ function processContainer(
           continue;
         }
 
-        const next = children[i + 1] as any;
+        const next = children[i + 1] as ParsedNode | undefined;
         const nextTag = next?.tagName?.toLowerCase();
 
         if (next && (nextTag === "dl" || nextTag === "p")) {
