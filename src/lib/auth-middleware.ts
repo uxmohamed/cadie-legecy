@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { log } from "@/lib/logger";
 
 export interface AuthenticatedRequest extends NextRequest {
@@ -58,7 +58,7 @@ async function authenticateWithToken(token: string): Promise<string | null> {
     
     // Use service role to query api_tokens table
     // We need to use service role because RLS won't let us query without auth
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     
     // Current timestamp for expiration check
     const now = new Date().toISOString();
@@ -89,7 +89,7 @@ async function authenticateWithToken(token: string): Promise<string | null> {
     });
 
     return tokenRecord.user_id;
-  } catch (error) {
+  } catch {
     // SECURITY: Don't log error details that could reveal system internals
     log.error("[AUTH] Token authentication error");
     return null;
@@ -101,7 +101,7 @@ async function authenticateWithToken(token: string): Promise<string | null> {
  * @param tokenId - The token ID
  */
 async function updateTokenLastUsed(tokenId: string): Promise<void> {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   
   await supabase
     .from("api_tokens")
@@ -135,5 +135,3 @@ export function generateToken(length: number = 32): string {
     .replace(/\//g, '_')
     .replace(/=/g, '');
 }
-
-
