@@ -99,7 +99,7 @@ function hasPaidAccess(record: UserBillingRecord, now: Date): boolean {
 
   const currentPeriodEnd = parseDate(record.current_period_end);
   if (!currentPeriodEnd) {
-    return record.subscription_status === "active";
+    return true;
   }
 
   return currentPeriodEnd.getTime() > now.getTime();

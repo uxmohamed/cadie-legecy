@@ -290,6 +290,22 @@ describe("resolvePlanForUser", () => {
     expect(plan).toBe("pro");
   });
 
+  it.each(["past_due", "paused", "unpaid", "canceled"] as const)(
+    "grants access when status is '%s' with no current_period_end",
+    async (status) => {
+      const record = makeBillingRecord({
+        plan_tier: "pro",
+        subscription_status: status,
+        current_period_end: null,
+      });
+      const supabase = makeMockSupabase(record);
+      (createAdminClient as jest.Mock).mockReturnValue(supabase);
+
+      const { plan } = await resolvePlanForUser("user_123");
+      expect(plan).toBe("pro");
+    }
+  );
+
   it("returns 'starter' when DB returns an error", async () => {
     const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: { message: "DB error" } });
     const eq = jest.fn().mockReturnValue({ maybeSingle });
