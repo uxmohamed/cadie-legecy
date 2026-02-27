@@ -437,6 +437,7 @@ export async function POST(request: NextRequest) {
               .from("links")
               .delete()
               .eq("user_id", user.id)
+              .eq("is_deleted", true)
               .in("id", ids!)
               .select();
           },

@@ -42,7 +42,8 @@ export async function DELETE(
       .from("links")
       .delete()
       .eq("id", id)
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .eq("is_deleted", true);
 
     if (error) {
       console.error("Error permanently deleting link:", error);
