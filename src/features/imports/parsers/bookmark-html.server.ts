@@ -1,4 +1,5 @@
 import { load } from "cheerio";
+import type { Element } from "domhandler";
 import type { BookmarkImportLink, BookmarkPreview } from "@/features/imports/types/import.types";
 
 interface ParseAccumulator {
@@ -6,10 +7,6 @@ interface ParseAccumulator {
   totalLinks: number;
   invalidLinks: number;
   topLevelFolders: Set<string>;
-}
-
-interface ParsedNode {
-  tagName?: string;
 }
 
 const SAMPLE_LINK_LIMIT = 20;
@@ -41,6 +38,10 @@ function normalizeTitle(input: string, fallbackUrl: string): string {
   return cleaned || fallbackUrl;
 }
 
+function isTagElement(node: unknown): node is Element {
+  return typeof node === "object" && node !== null && (node as { type?: string }).type === "tag";
+}
+
 function processContainer(
   $: ReturnType<typeof load>,
   element: unknown,
@@ -50,11 +51,11 @@ function processContainer(
   const children = $(element as never)
     .contents()
     .toArray()
-    .filter((node) => (node as { type?: string }).type === "tag");
+    .filter(isTagElement);
 
   for (let i = 0; i < children.length; i++) {
-    const node = children[i] as ParsedNode;
-    const tag = node.tagName?.toLowerCase();
+    const node = children[i];
+    const tag = node.name?.toLowerCase();
 
     if (!tag) continue;
 
@@ -97,8 +98,8 @@ function processContainer(
           continue;
         }
 
-        const next = children[i + 1] as ParsedNode | undefined;
-        const nextTag = next?.tagName?.toLowerCase();
+        const next = children[i + 1];
+        const nextTag = next?.name?.toLowerCase();
 
         if (next && (nextTag === "dl" || nextTag === "p")) {
           processContainer($, next, [...folderStack, folderName], acc);
