@@ -14,7 +14,7 @@ const createLinkHandler = new CreateLinkHandler();
 /**
  * GET /api/links
  * Retrieve links for the authenticated user
- * Optimized with caching headers for faster subsequent loads
+ * Marked no-store so list reads never serve stale data after mutations.
  */
 export async function GET(request: NextRequest) {
   // Authenticate to get userId for rate limiting
@@ -46,14 +46,9 @@ export async function GET(request: NextRequest) {
     response.headers.set(key, value);
   });
   
-  // Add caching headers for better performance
-  // private: only cache for this user (authenticated endpoint)
-  // max-age=0: always revalidate with server
-  // stale-while-revalidate=60: serve stale while revalidating in background for up to 60s
-  response.headers.set(
-    "Cache-Control",
-    "private, max-age=0, stale-while-revalidate=60"
-  );
+  // Keep link lists out of HTTP caches. React Query handles freshness on the client,
+  // and stale cached responses can overwrite optimistic link inserts.
+  response.headers.set("Cache-Control", "private, no-store");
   
   return response;
 }

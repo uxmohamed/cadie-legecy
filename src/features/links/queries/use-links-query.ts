@@ -71,7 +71,12 @@ async function fetchLinks(
   signal?: AbortSignal
 ): Promise<LinksResponse> {
   const url = buildQueryString(filters, offset, searchQuery, limit);
-  const response = await fetch(url, { signal });
+  const response = await fetch(url, {
+    signal,
+    // React Query already owns freshness; bypass browser HTTP cache so
+    // stale-while-revalidate responses cannot overwrite optimistic items.
+    cache: "no-store",
+  });
 
   if (!response.ok) {
     let errorMessage = "Failed to fetch links";
@@ -232,10 +237,13 @@ export function useLinksInfiniteQuery(
 export function useLinkQuery(linkId: string | undefined, enabled: boolean = true) {
   return useQuery({
     queryKey: queryKeys.links.detail(linkId ?? ""),
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       if (!linkId) throw new Error("Link ID required");
       
-      const response = await fetch(`/api/links/${linkId}`);
+      const response = await fetch(`/api/links/${linkId}`, {
+        signal,
+        cache: "no-store",
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch link");
       }

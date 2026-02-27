@@ -139,6 +139,7 @@ describe("/api/links route auth and rate-limit order", () => {
     expect(mockGetIdentifier).toHaveBeenCalledWith(request, "user_1");
     expect(mockRateLimitLinksLimit).toHaveBeenCalledWith("user:user_1");
     expect(mockGetLinksHandle).toHaveBeenCalledWith(request, "user_1");
+    expect(response.headers.get("Cache-Control")).toBe("private, no-store");
   });
 
   it("POST applies rate limiting for authenticated user and passes user id to handler", async () => {
