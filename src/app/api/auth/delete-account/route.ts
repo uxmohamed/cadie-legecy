@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { rateLimitAccountDeletion, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 
 
@@ -11,6 +10,7 @@ import { rateLimitAccountDeletion, getIdentifier, getRateLimitHeaders } from "@/
 export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createClient();
+    const supabaseAdmin = createAdminClient();
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
@@ -28,52 +28,73 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Delete user's data first (links, spaces, link_spaces, etc.)
-    // The database should have CASCADE deletes set up, but let's be explicit
+    // Delete user's data first (before deleting auth user)
+    // Use service role to bypass RLS and guarantee cleanup
     
     // Get user's link IDs first
-    const { data: userLinks } = await supabase
+    const { data: userLinks, error: userLinksError } = await supabaseAdmin
       .from("links")
       .select("id")
       .eq("user_id", user.id);
 
-    // Delete link_spaces entries for user's links
+    if (userLinksError) {
+      console.error("Error fetching user links:", userLinksError);
+      return NextResponse.json(
+        { error: "Failed to delete account" },
+        { status: 500 }
+      );
+    }
+
+    // Delete link_spaces and link_tags entries for user's links first
     if (userLinks && userLinks.length > 0) {
       const linkIds = userLinks.map(l => l.id);
-      const { error: linkSpacesError } = await supabase
-        .from("link_spaces")
-        .delete()
-        .in("link_id", linkIds);
+      const [linkSpacesResult, linkTagsResult] = await Promise.all([
+        supabaseAdmin
+          .from("link_spaces")
+          .delete()
+          .in("link_id", linkIds),
+        supabaseAdmin
+          .from("link_tags")
+          .delete()
+          .in("link_id", linkIds),
+      ]);
 
-      if (linkSpacesError) {
-        console.error("Error deleting link_spaces:", linkSpacesError);
+      if (linkSpacesResult.error || linkTagsResult.error) {
+        if (linkSpacesResult.error) {
+          console.error("Error deleting link_spaces:", linkSpacesResult.error);
+        }
+        if (linkTagsResult.error) {
+          console.error("Error deleting link_tags:", linkTagsResult.error);
+        }
+        return NextResponse.json(
+          { error: "Failed to delete account" },
+          { status: 500 }
+        );
       }
     }
 
-    // Delete spaces, links, tokens, and profile in parallel (all independent)
-    const [spacesResult, linksResult, tokensResult, profileResult] = await Promise.all([
-      supabase.from("spaces").delete().eq("user_id", user.id),
-      supabase.from("links").delete().eq("user_id", user.id),
-      supabase.from("api_tokens").delete().eq("user_id", user.id),
-      supabase.from("profiles").delete().eq("id", user.id),
+    // Delete remaining user-owned data in parallel
+    const [spacesResult, linksResult, tokensResult, billingResult, jobsResult, userResult] = await Promise.all([
+      supabaseAdmin.from("spaces").delete().eq("user_id", user.id),
+      supabaseAdmin.from("links").delete().eq("user_id", user.id),
+      supabaseAdmin.from("api_tokens").delete().eq("user_id", user.id),
+      supabaseAdmin.from("user_billing").delete().eq("user_id", user.id),
+      supabaseAdmin.from("bookmark_import_jobs").delete().eq("user_id", user.id),
+      supabaseAdmin.from("users").delete().eq("id", user.id),
     ]);
 
-    if (spacesResult.error) console.error("Error deleting spaces:", spacesResult.error);
-    if (linksResult.error) console.error("Error deleting links:", linksResult.error);
-    if (tokensResult.error) console.error("Error deleting tokens:", tokensResult.error);
-    if (profileResult.error) console.error("Error deleting profile:", profileResult.error);
-
-    // Delete the user from Supabase Auth using admin client
-    const supabaseAdmin = createAdminClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
-    );
+    if (spacesResult.error || linksResult.error || tokensResult.error || billingResult.error || jobsResult.error || userResult.error) {
+      if (spacesResult.error) console.error("Error deleting spaces:", spacesResult.error);
+      if (linksResult.error) console.error("Error deleting links:", linksResult.error);
+      if (tokensResult.error) console.error("Error deleting tokens:", tokensResult.error);
+      if (billingResult.error) console.error("Error deleting user_billing:", billingResult.error);
+      if (jobsResult.error) console.error("Error deleting bookmark_import_jobs:", jobsResult.error);
+      if (userResult.error) console.error("Error deleting user:", userResult.error);
+      return NextResponse.json(
+        { error: "Failed to delete account" },
+        { status: 500 }
+      );
+    }
 
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
 
