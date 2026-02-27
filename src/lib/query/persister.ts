@@ -4,7 +4,7 @@ import type { PersistedClient, Persister } from "@tanstack/react-query-persist-c
 // VERSIONED KEY - bump when schema changes to invalidate old cache
 // v2: Reduced staleTime from 0 to 5min, gcTime from 24hr to 2hr, maxAge from 24hr to 1hr
 export const CACHE_KEY = "tanstack-query-cache-v2";
-const store = createStore("caddy-cache", "query-cache");
+export const QUERY_CACHE_STORE = createStore("caddy-cache", "query-cache");
 
 /**
  * Creates an IndexedDB persister for TanStack Query
@@ -13,13 +13,13 @@ const store = createStore("caddy-cache", "query-cache");
 export function createIDBPersister(): Persister {
   return {
     persistClient: async (client: PersistedClient) => {
-      await set(CACHE_KEY, client, store);
+      await set(CACHE_KEY, client, QUERY_CACHE_STORE);
     },
     restoreClient: async () => {
-      return await get<PersistedClient>(CACHE_KEY, store);
+      return await get<PersistedClient>(CACHE_KEY, QUERY_CACHE_STORE);
     },
     removeClient: async () => {
-      await del(CACHE_KEY, store);
+      await del(CACHE_KEY, QUERY_CACHE_STORE);
     },
   };
 }
