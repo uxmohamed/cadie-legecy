@@ -19,9 +19,12 @@ const createLinkHandler = new CreateLinkHandler();
 export async function GET(request: NextRequest) {
   // Authenticate to get userId for rate limiting
   const userId = await authenticateRequest(request);
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   
   // Apply rate limiting
-  const identifier = getIdentifier(request, userId || undefined);
+  const identifier = getIdentifier(request, userId);
   const { success, limit, reset, remaining } = await rateLimitLinks.limit(identifier);
   
   if (!success) {
@@ -35,7 +38,7 @@ export async function GET(request: NextRequest) {
   }
   
   // Continue with handler
-  const response = await getLinksHandler.handle(request, userId || undefined);
+  const response = await getLinksHandler.handle(request, userId);
   
   // Add rate limit headers to response
   const headers = getRateLimitHeaders(limit, remaining, reset);
@@ -62,9 +65,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   // Authenticate to get userId for rate limiting
   const userId = await authenticateRequest(request);
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   
   // Apply rate limiting
-  const identifier = getIdentifier(request, userId || undefined);
+  const identifier = getIdentifier(request, userId);
   const { success, limit, reset, remaining } = await rateLimitLinks.limit(identifier);
   
   if (!success) {
@@ -97,7 +103,7 @@ export async function POST(request: NextRequest) {
     color_value: validatedData.color_value ?? null,
   };
   
-  const response = await createLinkHandler.handle(request, dto, userId || undefined);
+  const response = await createLinkHandler.handle(request, dto, userId);
   
   // Add rate limit headers to response
   const headers = getRateLimitHeaders(limit, remaining, reset);
