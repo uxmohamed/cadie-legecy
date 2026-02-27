@@ -140,6 +140,12 @@ export async function POST(request: NextRequest) {
     }
 
     const supportAmountCents = normalizeSupportAmount(plan, body.support_amount_cents);
+    if (plan === "believer" && supportAmountCents === null) {
+      return NextResponse.json(
+        { error: "Believer plan requires a valid support amount" },
+        { status: 400 }
+      );
+    }
     const checkoutOrigin = resolveCheckoutOrigin(request);
     const checkoutReturnUrl = normalizeReturnUrl(body.return_url, checkoutOrigin);
 

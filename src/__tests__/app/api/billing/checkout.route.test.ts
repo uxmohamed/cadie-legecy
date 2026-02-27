@@ -191,4 +191,68 @@ describe("POST /api/billing/checkout", () => {
     });
     expect(mockCreateLemonCheckout).not.toHaveBeenCalled();
   });
+
+  it("rejects believer checkout when support amount is missing", async () => {
+    mockGetVariantIdForSelection.mockReturnValue("variant_believer_year");
+
+    const request = makeRequest(
+      {
+        plan: "believer",
+        interval: "year",
+      },
+      "https://cadie.app"
+    );
+
+    const response = await POST(request as never);
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: "Believer plan requires a valid support amount",
+    });
+    expect(mockCreateLemonCheckout).not.toHaveBeenCalled();
+  });
+
+  it("rejects believer checkout when support amount is zero or invalid", async () => {
+    mockGetVariantIdForSelection.mockReturnValue("variant_believer_year");
+
+    const request = makeRequest(
+      {
+        plan: "believer",
+        interval: "year",
+        support_amount_cents: 0,
+      },
+      "https://cadie.app"
+    );
+
+    const response = await POST(request as never);
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: "Believer plan requires a valid support amount",
+    });
+    expect(mockCreateLemonCheckout).not.toHaveBeenCalled();
+  });
+
+  it("allows believer checkout when support amount is valid", async () => {
+    mockGetVariantIdForSelection.mockReturnValue("variant_believer_year");
+
+    const request = makeRequest(
+      {
+        plan: "believer",
+        interval: "year",
+        support_amount_cents: 2500,
+      },
+      "https://cadie.app"
+    );
+
+    const response = await POST(request as never);
+
+    expect(response.status).toBe(200);
+    expect(mockCreateLemonCheckout).toHaveBeenCalledWith(
+      expect.objectContaining({
+        variantId: "variant_believer_year",
+        supportAmountCents: 2500,
+      })
+    );
+  });
 });
