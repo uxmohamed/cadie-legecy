@@ -109,6 +109,22 @@ describe('canonicalizeUrl', () => {
       const result = canonicalizeUrl('https://example.com?z=1&a=2&m=3');
       expect(result).toBe('example.com?a=2&m=3&z=1');
     });
+
+    it('preserves duplicate query parameter values for the same key', () => {
+      const result = canonicalizeUrl(
+        'https://example.com/search?tag=javascript&tag=typescript&tag=react&page=1'
+      );
+      expect(result).toBe('example.com/search?page=1&tag=javascript&tag=typescript&tag=react');
+    });
+
+    it('keeps distinct duplicate-value URLs unique after canonicalization', () => {
+      const a = canonicalizeUrl('https://dev.to/search?tag=javascript&tag=react');
+      const b = canonicalizeUrl('https://dev.to/search?tag=javascript&tag=python');
+
+      expect(a).toBe('dev.to/search?tag=javascript&tag=react');
+      expect(b).toBe('dev.to/search?tag=javascript&tag=python');
+      expect(a).not.toBe(b);
+    });
   });
 
   describe('hash handling', () => {

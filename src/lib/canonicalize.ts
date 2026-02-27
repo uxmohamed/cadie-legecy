@@ -796,10 +796,13 @@ export function canonicalizeUrl(url: string): string {
     const filteredParams = new URLSearchParams();
 
     // Sort and filter parameters
-    const sortedKeys = Array.from(params.keys()).sort();
+    const sortedKeys = Array.from(new Set(Array.from(params.keys()))).sort();
     for (const key of sortedKeys) {
       if (!trackingParams.has(key.toLowerCase())) {
-        filteredParams.set(key.toLowerCase(), params.get(key) || "");
+        const values = params.getAll(key);
+        for (const value of values) {
+          filteredParams.append(key.toLowerCase(), value);
+        }
       }
     }
 

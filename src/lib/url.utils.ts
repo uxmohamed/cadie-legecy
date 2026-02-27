@@ -56,9 +56,12 @@ export function normalizeUrl(url: string): string {
         
         // Sort remaining parameters for consistency
         const sortedParams = new URLSearchParams();
-        const keys = Array.from(params.keys()).sort();
+        const keys = Array.from(new Set(Array.from(params.keys()))).sort();
         for (const key of keys) {
-            sortedParams.set(key, params.get(key)!);
+            const values = params.getAll(key);
+            for (const value of values) {
+                sortedParams.append(key, value);
+            }
         }
         
         urlObj.search = sortedParams.toString();
