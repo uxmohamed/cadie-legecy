@@ -652,9 +652,10 @@ export class BookmarkImportService {
     }
 
     const expiredDrafts = expiredDraftCandidates || [];
+    let actuallyExpiredDrafts: Array<{ id: string; storage_path: string | null }> = [];
     if (expiredDrafts.length > 0) {
       const expiredIds = expiredDrafts.map((row) => row.id);
-      const { error: expiredUpdateError } = await supabase
+      const { data: updatedExpiredDrafts, error: expiredUpdateError } = await supabase
         .from("bookmark_import_jobs")
         .update({
           status: "expired",
@@ -662,13 +663,16 @@ export class BookmarkImportService {
           completed_at: nowIso,
         })
         .in("id", expiredIds)
-        .eq("status", "draft");
+        .eq("status", "draft")
+        .select("id, storage_path");
 
       if (expiredUpdateError) {
         throw new Error(`Failed to mark import drafts as expired: ${expiredUpdateError.message}`);
       }
 
-      const expiredPaths = expiredDrafts
+      actuallyExpiredDrafts = (updatedExpiredDrafts || []) as Array<{ id: string; storage_path: string | null }>;
+
+      const expiredPaths = actuallyExpiredDrafts
         .map((row) => row.storage_path)
         .filter((path): path is string => typeof path === "string" && path.length > 0);
       if (expiredPaths.length > 0) {
@@ -711,7 +715,7 @@ export class BookmarkImportService {
     }
 
     return {
-      expiredDrafts: expiredDrafts.length,
+      expiredDrafts: actuallyExpiredDrafts.length,
       removedFiles,
     };
   }
