@@ -71,6 +71,4 @@ npm run extension:build
 - Bookmark import rollout: `/Users/hassan/Repos/cadie/docs/bookmark-import-v0-rollout.md`
 - Link export rollout: `/Users/hassan/Repos/cadie/docs/link-export-v0-rollout.md`
 
-## License
 
-MIT
