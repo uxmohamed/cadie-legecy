@@ -78,6 +78,7 @@ import { ShortcutProvider } from "@/components/shortcut-context";
 import { ShortcutsHelpModal } from "@/components/shortcuts-help-modal";
 import { QueryProvider } from "@/lib/query";
 import { Agentation } from "agentation";
+import { Analytics } from "@vercel/analytics/next";
 
 export default function RootLayout({
   children,
@@ -115,6 +116,7 @@ export default function RootLayout({
           </QueryProvider>
           {process.env.NODE_ENV === "development" && <Agentation />}
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
