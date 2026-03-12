@@ -35,12 +35,12 @@ const BLOCKED_PATH_PREFIXES = [
  * Prevents open redirect attacks by only allowing relative paths to known routes
  */
 function sanitizeRedirectPath(path: string | null): string {
-  // Default to home if no path provided
-  if (!path) return '/';
+  // Default to authenticated app landing page if no path provided
+  if (!path) return '/homepage';
   
   // SECURITY: Must be a relative path (not protocol-relative like //evil.com)
   if (!path.startsWith('/') || path.startsWith('//')) {
-    return '/';
+    return '/homepage';
   }
   
   // SECURITY: Remove any query params for validation, but preserve them after validation
@@ -49,7 +49,7 @@ function sanitizeRedirectPath(path: string | null): string {
   // SECURITY: Block sensitive paths (check both with and without trailing slash)
   for (const blockedPrefix of BLOCKED_PATH_PREFIXES) {
     if (pathOnly === blockedPrefix || pathOnly.startsWith(blockedPrefix + '/')) {
-      return '/';
+      return '/homepage';
     }
   }
   
@@ -60,7 +60,7 @@ function sanitizeRedirectPath(path: string | null): string {
   );
   
   if (!isExactMatch && !isUnderAllowedPrefix) {
-    return '/';
+    return '/homepage';
   }
   
   // Path is safe, return the original (with query params if any)
@@ -68,7 +68,7 @@ function sanitizeRedirectPath(path: string | null): string {
 }
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   
   // SECURITY: Sanitize redirect path to prevent open redirects

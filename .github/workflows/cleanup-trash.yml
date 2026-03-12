@@ -10,12 +10,14 @@ on:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
+    env:
+      APP_BASE_URL: ${{ vars.APP_BASE_URL != '' && vars.APP_BASE_URL || 'https://cadie.app' }}
     steps:
       - name: Trigger Trash Cleanup Endpoint
         run: |
           response=$(curl -s -w "\n%{http_code}" -X GET \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            https://cadie.app/api/cron/cleanup-trash)
+            "$APP_BASE_URL/api/cron/cleanup-trash")
 
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | head -n-1)
@@ -32,7 +34,7 @@ jobs:
         run: |
           response=$(curl -s -w "\n%{http_code}" -X GET \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            https://cadie.app/api/cron/cleanup-imports)
+            "$APP_BASE_URL/api/cron/cleanup-imports")
 
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | head -n-1)
