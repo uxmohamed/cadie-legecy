@@ -5,10 +5,36 @@ import { OnboardingClient } from "@/components/onboarding-client";
 import { fetchVariantPrices } from "@/lib/billing/lemon-client";
 import { prefetchSpaces } from "@/lib/server/prefetch-links";
 import { allChangelogs } from "contentlayer/generated";
+import { redirect } from "next/navigation";
 
 export default async function Home(props: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  const searchParams = await props.searchParams;
+
+  const callbackCode = searchParams.code;
+  const code = Array.isArray(callbackCode) ? callbackCode[0] : callbackCode;
+
+  // Supabase can occasionally return to /?code=... instead of /auth/callback.
+  // Forward those requests to the callback route so the code gets exchanged for a session.
+  if (code) {
+    const callbackSearchParams = new URLSearchParams();
+
+    for (const [key, value] of Object.entries(searchParams)) {
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          if (item != null) {
+            callbackSearchParams.append(key, item);
+          }
+        }
+      } else if (value != null) {
+        callbackSearchParams.set(key, value);
+      }
+    }
+
+    redirect(`/auth/callback?${callbackSearchParams.toString()}`);
+  }
+
   // Server-side auth check (no client-side flash)
   const {
     data: { user },
