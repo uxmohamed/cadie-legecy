@@ -66,6 +66,8 @@ interface AddLinksResponse {
  */
 const ALL_FILTERS: LinkFilters = { is_deleted: false, is_archived: false };
 const TRASH_FILTERS: LinkFilters = { is_deleted: true };
+const RECONCILIATION_POLL_INTERVAL_MS = 3_000;
+const RECONCILIATION_POLL_MAX_ATTEMPTS = 10;
 
 /**
  * Check if filters represent a space-specific view
@@ -139,6 +141,44 @@ function markLinkListsStale(queryClient: ReturnType<typeof useQueryClient>) {
     queryKey: queryKeys.links.all,
     refetchType: "none",
   });
+}
+
+function isLinkReconciling(link: Pick<Link, "fetch_status" | "processing_state">): boolean {
+  return (
+    link.fetch_status === "pending" ||
+    link.fetch_status === "fetching" ||
+    link.processing_state === "queued" ||
+    link.processing_state === "processing"
+  );
+}
+
+function schedulePendingLinkReconciliation(
+  queryClient: ReturnType<typeof useQueryClient>,
+  pendingIds: string[],
+  attempt: number = 1
+) {
+  if (pendingIds.length === 0 || attempt > RECONCILIATION_POLL_MAX_ATTEMPTS) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    const current = queryClient.getQueryData<LinksResponse>(queryKeys.links.list(ALL_FILTERS));
+    const pendingIdSet = new Set(pendingIds);
+    const hasTrackedPending = current?.links.some((link) => (
+      pendingIdSet.has(link.id) && isLinkReconciling(link)
+    ));
+
+    if (!hasTrackedPending) {
+      return;
+    }
+
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.links.all,
+      refetchType: "active",
+    });
+
+    schedulePendingLinkReconciliation(queryClient, pendingIds, attempt + 1);
+  }, RECONCILIATION_POLL_INTERVAL_MS);
 }
 
 /**
@@ -1099,7 +1139,7 @@ export function useLinkMutations(filters: LinkFilters) {
 
       if (context) {
         context.pendingLinkIds = createdLinks
-          .filter((link) => link.fetch_status === "pending" || link.fetch_status === "fetching")
+          .filter((link) => isLinkReconciling(link))
           .map((link) => link.id);
       }
 
@@ -1174,23 +1214,8 @@ export function useLinkMutations(filters: LinkFilters) {
       toast.error(err instanceof Error ? err.message : "Failed to save");
     },
     onSettled: (_data, _error, _items, context) => {
-      // Single bounded reconciliation poll to avoid refetch storms.
       const pendingIds = context?.pendingLinkIds || [];
-      if (pendingIds.length === 0) return;
-
-      setTimeout(() => {
-        const current = queryClient.getQueryData<LinksResponse>(queryKeys.links.list(ALL_FILTERS));
-        const pendingIdSet = new Set(pendingIds);
-        const hasTrackedPending = current?.links.some(
-          (link) =>
-            pendingIdSet.has(link.id) &&
-            (link.fetch_status === "pending" || link.fetch_status === "fetching")
-        );
-
-        if (hasTrackedPending) {
-          queryClient.invalidateQueries({ queryKey: queryKeys.links.all, refetchType: "active" });
-        }
-      }, 4000);
+      schedulePendingLinkReconciliation(queryClient, pendingIds);
     },
   });
 

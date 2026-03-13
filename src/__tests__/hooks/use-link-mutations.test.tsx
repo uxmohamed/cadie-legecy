@@ -55,6 +55,9 @@ function makeLink(overrides: Partial<Link> = {}): Link {
     fetched_at: overrides.fetched_at ?? null,
     etag: overrides.etag ?? null,
     last_modified: overrides.last_modified ?? null,
+    processing_state: overrides.processing_state ?? "completed",
+    processing_stage: overrides.processing_stage ?? "complete",
+    processing_error: overrides.processing_error ?? null,
   };
 }
 
@@ -143,5 +146,103 @@ describe("useLinkMutations", () => {
     );
     expect(spaceCache?.links.some((link) => link.id === createdLink.id)).toBe(true);
     queryClient.clear();
+  });
+
+  it("keeps reconciling pending links until the cache is resolved", async () => {
+    jest.useFakeTimers();
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: Infinity },
+        mutations: { retry: false, gcTime: Infinity },
+      },
+    });
+
+    const allFilters: LinkFilters = { is_deleted: false, is_archived: false };
+    queryClient.setQueryData<LinksResponse>(queryKeys.links.list(allFilters), {
+      links: [],
+      total: 0,
+    });
+
+    const pendingLink = makeLink({
+      id: "pending-link-1",
+      url: "https://example.com/pending",
+      clean_url: "https://example.com/pending",
+      title: "https://example.com/pending",
+      created_at: "2026-03-13T10:00:00.000Z",
+      updated_at: "2026-03-13T10:00:00.000Z",
+      fetch_status: "pending",
+      processing_state: "queued",
+      processing_stage: "queued",
+    });
+
+    const resolvedLink = makeLink({
+      ...pendingLink,
+      title: "Resolved Title",
+      fetch_status: "success",
+      processing_state: "completed",
+      processing_stage: "complete",
+      updated_at: "2026-03-13T10:00:08.000Z",
+    });
+
+    (global.fetch as jest.Mock).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+
+      if (url === "/api/links/batch") {
+        return {
+          ok: true,
+          json: async () => ({
+            links: [pendingLink],
+            count: 1,
+            restored: 0,
+            duplicates: 0,
+          }),
+        };
+      }
+
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    });
+
+    const invalidateSpy = jest.spyOn(queryClient, "invalidateQueries");
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+
+    const { result } = renderHook(() => useLinkMutations(allFilters), { wrapper });
+
+    act(() => {
+      result.current.addLinks([{ value: "https://example.com/pending", type: "url" }]);
+    });
+
+    await waitFor(() => {
+      const cache = queryClient.getQueryData<LinksResponse>(queryKeys.links.list(allFilters));
+      expect(cache?.links.some((link) => link.id === pendingLink.id)).toBe(true);
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(3_000);
+      await Promise.resolve();
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: queryKeys.links.all,
+      refetchType: "active",
+    });
+
+    queryClient.setQueryData<LinksResponse>(queryKeys.links.list(allFilters), {
+      links: [resolvedLink],
+      total: 1,
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(3_000);
+      await Promise.resolve();
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledTimes(1);
+
+    queryClient.clear();
+    jest.useRealTimers();
   });
 });
