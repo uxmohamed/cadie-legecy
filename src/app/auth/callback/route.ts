@@ -30,17 +30,19 @@ const BLOCKED_PATH_PREFIXES = [
   '/auth',
 ];
 
+const DEFAULT_AUTH_REDIRECT_PATH = '/';
+
 /**
  * Validate and sanitize the redirect path
  * Prevents open redirect attacks by only allowing relative paths to known routes
  */
 function sanitizeRedirectPath(path: string | null): string {
   // Default to authenticated app landing page if no path provided
-  if (!path) return '/homepage';
+  if (!path) return DEFAULT_AUTH_REDIRECT_PATH;
   
   // SECURITY: Must be a relative path (not protocol-relative like //evil.com)
   if (!path.startsWith('/') || path.startsWith('//')) {
-    return '/homepage';
+    return DEFAULT_AUTH_REDIRECT_PATH;
   }
   
   // SECURITY: Remove any query params for validation, but preserve them after validation
@@ -49,7 +51,7 @@ function sanitizeRedirectPath(path: string | null): string {
   // SECURITY: Block sensitive paths (check both with and without trailing slash)
   for (const blockedPrefix of BLOCKED_PATH_PREFIXES) {
     if (pathOnly === blockedPrefix || pathOnly.startsWith(blockedPrefix + '/')) {
-      return '/homepage';
+      return DEFAULT_AUTH_REDIRECT_PATH;
     }
   }
   
@@ -60,7 +62,7 @@ function sanitizeRedirectPath(path: string | null): string {
   );
   
   if (!isExactMatch && !isUnderAllowedPrefix) {
-    return '/homepage';
+    return DEFAULT_AUTH_REDIRECT_PATH;
   }
   
   // Path is safe, return the original (with query params if any)
