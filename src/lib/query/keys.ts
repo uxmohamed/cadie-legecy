@@ -30,6 +30,10 @@ function stableFilters(filters: LinkFilters): string {
  * - queryKeys.links.detail(id) - single link
  */
 export const queryKeys = {
+  billing: {
+    all: ["billing"] as const,
+    status: () => ["billing", "status"] as const,
+  },
   links: {
     // Base key for all link queries
     all: ["links"] as const,

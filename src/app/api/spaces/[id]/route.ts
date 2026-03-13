@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitSpaces, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
-import { authenticateRequest } from "@/lib/auth-middleware";
+import { createRequestContext } from "@/lib/auth-middleware";
+import { requireTokenScopes } from "@/lib/api-tokens";
 import { getBillingContext } from "@/lib/billing/context";
 import { createPlanLimitResponse } from "@/lib/billing/limit-response";
 
@@ -17,11 +18,13 @@ export async function PATCH(
 ) {
   try {
     // Authenticate the request and use the resulting user id for ownership checks.
-    const userId = await authenticateRequest(request);
-    
-    if (!userId) {
+    const context = await createRequestContext(request);
+    if (!context) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const scopeError = requireTokenScopes(context, ["spaces:write"]);
+    if (scopeError) return scopeError;
+    const userId = context.userId;
 
     const { id } = await params;
 
@@ -135,11 +138,13 @@ export async function DELETE(
 ) {
   try {
     // Authenticate the request and use the resulting user id for ownership checks.
-    const userId = await authenticateRequest(request);
-    
-    if (!userId) {
+    const context = await createRequestContext(request);
+    if (!context) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const scopeError = requireTokenScopes(context, ["spaces:write"]);
+    if (scopeError) return scopeError;
+    const userId = context.userId;
 
     const { id } = await params;
 

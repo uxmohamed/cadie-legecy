@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GetLinksHandler, CreateLinkHandler } from "@/features/links/api/handlers";
 import { rateLimitLinks, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 import { createRequestContext } from "@/lib/auth-middleware";
+import { requireTokenScopes } from "@/lib/api-tokens";
 import { validateRequestBody } from "@/lib/validation/validate";
 import { createLinkSchema } from "@/lib/validation/link.schemas";
 import type { CreateLinkDTO } from "@/features/links/types";
@@ -21,6 +22,8 @@ export async function GET(request: NextRequest) {
   if (!context) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const scopeError = requireTokenScopes(context, ["links:read"]);
+  if (scopeError) return scopeError;
   
   // Apply rate limiting
   const identifier = getIdentifier(request, context.userId);
@@ -61,6 +64,8 @@ export async function POST(request: NextRequest) {
   if (!context) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const scopeError = requireTokenScopes(context, ["links:write"]);
+  if (scopeError) return scopeError;
   
   // Apply rate limiting
   const identifier = getIdentifier(request, context.userId);

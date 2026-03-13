@@ -9,6 +9,7 @@ export interface ExtensionSettings {
   apiToken?: string;
   cadieUrl?: string;
   userEmail?: string;
+  installId?: string;
 }
 
 // Non-sensitive settings stored in sync storage
@@ -21,6 +22,7 @@ interface SyncSettings {
 interface LocalSettings {
   apiToken?: string;
   pendingUrl?: string;
+  installId?: string;
 }
 
 // Default to production URL
@@ -38,6 +40,8 @@ let cachedCadieUrl: string = DEFAULT_CADIE_URL;
 let isCadieUrlLoaded = false;
 let cachedPendingUrl: string | undefined;
 let isPendingUrlLoaded = false;
+let cachedInstallId: string | undefined;
+let isInstallIdLoaded = false;
 
 if (typeof chrome !== "undefined" && chrome.storage?.onChanged) {
   chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -49,6 +53,10 @@ if (typeof chrome !== "undefined" && chrome.storage?.onChanged) {
       if (changes.pendingUrl) {
         cachedPendingUrl = (changes.pendingUrl.newValue as string | undefined) || undefined;
         isPendingUrlLoaded = true;
+      }
+      if (changes.installId) {
+        cachedInstallId = (changes.installId.newValue as string | undefined) || undefined;
+        isInstallIdLoaded = true;
       }
     }
 
@@ -66,7 +74,7 @@ if (typeof chrome !== "undefined" && chrome.storage?.onChanged) {
 export async function getSettings(): Promise<ExtensionSettings> {
   return new Promise((resolve) => {
     // Get sensitive data from local storage (not synced)
-    chrome.storage.local.get({ apiToken: "" }, (localItems) => {
+    chrome.storage.local.get({ apiToken: "", installId: "" }, (localItems) => {
       // Get non-sensitive data from sync storage
       chrome.storage.sync.get(
         {
@@ -76,6 +84,7 @@ export async function getSettings(): Promise<ExtensionSettings> {
         (syncItems) => {
           resolve({
             apiToken: (localItems as LocalSettings).apiToken,
+            installId: (localItems as LocalSettings).installId,
             cadieUrl: (syncItems as SyncSettings).cadieUrl,
             userEmail: (syncItems as SyncSettings).userEmail,
           });
@@ -100,6 +109,16 @@ export async function saveSettings(settings: Partial<ExtensionSettings>): Promis
       promises.push(
         new Promise<void>((res) => {
           chrome.storage.local.set({ apiToken: settings.apiToken }, () => res());
+        })
+      );
+    }
+
+    if (settings.installId !== undefined) {
+      cachedInstallId = settings.installId || undefined;
+      isInstallIdLoaded = true;
+      promises.push(
+        new Promise<void>((res) => {
+          chrome.storage.local.set({ installId: settings.installId }, () => res());
         })
       );
     }
@@ -139,10 +158,23 @@ export async function clearSettings(): Promise<void> {
     isCadieUrlLoaded = true;
     cachedPendingUrl = undefined;
     isPendingUrlLoaded = true;
+    isInstallIdLoaded = false;
     // Clear both storage areas
-    chrome.storage.local.clear(() => {
-      chrome.storage.sync.clear(() => {
-        resolve();
+    chrome.storage.local.get({ installId: "" }, (items) => {
+      const installId = (items as LocalSettings).installId || undefined;
+      cachedInstallId = installId;
+      chrome.storage.local.clear(() => {
+        if (installId) {
+          chrome.storage.local.set({ installId }, () => {
+            chrome.storage.sync.clear(() => {
+              resolve();
+            });
+          });
+          return;
+        }
+        chrome.storage.sync.clear(() => {
+          resolve();
+        });
       });
     });
   });
@@ -161,6 +193,32 @@ export async function getApiToken(): Promise<string | undefined> {
       cachedApiToken = (items as LocalSettings).apiToken || undefined;
       isApiTokenLoaded = true;
       resolve(cachedApiToken);
+    });
+  });
+}
+
+/**
+ * Get or create a stable install ID for this extension installation.
+ */
+export async function getInstallId(): Promise<string> {
+  if (isInstallIdLoaded && cachedInstallId) {
+    return cachedInstallId;
+  }
+
+  return new Promise((resolve) => {
+    chrome.storage.local.get({ installId: "" }, (items) => {
+      const existing = (items as LocalSettings).installId || undefined;
+      if (existing) {
+        cachedInstallId = existing;
+        isInstallIdLoaded = true;
+        resolve(existing);
+        return;
+      }
+
+      const nextInstallId = crypto.randomUUID();
+      cachedInstallId = nextInstallId;
+      isInstallIdLoaded = true;
+      chrome.storage.local.set({ installId: nextInstallId }, () => resolve(nextInstallId));
     });
   });
 }

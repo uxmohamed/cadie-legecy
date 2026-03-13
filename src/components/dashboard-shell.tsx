@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/menu";
 import { useShortcuts } from "@/components/shortcut-context";
 import { GlobalCommandMenu } from "@/components/global-command-menu";
+import { useBillingQuery } from "@/features/billing/queries/use-billing-query";
 
 interface DashboardShellProps {
   user: User;
@@ -60,14 +61,6 @@ interface DashboardShellProps {
   onUploadImages?: (files: File[]) => void;
   onUploadDocuments?: (files: File[]) => void;
   onCreateNote?: () => void;
-}
-
-interface BillingStatusResponse {
-  plan?: string;
-  subscription?: {
-    status?: string;
-    current_period_end?: string | null;
-  };
 }
 
 export function DashboardShell({
@@ -111,45 +104,31 @@ export function DashboardShell({
   const isTrashView = selectedCategoryId === "trash";
   const selectedSpace = spaces?.find(s => s.id === selectedCategoryId);
   const [isDraggingFiles, setIsDraggingFiles] = React.useState(false);
-
-  // Billing usage warning
-  const [billingWarning, setBillingWarning] = React.useState<{
-    nearLimit: boolean;
-    atLimit: boolean;
-    current: number;
-    max: number;
-  } | null>(null);
+  const { billing } = useBillingQuery();
   const [isSubscriptionCelebrationOpen, setIsSubscriptionCelebrationOpen] = React.useState(false);
+  const billingWarning = React.useMemo(() => {
+    if (billing?.plan !== "starter" || !billing.entitlements.maxSavedItems) {
+      return null;
+    }
 
-  React.useEffect(() => {
-    fetch("/api/billing/status")
-      .then((res) => res.json())
-      .then((data: {
-        plan?: string;
-        entitlements?: { maxSavedItems: number | null };
-        usage?: { totalSavedItems: number };
-        warnings?: { near_starter_saved_items_limit: boolean };
-      }) => {
-        if (data.plan !== "starter" || !data.entitlements?.maxSavedItems) return;
-        const max = data.entitlements.maxSavedItems;
-        const current = data.usage?.totalSavedItems ?? 0;
-        const nearLimit = data.warnings?.near_starter_saved_items_limit ?? false;
-        const atLimit = current >= max;
-        if (nearLimit || atLimit) {
-          setBillingWarning({ nearLimit, atLimit, current, max });
-        }
-      })
-      .catch(() => {});
-  }, []);
+    const max = billing.entitlements.maxSavedItems;
+    const current = billing.usage.totalSavedItems;
+    const nearLimit = billing.warnings.near_starter_saved_items_limit;
+    const atLimit = current >= max;
+
+    if (!nearLimit && !atLimit) {
+      return null;
+    }
+
+    return { nearLimit, atLimit, current, max };
+  }, [billing]);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
 
     const url = new URL(window.location.href);
     const billingSuccess = url.searchParams.get("billing_success");
-    if (billingSuccess !== "1") return;
-
-    let cancelled = false;
+    if (billingSuccess !== "1" || !billing || billing.plan === "starter") return;
 
     const clearSuccessParam = () => {
       const nextUrl = new URL(window.location.href);
@@ -159,38 +138,19 @@ export function DashboardShell({
       window.history.replaceState(null, "", cleanUrl);
     };
 
-    const maybeCelebrateUpgrade = async () => {
-      try {
-        // Trigger an on-demand sync first in case webhook delivery lags behind redirect.
-        await fetch("/api/billing/sync", { method: "POST" }).catch(() => null);
+    const status = billing.subscription.status || "unknown";
+    const periodEnd = billing.subscription.current_period_end || "none";
+    const celebrationKey = `billing_celebrated:${user.id}:${billing.plan}:${status}:${periodEnd}`;
 
-        const res = await fetch("/api/billing/status", { cache: "no-store" });
-        if (!res.ok) return;
+    if (window.localStorage.getItem(celebrationKey) === "1") {
+      clearSuccessParam();
+      return;
+    }
 
-        const data = (await res.json()) as BillingStatusResponse;
-        if (!data.plan || data.plan === "starter") return;
-
-        const status = data.subscription?.status || "unknown";
-        const periodEnd = data.subscription?.current_period_end || "none";
-        const celebrationKey = `billing_celebrated:${user.id}:${data.plan}:${status}:${periodEnd}`;
-
-        if (window.localStorage.getItem(celebrationKey) === "1") return;
-        window.localStorage.setItem(celebrationKey, "1");
-
-        if (!cancelled) {
-          setIsSubscriptionCelebrationOpen(true);
-        }
-      } finally {
-        clearSuccessParam();
-      }
-    };
-
-    void maybeCelebrateUpgrade();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user.id]);
+    window.localStorage.setItem(celebrationKey, "1");
+    setIsSubscriptionCelebrationOpen(true);
+    clearSuccessParam();
+  }, [billing, user.id]);
   const dragCounterRef = React.useRef(0);
   const uploadInputRef = React.useRef<HTMLInputElement>(null);
 

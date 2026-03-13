@@ -51,6 +51,9 @@ function createLinkRow(overrides: Partial<LinkRow> = {}): LinkRow {
     fetched_at: null,
     etag: null,
     last_modified: null,
+    processing_state: "completed",
+    processing_stage: "complete",
+    processing_error: null,
     ...overrides,
   };
 }

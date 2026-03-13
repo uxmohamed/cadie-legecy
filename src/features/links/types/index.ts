@@ -4,6 +4,8 @@
 export type {
     ContentType,
     Link,
+    LinkProcessingState,
+    LinkProcessingStage,
     CreateLinkDTO,
     UpdateLinkDTO,
     LinkFilters,

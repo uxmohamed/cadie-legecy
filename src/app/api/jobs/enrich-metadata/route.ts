@@ -3,6 +3,8 @@ import { Receiver } from "@upstash/qstash";
 import { MetadataService } from "@/features/links/services/metadata.service";
 import { log } from "@/lib/logger";
 import type { EnrichMetadataJob } from "@/lib/job-queue";
+import { createAdminClient } from "@/lib/supabase/server";
+import { updateLinkProcessingState } from "@/features/links/lib/link-processing";
 
 
 /**
@@ -14,6 +16,8 @@ import type { EnrichMetadataJob } from "@/lib/job-queue";
  * This endpoint is secured by QStash signature verification
  */
 export async function POST(request: NextRequest) {
+  let job: EnrichMetadataJob | null = null;
+
   try {
     // Verify QStash signature
     const receiver = new Receiver({
@@ -39,7 +43,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Parse the job
-    const job: EnrichMetadataJob = JSON.parse(body);
+    job = JSON.parse(body) as EnrichMetadataJob;
     const { linkId, url, userId } = job;
     
     if (!linkId || !url || !userId) {
@@ -51,10 +55,37 @@ export async function POST(request: NextRequest) {
     }
     
     log.info("[Job] Processing metadata enrichment", { linkId, url });
+
+    const supabase = createAdminClient();
+    await updateLinkProcessingState(supabase, {
+      linkId,
+      userId,
+      state: "processing",
+      stage: "metadata",
+    });
     
     // Execute the metadata enrichment
     const metadataService = new MetadataService();
-    await metadataService.enrichLink(linkId, url, "url", userId);
+    const metadataStatus = await metadataService.enrichLink(linkId, url, "url", userId);
+    if (metadataStatus === "success") {
+      await updateLinkProcessingState(supabase, {
+        linkId,
+        userId,
+        state: "processing",
+        stage: "ai_tagging",
+      });
+    } else {
+      log.warn("[Job] Metadata enrichment completed without full metadata", {
+        linkId,
+        metadataStatus,
+      });
+      await updateLinkProcessingState(supabase, {
+        linkId,
+        userId,
+        state: "completed",
+        stage: "complete",
+      });
+    }
     
     log.info("[Job] Metadata enrichment completed", { linkId });
     
@@ -65,6 +96,19 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     log.error("[Job] Metadata enrichment failed", { error });
+    if (job?.linkId && job.userId) {
+      try {
+        const supabase = createAdminClient();
+        await updateLinkProcessingState(supabase, {
+          linkId: job.linkId,
+          userId: job.userId,
+          state: "completed",
+          stage: "complete",
+        });
+      } catch {
+        // Ignore follow-up persistence failures.
+      }
+    }
     
     // Return 500 to trigger QStash retry
     return NextResponse.json(

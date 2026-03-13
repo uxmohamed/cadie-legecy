@@ -11,6 +11,11 @@ import { AutoSpaceForwardingService } from "@/features/spaces/services/auto-spac
 import { getBillingContext } from "@/lib/billing/context";
 import { createPlanLimitResponse } from "@/lib/billing/limit-response";
 import { log } from "@/lib/logger";
+import {
+  getInitialLinkProcessingStage,
+  getInitialLinkProcessingState,
+  updateLinkProcessingState,
+} from "@/features/links/lib/link-processing";
 
 /**
  * Maximum number of items per batch operation
@@ -59,6 +64,9 @@ interface LinkInsertPayload {
   is_pinned: boolean;
   fetch_status: "success" | "pending";
   fetched_at: string | null;
+  processing_state: string;
+  processing_stage: string;
+  processing_error: string | null;
   notes: string | null;
   content_text: string | null;
 }
@@ -242,6 +250,9 @@ export async function POST(request: NextRequest) {
             is_pinned: false,
             fetch_status: isColor || isNote ? "success" as const : "pending" as const,
             fetched_at: isColor || isNote ? new Date().toISOString() : null,
+            processing_state: getInitialLinkProcessingState(ct),
+            processing_stage: getInitialLinkProcessingStage(ct),
+            processing_error: null,
             notes: link.notes || null,
             content_text: link.content_text || null,
           };
@@ -311,6 +322,17 @@ export async function POST(request: NextRequest) {
               const imageLinks = createdLinks.filter((link) => link.content_type === "image");
               const documentLinks = createdLinks.filter((link) => link.content_type === "document");
 
+              await Promise.allSettled(
+                createdLinks.map((link) =>
+                  updateLinkProcessingState(supabase, {
+                    linkId: link.id,
+                    userId: user.id,
+                    state: "processing",
+                    stage: "forwarding",
+                  })
+                )
+              );
+
               if (urlLinks.length > 0) {
                 const metadataJobs = urlLinks.map((link) => ({
                   linkId: link.id,
@@ -322,8 +344,30 @@ export async function POST(request: NextRequest) {
                   userId: user.id,
                 }));
 
-                enqueueBatchMetadataEnrichment(metadataJobs, { baseUrl: callbackBaseUrl }).catch(() => {});
-                enqueueBatchAITagging(aiTagJobs, { baseUrl: callbackBaseUrl }).catch(() => {});
+                enqueueBatchMetadataEnrichment(metadataJobs, { baseUrl: callbackBaseUrl }).catch(async () => {
+                  await Promise.allSettled(
+                    urlLinks.map((link) =>
+                      updateLinkProcessingState(supabase, {
+                        linkId: link.id,
+                        userId: user.id,
+                        state: "completed",
+                        stage: "complete",
+                      })
+                    )
+                  );
+                });
+                enqueueBatchAITagging(aiTagJobs, { baseUrl: callbackBaseUrl }).catch(async () => {
+                  await Promise.allSettled(
+                    urlLinks.map((link) =>
+                      updateLinkProcessingState(supabase, {
+                        linkId: link.id,
+                        userId: user.id,
+                        state: "completed",
+                        stage: "complete",
+                      })
+                    )
+                  );
+                });
               }
 
               if (imageLinks.length > 0) {
@@ -331,7 +375,18 @@ export async function POST(request: NextRequest) {
                   linkId: link.id,
                   userId: user.id,
                 }));
-                enqueueBatchAIVisionTagging(visionJobs, { baseUrl: callbackBaseUrl }).catch(() => {});
+                enqueueBatchAIVisionTagging(visionJobs, { baseUrl: callbackBaseUrl }).catch(async () => {
+                  await Promise.allSettled(
+                    imageLinks.map((link) =>
+                      updateLinkProcessingState(supabase, {
+                        linkId: link.id,
+                        userId: user.id,
+                        state: "completed",
+                        stage: "complete",
+                      })
+                    )
+                  );
+                });
               }
 
               if (documentLinks.length > 0) {
@@ -339,14 +394,39 @@ export async function POST(request: NextRequest) {
                   linkId: link.id,
                   userId: user.id,
                 }));
-                enqueueBatchAITagging(docTagJobs, { baseUrl: callbackBaseUrl }).catch(() => {});
+                enqueueBatchAITagging(docTagJobs, { baseUrl: callbackBaseUrl }).catch(async () => {
+                  await Promise.allSettled(
+                    documentLinks.map((link) =>
+                      updateLinkProcessingState(supabase, {
+                        linkId: link.id,
+                        userId: user.id,
+                        state: "completed",
+                        stage: "complete",
+                      })
+                    )
+                  );
+                });
               }
+
+              await Promise.allSettled(
+                createdLinks
+                  .filter((link) => link.content_type === "url" || link.content_type === "image" || link.content_type === "document" || !link.content_type)
+                  .map((link) =>
+                    updateLinkProcessingState(supabase, {
+                      linkId: link.id,
+                      userId: user.id,
+                      state: "processing",
+                      stage: link.content_type === "image" ? "ai_vision_tagging" : "metadata",
+                    })
+                  )
+              );
 
               try {
                 await autoSpaceForwardingService.forwardLinks(user.id, createdLinks);
               } catch (error) {
                 log.warn("[BatchAddAsync] Auto-forwarding failed", {
                   userId: user.id,
+                  nonFatal: true,
                   error: error instanceof Error ? error.message : String(error),
                 });
               }

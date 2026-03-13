@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { generateToken, hashToken } from "@/lib/auth-middleware";
 import { rateLimitAuth, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 import { validateRequestBody } from "@/lib/validation/validate";
 import { createTokenSchema } from "@/lib/validation/auth.schemas";
+import { createOpaqueApiToken } from "@/lib/api-token-service";
 
 
 /**
@@ -36,8 +36,9 @@ export async function GET(request: NextRequest) {
     // Fetch all tokens for the user (without token_hash)
     const { data: tokens, error } = await supabase
       .from("api_tokens")
-      .select("id, name, last_used_at, created_at, expires_at")
+      .select("id, name, last_used_at, created_at, expires_at, scope, client_id, install_id, install_metadata")
       .eq("user_id", user.id)
+      .is("revoked_at", null)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -100,46 +101,28 @@ export async function POST(request: NextRequest) {
       return validationError;
     }
 
-    const { name } = validatedData;
-
-    // Generate a new token (plaintext)
-    const token = generateToken(32); // 32 bytes = 43 characters in base64url
-    
-    // Hash the token for storage
-    const tokenHash = await hashToken(token);
+    const { name, scope } = validatedData;
     
     // Set expiration (90 days from now)
     const DEFAULT_TOKEN_EXPIRATION_DAYS = 90;
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + DEFAULT_TOKEN_EXPIRATION_DAYS);
 
-    // Store the hashed token in the database with expiration
-    const { data: tokenRecord, error } = await supabase
-      .from("api_tokens")
-      .insert({
-        user_id: user.id,
-        token_hash: tokenHash,
-        name: name.trim(),
-        expires_at: expiresAt.toISOString(),
-      })
-      .select("id, name, created_at, expires_at")
-      .single();
-
-    if (error) {
-      console.error("Error creating token:", error);
-      return NextResponse.json(
-        { error: "Failed to create token" },
-        { status: 500 }
-      );
-    }
+    const createdToken = await createOpaqueApiToken({
+      userId: user.id,
+      name,
+      expiresAt: expiresAt.toISOString(),
+      scopes: scope,
+    });
 
     // Return the plaintext token (ONLY TIME we send it) and expiration
     return NextResponse.json({
-      token,
-      id: tokenRecord.id,
-      name: tokenRecord.name,
-      created_at: tokenRecord.created_at,
-      expires_at: tokenRecord.expires_at,
+      token: createdToken.plaintextToken,
+      id: createdToken.record.id,
+      name: createdToken.record.name,
+      created_at: createdToken.record.createdAt,
+      expires_at: createdToken.record.expiresAt,
+      scope: createdToken.record.scopes,
     }, { status: 201 });
   } catch (error) {
     console.error("Error in POST /api/auth/tokens:", error);
@@ -149,4 +132,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

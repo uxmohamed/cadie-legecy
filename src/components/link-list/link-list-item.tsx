@@ -5,8 +5,8 @@ import * as React from "react";
 import type { Link } from "@/features/links/types";
 import { cn, formatDate, cleanUrl } from "@/lib/utils";
 import { Favicon } from "@/components/ui/favicon";
-import { DocumentFabIcon } from "@/components/ui/document-fab-icon";
 import { Button } from "@/components/ui/button";
+import { LinkProcessingBadge } from "@/components/link-processing-badge";
 import {
   IconFileTypePdf,
   IconPinnedOff,
@@ -230,6 +230,7 @@ export function LinkListItem({
                 )}>
                   {link.title || link.url}
                 </div>
+                <LinkProcessingBadge link={link} />
                 {!isColor && !isImage && !isNote && (
                   <div
                     className={cn(
