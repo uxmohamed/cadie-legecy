@@ -16,6 +16,7 @@ import {
   getInitialLinkProcessingState,
   updateLinkProcessingState,
 } from "@/features/links/lib/link-processing";
+import { runDirectLinkEnrichment } from "@/features/links/services/direct-enrichment.service";
 
 /**
  * Maximum number of items per batch operation
@@ -321,6 +322,7 @@ export async function POST(request: NextRequest) {
               );
               const imageLinks = createdLinks.filter((link) => link.content_type === "image");
               const documentLinks = createdLinks.filter((link) => link.content_type === "document");
+              const directFallbackLinkIds = new Set<string>();
 
               await Promise.allSettled(
                 createdLinks.map((link) =>
@@ -344,30 +346,17 @@ export async function POST(request: NextRequest) {
                   userId: user.id,
                 }));
 
-                enqueueBatchMetadataEnrichment(metadataJobs, { baseUrl: callbackBaseUrl }).catch(async () => {
+                const [metadataQueued, aiQueued] = await Promise.all([
+                  enqueueBatchMetadataEnrichment(metadataJobs, { baseUrl: callbackBaseUrl }),
+                  enqueueBatchAITagging(aiTagJobs, { baseUrl: callbackBaseUrl }),
+                ]);
+
+                if (!metadataQueued || !aiQueued) {
+                  urlLinks.forEach((link) => directFallbackLinkIds.add(link.id));
                   await Promise.allSettled(
-                    urlLinks.map((link) =>
-                      updateLinkProcessingState(supabase, {
-                        linkId: link.id,
-                        userId: user.id,
-                        state: "completed",
-                        stage: "complete",
-                      })
-                    )
+                    urlLinks.map((link) => runDirectLinkEnrichment(link.id, user.id))
                   );
-                });
-                enqueueBatchAITagging(aiTagJobs, { baseUrl: callbackBaseUrl }).catch(async () => {
-                  await Promise.allSettled(
-                    urlLinks.map((link) =>
-                      updateLinkProcessingState(supabase, {
-                        linkId: link.id,
-                        userId: user.id,
-                        state: "completed",
-                        stage: "complete",
-                      })
-                    )
-                  );
-                });
+                }
               }
 
               if (imageLinks.length > 0) {
@@ -375,18 +364,13 @@ export async function POST(request: NextRequest) {
                   linkId: link.id,
                   userId: user.id,
                 }));
-                enqueueBatchAIVisionTagging(visionJobs, { baseUrl: callbackBaseUrl }).catch(async () => {
+                const visionQueued = await enqueueBatchAIVisionTagging(visionJobs, { baseUrl: callbackBaseUrl });
+                if (!visionQueued) {
+                  imageLinks.forEach((link) => directFallbackLinkIds.add(link.id));
                   await Promise.allSettled(
-                    imageLinks.map((link) =>
-                      updateLinkProcessingState(supabase, {
-                        linkId: link.id,
-                        userId: user.id,
-                        state: "completed",
-                        stage: "complete",
-                      })
-                    )
+                    imageLinks.map((link) => runDirectLinkEnrichment(link.id, user.id))
                   );
-                });
+                }
               }
 
               if (documentLinks.length > 0) {
@@ -394,23 +378,19 @@ export async function POST(request: NextRequest) {
                   linkId: link.id,
                   userId: user.id,
                 }));
-                enqueueBatchAITagging(docTagJobs, { baseUrl: callbackBaseUrl }).catch(async () => {
+                const docsQueued = await enqueueBatchAITagging(docTagJobs, { baseUrl: callbackBaseUrl });
+                if (!docsQueued) {
+                  documentLinks.forEach((link) => directFallbackLinkIds.add(link.id));
                   await Promise.allSettled(
-                    documentLinks.map((link) =>
-                      updateLinkProcessingState(supabase, {
-                        linkId: link.id,
-                        userId: user.id,
-                        state: "completed",
-                        stage: "complete",
-                      })
-                    )
+                    documentLinks.map((link) => runDirectLinkEnrichment(link.id, user.id))
                   );
-                });
+                }
               }
 
               await Promise.allSettled(
                 createdLinks
                   .filter((link) => link.content_type === "url" || link.content_type === "image" || link.content_type === "document" || !link.content_type)
+                  .filter((link) => !directFallbackLinkIds.has(link.id))
                   .map((link) =>
                     updateLinkProcessingState(supabase, {
                       linkId: link.id,

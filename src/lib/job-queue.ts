@@ -88,11 +88,17 @@ export function buildMetadataJobDedupeKey(job: Pick<EnrichMetadataJob, "userId" 
 export async function enqueueMetadataEnrichment(
   job: EnrichMetadataJob,
   options?: EnqueueOptions
-): Promise<void> {
+): Promise<boolean> {
   const client = getQStashClient();
-  if (!client) return;
+  if (!client) return false;
 
-  const baseUrl = resolveBaseUrl(options?.baseUrl);
+  let baseUrl: string;
+  try {
+    baseUrl = resolveBaseUrl(options?.baseUrl);
+  } catch (error) {
+    console.error("[QStash] Failed to resolve metadata callback URL:", error);
+    return false;
+  }
   
   try {
     await client.publishJSON({
@@ -101,9 +107,10 @@ export async function enqueueMetadataEnrichment(
       retries: QSTASH_JOB_RETRIES.metadataEnrichment,
       delay: 0, // Start immediately for instant UI
     });
+    return true;
   } catch (error) {
-    // Log but don't throw - metadata enrichment is best-effort
     console.error("[QStash] Failed to enqueue metadata enrichment:", error);
+    return false;
   }
 }
 
@@ -115,10 +122,11 @@ export async function enqueueMetadataEnrichment(
 export async function enqueueBatchMetadataEnrichment(
   jobs: EnrichMetadataJob[],
   options?: EnqueueOptions
-): Promise<void> {
-  await Promise.allSettled(
+): Promise<boolean> {
+  const results = await Promise.all(
     jobs.map(job => enqueueMetadataEnrichment(job, options))
   );
+  return results.every(Boolean);
 }
 
 /**
@@ -141,11 +149,17 @@ export function buildAITaggingJobDedupeKey(job: Pick<EnrichAITagsJob, "userId" |
 export async function enqueueAITagging(
   job: EnrichAITagsJob,
   options?: EnqueueOptions
-): Promise<void> {
+): Promise<boolean> {
   const client = getQStashClient();
-  if (!client) return;
+  if (!client) return false;
 
-  const baseUrl = resolveBaseUrl(options?.baseUrl);
+  let baseUrl: string;
+  try {
+    baseUrl = resolveBaseUrl(options?.baseUrl);
+  } catch (error) {
+    console.error("[QStash] Failed to resolve AI tagging callback URL:", error);
+    return false;
+  }
 
   try {
     await client.publishJSON({
@@ -154,8 +168,10 @@ export async function enqueueAITagging(
       retries: QSTASH_JOB_RETRIES.aiTagging,
       delay: 10, // 10 second delay to let metadata settle
     });
+    return true;
   } catch (error) {
     console.error("[QStash] Failed to enqueue AI tagging:", error);
+    return false;
   }
 }
 
@@ -165,10 +181,11 @@ export async function enqueueAITagging(
 export async function enqueueBatchAITagging(
   jobs: EnrichAITagsJob[],
   options?: EnqueueOptions
-): Promise<void> {
-  await Promise.allSettled(
+): Promise<boolean> {
+  const results = await Promise.all(
     jobs.map(job => enqueueAITagging(job, options))
   );
+  return results.every(Boolean);
 }
 
 /**
@@ -203,11 +220,17 @@ export function buildBookmarkImportJobDedupeKey(
 export async function enqueueAIVisionTagging(
   job: EnrichAIVisionTagsJob,
   options?: EnqueueOptions
-): Promise<void> {
+): Promise<boolean> {
   const client = getQStashClient();
-  if (!client) return;
+  if (!client) return false;
 
-  const baseUrl = resolveBaseUrl(options?.baseUrl);
+  let baseUrl: string;
+  try {
+    baseUrl = resolveBaseUrl(options?.baseUrl);
+  } catch (error) {
+    console.error("[QStash] Failed to resolve AI vision callback URL:", error);
+    return false;
+  }
 
   try {
     await client.publishJSON({
@@ -216,8 +239,10 @@ export async function enqueueAIVisionTagging(
       retries: QSTASH_JOB_RETRIES.aiVisionTagging,
       delay: 2,
     });
+    return true;
   } catch (error) {
     console.error("[QStash] Failed to enqueue AI vision tagging:", error);
+    return false;
   }
 }
 
@@ -227,10 +252,11 @@ export async function enqueueAIVisionTagging(
 export async function enqueueBatchAIVisionTagging(
   jobs: EnrichAIVisionTagsJob[],
   options?: EnqueueOptions
-): Promise<void> {
-  await Promise.allSettled(
+): Promise<boolean> {
+  const results = await Promise.all(
     jobs.map(job => enqueueAIVisionTagging(job, options))
   );
+  return results.every(Boolean);
 }
 
 /**

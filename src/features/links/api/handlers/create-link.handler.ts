@@ -21,6 +21,7 @@ import {
     updateLinkProcessingState,
 } from "@/features/links/lib/link-processing";
 import { buildRecoveryMetadataUpdates, shouldSkipAITagWrite } from "@/features/links/lib/enrichment-ownership";
+import { runDirectLinkEnrichment } from "@/features/links/services/direct-enrichment.service";
 
 const EXTENSION_SOURCE_HEADER = "x-cadie-source";
 const EXTENSION_SOURCE_VALUE = "extension";
@@ -116,6 +117,16 @@ export class CreateLinkHandler {
         return usePrivilegedClient
             ? new AutoSpaceForwardingService(() => createAdminClient())
             : new AutoSpaceForwardingService();
+    }
+
+    private async loadLinkForResponse(
+        usePrivilegedClient: boolean,
+        userId: string,
+        linkId: string
+    ): Promise<CreateLinkResponseBody["link"] | null> {
+        const linkService = this.createLinkService(usePrivilegedClient);
+        const link = await linkService.getLink(linkId, userId);
+        return link as unknown as CreateLinkResponseBody["link"] | null;
     }
 
     private async validateLink(url: string, title: string): Promise<void> {
@@ -539,22 +550,21 @@ export class CreateLinkHandler {
         userId: string,
         link: { id: string; url: string; content_type?: string },
         baseUrl?: string
-    ): Promise<void> {
+    ): Promise<boolean> {
         const contentType = link.content_type || "url";
 
         if (contentType === "color" || contentType === "note") {
-            return;
+            return true;
         }
 
         if (contentType === "image") {
-            await enqueueAIVisionTagging({
+            return enqueueAIVisionTagging({
                 linkId: link.id,
                 userId,
             }, { baseUrl });
-            return;
         }
 
-        await Promise.allSettled([
+        const [metadataQueued, aiQueued] = await Promise.all([
             enqueueMetadataEnrichment({
                 linkId: link.id,
                 url: link.url,
@@ -565,6 +575,7 @@ export class CreateLinkHandler {
                 userId,
             }, { baseUrl }),
         ]);
+        return metadataQueued && aiQueued;
     }
 
     async handle(
@@ -739,28 +750,67 @@ export class CreateLinkHandler {
 
             const shouldQueueProcessing = !isDuplicate && !isRestored;
 
+            let responseLink = link as unknown as CreateLinkResponseBody["link"];
+            let responseProcessingState: CreateLinkResponseBody["processing_state"] = shouldQueueProcessing
+                ? getInitialLinkProcessingState(link.content_type)
+                : "completed";
+            let enrichmentQueued = false;
+
+            if (shouldQueueProcessing) {
+                try {
+                    enrichmentQueued = await this.enqueueEnrichmentJobs(userId!, link, callbackBaseUrl);
+                } catch (error) {
+                    enrichmentQueued = false;
+                    log.warn("[LinkCreateInline] Failed to enqueue enrichment jobs", {
+                        linkId: link.id,
+                        source: isExtensionSave ? EXTENSION_SOURCE_VALUE : "web",
+                        nonFatal: true,
+                        error: error instanceof Error ? error.message : String(error),
+                    });
+                }
+
+                if (!enrichmentQueued) {
+                    try {
+                        await runDirectLinkEnrichment(link.id, userId!);
+                        const refreshedLink = await this.loadLinkForResponse(usePrivilegedClient, userId!, link.id);
+                        if (refreshedLink) {
+                            responseLink = refreshedLink;
+                        }
+                        responseProcessingState = "completed";
+                    } catch (error) {
+                        log.warn("[LinkCreateInline] Direct enrichment fallback failed", {
+                            linkId: link.id,
+                            source: isExtensionSave ? EXTENSION_SOURCE_VALUE : "web",
+                            nonFatal: true,
+                            error: error instanceof Error ? error.message : String(error),
+                        });
+                    }
+                }
+            }
+
             if (shouldQueueProcessing) {
                 after(async () => {
                     const asyncStartedAt = Date.now();
-                    let enqueueMs = 0;
                     let forwardingMs = 0;
                     let recoveryMs = 0;
                     const autoForwardingService = this.createAutoForwardingService(usePrivilegedClient);
                     let supabase: AdminClient | null = null;
 
-                    try {
-                        supabase = createAdminClient();
-                        await updateLinkProcessingState(supabase, {
-                            linkId: link.id,
-                            userId: userId!,
-                            state: "processing",
-                            stage: "forwarding",
-                        });
-                    } catch (error) {
-                        log.warn("[LinkCreateAsync] Failed to mark link as processing", {
-                            linkId: link.id,
-                            error: error instanceof Error ? error.message : String(error),
-                        });
+                    if (enrichmentQueued) {
+                        try {
+                            supabase = createAdminClient();
+                            await updateLinkProcessingState(supabase, {
+                                linkId: link.id,
+                                userId: userId!,
+                                state: "processing",
+                                stage: "forwarding",
+                            });
+                        } catch (error) {
+                            log.warn("[LinkCreateAsync] Failed to mark link as processing", {
+                                linkId: link.id,
+                                error: error instanceof Error ? error.message : String(error),
+                            });
+                        }
                     }
 
                     try {
@@ -776,55 +826,62 @@ export class CreateLinkHandler {
                         });
                     }
 
-                    try {
-                        if (supabase) {
-                            await updateLinkProcessingState(supabase, {
-                                linkId: link.id,
-                                userId: userId!,
-                                state: "processing",
-                                stage: "enrichment_queue",
-                            });
-                        }
-                        const enqueueStartedAt = Date.now();
-                        await this.enqueueEnrichmentJobs(userId!, link, callbackBaseUrl);
-                        enqueueMs = Date.now() - enqueueStartedAt;
-                        if (supabase && !shouldTrackLinkProcessing(link.content_type)) {
-                            await updateLinkProcessingState(supabase, {
-                                linkId: link.id,
-                                userId: userId!,
-                                state: "completed",
-                                stage: "complete",
-                            });
-                        } else if (supabase) {
-                            await updateLinkProcessingState(supabase, {
-                                linkId: link.id,
-                                userId: userId!,
-                                state: "processing",
-                                stage: link.content_type === "image" ? "ai_vision_tagging" : "metadata",
-                            });
-                        }
-                    } catch (error) {
-                        if (supabase) {
-                            try {
+                    if (enrichmentQueued) {
+                        try {
+                            if (supabase && !shouldTrackLinkProcessing(link.content_type)) {
                                 await updateLinkProcessingState(supabase, {
                                     linkId: link.id,
                                     userId: userId!,
                                     state: "completed",
                                     stage: "complete",
                                 });
-                            } catch (updateError) {
-                                log.warn("[LinkCreateAsync] Failed to persist enqueue failure", {
+                            } else if (supabase) {
+                                await updateLinkProcessingState(supabase, {
                                     linkId: link.id,
-                                    error: updateError instanceof Error ? updateError.message : String(updateError),
+                                    userId: userId!,
+                                    state: "processing",
+                                    stage: link.content_type === "image" ? "ai_vision_tagging" : "metadata",
                                 });
                             }
+                        } catch (error) {
+                            if (supabase) {
+                                try {
+                                    await updateLinkProcessingState(supabase, {
+                                        linkId: link.id,
+                                        userId: userId!,
+                                        state: "completed",
+                                        stage: "complete",
+                                    });
+                                } catch (updateError) {
+                                    log.warn("[LinkCreateAsync] Failed to persist enqueue failure", {
+                                        linkId: link.id,
+                                        error: updateError instanceof Error ? updateError.message : String(updateError),
+                                    });
+                                }
+                            }
+                            log.warn("[LinkCreateAsync] Failed to update queued processing state", {
+                                linkId: link.id,
+                                source: isExtensionSave ? EXTENSION_SOURCE_VALUE : "web",
+                                nonFatal: true,
+                                error: error instanceof Error ? error.message : String(error),
+                            });
                         }
-                        log.warn("[LinkCreateAsync] Failed to enqueue enrichment jobs", {
-                            linkId: link.id,
-                            source: isExtensionSave ? EXTENSION_SOURCE_VALUE : "web",
-                            nonFatal: true,
-                            error: error instanceof Error ? error.message : String(error),
-                        });
+                    } else if (supabase) {
+                        try {
+                            await updateLinkProcessingState(supabase, {
+                                linkId: link.id,
+                                userId: userId!,
+                                state: "completed",
+                                stage: "complete",
+                            });
+                        } catch (error) {
+                            log.warn("[LinkCreateAsync] Failed to persist inline completion state", {
+                                linkId: link.id,
+                                source: isExtensionSave ? EXTENSION_SOURCE_VALUE : "web",
+                                nonFatal: true,
+                                error: error instanceof Error ? error.message : String(error),
+                            });
+                        }
                     }
 
                     if (isExtensionSave) {
@@ -867,7 +924,7 @@ export class CreateLinkHandler {
                     log.info("[LinkCreateAsyncPerf]", {
                         linkId: link.id,
                         source: isExtensionSave ? EXTENSION_SOURCE_VALUE : "web",
-                        enqueueMs,
+                        queuedEnrichment: enrichmentQueued,
                         forwardingMs,
                         recoveryMs,
                         totalAsyncMs: Date.now() - asyncStartedAt,
@@ -876,14 +933,12 @@ export class CreateLinkHandler {
             }
 
             const responseBody: CreateLinkResponseBody = {
-                link: link as unknown as CreateLinkResponseBody["link"],
+                link: responseLink,
                 duplicate: isDuplicate,
                 restored: isRestored,
                 auto_forwarded_to: null,
                 auto_forwarded_spaces: [],
-                processing_state: shouldQueueProcessing
-                    ? getInitialLinkProcessingState(link.content_type)
-                    : "completed",
+                processing_state: responseProcessingState,
             };
 
             const status = isDuplicate ? 200 : 201;
