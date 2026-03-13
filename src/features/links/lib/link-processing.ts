@@ -23,11 +23,7 @@ export function getLinkProcessingStatus(link: Pick<Link, "processing_state" | "p
   }
 
   if (state === "failed") {
-    return {
-      label: "Needs attention",
-      title: link.processing_error || "Background processing failed. You can keep the item, but some enrichment did not complete.",
-      variant: "error",
-    };
+    return null;
   }
 
   if (state === "queued") {

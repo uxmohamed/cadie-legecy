@@ -138,9 +138,8 @@ export async function POST(request: NextRequest) {
       await updateLinkProcessingState(supabase, {
         linkId,
         userId,
-        state: "failed",
-        stage: "ai_tagging",
-        error: "AI tagging did not return any tags.",
+        state: "completed",
+        stage: "complete",
       });
       return NextResponse.json({ success: true, noResult: true });
     }
@@ -209,9 +208,8 @@ export async function POST(request: NextRequest) {
         await updateLinkProcessingState(supabase, {
           linkId: job.linkId,
           userId: job.userId,
-          state: "failed",
-          stage: "ai_tagging",
-          error: "AI tagging failed.",
+          state: "completed",
+          stage: "complete",
         });
       } catch {
         // Ignore follow-up persistence failures.

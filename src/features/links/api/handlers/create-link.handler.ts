@@ -513,14 +513,19 @@ export class CreateLinkHandler {
             await updateLinkProcessingState(supabase, {
                 linkId,
                 userId,
-                state: "failed",
-                stage: "extension_recovery",
-                error: "Extension recovery could not finish background processing.",
+                state: "completed",
+                stage: "complete",
             });
-            this.logRecovery(linkId, "finalize", "success", { reason: "marked_failed_after_full_recovery_failure", contentType });
+            this.logRecovery(linkId, "finalize", "success", { reason: "completed_after_full_recovery_attempt", contentType });
             return;
         }
 
+        await updateLinkProcessingState(supabase, {
+            linkId,
+            userId,
+            state: "completed",
+            stage: "complete",
+        });
         this.logRecovery(linkId, "finalize", "skipped", {
             reason: "still_unresolved_no_full_failure",
             fetchStatus: finalLink.fetch_status,
@@ -803,9 +808,8 @@ export class CreateLinkHandler {
                                 await updateLinkProcessingState(supabase, {
                                     linkId: link.id,
                                     userId: userId!,
-                                    state: "failed",
-                                    stage: "enrichment_queue",
-                                    error: "We saved the item, but couldn't start background enrichment.",
+                                    state: "completed",
+                                    stage: "complete",
                                 });
                             } catch (updateError) {
                                 log.warn("[LinkCreateAsync] Failed to persist enqueue failure", {
@@ -817,6 +821,7 @@ export class CreateLinkHandler {
                         log.warn("[LinkCreateAsync] Failed to enqueue enrichment jobs", {
                             linkId: link.id,
                             source: isExtensionSave ? EXTENSION_SOURCE_VALUE : "web",
+                            nonFatal: true,
                             error: error instanceof Error ? error.message : String(error),
                         });
                     }
@@ -840,9 +845,8 @@ export class CreateLinkHandler {
                                     await updateLinkProcessingState(supabase, {
                                         linkId: link.id,
                                         userId: userId!,
-                                        state: "failed",
-                                        stage: "extension_recovery",
-                                        error: "Extension recovery failed after save.",
+                                        state: "completed",
+                                        stage: "complete",
                                     });
                                 } catch (updateError) {
                                     log.warn("[LinkCreateAsync] Failed to persist recovery failure", {
@@ -853,6 +857,7 @@ export class CreateLinkHandler {
                             }
                             log.warn("[LinkCreateAsync] Extension recovery failed", {
                                 linkId: link.id,
+                                nonFatal: true,
                                 error: error instanceof Error ? error.message : String(error),
                             });
                         }

@@ -350,9 +350,8 @@ export async function POST(request: NextRequest) {
                       updateLinkProcessingState(supabase, {
                         linkId: link.id,
                         userId: user.id,
-                        state: "failed",
-                        stage: "enrichment_queue",
-                        error: "We saved the item, but couldn't start background enrichment.",
+                        state: "completed",
+                        stage: "complete",
                       })
                     )
                   );
@@ -363,9 +362,8 @@ export async function POST(request: NextRequest) {
                       updateLinkProcessingState(supabase, {
                         linkId: link.id,
                         userId: user.id,
-                        state: "failed",
-                        stage: "enrichment_queue",
-                        error: "We saved the item, but couldn't start background enrichment.",
+                        state: "completed",
+                        stage: "complete",
                       })
                     )
                   );
@@ -383,9 +381,8 @@ export async function POST(request: NextRequest) {
                       updateLinkProcessingState(supabase, {
                         linkId: link.id,
                         userId: user.id,
-                        state: "failed",
-                        stage: "enrichment_queue",
-                        error: "We saved the item, but couldn't start background enrichment.",
+                        state: "completed",
+                        stage: "complete",
                       })
                     )
                   );
@@ -403,9 +400,8 @@ export async function POST(request: NextRequest) {
                       updateLinkProcessingState(supabase, {
                         linkId: link.id,
                         userId: user.id,
-                        state: "failed",
-                        stage: "enrichment_queue",
-                        error: "We saved the item, but couldn't start background enrichment.",
+                        state: "completed",
+                        stage: "complete",
                       })
                     )
                   );

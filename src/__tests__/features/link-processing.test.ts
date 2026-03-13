@@ -15,17 +15,13 @@ describe("link processing helpers", () => {
     expect(getInitialLinkProcessingStage("color")).toBe("complete");
   });
 
-  it("formats failed states with inspectable error copy", () => {
+  it("hides failed states from the badge UI", () => {
     expect(
       getLinkProcessingStatus({
         processing_state: "failed",
         processing_stage: "metadata",
         processing_error: "Metadata enrichment failed.",
       })
-    ).toMatchObject({
-      label: "Needs attention",
-      variant: "error",
-      title: "Metadata enrichment failed.",
-    });
+    ).toBeNull();
   });
 });

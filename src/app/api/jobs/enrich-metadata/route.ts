@@ -75,12 +75,15 @@ export async function POST(request: NextRequest) {
         stage: "ai_tagging",
       });
     } else {
+      log.warn("[Job] Metadata enrichment completed without full metadata", {
+        linkId,
+        metadataStatus,
+      });
       await updateLinkProcessingState(supabase, {
         linkId,
         userId,
-        state: "failed",
-        stage: "metadata",
-        error: `Metadata enrichment ended with status: ${metadataStatus}.`,
+        state: "completed",
+        stage: "complete",
       });
     }
     
@@ -99,9 +102,8 @@ export async function POST(request: NextRequest) {
         await updateLinkProcessingState(supabase, {
           linkId: job.linkId,
           userId: job.userId,
-          state: "failed",
-          stage: "metadata",
-          error: "Metadata enrichment failed.",
+          state: "completed",
+          stage: "complete",
         });
       } catch {
         // Ignore follow-up persistence failures.
