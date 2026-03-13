@@ -2,7 +2,7 @@
  * Options page - Simple connect/disconnect flow
  */
 
-import { getSettings, clearSettings } from "../lib/storage";
+import { getSettings, clearSettings, getInstallId } from "../lib/storage";
 
 // DOM elements
 const notConnectedView = document.getElementById("notConnectedView") as HTMLDivElement;
