@@ -4,6 +4,7 @@ import { AITaggingService } from "@/features/links/services/ai-tagging.service";
 import { SupabaseLinkRepository } from "@/features/links/repositories";
 import { createRequestContext, type RequestContext } from "@/lib/auth-middleware";
 import type { CreateLinkDTO } from "@/features/links/types";
+import type { FaviconVariant } from "@/features/links/types/link.types";
 import { toAppError, ErrorCode, AppError } from "@/lib/errors";
 import { resolveColorMetadata } from "@/lib/canonicalize";
 import { enqueueMetadataEnrichment, enqueueAITagging, enqueueAIVisionTagging } from "@/lib/job-queue";
@@ -71,7 +72,7 @@ interface RecoveryLink {
     favicon_url: string | null;
     final_url: string | null;
     canonical_url: string | null;
-    favicon_variants: Array<Record<string, unknown>> | null;
+    favicon_variants: FaviconVariant[] | null;
     preview_image_width: number | null;
     preview_image_height: number | null;
     theme_color: string | null;
