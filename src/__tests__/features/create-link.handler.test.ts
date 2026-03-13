@@ -2,6 +2,8 @@ const mockCreateLink = jest.fn();
 const mockRepositoryConstructor = jest.fn();
 const mockGetBillingContext = jest.fn();
 const mockGetIdempotentResponse = jest.fn();
+const mockForwardLinks = jest.fn();
+const mockUpdateLinkProcessingState = jest.fn();
 
 jest.mock("next/server", () => {
   class MockNextResponse {
@@ -67,7 +69,19 @@ jest.mock("@/lib/job-queue", () => ({
 }));
 
 jest.mock("@/features/spaces/services/auto-space-forwarding.service", () => ({
-  AutoSpaceForwardingService: jest.fn(),
+  AutoSpaceForwardingService: jest.fn().mockImplementation(() => ({
+    forwardLinks: (...args: unknown[]) => mockForwardLinks(...args),
+  })),
+}));
+
+jest.mock("@/features/links/lib/link-processing", () => ({
+  getInitialLinkProcessingState: (contentType?: string | null) =>
+    contentType === "url" || contentType === "image" || contentType === "document"
+      ? "queued"
+      : "completed",
+  shouldTrackLinkProcessing: (contentType?: string | null) =>
+    contentType === "url" || contentType === "image" || contentType === "document",
+  updateLinkProcessingState: (...args: unknown[]) => mockUpdateLinkProcessingState(...args),
 }));
 
 jest.mock("@/lib/supabase/server", () => ({
@@ -95,10 +109,16 @@ jest.mock("@/lib/idempotency", () => ({
 }));
 
 import { CreateLinkHandler } from "@/features/links/api/handlers/create-link.handler";
+import { after } from "next/server";
 
 describe("CreateLinkHandler privileged extension path", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockForwardLinks.mockResolvedValue({
+      forwardedSpaceNames: [],
+      forwardedByLinkId: {},
+    });
+    mockUpdateLinkProcessingState.mockResolvedValue(undefined);
     mockGetIdempotentResponse.mockResolvedValue(null);
     mockGetBillingContext.mockResolvedValue({
       plan: "starter",
@@ -199,5 +219,62 @@ describe("CreateLinkHandler privileged extension path", () => {
     await expect(response.json()).resolves.toMatchObject({
       processing_state: "completed",
     });
+  });
+
+  it("does not mark a saved link as failed when auto-forwarding throws", async () => {
+    const mockAfter = after as jest.Mock;
+    mockAfter.mockImplementation((callback: () => Promise<void>) => {
+      void callback();
+    });
+    mockForwardLinks.mockRejectedValueOnce(new Error("forwarding down"));
+    mockCreateLink.mockResolvedValueOnce({
+      link: {
+        id: "link_async_1",
+        content_type: "url",
+        url: "https://example.com",
+      },
+      isDuplicate: false,
+      isRestored: false,
+    });
+
+    const handler = new CreateLinkHandler();
+
+    const response = await handler.handle(
+      {
+        headers: new Headers(),
+        nextUrl: new URL("https://cadie.app/api/links"),
+      } as never,
+      {
+        url: "https://example.com",
+        title: "Example",
+        content_type: "url",
+      },
+      {
+        userId: "user_1",
+        authSource: "session",
+        token: null,
+      }
+    );
+
+    await expect(response.json()).resolves.toMatchObject({
+      processing_state: "queued",
+    });
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockForwardLinks).toHaveBeenCalledWith("user_1", [
+      expect.objectContaining({
+        id: "link_async_1",
+      }),
+    ]);
+    expect(mockUpdateLinkProcessingState).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        linkId: "link_async_1",
+        state: "failed",
+        stage: "forwarding",
+      })
+    );
   });
 });

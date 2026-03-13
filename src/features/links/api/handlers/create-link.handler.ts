@@ -762,25 +762,10 @@ export class CreateLinkHandler {
                         await autoForwardingService.forwardLinks(userId!, [link]);
                         forwardingMs = Date.now() - forwardingStartedAt;
                     } catch (error) {
-                        if (supabase) {
-                            try {
-                                await updateLinkProcessingState(supabase, {
-                                    linkId: link.id,
-                                    userId: userId!,
-                                    state: "failed",
-                                    stage: "forwarding",
-                                    error: "Auto-forwarding failed after save.",
-                                });
-                            } catch (updateError) {
-                                log.warn("[LinkCreateAsync] Failed to persist forwarding failure", {
-                                    linkId: link.id,
-                                    error: updateError instanceof Error ? updateError.message : String(updateError),
-                                });
-                            }
-                        }
                         log.warn("[LinkCreateAsync] Failed to auto-forward link", {
                             linkId: link.id,
                             source: isExtensionSave ? EXTENSION_SOURCE_VALUE : "web",
+                            nonFatal: true,
                             error: error instanceof Error ? error.message : String(error),
                         });
                     }

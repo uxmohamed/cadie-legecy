@@ -428,19 +428,9 @@ export async function POST(request: NextRequest) {
               try {
                 await autoSpaceForwardingService.forwardLinks(user.id, createdLinks);
               } catch (error) {
-                await Promise.allSettled(
-                  createdLinks.map((link) =>
-                    updateLinkProcessingState(supabase, {
-                      linkId: link.id,
-                      userId: user.id,
-                      state: "failed",
-                      stage: "forwarding",
-                      error: "Auto-forwarding failed after save.",
-                    })
-                  )
-                );
                 log.warn("[BatchAddAsync] Auto-forwarding failed", {
                   userId: user.id,
+                  nonFatal: true,
                   error: error instanceof Error ? error.message : String(error),
                 });
               }
