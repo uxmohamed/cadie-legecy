@@ -4,6 +4,16 @@
  * Content types supported by the application
  */
 export type ContentType = "url" | "color" | "image" | "document" | "note";
+export type LinkProcessingState = "queued" | "processing" | "completed" | "failed";
+export type LinkProcessingStage =
+    | "queued"
+    | "forwarding"
+    | "enrichment_queue"
+    | "metadata"
+    | "ai_tagging"
+    | "ai_vision_tagging"
+    | "extension_recovery"
+    | "complete";
 
 /**
  * Link entity representing a saved item
@@ -53,6 +63,9 @@ export interface Link {
     fetched_at: string | null;
     etag: string | null;
     last_modified: string | null;
+    processing_state?: LinkProcessingState | null;
+    processing_stage?: LinkProcessingStage | null;
+    processing_error?: string | null;
 }
 
 /**

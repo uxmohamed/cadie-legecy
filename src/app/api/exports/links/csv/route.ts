@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authenticateRequest } from "@/lib/auth-middleware";
+import { createRequestContext } from "@/lib/auth-middleware";
+import { requireTokenScopes } from "@/lib/api-tokens";
 import {
   getIdentifier,
   getRateLimitHeaders,
@@ -17,11 +18,13 @@ const service = new LinkExportService();
  * Exports active links for the authenticated user as CSV.
  */
 export async function GET(request: NextRequest) {
-  const userId = await authenticateRequest(request);
-
-  if (!userId) {
+  const context = await createRequestContext(request);
+  if (!context) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const scopeError = requireTokenScopes(context, ["exports:read", "links:read"]);
+  if (scopeError) return scopeError;
+  const userId = context.userId;
 
   const identifier = getIdentifier(request, userId);
   const { success, limit, reset, remaining } = await rateLimitExports.limit(identifier);

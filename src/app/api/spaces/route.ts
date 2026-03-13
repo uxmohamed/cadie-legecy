@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimitSpaces, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 import { createRequestContext } from "@/lib/auth-middleware";
+import { requireTokenScopes } from "@/lib/api-tokens";
 import { getBillingContext } from "@/lib/billing/context";
 import { createPlanLimitResponse } from "@/lib/billing/limit-response";
 import { RequestDataAccess, RequestDataAccessError } from "@/lib/request-data";
@@ -11,6 +12,8 @@ export async function GET(request: NextRequest) {
     if (!context) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const scopeError = requireTokenScopes(context, ["spaces:read"]);
+    if (scopeError) return scopeError;
 
     const dataAccess = new RequestDataAccess(context);
 
@@ -63,6 +66,8 @@ export async function POST(request: NextRequest) {
     if (!context) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const scopeError = requireTokenScopes(context, ["spaces:write"]);
+    if (scopeError) return scopeError;
 
     const dataAccess = new RequestDataAccess(context);
 

@@ -15,6 +15,8 @@ describe("RequestDataAccess", () => {
       id: "token_1",
       expiresAt: "2099-01-01T00:00:00Z",
       scopes: ["legacy_full_access"],
+      clientId: "cadie-browser-extension",
+      installId: "install_1",
     },
   };
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { authenticateRequest } from "@/lib/auth-middleware";
+import { createRequestContext } from "@/lib/auth-middleware";
+import { requireTokenScopes } from "@/lib/api-tokens";
 import {
   AUTO_FORWARDING_FIELDS,
   AUTO_FORWARDING_JOIN_OPERATORS,
@@ -46,10 +47,13 @@ function sanitizeConditions(input: unknown, validSpaceIds?: Set<string>): AutoFo
 }
 
 export async function GET(request: NextRequest) {
-  const userId = await authenticateRequest(request);
-  if (!userId) {
+  const context = await createRequestContext(request);
+  if (!context) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const scopeError = requireTokenScopes(context, ["settings:read"]);
+  if (scopeError) return scopeError;
+  const userId = context.userId;
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -78,10 +82,13 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const userId = await authenticateRequest(request);
-  if (!userId) {
+  const context = await createRequestContext(request);
+  if (!context) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const scopeError = requireTokenScopes(context, ["settings:write"]);
+  if (scopeError) return scopeError;
+  const userId = context.userId;
 
   const body = (await request.json().catch(() => ({}))) as { enabled?: unknown; conditions?: unknown };
 

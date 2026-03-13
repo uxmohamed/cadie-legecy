@@ -212,6 +212,9 @@ export interface Database {
           fetched_at: string | null;
           etag: string | null;
           last_modified: string | null;
+          processing_state: string;
+          processing_stage: string | null;
+          processing_error: string | null;
         };
         Insert: {
           id?: string;
@@ -257,6 +260,9 @@ export interface Database {
           fetched_at?: string | null;
           etag?: string | null;
           last_modified?: string | null;
+          processing_state?: string;
+          processing_stage?: string | null;
+          processing_error?: string | null;
         };
         Update: {
           id?: string;
@@ -302,6 +308,9 @@ export interface Database {
           fetched_at?: string | null;
           etag?: string | null;
           last_modified?: string | null;
+          processing_state?: string;
+          processing_stage?: string | null;
+          processing_error?: string | null;
         };
       };
       bookmark_import_jobs: {

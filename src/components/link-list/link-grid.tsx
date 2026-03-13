@@ -4,7 +4,7 @@ import * as React from "react";
 import type { Link } from "@/features/links/types";
 import { Badge } from "@/components/ui/badge";
 import { Favicon } from "@/components/ui/favicon";
-import { DocumentFabIcon } from "@/components/ui/document-fab-icon";
+import { LinkProcessingBadge } from "@/components/link-processing-badge";
 import { formatDate } from "@/lib/utils";
 import { IconPinFilled, IconPhoto, IconNotes } from "@tabler/icons-react";
 
@@ -141,6 +141,7 @@ function LinkGridCard({
         <div className="text-sm font-medium text-fg line-clamp-2">
           {link.title || link.url}
         </div>
+        <LinkProcessingBadge link={link} className="max-w-full" />
         {link.ai_tags && link.ai_tags.length > 0 && (
           <div className="flex items-center gap-1 flex-wrap">
             {link.ai_tags.slice(0, 2).map((tag) => (

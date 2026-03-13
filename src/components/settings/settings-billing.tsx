@@ -7,29 +7,9 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { IconArrowRight, IconLoader2 } from "@tabler/icons-react";
 import { toast } from "sonner";
-import type { PlanTier, Entitlements } from "@/lib/billing/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-interface BillingStatus {
-  plan: PlanTier;
-  subscription: {
-    status: string;
-    interval: string | null;
-    current_period_end: string | null;
-    cancel_at_period_end: boolean;
-    support_amount_cents: number | null;
-  };
-  entitlements: Entitlements;
-  usage: {
-    totalSavedItems: number;
-    spacesTotal: number;
-    imagesTotal: number;
-    documentsTotal: number;
-  };
-  warnings: {
-    near_starter_saved_items_limit: boolean;
-  };
-}
+import { queryKeys } from "@/lib/query/keys";
+import { useBillingQuery } from "@/features/billing/queries/use-billing-query";
 
 const PLAN_LABELS = {
   starter: "Starter",
@@ -85,28 +65,10 @@ function UsageMeter({
 }
 
 export function SettingsBilling() {
-  const [billing, setBilling] = React.useState<BillingStatus | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
   const [isCheckoutLoading, setIsCheckoutLoading] = React.useState(false);
   const [isPortalLoading, setIsPortalLoading] = React.useState(false);
   const [isSyncLoading, setIsSyncLoading] = React.useState(false);
-
-  const loadBilling = React.useCallback(async () => {
-    try {
-      const res = await fetch("/api/billing/status");
-      if (!res.ok) return;
-      const data = (await res.json()) as BillingStatus;
-      setBilling(data);
-    } catch {
-      // no-op
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  React.useEffect(() => {
-    void loadBilling();
-  }, [loadBilling]);
+  const { billing, isLoading, queryClient } = useBillingQuery();
 
   const handleCheckout = async (interval: "month" | "year") => {
     setIsCheckoutLoading(true);
@@ -153,7 +115,10 @@ export function SettingsBilling() {
         window.location.assign(data.portal_url);
       } else {
         if (data.sync_attempted) {
-          await loadBilling();
+          await queryClient.invalidateQueries({
+            queryKey: queryKeys.billing.all,
+            refetchType: "active",
+          });
         }
 
         if (data.reason === "no_user_email") {
@@ -198,7 +163,10 @@ export function SettingsBilling() {
         toast.error(data.message ?? "No active subscription found yet. If you just paid, retry in a few seconds.");
       }
 
-      await loadBilling();
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.billing.all,
+        refetchType: "active",
+      });
     } catch {
       toast.error("Failed to refresh billing status.");
     } finally {

@@ -75,6 +75,18 @@ describe("/api/links route auth and rate-limit order", () => {
     token: null,
   };
 
+  const readOnlyTokenContext = {
+    userId: "user_1",
+    authSource: "api_token" as const,
+    token: {
+      id: "token_1",
+      expiresAt: "2099-01-01T00:00:00Z",
+      scopes: ["links:read"] as const,
+      clientId: "cadie-browser-extension",
+      installId: "install_1",
+    },
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockCreateRequestContext.mockResolvedValue(sessionContext);
@@ -189,5 +201,27 @@ describe("/api/links route auth and rate-limit order", () => {
       }),
       sessionContext
     );
+  });
+
+  it("POST returns 403 before validation when token lacks write scope", async () => {
+    mockCreateRequestContext.mockResolvedValue(readOnlyTokenContext);
+
+    const response = await POST({
+      headers: new Headers(),
+      json: jest.fn().mockResolvedValue({
+        url: "https://example.com",
+      }),
+      nextUrl: new URL("http://localhost/api/links"),
+    } as never);
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: "Token does not have the required scope",
+      required_scopes: ["links:write"],
+      token_scopes: ["links:read"],
+    });
+    expect(mockRateLimitLinksLimit).not.toHaveBeenCalled();
+    expect(mockValidateRequestBody).not.toHaveBeenCalled();
+    expect(mockCreateLinkHandle).not.toHaveBeenCalled();
   });
 });

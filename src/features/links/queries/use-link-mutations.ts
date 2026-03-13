@@ -6,6 +6,10 @@ import type { Link, LinkFilters } from "@/features/links/types";
 import type { DetectedContent } from "@/lib/content-detector";
 import { canonicalizeColor, resolveColorMetadata } from "@/lib/canonicalize";
 import { queryKeys } from "@/lib/query/keys";
+import {
+  getInitialLinkProcessingStage,
+  getInitialLinkProcessingState,
+} from "@/features/links/lib/link-processing";
 
 /**
  * Extract a readable name from an image URL
@@ -1075,6 +1079,9 @@ export function useLinkMutations(filters: LinkFilters) {
           fetched_at: null,
           etag: null,
           last_modified: null,
+          processing_state: getInitialLinkProcessingState(type),
+          processing_stage: getInitialLinkProcessingStage(type),
+          processing_error: null,
         }];
       });
 

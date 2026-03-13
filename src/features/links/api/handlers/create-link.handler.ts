@@ -14,6 +14,11 @@ import { log } from "@/lib/logger";
 import { getBillingContext } from "@/lib/billing/context";
 import { createPlanLimitResponse } from "@/lib/billing/limit-response";
 import { getIdempotentResponse, setIdempotentResponse } from "@/lib/idempotency";
+import {
+    getInitialLinkProcessingState,
+    shouldTrackLinkProcessing,
+    updateLinkProcessingState,
+} from "@/features/links/lib/link-processing";
 
 const EXTENSION_SOURCE_HEADER = "x-cadie-source";
 const EXTENSION_SOURCE_VALUE = "extension";
@@ -61,7 +66,7 @@ interface CreateLinkResponseBody {
     restored: boolean;
     auto_forwarded_to: string | null;
     auto_forwarded_spaces: string[];
-    processing_state: "queued" | "completed";
+    processing_state: "queued" | "processing" | "completed" | "failed";
 }
 
 /**
@@ -471,6 +476,12 @@ export class CreateLinkHandler {
         }
 
         if (!this.shouldRunRecovery(finalLink)) {
+            await updateLinkProcessingState(supabase, {
+                linkId,
+                userId,
+                state: "completed",
+                stage: "complete",
+            });
             this.logRecovery(linkId, "finalize", "success", {
                 reason: "resolved",
                 fetchStatus: finalLink.fetch_status,
@@ -499,6 +510,13 @@ export class CreateLinkHandler {
                 return;
             }
 
+            await updateLinkProcessingState(supabase, {
+                linkId,
+                userId,
+                state: "failed",
+                stage: "extension_recovery",
+                error: "Extension recovery could not finish background processing.",
+            });
             this.logRecovery(linkId, "finalize", "success", { reason: "marked_failed_after_full_recovery_failure", contentType });
             return;
         }
@@ -722,12 +740,44 @@ export class CreateLinkHandler {
                     let forwardingMs = 0;
                     let recoveryMs = 0;
                     const autoForwardingService = this.createAutoForwardingService(usePrivilegedClient);
+                    let supabase: AdminClient | null = null;
+
+                    try {
+                        supabase = createAdminClient();
+                        await updateLinkProcessingState(supabase, {
+                            linkId: link.id,
+                            userId: userId!,
+                            state: "processing",
+                            stage: "forwarding",
+                        });
+                    } catch (error) {
+                        log.warn("[LinkCreateAsync] Failed to mark link as processing", {
+                            linkId: link.id,
+                            error: error instanceof Error ? error.message : String(error),
+                        });
+                    }
 
                     try {
                         const forwardingStartedAt = Date.now();
                         await autoForwardingService.forwardLinks(userId!, [link]);
                         forwardingMs = Date.now() - forwardingStartedAt;
                     } catch (error) {
+                        if (supabase) {
+                            try {
+                                await updateLinkProcessingState(supabase, {
+                                    linkId: link.id,
+                                    userId: userId!,
+                                    state: "failed",
+                                    stage: "forwarding",
+                                    error: "Auto-forwarding failed after save.",
+                                });
+                            } catch (updateError) {
+                                log.warn("[LinkCreateAsync] Failed to persist forwarding failure", {
+                                    linkId: link.id,
+                                    error: updateError instanceof Error ? updateError.message : String(updateError),
+                                });
+                            }
+                        }
                         log.warn("[LinkCreateAsync] Failed to auto-forward link", {
                             linkId: link.id,
                             source: isExtensionSave ? EXTENSION_SOURCE_VALUE : "web",
@@ -736,10 +786,49 @@ export class CreateLinkHandler {
                     }
 
                     try {
+                        if (supabase) {
+                            await updateLinkProcessingState(supabase, {
+                                linkId: link.id,
+                                userId: userId!,
+                                state: "processing",
+                                stage: "enrichment_queue",
+                            });
+                        }
                         const enqueueStartedAt = Date.now();
                         await this.enqueueEnrichmentJobs(userId!, link, callbackBaseUrl);
                         enqueueMs = Date.now() - enqueueStartedAt;
+                        if (supabase && !shouldTrackLinkProcessing(link.content_type)) {
+                            await updateLinkProcessingState(supabase, {
+                                linkId: link.id,
+                                userId: userId!,
+                                state: "completed",
+                                stage: "complete",
+                            });
+                        } else if (supabase) {
+                            await updateLinkProcessingState(supabase, {
+                                linkId: link.id,
+                                userId: userId!,
+                                state: "processing",
+                                stage: link.content_type === "image" ? "ai_vision_tagging" : "metadata",
+                            });
+                        }
                     } catch (error) {
+                        if (supabase) {
+                            try {
+                                await updateLinkProcessingState(supabase, {
+                                    linkId: link.id,
+                                    userId: userId!,
+                                    state: "failed",
+                                    stage: "enrichment_queue",
+                                    error: "We saved the item, but couldn't start background enrichment.",
+                                });
+                            } catch (updateError) {
+                                log.warn("[LinkCreateAsync] Failed to persist enqueue failure", {
+                                    linkId: link.id,
+                                    error: updateError instanceof Error ? updateError.message : String(updateError),
+                                });
+                            }
+                        }
                         log.warn("[LinkCreateAsync] Failed to enqueue enrichment jobs", {
                             linkId: link.id,
                             source: isExtensionSave ? EXTENSION_SOURCE_VALUE : "web",
@@ -749,10 +838,34 @@ export class CreateLinkHandler {
 
                     if (isExtensionSave) {
                         try {
+                            if (supabase) {
+                                await updateLinkProcessingState(supabase, {
+                                    linkId: link.id,
+                                    userId: userId!,
+                                    state: "processing",
+                                    stage: "extension_recovery",
+                                });
+                            }
                             const recoveryStartedAt = Date.now();
                             await this.runExtensionRecovery(link.id, userId!);
                             recoveryMs = Date.now() - recoveryStartedAt;
                         } catch (error) {
+                            if (supabase) {
+                                try {
+                                    await updateLinkProcessingState(supabase, {
+                                        linkId: link.id,
+                                        userId: userId!,
+                                        state: "failed",
+                                        stage: "extension_recovery",
+                                        error: "Extension recovery failed after save.",
+                                    });
+                                } catch (updateError) {
+                                    log.warn("[LinkCreateAsync] Failed to persist recovery failure", {
+                                        linkId: link.id,
+                                        error: updateError instanceof Error ? updateError.message : String(updateError),
+                                    });
+                                }
+                            }
                             log.warn("[LinkCreateAsync] Extension recovery failed", {
                                 linkId: link.id,
                                 error: error instanceof Error ? error.message : String(error),
@@ -777,7 +890,9 @@ export class CreateLinkHandler {
                 restored: isRestored,
                 auto_forwarded_to: null,
                 auto_forwarded_spaces: [],
-                processing_state: shouldQueueProcessing ? "queued" : "completed",
+                processing_state: shouldQueueProcessing
+                    ? getInitialLinkProcessingState(link.content_type)
+                    : "completed",
             };
 
             const status = isDuplicate ? 200 : 201;

@@ -1,13 +1,20 @@
 import { NextRequest } from "next/server";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { log } from "@/lib/logger";
+import {
+  DEFAULT_TOKEN_SCOPES,
+  normalizeApiTokenScopes,
+  type ApiTokenScope,
+} from "@/lib/api-tokens";
 
 export type AuthSource = "session" | "api_token";
 
 export interface ApiTokenMetadata {
   id: string;
   expiresAt: string;
-  scopes: readonly ["legacy_full_access"];
+  scopes: readonly ApiTokenScope[];
+  clientId: string | null;
+  installId: string | null;
 }
 
 export interface RequestContext {
@@ -37,7 +44,9 @@ export async function createRequestContext(
       token: {
         id: apiToken.tokenId,
         expiresAt: apiToken.expiresAt,
-        scopes: ["legacy_full_access"] as const,
+        scopes: apiToken.scopes,
+        clientId: apiToken.clientId,
+        installId: apiToken.installId,
       },
     };
   }
@@ -73,7 +82,14 @@ export async function authenticateRequest(
  */
 async function authenticateApiToken(
   token: string
-): Promise<{ userId: string; tokenId: string; expiresAt: string } | null> {
+): Promise<{
+  userId: string;
+  tokenId: string;
+  expiresAt: string;
+  scopes: readonly ApiTokenScope[];
+  clientId: string | null;
+  installId: string | null;
+} | null> {
   if (!token || token.length < 32) {
     // SECURITY: Don't log token details - could aid attackers
     log.warn("[AUTH] Invalid token format");
@@ -95,8 +111,9 @@ async function authenticateApiToken(
     // Look up token in database and check expiration
     const { data: tokenRecord, error } = await supabase
       .from("api_tokens")
-      .select("user_id, id, expires_at")
+      .select("user_id, id, expires_at, scope, client_id, install_id")
       .eq("token_hash", tokenHash)
+      .is("revoked_at", null)
       .gt("expires_at", now) // Only return non-expired tokens
       .single();
 
@@ -121,6 +138,9 @@ async function authenticateApiToken(
       userId: tokenRecord.user_id,
       tokenId: tokenRecord.id,
       expiresAt: tokenRecord.expires_at,
+      scopes: normalizeApiTokenScopes(tokenRecord.scope ?? DEFAULT_TOKEN_SCOPES),
+      clientId: tokenRecord.client_id ?? null,
+      installId: tokenRecord.install_id ?? null,
     };
   } catch {
     // SECURITY: Don't log error details that could reveal system internals

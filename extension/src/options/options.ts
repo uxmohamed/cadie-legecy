@@ -2,7 +2,7 @@
  * Options page - Simple connect/disconnect flow
  */
 
-import { getSettings, clearSettings } from "../lib/storage";
+import { getSettings, clearSettings, getInstallId } from "../lib/storage";
 
 // DOM elements
 const notConnectedView = document.getElementById("notConnectedView") as HTMLDivElement;
@@ -41,7 +41,9 @@ async function handleConnect() {
     connectBtn.disabled = true;
 
     const extensionId = chrome.runtime.id;
-    const authUrl = `https://cadie.app/extension/authorize?extensionId=${extensionId}`;
+    const installId = await getInstallId();
+    const extensionVersion = chrome.runtime.getManifest().version;
+    const authUrl = `https://cadie.app/extension/authorize?extensionId=${encodeURIComponent(extensionId)}&installId=${encodeURIComponent(installId)}&extensionVersion=${encodeURIComponent(extensionVersion)}&browserName=chrome`;
 
     // Open authorization page
     await chrome.tabs.create({ url: authUrl });
@@ -59,7 +61,7 @@ async function handleConnect() {
     };
     chrome.runtime.onMessage.addListener(messageListener);
 
-  } catch (error) {
+  } catch {
     showStatus("Failed to connect", "error");
     connectBtn.classList.remove("loading");
     connectBtn.disabled = false;
@@ -76,7 +78,7 @@ async function handleDisconnect() {
     isConnected = false;
     updateView();
     showStatus("Disconnected", "info");
-  } catch (error) {
+  } catch {
     showStatus("Failed to disconnect", "error");
   } finally {
     disconnectBtn.disabled = false;

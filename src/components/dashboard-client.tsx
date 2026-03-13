@@ -6,6 +6,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { DashboardContent } from "@/components/dashboard-content";
 import { LinkListSkeleton } from "@/components/skeletons";
+import { useBillingRealtimeInvalidation } from "@/features/billing/hooks/use-billing-realtime-invalidation.hook";
 import { useRealtimeSync } from "@/features/links/hooks/use-realtime-sync.hook";
 import { useSpaces } from "@/features/spaces/queries";
 import dynamic from "next/dynamic";
@@ -153,6 +154,7 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
 
   // Initialize realtime sync - keeps store updated with database changes
   useRealtimeSync(!!user, user.id);
+  useBillingRealtimeInvalidation(!!user, user.id);
 
   // Handle view change with non-blocking navigation
   const handleViewChange = React.useCallback((categoryId: string | null) => {
