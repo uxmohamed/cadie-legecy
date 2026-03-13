@@ -3,6 +3,20 @@ import { Client } from "@upstash/qstash";
 const qstashToken = process.env.QSTASH_TOKEN;
 const qstash = qstashToken ? new Client({ token: qstashToken }) : null;
 
+export const QSTASH_JOB_RETRIES = {
+  metadataEnrichment: 3,
+  aiTagging: 3,
+  aiVisionTagging: 3,
+  bookmarkImportProcessing: 5,
+} as const;
+
+export const QSTASH_JOB_MAX_ATTEMPTS = {
+  metadataEnrichment: QSTASH_JOB_RETRIES.metadataEnrichment + 1,
+  aiTagging: QSTASH_JOB_RETRIES.aiTagging + 1,
+  aiVisionTagging: QSTASH_JOB_RETRIES.aiVisionTagging + 1,
+  bookmarkImportProcessing: QSTASH_JOB_RETRIES.bookmarkImportProcessing + 1,
+} as const;
+
 interface EnqueueOptions {
   baseUrl?: string;
 }
@@ -58,6 +72,10 @@ export interface EnrichMetadataJob {
   userId: string;
 }
 
+export function buildMetadataJobDedupeKey(job: Pick<EnrichMetadataJob, "userId" | "linkId">): string {
+  return `metadata:${job.userId}:${job.linkId}`;
+}
+
 /**
  * Enqueue a metadata enrichment job
  * 
@@ -80,7 +98,7 @@ export async function enqueueMetadataEnrichment(
     await client.publishJSON({
       url: `${baseUrl}/api/jobs/enrich-metadata`,
       body: job,
-      retries: 3, // Retry up to 3 times on failure
+      retries: QSTASH_JOB_RETRIES.metadataEnrichment,
       delay: 0, // Start immediately for instant UI
     });
   } catch (error) {
@@ -111,6 +129,10 @@ export interface EnrichAITagsJob {
   userId: string;
 }
 
+export function buildAITaggingJobDedupeKey(job: Pick<EnrichAITagsJob, "userId" | "linkId">): string {
+  return `ai-tags:${job.userId}:${job.linkId}`;
+}
+
 /**
  * Enqueue an AI tagging job
  *
@@ -129,7 +151,7 @@ export async function enqueueAITagging(
     await client.publishJSON({
       url: `${baseUrl}/api/jobs/enrich-ai-tags`,
       body: job,
-      retries: 3,
+      retries: QSTASH_JOB_RETRIES.aiTagging,
       delay: 10, // 10 second delay to let metadata settle
     });
   } catch (error) {
@@ -162,6 +184,18 @@ export interface ProcessBookmarkImportJob {
   userId: string;
 }
 
+export function buildAIVisionTaggingJobDedupeKey(
+  job: Pick<EnrichAIVisionTagsJob, "userId" | "linkId">
+): string {
+  return `ai-vision-tags:${job.userId}:${job.linkId}`;
+}
+
+export function buildBookmarkImportJobDedupeKey(
+  job: Pick<ProcessBookmarkImportJob, "userId" | "importJobId">
+): string {
+  return `bookmark-import:${job.userId}:${job.importJobId}`;
+}
+
 /**
  * Enqueue an AI vision tagging job for an image item.
  * Uses a 2s delay to let the upload settle.
@@ -179,7 +213,7 @@ export async function enqueueAIVisionTagging(
     await client.publishJSON({
       url: `${baseUrl}/api/jobs/enrich-ai-vision-tags`,
       body: job,
-      retries: 3,
+      retries: QSTASH_JOB_RETRIES.aiVisionTagging,
       delay: 2,
     });
   } catch (error) {
@@ -217,7 +251,7 @@ export async function enqueueBookmarkImportProcessing(
   await client.publishJSON({
     url: `${baseUrl}/api/jobs/process-bookmark-import`,
     body: job,
-    retries: 5,
+    retries: QSTASH_JOB_RETRIES.bookmarkImportProcessing,
     delay: 0,
   });
 }

@@ -726,41 +726,35 @@ function showAuthPromptOverlay() {
 // ============================================================================
 
 let authProcessed = false;
+let authRequestInFlight = false;
 
 const ALLOWED_AUTH_ORIGINS = [
   "https://cadie.app",
   "https://www.cadie.app",
 ];
 
+const ALLOWED_AUTH_HOSTNAMES = new Set(["cadie.app", "www.cadie.app"]);
+
+interface AuthSuccessPayload {
+  token?: string;
+  email?: string;
+  state?: string;
+  installId?: string;
+  extensionId?: string;
+}
+
 window.addEventListener("message", (event: MessageEvent) => {
   if (event.source !== window) return;
   if (!ALLOWED_AUTH_ORIGINS.includes(event.origin)) return;
-  if (!window.location.hostname.includes("cadie.app")) return;
-  
+  if (!ALLOWED_AUTH_HOSTNAMES.has(window.location.hostname)) return;
+
   const data = event.data;
   if (data?.type === "CADIE_AUTH_SUCCESS" && data?.token && !authProcessed) {
-    authProcessed = true;
-    chrome.runtime.sendMessage({
-      type: "CADIE_AUTH_SUCCESS",
-      data: {
-        token: data.token,
-        email: data.email,
-        url: "https://cadie.app",
-        cadieUrl: "https://cadie.app",
-        state: data.state,
-      },
-    }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.error("Error sending auth message:", chrome.runtime.lastError);
-        authProcessed = false;
-      } else {
-        window.postMessage({ type: "CADIE_AUTH_ACK", success: true }, "*");
-      }
-    });
+    void forwardAuthToExtension(data, event.origin);
   }
 });
 
-if (window.location.hostname.includes("cadie.app") && window.location.pathname.includes("/extension/authorize")) {
+if (ALLOWED_AUTH_HOSTNAMES.has(window.location.hostname) && window.location.pathname.includes("/extension/authorize")) {
   checkForAuthData();
 
   const pollInterval = setInterval(() => {
@@ -778,31 +772,53 @@ function checkForAuthData(): boolean {
   const authDataElement = document.getElementById("cadie-auth-data");
   if (authDataElement) {
     try {
-      const authData = JSON.parse(authDataElement.getAttribute("data-auth") || "{}");
+      const authData = JSON.parse(authDataElement.getAttribute("data-auth") || "{}") as AuthSuccessPayload;
       if (authData.token) {
-        authProcessed = true;
-        chrome.runtime.sendMessage({
-          type: "CADIE_AUTH_SUCCESS",
-          data: {
-            token: authData.token,
-            email: authData.email,
-            url: "https://cadie.app",
-            cadieUrl: "https://cadie.app",
-            state: authData.state,
-          },
-        }, (response) => {
-          if (chrome.runtime.lastError) {
-            console.error("Error sending auth message:", chrome.runtime.lastError);
-            authProcessed = false;
-          } else {
-            window.postMessage({ type: "CADIE_AUTH_ACK", success: true }, "*");
-          }
-        });
-        return true;
+        void forwardAuthToExtension(authData, window.location.origin);
+        return authProcessed;
       }
     } catch (e) {
       console.error("Error parsing auth data:", e);
     }
   }
   return false;
+}
+
+function forwardAuthToExtension(authData: AuthSuccessPayload, targetOrigin: string): void {
+  if (authProcessed || authRequestInFlight) return;
+
+  authRequestInFlight = true;
+  chrome.runtime.sendMessage(
+    {
+      type: "CADIE_AUTH_SUCCESS",
+      data: {
+        token: authData.token,
+        email: authData.email,
+        url: "https://cadie.app",
+        cadieUrl: "https://cadie.app",
+        state: authData.state,
+        installId: authData.installId,
+        extensionId: authData.extensionId,
+      },
+    },
+    (response?: { success?: boolean; error?: string }) => {
+      authRequestInFlight = false;
+
+      if (chrome.runtime.lastError) {
+        console.error("Error sending auth message:", chrome.runtime.lastError);
+        return;
+      }
+
+      if (!response?.success) {
+        console.warn("Rejected auth completion payload:", response?.error || "Unknown error");
+        return;
+      }
+
+      authProcessed = true;
+      window.postMessage(
+        { type: "CADIE_AUTH_ACK", success: true, state: authData.state || "" },
+        targetOrigin
+      );
+    }
+  );
 }

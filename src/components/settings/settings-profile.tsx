@@ -1,12 +1,12 @@
 "use client";
 
 import * as React from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { User } from "@supabase/supabase-js";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/tooltip";
 import { getUserProfile, completeOnboarding } from "@/hooks/use-onboarding";
 import { buildAvatarFallbackChain } from "@/lib/avatar";
+import { clearAllCaches } from "@/lib/query/auth-reset";
 import { createClient } from "@/lib/supabase/client";
 import { IconPencil, IconLoader2, IconLogout } from "@tabler/icons-react";
 import { toast } from "sonner";
@@ -35,6 +36,7 @@ interface SettingsProfileProps {
 }
 
 export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps) {
+  const queryClient = useQueryClient();
   const [displayName, setDisplayName] = React.useState("");
   const [originalDisplayName, setOriginalDisplayName] = React.useState("");
   const [avatarUrl, setAvatarUrl] = React.useState("");
@@ -139,6 +141,7 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
 
   const handleSignOut = async () => {
     const supabase = createClient();
+    await clearAllCaches(queryClient, user.id);
     await supabase.auth.signOut();
     window.location.href = "/";
   };
@@ -157,6 +160,7 @@ export function SettingsProfile({ user, onProfileUpdate }: SettingsProfileProps)
 
       // Sign out and redirect after successful deletion
       const supabase = createClient();
+      await clearAllCaches(queryClient, user.id);
       await supabase.auth.signOut();
       window.location.href = "/";
     } catch (error) {

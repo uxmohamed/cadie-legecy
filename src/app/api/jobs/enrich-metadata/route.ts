@@ -2,10 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { Receiver } from "@upstash/qstash";
 import { MetadataService } from "@/features/links/services/metadata.service";
 import { log } from "@/lib/logger";
-import type { EnrichMetadataJob } from "@/lib/job-queue";
+import {
+  buildMetadataJobDedupeKey,
+  QSTASH_JOB_MAX_ATTEMPTS,
+  type EnrichMetadataJob,
+} from "@/lib/job-queue";
 import { createAdminClient } from "@/lib/supabase/server";
 import { updateLinkProcessingState } from "@/features/links/lib/link-processing";
+import {
+  claimBackgroundJobExecution,
+  getQStashAttemptInfo,
+  markBackgroundJobCompleted,
+  safeMarkBackgroundJobFailed,
+} from "@/lib/background-job-executions";
 
+const JOB_TYPE = "metadata_enrichment";
 
 /**
  * POST /api/jobs/enrich-metadata
@@ -17,6 +28,9 @@ import { updateLinkProcessingState } from "@/features/links/lib/link-processing"
  */
 export async function POST(request: NextRequest) {
   let job: EnrichMetadataJob | null = null;
+  let jobDedupeKey: string | null = null;
+  let invocationId: string | null = null;
+  let attemptCount = 1;
 
   try {
     // Verify QStash signature
@@ -56,7 +70,83 @@ export async function POST(request: NextRequest) {
     
     log.info("[Job] Processing metadata enrichment", { linkId, url });
 
+    const attemptInfo = getQStashAttemptInfo(
+      request.headers,
+      QSTASH_JOB_MAX_ATTEMPTS.metadataEnrichment
+    );
+    attemptCount = attemptInfo.attemptCount;
+    jobDedupeKey = buildMetadataJobDedupeKey(job);
+
+    const claimed = await claimBackgroundJobExecution({
+      jobType: JOB_TYPE,
+      dedupeKey: jobDedupeKey,
+      payload: job as unknown as Record<string, unknown>,
+      attemptCount,
+      maxAttempts: attemptInfo.maxAttempts,
+    });
+    invocationId = claimed.invocationId;
+
+    if (!claimed.shouldProcess) {
+      log.info("[Job] Skipping duplicate metadata delivery", {
+        linkId,
+        dedupeKey: jobDedupeKey,
+        state: claimed.duplicateState,
+        attemptCount,
+        messageId: attemptInfo.messageId,
+      });
+      return NextResponse.json({
+        success: true,
+        skipped: true,
+        reason: claimed.duplicateState,
+        linkId,
+      });
+    }
+
     const supabase = createAdminClient();
+    const { data: existingLink, error: existingLinkError } = await supabase
+      .from("links")
+      .select("fetch_status, ai_tags")
+      .eq("id", linkId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (existingLinkError) {
+      throw new Error(existingLinkError.message);
+    }
+
+    const fetchStatus = existingLink?.fetch_status;
+    const hasResolvedMetadata = Boolean(fetchStatus && fetchStatus !== "pending" && fetchStatus !== "fetching");
+    if (hasResolvedMetadata) {
+      if (fetchStatus === "success") {
+        await updateLinkProcessingState(supabase, {
+          linkId,
+          userId,
+          state: existingLink?.ai_tags?.length ? "completed" : "processing",
+          stage: existingLink?.ai_tags?.length ? "complete" : "ai_tagging",
+        });
+      } else {
+        await updateLinkProcessingState(supabase, {
+          linkId,
+          userId,
+          state: "completed",
+          stage: "complete",
+        });
+      }
+
+      await markBackgroundJobCompleted({
+        jobType: JOB_TYPE,
+        dedupeKey: jobDedupeKey,
+        invocationId: invocationId!,
+      });
+      return NextResponse.json({
+        success: true,
+        skipped: true,
+        linkId,
+        reason: "already_resolved",
+        fetchStatus,
+      });
+    }
+
     await updateLinkProcessingState(supabase, {
       linkId,
       userId,
@@ -88,6 +178,12 @@ export async function POST(request: NextRequest) {
     }
     
     log.info("[Job] Metadata enrichment completed", { linkId });
+
+    await markBackgroundJobCompleted({
+      jobType: JOB_TYPE,
+      dedupeKey: jobDedupeKey,
+      invocationId: invocationId!,
+    });
     
     return NextResponse.json({ 
       success: true,
@@ -107,6 +203,26 @@ export async function POST(request: NextRequest) {
         });
       } catch {
         // Ignore follow-up persistence failures.
+      }
+    }
+
+    if (jobDedupeKey && invocationId) {
+      const failure = await safeMarkBackgroundJobFailed({
+        jobType: JOB_TYPE,
+        dedupeKey: jobDedupeKey,
+        invocationId,
+        attemptCount,
+        maxAttempts: QSTASH_JOB_MAX_ATTEMPTS.metadataEnrichment,
+        error,
+      });
+      if (failure.terminal) {
+        return NextResponse.json(
+          {
+            error: "Metadata enrichment failed permanently",
+            details: error instanceof Error ? error.message : "Unknown error",
+          },
+          { status: 489 }
+        );
       }
     }
     

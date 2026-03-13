@@ -64,7 +64,7 @@ export function UserMenu({ user }: UserMenuProps) {
       
       // Clear all caches before signing out to prevent data leakage between accounts
       // This clears: TanStack Query cache, IndexedDB persisted cache, and UI store
-      await clearAllCaches(queryClient);
+      await clearAllCaches(queryClient, user.id);
       clearUIStore();
       
       const supabase = createClient();
@@ -82,7 +82,7 @@ export function UserMenu({ user }: UserMenuProps) {
       console.error("Error signing out:", error);
       setIsSigningOut(false);
     }
-  }, [queryClient]);
+  }, [queryClient, user.id]);
 
   // Handle looping keyboard navigation
   React.useEffect(() => {

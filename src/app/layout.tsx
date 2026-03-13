@@ -77,21 +77,25 @@ export const metadata: Metadata = {
 import { ShortcutProvider } from "@/components/shortcut-context";
 import { ShortcutsHelpModal } from "@/components/shortcuts-help-modal";
 import { QueryProvider } from "@/lib/query";
+import { getUser } from "@/lib/supabase/server";
 import { Agentation } from "agentation";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const {
+    data: { user },
+  } = await getUser();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#F6F4EE" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#1f1f1f" media="(prefers-color-scheme: dark)" />
-        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
       </head>
       <body suppressHydrationWarning className={`${inter.variable} ${customFont.variable} antialiased`}>
@@ -99,7 +103,7 @@ export default function RootLayout({
           Skip to content
         </a>
         <ThemeProvider defaultTheme="system">
-          <QueryProvider>
+          <QueryProvider key={user?.id ?? "anonymous"} userId={user?.id ?? null}>
             <Suspense fallback={null}>
               <PostHogPageView />
             </Suspense>

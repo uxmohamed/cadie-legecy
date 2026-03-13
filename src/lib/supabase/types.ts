@@ -313,6 +313,59 @@ export interface Database {
           processing_error?: string | null;
         };
       };
+      background_job_executions: {
+        Row: {
+          id: string;
+          job_type: string;
+          dedupe_key: string;
+          status: string;
+          attempt_count: number;
+          max_attempts: number;
+          active_invocation_id: string | null;
+          last_error: string | null;
+          last_payload: Record<string, unknown>;
+          last_received_at: string;
+          started_at: string | null;
+          completed_at: string | null;
+          terminal_failed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          job_type: string;
+          dedupe_key: string;
+          status: string;
+          attempt_count?: number;
+          max_attempts?: number;
+          active_invocation_id?: string | null;
+          last_error?: string | null;
+          last_payload?: Record<string, unknown>;
+          last_received_at?: string;
+          started_at?: string | null;
+          completed_at?: string | null;
+          terminal_failed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          job_type?: string;
+          dedupe_key?: string;
+          status?: string;
+          attempt_count?: number;
+          max_attempts?: number;
+          active_invocation_id?: string | null;
+          last_error?: string | null;
+          last_payload?: Record<string, unknown>;
+          last_received_at?: string;
+          started_at?: string | null;
+          completed_at?: string | null;
+          terminal_failed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       bookmark_import_jobs: {
         Row: {
           id: string;

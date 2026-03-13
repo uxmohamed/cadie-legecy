@@ -2,6 +2,65 @@ import type { LinkMetadata, ExtractedMetadata, BatchMetadataOptions, FetchStatus
 import { extractMetadata } from "@/lib/metadata";
 import { log } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/server";
+import {
+    buildQueuedMetadataFailureUpdates,
+    buildQueuedMetadataSuccessUpdates,
+    shouldPreserveResolvedMetadata,
+} from "@/features/links/lib/enrichment-ownership";
+
+const OWNERSHIP_SELECT_FIELDS = [
+    "id",
+    "user_id",
+    "url",
+    "title",
+    "description",
+    "domain",
+    "site_name",
+    "content_text",
+    "og_image_url",
+    "favicon_url",
+    "final_url",
+    "canonical_url",
+    "favicon_variants",
+    "preview_image_width",
+    "preview_image_height",
+    "theme_color",
+    "language",
+    "word_count",
+    "reading_time_minutes",
+    "status_code",
+    "fetch_status",
+    "fetched_at",
+    "etag",
+    "last_modified",
+].join(", ");
+
+type MetadataOwnershipRow = {
+    id: string;
+    user_id: string;
+    url: string;
+    title: string | null;
+    description: string | null;
+    domain: string | null;
+    site_name: string | null;
+    content_text: string | null;
+    og_image_url: string | null;
+    favicon_url: string | null;
+    final_url: string | null;
+    canonical_url: string | null;
+    favicon_variants: Array<Record<string, unknown>> | null;
+    preview_image_width: number | null;
+    preview_image_height: number | null;
+    theme_color: string | null;
+    language: string | null;
+    word_count: number | null;
+    reading_time_minutes: number | null;
+    status_code: number | null;
+    fetch_status: string | null;
+    fetched_at: string | null;
+    etag: string | null;
+    last_modified: string | null;
+};
 
 /**
  * Default options for batch metadata fetching
@@ -78,6 +137,30 @@ export class MetadataService {
         };
     }
 
+    private async loadCurrentLinkForOwnership(
+        linkId: string,
+        userId?: string
+    ): Promise<MetadataOwnershipRow | null> {
+        const supabase = createAdminClient();
+        let query = supabase
+            .from("links")
+            .select(OWNERSHIP_SELECT_FIELDS)
+            .eq("id", linkId);
+
+        if (userId) {
+            query = query.eq("user_id", userId);
+        }
+
+        const { data, error } = await query.maybeSingle();
+
+        if (error) {
+            log.error(`[EnrichLink] Failed to load current metadata state for ${linkId}`, error);
+            return null;
+        }
+
+        return (data as MetadataOwnershipRow | null) ?? null;
+    }
+
     /**
      * Fetch metadata for multiple URLs with concurrency control
      */
@@ -129,21 +212,20 @@ export class MetadataService {
         try {
             log.info(`[EnrichLink] Starting metadata enrichment for ${linkId}`);
             const metadata = await extractMetadata(url);
-            
+            const currentLink = await this.loadCurrentLinkForOwnership(linkId, userId);
+
+            if (!currentLink) {
+                log.warn(`[EnrichLink] Link no longer exists during metadata enrichment`, { linkId, userId });
+                return metadata.fetch_status;
+            }
+
             if (metadata.fetch_status === "success") {
                 const supabase = createAdminClient();
+                const updates = buildQueuedMetadataSuccessUpdates(metadata);
 
                 let query = supabase
                   .from("links")
-                  .update({
-                    title: metadata.title,
-                    description: metadata.description,
-                    og_image_url: metadata.preview_image_url,
-                    favicon_url: metadata.favicon_url,
-                    site_name: metadata.site_name,
-                    fetch_status: "success",
-                    fetched_at: metadata.fetched_at,
-                  })
+                  .update(updates)
                   .eq("id", linkId);
 
                 if (userId) {
@@ -160,24 +242,39 @@ export class MetadataService {
                 }
                 return "success";
             } else {
-                // Update with failure status but preserve url as title if needed
+                const failureUpdates = buildQueuedMetadataFailureUpdates(currentLink, metadata);
+
+                if (!failureUpdates || shouldPreserveResolvedMetadata(currentLink)) {
+                    log.info(`[EnrichLink] Preserving resolved metadata after failed refresh`, {
+                        linkId,
+                        existingStatus: currentLink.fetch_status,
+                        attemptedStatus: metadata.fetch_status,
+                    });
+                    return "success";
+                }
+
                 const supabase = createAdminClient();
                 let query = supabase
                   .from("links")
-                  .update({
-                    fetch_status: metadata.fetch_status,
-                    fetched_at: metadata.fetched_at,
-                  })
+                  .update(failureUpdates)
                   .eq("id", linkId);
 
                 if (userId) {
                     query = query.eq("user_id", userId);
                 }
 
+                query = query.neq("fetch_status", "success");
+
                 const { error } = await query;
                 if (error) {
                     log.error(`[EnrichLink] Failed to update metadata status for ${linkId}`, error);
                     throw error;
+                }
+
+                const refreshedLink = await this.loadCurrentLinkForOwnership(linkId, userId);
+                if (refreshedLink?.fetch_status === "success") {
+                    log.info(`[EnrichLink] Skipped failure downgrade because metadata is already resolved`, { linkId });
+                    return "success";
                 }
 
                 log.warn(`[EnrichLink] Metadata extraction completed with status ${metadata.fetch_status}`, { linkId });

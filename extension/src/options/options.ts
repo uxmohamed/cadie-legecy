@@ -39,14 +39,13 @@ async function handleConnect() {
   try {
     connectBtn.classList.add("loading");
     connectBtn.disabled = true;
-
-    const extensionId = chrome.runtime.id;
-    const installId = await getInstallId();
-    const extensionVersion = chrome.runtime.getManifest().version;
-    const authUrl = `https://cadie.app/extension/authorize?extensionId=${encodeURIComponent(extensionId)}&installId=${encodeURIComponent(installId)}&extensionVersion=${encodeURIComponent(extensionVersion)}&browserName=chrome`;
-
-    // Open authorization page
-    await chrome.tabs.create({ url: authUrl });
+    const openAuthPage = await chrome.runtime.sendMessage({ action: "openAuthPage" }) as {
+      success?: boolean;
+      error?: string;
+    };
+    if (!openAuthPage?.success) {
+      throw new Error(openAuthPage?.error || "Failed to open authorization page");
+    }
 
     // Listen for auth completion
     const messageListener = (message: { type: string }) => {

@@ -22,6 +22,13 @@ interface LinksResponse {
   total: number;
 }
 
+interface SpacesResponse {
+  spaces: Array<{
+    id: string;
+    link_count: number;
+  }>;
+}
+
 function isLinkListQueryKey(queryKey: readonly unknown[]): queryKey is ReturnType<typeof queryKeys.links.list> {
   return queryKey[0] === "links" && queryKey[1] === "list" && typeof queryKey[2] === "string";
 }
@@ -56,6 +63,140 @@ function matchesFilters(link: Link, filters: LinkFilters): boolean {
   }
 
   return true;
+}
+
+function isSafeRealtimePatchedList(filters: LinkFilters): boolean {
+  if (filters.content_type || filters.is_pinned !== undefined) {
+    return false;
+  }
+
+  if (filters.space_id) {
+    return filters.is_deleted !== true && (filters.is_archived === false || filters.is_archived === undefined);
+  }
+
+  const isTrashOnly = filters.is_deleted === true && filters.is_archived === undefined;
+  if (isTrashOnly) {
+    return true;
+  }
+
+  const isDefaultActiveList =
+    filters.is_deleted !== true &&
+    (filters.is_archived === false || filters.is_archived === undefined);
+
+  return isDefaultActiveList;
+}
+
+function isPatchedRealtimeQuery(queryKey: readonly unknown[]): boolean {
+  if (!isLinkListQueryKey(queryKey) || queryKey.length !== 3) {
+    return false;
+  }
+
+  const filters = parseLinkFilters(queryKey);
+  return !!filters && isSafeRealtimePatchedList(filters);
+}
+
+function invalidateDerivedLinkQueries(
+  queryClient: ReturnType<typeof useQueryClient>
+) {
+  void queryClient.invalidateQueries({
+    predicate: (query) => {
+      const { queryKey } = query;
+      if (!Array.isArray(queryKey) || queryKey[0] !== "links") {
+        return false;
+      }
+
+      if (queryKey[1] === "detail") {
+        return false;
+      }
+
+      return !isPatchedRealtimeQuery(queryKey);
+    },
+    refetchType: "active",
+  });
+}
+
+function recoverFromRealtimeReconnect(
+  queryClient: ReturnType<typeof useQueryClient>
+) {
+  void queryClient.invalidateQueries({
+    queryKey: queryKeys.links.all,
+    refetchType: "active",
+  });
+  void queryClient.invalidateQueries({
+    queryKey: queryKeys.spaces.all,
+    refetchType: "active",
+  });
+  void queryClient.invalidateQueries({
+    queryKey: queryKeys.linkSpaces.all,
+    refetchType: "active",
+  });
+}
+
+function updateSpaceLinkCount(
+  queryClient: ReturnType<typeof useQueryClient>,
+  spaceId: string,
+  delta: number
+) {
+  queryClient.setQueryData<SpacesResponse>(queryKeys.spaces.list(), (old) => {
+    if (!old) {
+      return old;
+    }
+
+    let changed = false;
+    const spaces = old.spaces.map((space) => {
+      if (space.id !== spaceId) {
+        return space;
+      }
+
+      changed = true;
+      return {
+        ...space,
+        link_count: Math.max(0, space.link_count + delta),
+      };
+    });
+
+    return changed ? { spaces } : old;
+  });
+}
+
+function forEachPatchedSpaceQuery(
+  queryClient: ReturnType<typeof useQueryClient>,
+  visitor: (queryKey: readonly unknown[], filters: LinkFilters) => void
+) {
+  const cachedQueries = queryClient.getQueriesData<LinksResponse>({
+    queryKey: queryKeys.links.all,
+  });
+
+  cachedQueries.forEach(([queryKey]) => {
+    if (!Array.isArray(queryKey)) {
+      return;
+    }
+
+    const filters = parseLinkFilters(queryKey);
+    if (!filters?.space_id || !isPatchedRealtimeQuery(queryKey)) {
+      return;
+    }
+
+    visitor(queryKey, filters);
+  });
+}
+
+function invalidateSpaceScopedQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  spaceId: string
+) {
+  void queryClient.invalidateQueries({
+    predicate: (query) => {
+      const { queryKey } = query;
+      if (!Array.isArray(queryKey) || !isLinkListQueryKey(queryKey)) {
+        return false;
+      }
+
+      const filters = parseLinkFilters(queryKey);
+      return filters?.space_id === spaceId;
+    },
+    refetchType: "active",
+  });
 }
 
 function getCachedLink(
@@ -190,6 +331,35 @@ function handleUpdate(
     });
   }
 
+  forEachPatchedSpaceQuery(queryClient, (queryKey, filters) => {
+    queryClient.setQueryData<LinksResponse>(queryKey, (old) => {
+      if (!old) {
+        return old;
+      }
+
+      const existing = old.links.find((link) => link.id === newLink.id);
+      if (!existing) {
+        return old;
+      }
+
+      if (!matchesFilters(newLink, filters)) {
+        return {
+          links: old.links.filter((link) => link.id !== newLink.id),
+          total: Math.max(0, old.total - 1),
+        };
+      }
+
+      if (existing.updated_at === newLink.updated_at) {
+        return old;
+      }
+
+      return {
+        ...old,
+        links: sortLinks(old.links.map((link) => (link.id === newLink.id ? newLink : link))),
+      };
+    });
+  });
+
   // Also update detail cache if exists
   queryClient.setQueryData(queryKeys.links.detail(newLink.id), newLink);
 }
@@ -219,6 +389,24 @@ function handleDelete(
     });
   }
 
+  forEachPatchedSpaceQuery(queryClient, (queryKey) => {
+    queryClient.setQueryData<LinksResponse>(queryKey, (old) => {
+      if (!old) {
+        return old;
+      }
+
+      const hadLink = old.links.some((item) => item.id === link.id);
+      if (!hadLink) {
+        return old;
+      }
+
+      return {
+        links: old.links.filter((item) => item.id !== link.id),
+        total: Math.max(0, old.total - 1),
+      };
+    });
+  });
+
   // Remove from detail cache
   queryClient.removeQueries({ queryKey: queryKeys.links.detail(link.id) });
 }
@@ -227,26 +415,16 @@ function handleSpaceLinkInsert(
   queryClient: ReturnType<typeof useQueryClient>,
   membership: LinkSpaceRow
 ) {
+  updateSpaceLinkCount(queryClient, membership.space_id, 1);
+
   const link = getCachedLink(queryClient, membership.link_id);
   if (!link) {
+    invalidateSpaceScopedQueries(queryClient, membership.space_id);
     return;
   }
 
-  const cachedQueries = queryClient.getQueriesData<LinksResponse>({
-    queryKey: queryKeys.links.all,
-  });
-
-  cachedQueries.forEach(([queryKey]) => {
-    if (!Array.isArray(queryKey)) {
-      return;
-    }
-
-    const filters = parseLinkFilters(queryKey);
-    if (!filters?.space_id || filters.space_id !== membership.space_id) {
-      return;
-    }
-
-    if (!matchesFilters(link, filters)) {
+  forEachPatchedSpaceQuery(queryClient, (queryKey, filters) => {
+    if (filters.space_id !== membership.space_id || !matchesFilters(link, filters)) {
       return;
     }
 
@@ -279,17 +457,8 @@ function handleSpaceLinkDelete(
   queryClient: ReturnType<typeof useQueryClient>,
   membership: LinkSpaceRow
 ) {
-  const cachedQueries = queryClient.getQueriesData<LinksResponse>({
-    queryKey: queryKeys.links.all,
-  });
-
-  cachedQueries.forEach(([queryKey]) => {
-    if (!Array.isArray(queryKey)) {
-      return;
-    }
-
-    const filters = parseLinkFilters(queryKey);
-    if (!filters?.space_id || filters.space_id !== membership.space_id) {
+  forEachPatchedSpaceQuery(queryClient, (queryKey, filters) => {
+    if (filters.space_id !== membership.space_id) {
       return;
     }
 
@@ -309,6 +478,8 @@ function handleSpaceLinkDelete(
       };
     });
   });
+
+  updateSpaceLinkCount(queryClient, membership.space_id, -1);
 }
 
 /**
@@ -319,6 +490,7 @@ function handleSpaceLinkDelete(
  */
 export function useRealtimeSync(isAuthenticated: boolean, userId?: string): void {
   const queryClient = useQueryClient();
+  const needsFreshnessRecoveryRef = React.useRef(false);
 
   React.useEffect(() => {
     if (!isAuthenticated || !userId) return;
@@ -343,6 +515,7 @@ export function useRealtimeSync(isAuthenticated: boolean, userId?: string): void
           if (eventType === "DELETE") {
             if (oldLink) {
               handleDelete(queryClient, oldLink);
+              invalidateDerivedLinkQueries(queryClient);
             }
             return;
           }
@@ -350,6 +523,7 @@ export function useRealtimeSync(isAuthenticated: boolean, userId?: string): void
           if (eventType === "INSERT") {
             if (newLink) {
               handleInsert(queryClient, newLink);
+              invalidateDerivedLinkQueries(queryClient);
             }
             return;
           }
@@ -357,6 +531,7 @@ export function useRealtimeSync(isAuthenticated: boolean, userId?: string): void
           if (eventType === "UPDATE") {
             if (newLink && oldLink) {
               handleUpdate(queryClient, newLink, oldLink);
+              invalidateDerivedLinkQueries(queryClient);
             }
           }
         },
@@ -375,11 +550,13 @@ export function useRealtimeSync(isAuthenticated: boolean, userId?: string): void
 
           if (eventType === "INSERT" && newMembership) {
             handleSpaceLinkInsert(queryClient, newMembership);
+            invalidateDerivedLinkQueries(queryClient);
             return;
           }
 
           if (eventType === "DELETE" && oldMembership) {
             handleSpaceLinkDelete(queryClient, oldMembership);
+            invalidateDerivedLinkQueries(queryClient);
           }
         },
       )
@@ -391,9 +568,20 @@ export function useRealtimeSync(isAuthenticated: boolean, userId?: string): void
             log.warn("Realtime: Subscription issue (TanStack Query)", { status, userId });
           }
         }
+
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          needsFreshnessRecoveryRef.current = true;
+          return;
+        }
+
+        if (status === "SUBSCRIBED" && needsFreshnessRecoveryRef.current) {
+          needsFreshnessRecoveryRef.current = false;
+          recoverFromRealtimeReconnect(queryClient);
+        }
       });
 
     return () => {
+      needsFreshnessRecoveryRef.current = false;
       supabase
         .removeChannel(channel)
         .catch(() => {
