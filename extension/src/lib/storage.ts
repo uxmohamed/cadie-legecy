@@ -12,6 +12,16 @@ export interface ExtensionSettings {
   installId?: string;
 }
 
+export interface ExtensionAuthSession {
+  state: string;
+  installId: string;
+  extensionId: string;
+  extensionVersion: string;
+  browserName: string;
+  createdAt: number;
+  expiresAt: number;
+}
+
 // Non-sensitive settings stored in sync storage
 interface SyncSettings {
   cadieUrl?: string;
@@ -23,6 +33,7 @@ interface LocalSettings {
   apiToken?: string;
   pendingUrl?: string;
   installId?: string;
+  authSession?: ExtensionAuthSession;
 }
 
 // Default to production URL
@@ -42,6 +53,8 @@ let cachedPendingUrl: string | undefined;
 let isPendingUrlLoaded = false;
 let cachedInstallId: string | undefined;
 let isInstallIdLoaded = false;
+let cachedAuthSession: ExtensionAuthSession | undefined;
+let isAuthSessionLoaded = false;
 
 if (typeof chrome !== "undefined" && chrome.storage?.onChanged) {
   chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -57,6 +70,10 @@ if (typeof chrome !== "undefined" && chrome.storage?.onChanged) {
       if (changes.installId) {
         cachedInstallId = (changes.installId.newValue as string | undefined) || undefined;
         isInstallIdLoaded = true;
+      }
+      if (changes.authSession) {
+        cachedAuthSession = (changes.authSession.newValue as ExtensionAuthSession | undefined) || undefined;
+        isAuthSessionLoaded = true;
       }
     }
 
@@ -158,6 +175,8 @@ export async function clearSettings(): Promise<void> {
     isCadieUrlLoaded = true;
     cachedPendingUrl = undefined;
     isPendingUrlLoaded = true;
+    cachedAuthSession = undefined;
+    isAuthSessionLoaded = true;
     isInstallIdLoaded = false;
     // Clear both storage areas
     chrome.storage.local.get({ installId: "" }, (items) => {
@@ -220,6 +239,45 @@ export async function getInstallId(): Promise<string> {
       isInstallIdLoaded = true;
       chrome.storage.local.set({ installId: nextInstallId }, () => resolve(nextInstallId));
     });
+  });
+}
+
+/**
+ * Get the pending extension auth session, if any.
+ */
+export async function getAuthSession(): Promise<ExtensionAuthSession | undefined> {
+  if (isAuthSessionLoaded) {
+    return cachedAuthSession;
+  }
+
+  return new Promise((resolve) => {
+    chrome.storage.local.get({ authSession: undefined }, (items) => {
+      cachedAuthSession = (items as LocalSettings).authSession || undefined;
+      isAuthSessionLoaded = true;
+      resolve(cachedAuthSession);
+    });
+  });
+}
+
+/**
+ * Persist the current extension auth session.
+ */
+export async function setAuthSession(authSession: ExtensionAuthSession): Promise<void> {
+  cachedAuthSession = authSession;
+  isAuthSessionLoaded = true;
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ authSession }, () => resolve());
+  });
+}
+
+/**
+ * Clear the current extension auth session.
+ */
+export async function clearAuthSession(): Promise<void> {
+  cachedAuthSession = undefined;
+  isAuthSessionLoaded = true;
+  return new Promise((resolve) => {
+    chrome.storage.local.remove("authSession", () => resolve());
   });
 }
 

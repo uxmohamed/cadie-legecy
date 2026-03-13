@@ -16,7 +16,7 @@ WHERE scope IS NULL OR install_metadata IS NULL;
 
 CREATE INDEX IF NOT EXISTS idx_api_tokens_active_hash
   ON api_tokens(token_hash)
-  WHERE revoked_at IS NULL AND expires_at > now();
+  WHERE revoked_at IS NULL;
 
 CREATE INDEX IF NOT EXISTS idx_api_tokens_active_install
   ON api_tokens(user_id, install_id, client_id)

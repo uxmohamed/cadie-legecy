@@ -9,8 +9,8 @@ import { EXTENSION_TOKEN_SCOPES } from "@/lib/api-tokens";
  * POST /api/extension/authorize
  * Generate API token for extension authorization (one-click flow)
  * 
- * Body: { name?: string, installId?: string, clientId?: string, extensionVersion?: string, browserName?: string, platform?: string }
- * Returns: { token: string, user: { email: string, id: string } }
+ * Body: { name?: string, installId?: string, state: string, clientId?: string, extensionVersion?: string, browserName?: string, platform?: string }
+ * Returns: { token: string, state: string, user: { email: string, id: string } }
  */
 export async function POST(request: NextRequest) {
   try {
@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
     interface AuthorizeBody {
       name?: string;
       installId?: string;
+      state?: string;
       clientId?: string;
       extensionVersion?: string;
       browserName?: string;
@@ -44,7 +45,12 @@ export async function POST(request: NextRequest) {
     const body = (await request.json().catch(() => ({}))) as AuthorizeBody;
     const name = body.name || "Extension";
     const installId = typeof body.installId === "string" && body.installId.trim() ? body.installId.trim() : null;
+    const state = typeof body.state === "string" ? body.state.trim() : "";
     const clientId = typeof body.clientId === "string" && body.clientId.trim() ? body.clientId.trim() : "cadie-browser-extension";
+
+    if (!state || state.length > 200) {
+      return NextResponse.json({ error: "Valid auth state is required" }, { status: 400 });
+    }
 
     // Store the hashed token in the database
     // Set expiration to 1 year from now for extension tokens
@@ -74,6 +80,7 @@ export async function POST(request: NextRequest) {
     // Return the plaintext token (ONLY TIME we send it)
     return NextResponse.json({
       token: createdToken.plaintextToken,
+      state,
       user: {
         id: user.id,
         email: user.email,
@@ -98,4 +105,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
