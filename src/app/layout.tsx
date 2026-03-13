@@ -79,6 +79,7 @@ import { ShortcutsHelpModal } from "@/components/shortcuts-help-modal";
 import { QueryProvider } from "@/lib/query";
 import { Agentation } from "agentation";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export default function RootLayout({
   children,
@@ -117,6 +118,7 @@ export default function RootLayout({
           {process.env.NODE_ENV === "development" && <Agentation />}
         </ThemeProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
