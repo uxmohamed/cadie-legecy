@@ -1,4 +1,3 @@
-import { NextRequest } from 'next/server'
 import { cache } from 'react'
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
@@ -44,7 +43,10 @@ export const getUser = cache(async () => {
 
 /**
  * Create a Supabase client with Service Role privileges
- * WARNING: access controls are bypassed. Use with caution.
+ * WARNING: access controls are bypassed. Approved callers are:
+ * - token verification in auth middleware
+ * - constrained request-data access for bearer-authenticated routes
+ * - explicit background or system-only flows
  */
 export function createAdminClient() {
   const { url } = getSupabasePublicEnv()
@@ -64,20 +66,4 @@ export function createAdminClient() {
       }
     }
   )
-}
-
-/**
- * Use a session-bound client for normal web requests, but switch to a
- * service-role client for already-authenticated API token requests.
- *
- * This should only be called after authenticateRequest() has returned a userId,
- * and every query must still be explicitly scoped by that userId.
- */
-export async function createDataClientForRequest(request: Pick<NextRequest, 'headers'>) {
-  const authHeader = request.headers.get('authorization')
-  if (authHeader?.startsWith('Bearer ')) {
-    return createAdminClient()
-  }
-
-  return createClient()
 }

@@ -16,7 +16,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Use authenticateRequest to support both Bearer token (extension) and session auth (web)
+    // Authenticate the request and use the resulting user id for ownership checks.
     const userId = await authenticateRequest(request);
     
     if (!userId) {
@@ -134,7 +134,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Use authenticateRequest to support both Bearer token (extension) and session auth (web)
+    // Authenticate the request and use the resulting user id for ownership checks.
     const userId = await authenticateRequest(request);
     
     if (!userId) {

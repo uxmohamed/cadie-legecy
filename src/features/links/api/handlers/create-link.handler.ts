@@ -2,7 +2,7 @@ import { NextRequest, NextResponse, after } from "next/server";
 import { LinkService } from "@/features/links/services";
 import { AITaggingService } from "@/features/links/services/ai-tagging.service";
 import { SupabaseLinkRepository } from "@/features/links/repositories";
-import { authenticateRequest } from "@/lib/auth-middleware";
+import { createRequestContext, type RequestContext } from "@/lib/auth-middleware";
 import type { CreateLinkDTO } from "@/features/links/types";
 import { toAppError, ErrorCode, AppError } from "@/lib/errors";
 import { resolveColorMetadata } from "@/lib/canonicalize";
@@ -546,7 +546,7 @@ export class CreateLinkHandler {
     async handle(
         request: NextRequest,
         validatedData?: CreateLinkDTO,
-        authenticatedUserId?: string
+        requestContext?: RequestContext
     ): Promise<NextResponse> {
         const requestStartedAt = Date.now();
         let userId: string | null = null;
@@ -558,7 +558,8 @@ export class CreateLinkHandler {
         try {
             // Authenticate
             const authStartedAt = Date.now();
-            userId = authenticatedUserId || await authenticateRequest(request);
+            const context = requestContext || await createRequestContext(request);
+            userId = context?.userId ?? null;
             authMs = Date.now() - authStartedAt;
             if (!userId) {
                 return NextResponse.json(
@@ -700,7 +701,8 @@ export class CreateLinkHandler {
             }
 
             const isExtensionSave = this.isExtensionSource(request);
-            const linkService = this.createLinkService(isExtensionSave);
+            const usePrivilegedClient = isExtensionSave && context?.authSource === "api_token";
+            const linkService = this.createLinkService(usePrivilegedClient);
 
             // Create link using service
             const createStartedAt = Date.now();
@@ -719,7 +721,7 @@ export class CreateLinkHandler {
                     let enqueueMs = 0;
                     let forwardingMs = 0;
                     let recoveryMs = 0;
-                    const autoForwardingService = this.createAutoForwardingService(isExtensionSave);
+                    const autoForwardingService = this.createAutoForwardingService(usePrivilegedClient);
 
                     try {
                         const forwardingStartedAt = Date.now();

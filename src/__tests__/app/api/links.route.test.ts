@@ -1,4 +1,4 @@
-const mockAuthenticateRequest = jest.fn();
+const mockCreateRequestContext = jest.fn();
 const mockRateLimitLinksLimit = jest.fn();
 const mockGetIdentifier = jest.fn();
 const mockGetRateLimitHeaders = jest.fn();
@@ -42,7 +42,7 @@ jest.mock("next/server", () => {
 });
 
 jest.mock("@/lib/auth-middleware", () => ({
-  authenticateRequest: (...args: unknown[]) => mockAuthenticateRequest(...args),
+  createRequestContext: (...args: unknown[]) => mockCreateRequestContext(...args),
 }));
 
 jest.mock("@/lib/rate-limit", () => ({
@@ -69,8 +69,15 @@ jest.mock("@/features/links/api/handlers", () => ({
 import { GET, POST } from "@/app/api/links/route";
 
 describe("/api/links route auth and rate-limit order", () => {
+  const sessionContext = {
+    userId: "user_1",
+    authSource: "session" as const,
+    token: null,
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
+    mockCreateRequestContext.mockResolvedValue(sessionContext);
     mockGetIdentifier.mockReturnValue("user:user_1");
     mockGetRateLimitHeaders.mockReturnValue({
       "X-RateLimit-Limit": "100",
@@ -86,7 +93,7 @@ describe("/api/links route auth and rate-limit order", () => {
   });
 
   it("GET returns 401 before rate limiting when unauthenticated", async () => {
-    mockAuthenticateRequest.mockResolvedValue(null);
+    mockCreateRequestContext.mockResolvedValue(null);
 
     const response = await GET({
       headers: new Headers(),
@@ -101,7 +108,7 @@ describe("/api/links route auth and rate-limit order", () => {
   });
 
   it("POST returns 401 before rate limiting when unauthenticated", async () => {
-    mockAuthenticateRequest.mockResolvedValue(null);
+    mockCreateRequestContext.mockResolvedValue(null);
 
     const response = await POST({
       headers: new Headers(),
@@ -121,7 +128,6 @@ describe("/api/links route auth and rate-limit order", () => {
   });
 
   it("GET applies rate limiting for authenticated user and passes user id to handler", async () => {
-    mockAuthenticateRequest.mockResolvedValue("user_1");
     mockGetLinksHandle.mockResolvedValue({
       status: 200,
       headers: new Headers(),
@@ -142,8 +148,7 @@ describe("/api/links route auth and rate-limit order", () => {
     expect(response.headers.get("Cache-Control")).toBe("private, no-store");
   });
 
-  it("POST applies rate limiting for authenticated user and passes user id to handler", async () => {
-    mockAuthenticateRequest.mockResolvedValue("user_1");
+  it("POST applies rate limiting for authenticated user and passes request context to handler", async () => {
     mockValidateRequestBody.mockResolvedValue({
       data: {
         url: "https://example.com",
@@ -182,7 +187,7 @@ describe("/api/links route auth and rate-limit order", () => {
         description: null,
         color_value: null,
       }),
-      "user_1"
+      sessionContext
     );
   });
 });

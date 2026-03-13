@@ -1,0 +1,598 @@
+flowchart LR
+
+subgraph Frontend["Frontend"]
+  direction TB
+
+  subgraph FE_Web["Web App"]
+    direction TB
+    FE_Browser["Browser user"]
+    FE_Layout["src/app/layout.tsx: ThemeProvider, QueryProvider, PostHogPageView, ErrorBoundary, ToasterProvider, ShortcutProvider"]
+    FE_Home["src/app/page.tsx: SSR gate -> LandingPage or OnboardingClient or DashboardClient"]
+    FE_AuthForm["src/components/auth-form.tsx: Google OAuth + email OTP"]
+    FE_AuthCb["src/app/auth/callback/route.ts: exchangeCodeForSession()"]
+    FE_ExtAuthorize["src/app/extension/authorize/page.tsx: extension token handoff page"]
+    FE_DashShell["src/components/dashboard-shell.tsx: billing warning + billing_success sync/reload"]
+    FE_DashClient["src/components/dashboard-client.tsx: authenticated UI + useRealtimeSync()"]
+    FE_SettingsBilling["src/components/settings/settings-billing.tsx: billing status, checkout, portal, manual sync"]
+    FE_SettingsExt["src/components/settings/settings-extensions.tsx: list + revoke extension tokens"]
+    FE_Onboarding["src/hooks/use-onboarding.ts: read/write user_profiles"]
+  end
+
+  subgraph FE_State["Client State"]
+    direction TB
+    FE_RQ["TanStack Query client: staleTime 5m, gcTime 2h, refetchOnWindowFocus=false, retry=1"]
+    FE_IDB["IndexedDB via idb-keyval: store caddy-cache, key tanstack-query-cache-v2"]
+    FE_Zustand["Zustand UI store: selection state only"]
+    FE_Realtime["Supabase Realtime subscription: links + link_spaces"]
+  end
+
+  subgraph FE_Store["Client Storage"]
+    direction TB
+    FE_LSView["localStorage: cadie-view-mode"]
+    FE_LSBill["localStorage: billing celebration dedupe key"]
+    FE_LSTheme["localStorage: theme persistence"]
+  end
+
+  subgraph FE_Auth["Client Auth"]
+    direction TB
+    FE_UseAuth["src/hooks/use-auth.ts: supabase.auth.getUser() + onAuthStateChange()"]
+    FE_Cookies["Supabase session cookies"]
+    FE_ClientEnv["Client env: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY, NEXT_PUBLIC_POSTHOG_KEY, NEXT_PUBLIC_POSTHOG_HOST, NEXT_PUBLIC_SITE_URL, NEXT_PUBLIC_BASE_URL, NODE_ENV"]
+  end
+
+  subgraph FE_Obs["Client Observability"]
+    direction TB
+    FE_PostHog["src/instrumentation-client.ts + PostHogPageView"]
+    FE_Sentry["src/instrumentation-client.ts: Sentry browser init"]
+  end
+end
+
+subgraph Extension["Extension"]
+  direction TB
+
+  subgraph EX_ContentSG["Content Script"]
+    direction TB
+    EX_Page["Any browser page or cadie.app tab"]
+    EX_Content["extension/src/content.ts: overlay UI, page listeners, space actions"]
+    EX_Overlay["Overlay states: loading, success, duplicate, error, auth-required"]
+  end
+
+  subgraph EX_BackSG["Background Service Worker"]
+    direction TB
+    EX_Manifest["extension/manifest.json: MV3, activeTab, contextMenus, storage, host_permissions cadie.app + localhost"]
+    EX_Background["extension/src/background.ts: context menus, action click, save orchestration"]
+    EX_SaveUrl["saveUrl() + saveWithRetry(): dedupe lock, retry, pendingUrl replay"]
+    EX_ApiClient["extension/src/lib/api-client.ts"]
+  end
+
+  subgraph EX_OptionsSG["Options Page"]
+    direction TB
+    EX_Options["extension/src/options/options.ts: connect and disconnect UI"]
+  end
+
+  subgraph EX_StorageSG["Extension Storage"]
+    direction TB
+    EX_StorageLib["extension/src/lib/storage.ts"]
+    EX_Local["chrome.storage.local: apiToken, pendingUrl"]
+    EX_Sync["chrome.storage.sync: cadieUrl, userEmail"]
+    EX_NoSession["chrome.storage.session: not used"]
+  end
+
+  subgraph EX_AuthBridgeSG["Extension Auth Bridge"]
+    direction TB
+    EX_PostMsg["window.postMessage bridge on cadie.app /extension/authorize"]
+    EX_AuthMsgs["CADIE_AUTH_SUCCESS and CADIE_AUTH_ACK"]
+    EX_AuthDone["CADIE_AUTH_COMPLETE runtime message"]
+  end
+end
+
+subgraph Backend["Backend"]
+  direction TB
+
+  subgraph BE_MAuth["Middleware & Auth"]
+    direction TB
+    BE_MW["src/middleware.ts: Supabase SSR middleware, session refresh, route gating"]
+    BE_ReqValidate["Request validation: zod schemas + UUID/body guards"]
+    BE_AuthDual["createRequestContext(): session cookie or Bearer opaque API token"]
+    BE_SSRClient["createClient(): session-bound Supabase SSR client"]
+    BE_AdminClient["createAdminClient(): service-role Supabase client"]
+    BE_RequestData["RequestDataAccess: constrained route-level data access for Bearer flows"]
+    BE_InternalAuth["src/lib/internal-auth.ts: X-Internal-Token HMAC helper"]
+  end
+
+  subgraph BE_API["API Routes"]
+    direction TB
+
+    subgraph BE_API_Auth["Auth"]
+      direction TB
+      R_TokensGet["GET /api/auth/tokens"]
+      R_TokensPost["POST /api/auth/tokens"]
+      R_TokensDelete["DELETE /api/auth/tokens/[id]"]
+      R_DeleteAccount["DELETE /api/auth/delete-account"]
+      R_ExtAuthorize["POST /api/extension/authorize"]
+    end
+
+    subgraph BE_API_Links["Links And Metadata"]
+      direction TB
+      R_LinksGet["GET /api/links"]
+      R_LinksPost["POST /api/links"]
+      R_LinkPut["PUT /api/links/[id]"]
+      R_LinkDelete["DELETE /api/links/[id]"]
+      R_LinkPermanent["DELETE /api/links/[id]/permanent"]
+      R_LinkMeta["POST /api/links/[id]/metadata"]
+      R_LinkSpacesGet["GET /api/links/[id]/spaces"]
+      R_LinksBatch["POST /api/links/batch"]
+      R_Metadata["POST /api/metadata"]
+      R_MetadataBatch["POST /api/metadata/batch"]
+      R_ExtLinkContext["GET /api/extension/link-context"]
+      R_ExportCsv["GET /api/exports/links/csv"]
+    end
+
+    subgraph BE_API_Spaces["Spaces"]
+      direction TB
+      R_SpacesGet["GET /api/spaces"]
+      R_SpacesGetLite["GET /api/spaces?lite=1"]
+      R_SpacesPost["POST /api/spaces"]
+      R_SpacePatch["PATCH /api/spaces/[id]"]
+      R_SpaceDelete["DELETE /api/spaces/[id]"]
+      R_SpaceLinksPost["POST /api/spaces/[id]/links"]
+      R_SpaceLinksDelete["DELETE /api/spaces/[id]/links"]
+      R_SpaceForwardGet["GET /api/settings/space-forwarding"]
+      R_SpaceForwardPatch["PATCH /api/settings/space-forwarding"]
+    end
+
+    subgraph BE_API_Billing["Billing"]
+      direction TB
+      R_BillStatus["GET /api/billing/status"]
+      R_BillCheckout["POST /api/billing/checkout"]
+      R_BillPortal["POST /api/billing/portal"]
+      R_BillSync["POST /api/billing/sync"]
+      R_LemonWebhook["POST /api/webhooks/lemonsqueezy"]
+    end
+
+    subgraph BE_API_Imports["Imports And Jobs"]
+      direction TB
+      R_ImportsGet["GET /api/imports"]
+      R_ImportById["GET /api/imports/[id]"]
+      R_ImportStart["POST /api/imports/[id]/start"]
+      R_ImportPreview["POST /api/imports/bookmarks/preview"]
+      R_JobMeta["POST /api/jobs/enrich-metadata"]
+      R_JobAITag["POST /api/jobs/enrich-ai-tags"]
+      R_JobAIVision["POST /api/jobs/enrich-ai-vision-tags"]
+      R_JobImport["POST /api/jobs/process-bookmark-import"]
+    end
+
+    subgraph BE_API_Maint["Maintenance And Diagnostics"]
+      direction TB
+      R_CronTrash["GET /api/cron/cleanup-trash"]
+      R_CronImports["GET /api/cron/cleanup-imports"]
+      R_CronBill["GET /api/cron/billing-reconcile"]
+      R_Analytics["GET /api/analytics/example"]
+    end
+  end
+
+  subgraph BE_Billing["Billing"]
+    direction TB
+    BE_BillCtx["src/lib/billing/context.ts: getBillingContext()"]
+    BE_PlanResolver["src/lib/billing/plan-resolver.ts: resolvePlanForUser() fail-closed"]
+    BE_LemonClient["src/lib/billing/lemon-client.ts: checkout, portal, variant prices"]
+    BE_BillSync["src/lib/billing/sync.ts: syncSubscription()"]
+    BE_WebhookSig["verifyLemonWebhookSignature(): x-signature HMAC SHA-256"]
+    BE_WebhookProc["src/lib/billing/webhook-handler.ts: processLemonWebhook()"]
+    BE_BillPortalFlow["Portal flow: local subscription lookup, sync fallback, portal fetch"]
+    BE_BillRefetch["Billing changes reach frontend only by GET /api/billing/status or POST /api/billing/sync"]
+    BE_BillStatuses["subscription_status values: inactive, active, past_due, canceled, paused, unpaid, expired"]
+  end
+
+  subgraph BE_Async["Async Jobs"]
+    direction TB
+    BE_LinkRead["GetLinksHandler and read-only link queries"]
+    BE_LinkWrite["CreateLinkHandler, LinkService, batch update or delete flows"]
+    BE_LinkCreateFlow["POST /api/links pipeline: validate -> auth -> rate limit -> idempotency -> billing -> create"]
+    BE_LinkDup["Duplicate detection or restore-from-trash"]
+    BE_After["after(): non-blocking post-create branch"]
+    BE_AutoForward["AutoSpaceForwardingService: rules, heuristics, optional AI"]
+    BE_JobQueue["src/lib/job-queue.ts: publishJSON() to QStash"]
+    BE_QVerify["Receiver.verify(): upstash-signature"]
+    BE_MetadataSvc["MetadataService: enrich link metadata"]
+    BE_AITagSvc["AITaggingService: URL and document tags"]
+    BE_AIVisionSvc["AI vision tagging for image items"]
+    BE_ImportSvc["BookmarkImportService: preview, start, process job"]
+    BE_ExtRecovery["Extension-only recovery path after save"]
+  end
+
+  subgraph BE_Cron["Cron & Maintenance"]
+    direction TB
+    BE_CronGuard["CRON_SECRET Bearer auth guard"]
+    BE_CleanupTrash["Cleanup trash: hard-delete old trashed links"]
+    BE_CleanupImports["Cleanup imports: expire old bookmark import jobs"]
+    BE_BillReconcile["Billing reconcile: scan rows then syncSubscription()"]
+  end
+
+  subgraph BE_Cross["Cross-Cutting"]
+    direction TB
+    BE_RateLimit["src/lib/rate-limit.ts: Upstash sliding-window limiters"]
+    BE_Idem["src/lib/idempotency.ts: Upstash Redis or memory idempotency cache"]
+    BE_Logger["src/lib/logger.ts"]
+    BE_SentrySrv["src/instrumentation.ts: Sentry server and edge init"]
+    BE_PostHogSrv["src/lib/posthog-server.ts"]
+    BE_ServerEnv["Server env: SUPABASE_SERVICE_ROLE_KEY, UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN, QSTASH_TOKEN, QSTASH_CURRENT_SIGNING_KEY, QSTASH_NEXT_SIGNING_KEY, CRON_SECRET, INTERNAL_API_SECRET, LEMONSQUEEZY_API_KEY, LEMONSQUEEZY_STORE_ID, LEMONSQUEEZY_WEBHOOK_SECRET, LEMONSQUEEZY_PRO_MONTHLY_VARIANT_ID, LEMONSQUEEZY_PRO_YEARLY_VARIANT_ID, LEMONSQUEEZY_BELIEVER_YEARLY_VARIANT_ID, LEMONSQUEEZY_TEST_MODE, OPENAI_API_KEY, GOOGLE_AI_API_KEY, NEXT_PUBLIC_SITE_URL, NEXT_PUBLIC_BASE_URL, VERCEL_PROJECT_PRODUCTION_URL, VERCEL_URL, NODE_ENV, NEXT_RUNTIME"]
+    ERR_401["401 Unauthorized"]
+    ERR_429["429 Rate Limited"]
+    ERR_Plan["PLAN_LIMIT_REACHED"]
+    ERR_Webhook["Invalid webhook signature"]
+    ERR_QSig["QStash signature missing or invalid"]
+    ERR_NoSub["No matching Lemon subscription"]
+    ERR_Idem["Idempotent replay"]
+  end
+end
+
+subgraph Database["Database"]
+  direction TB
+
+  subgraph DB_Public["Public Tables"]
+    direction TB
+    DB_Users["users"]
+    DB_UserProfiles["user_profiles (inferred, runtime-queried)"]
+    DB_ApiTokens["api_tokens (inferred, runtime-queried, token_hash stored)"]
+    DB_Spaces["spaces"]
+    DB_LinkSpaces["link_spaces"]
+    DB_Links["links"]
+    DB_LinkTags["link_tags"]
+    DB_ImportJobs["bookmark_import_jobs"]
+    DB_UserBilling["user_billing"]
+    DB_BillLedger["billing_webhook_events: processing ledger by event_id and provider_event_id"]
+  end
+
+  subgraph DB_Managed["Managed Supabase Storage/Auth"]
+    direction TB
+    DB_SupaAuth["Supabase Auth: users, OTP, OAuth, sessions"]
+    DB_SupaRealtime["Supabase Realtime: postgres_changes on links and link_spaces"]
+    DB_SupaStorage["Supabase Storage buckets: images and documents"]
+  end
+end
+
+subgraph External Services["External Services"]
+  direction TB
+  EXTS_LemonAPI["Lemon Squeezy API"]
+  EXTS_LemonHooks["Lemon Squeezy webhook source"]
+  EXTS_Redis["Upstash Redis"]
+  EXTS_QStash["Upstash QStash"]
+  EXTS_OpenAI["OpenAI API"]
+  EXTS_GoogleAI["Google Generative AI"]
+  EXTS_PostHog["PostHog"]
+  EXTS_Sentry["Sentry"]
+
+  subgraph Legend["Legend"]
+    direction TB
+    L_S1["Sync origin"]
+    L_S2["Sync destination"]
+    L_A1["Async origin"]
+    L_A2["Async destination"]
+    L_O1["Fallback origin"]
+    L_O2["Fallback destination"]
+    L_S1 --> L_S2
+    L_A1 -.-> L_A2
+    L_O1 ==> L_O2
+  end
+end
+
+FE_Browser --> FE_Layout
+FE_Layout --> FE_Home
+FE_Layout --> FE_PostHog
+FE_Layout --> FE_Sentry
+FE_Home --> FE_AuthForm
+FE_Home --> FE_DashShell
+FE_Home --> FE_DashClient
+FE_Home --> FE_Onboarding
+FE_DashClient --> FE_RQ
+FE_RQ --> FE_IDB
+FE_DashClient --> FE_Zustand
+FE_DashClient --> FE_Realtime
+FE_DashClient --> FE_LSView
+FE_DashShell --> FE_LSBill
+FE_Layout --> FE_LSTheme
+FE_ClientEnv --> FE_UseAuth
+FE_ClientEnv --> FE_PostHog
+FE_UseAuth --> FE_Home
+FE_Cookies --> FE_UseAuth
+FE_PostHog --> EXTS_PostHog
+FE_Sentry --> EXTS_Sentry
+BE_SentrySrv --> EXTS_Sentry
+BE_PostHogSrv --> EXTS_PostHog
+
+FE_AuthForm -->|"magic-link email or Google OAuth start"| DB_SupaAuth
+DB_SupaAuth -->|"OAuth redirect code or magic-link code"| FE_AuthCb
+FE_AuthCb -->|"exchangeCodeForSession()"| DB_SupaAuth
+DB_SupaAuth -->|"Supabase session cookies"| FE_Cookies
+
+BE_MW -->|"refresh expired session"| DB_SupaAuth
+BE_MW --> FE_Home
+BE_MW --> FE_ExtAuthorize
+
+FE_Onboarding -->|"SELECT and UPSERT user_profiles"| DB_UserProfiles
+FE_Onboarding -->|"auth.updateUser() metadata sync"| DB_SupaAuth
+
+FE_Realtime -->|"postgres_changes subscription"| DB_SupaRealtime
+DB_SupaRealtime -.->|"eventual cache updates"| FE_RQ
+
+EX_Manifest --> EX_Background
+EX_Manifest --> EX_Content
+EX_Manifest --> EX_Options
+EX_Page --> EX_Content
+EX_Content --> EX_Overlay
+EX_Background --> EX_SaveUrl
+EX_SaveUrl --> EX_StorageLib
+EX_StorageLib --> EX_Local
+EX_StorageLib --> EX_Sync
+EX_StorageLib --> EX_NoSession
+EX_SaveUrl --> EX_ApiClient
+
+EX_ApiClient -->|"POST /api/links, Authorization: Bearer opaque API token, X-Cadie-Source=extension, JSON { url }, Idempotency-Key"| R_LinksPost
+R_LinksPost -->|"JSON { link, duplicate, restored, processing_state }"| EX_Background
+EX_Background -->|"showSaveOverlay state + linkId"| EX_Content
+
+EX_Content -->|"fetchLinkContext runtime message"| EX_Background
+EX_Background -->|"GET /api/extension/link-context?linkId=<uuid>"| R_ExtLinkContext
+EX_Content -->|"space add or remove runtime message"| EX_Background
+EX_Background -->|"GET /api/spaces?lite=1"| R_SpacesGetLite
+EX_Background -->|"POST /api/spaces/[id]/links"| R_SpaceLinksPost
+EX_Background -->|"DELETE /api/spaces/[id]/links"| R_SpaceLinksDelete
+
+EX_Content -->|"openAuthPage runtime message"| EX_Background
+EX_Options -->|"Connect: open cadie.app /extension/authorize"| FE_ExtAuthorize
+EX_Background -->|"open cadie.app /extension/authorize?extensionId=..."| FE_ExtAuthorize
+FE_ExtAuthorize -->|"POST /api/extension/authorize with Supabase session cookies"| R_ExtAuthorize
+R_ExtAuthorize -->|"SHA-256 token hash insert; plaintext returned once"| DB_ApiTokens
+FE_ExtAuthorize -->|"window.postMessage CADIE_AUTH_SUCCESS"| EX_PostMsg
+EX_PostMsg --> EX_AuthMsgs
+EX_AuthMsgs -->|"chrome.runtime.sendMessage"| EX_Background
+EX_Background -->|"store apiToken + pendingUrl"| EX_Local
+EX_Background -->|"store cadieUrl + userEmail"| EX_Sync
+EX_Background --> EX_AuthDone
+EX_AuthDone --> EX_Options
+EX_Background ==>|"pendingUrl replay after auth"| EX_SaveUrl
+
+BE_ServerEnv --> BE_SSRClient
+BE_ServerEnv --> BE_AdminClient
+BE_ServerEnv --> BE_RateLimit
+BE_ServerEnv --> BE_Idem
+BE_ServerEnv --> BE_JobQueue
+BE_ServerEnv --> BE_LemonClient
+BE_ServerEnv --> BE_WebhookSig
+BE_ServerEnv --> BE_InternalAuth
+BE_ServerEnv --> BE_CronGuard
+BE_ServerEnv --> BE_AITagSvc
+BE_ServerEnv --> BE_AIVisionSvc
+BE_ServerEnv --> BE_MetadataSvc
+BE_ServerEnv --> BE_SentrySrv
+
+BE_AuthDual -->|"session cookie path via supabase.auth.getUser()"| BE_SSRClient
+BE_AuthDual -->|"Bearer opaque API token path (verification only)"| BE_AdminClient
+BE_AuthDual -->|"Bearer request data access via named constrained helpers"| BE_RequestData
+BE_SSRClient --> DB_SupaAuth
+BE_AdminClient --> DB_ApiTokens
+BE_DataClient --> BE_SSRClient
+BE_DataClient --> BE_AdminClient
+
+R_TokensGet --> BE_AuthDual
+R_TokensPost --> BE_AuthDual
+R_TokensDelete --> BE_AuthDual
+R_DeleteAccount --> BE_AuthDual
+R_ExtAuthorize --> BE_AuthDual
+R_LinksGet --> BE_AuthDual
+R_LinksPost --> BE_ReqValidate
+R_LinkPut --> BE_AuthDual
+R_LinkDelete --> BE_AuthDual
+R_LinkPermanent --> BE_AuthDual
+R_LinkMeta --> BE_AuthDual
+R_LinkSpacesGet --> BE_AuthDual
+R_LinksBatch --> BE_AuthDual
+R_Metadata --> BE_AuthDual
+R_MetadataBatch --> BE_AuthDual
+R_ExtLinkContext --> BE_AuthDual
+R_ExportCsv --> BE_AuthDual
+R_SpacesGet --> BE_AuthDual
+R_SpacesGetLite --> BE_AuthDual
+R_SpacesPost --> BE_AuthDual
+R_SpacePatch --> BE_AuthDual
+R_SpaceDelete --> BE_AuthDual
+R_SpaceLinksPost --> BE_AuthDual
+R_SpaceLinksDelete --> BE_AuthDual
+R_SpaceForwardGet --> BE_AuthDual
+R_SpaceForwardPatch --> BE_AuthDual
+R_BillStatus --> BE_AuthDual
+R_BillCheckout --> BE_AuthDual
+R_BillPortal --> BE_AuthDual
+R_BillSync --> BE_AuthDual
+R_ImportsGet --> BE_AuthDual
+R_ImportById --> BE_AuthDual
+R_ImportStart --> BE_AuthDual
+R_ImportPreview --> BE_AuthDual
+
+BE_AuthDual --> BE_RateLimit
+BE_AuthDual ==>|"auth failure"| ERR_401
+BE_RateLimit --> EXTS_Redis
+BE_Idem --> EXTS_Redis
+BE_RateLimit ==>|"limit exceeded"| ERR_429
+
+FE_SettingsExt -->|"GET tokens"| R_TokensGet
+FE_SettingsExt -->|"DELETE token"| R_TokensDelete
+R_TokensGet -->|"list token metadata"| DB_ApiTokens
+R_TokensPost -->|"generate plaintext token, store SHA-256 token_hash"| DB_ApiTokens
+R_TokensDelete -->|"revoke token"| DB_ApiTokens
+R_DeleteAccount -->|"delete owned tokens and user data"| DB_ApiTokens
+R_DeleteAccount --> DB_Users
+R_DeleteAccount --> DB_Links
+R_DeleteAccount --> DB_Spaces
+R_DeleteAccount --> DB_UserBilling
+
+R_LinksGet --> BE_LinkRead
+BE_LinkRead --> DB_Links
+R_LinkPut --> BE_LinkWrite
+R_LinkDelete --> BE_LinkWrite
+R_LinkPermanent --> BE_LinkWrite
+R_LinksBatch --> BE_LinkWrite
+BE_LinkWrite --> DB_Links
+BE_LinkWrite --> DB_LinkSpaces
+BE_LinkWrite --> DB_LinkTags
+R_LinkSpacesGet --> DB_LinkSpaces
+R_LinkMeta --> BE_MetadataSvc
+R_Metadata --> BE_MetadataSvc
+R_MetadataBatch --> BE_MetadataSvc
+R_ExportCsv --> BE_LinkRead
+
+R_SpacesGet -->|"full spaces list + counts"| DB_Spaces
+R_SpacesGet --> DB_LinkSpaces
+R_SpacesGet --> DB_Links
+R_SpacesGetLite -->|"lite=1 fast path: id, name, color only"| DB_Spaces
+R_SpacesPost --> BE_BillCtx
+R_SpacesPost --> DB_Spaces
+R_SpacePatch --> DB_Spaces
+R_SpaceDelete --> DB_Spaces
+R_SpaceLinksPost --> DB_LinkSpaces
+R_SpaceLinksDelete --> DB_LinkSpaces
+R_SpaceForwardGet --> DB_Users
+R_SpaceForwardPatch --> DB_Users
+R_ExtLinkContext -->|"reads spaces + selected memberships"| DB_Spaces
+R_ExtLinkContext --> DB_LinkSpaces
+R_ExtLinkContext --> DB_Links
+
+FE_DashClient -->|"query mutations and fetch()"| R_LinksPost
+FE_DashClient -->|"list and search fetches"| R_LinksGet
+FE_DashClient -->|"metadata, update, delete, batch"| R_LinkPut
+FE_DashClient -->|"space list and membership ops"| R_SpacesGet
+
+R_LinksPost --> BE_LinkCreateFlow
+BE_LinkCreateFlow --> BE_AuthDual
+BE_LinkCreateFlow --> BE_ReqValidate
+BE_LinkCreateFlow --> BE_RateLimit
+BE_LinkCreateFlow --> BE_Idem
+BE_Idem ==>|"cached response replay"| ERR_Idem
+BE_LinkCreateFlow --> BE_BillCtx
+BE_BillCtx --> BE_PlanResolver
+BE_PlanResolver -->|"verifiable paid source + current_period_end check"| DB_UserBilling
+BE_PlanResolver --> DB_Users
+BE_BillCtx --> DB_Links
+BE_BillCtx --> DB_Spaces
+BE_BillCtx ==>|"entitlement exceeded"| ERR_Plan
+BE_LinkCreateFlow --> BE_LinkWrite
+BE_LinkWrite --> BE_LinkDup
+BE_LinkDup -->|"create new link or restore from trash or duplicate response"| DB_Links
+BE_LinkWrite -.->|"after() async branch for non-duplicate new saves"| BE_After
+BE_After -.-> BE_AutoForward
+BE_After -.-> BE_JobQueue
+BE_After -.->|"extension source only"| BE_ExtRecovery
+BE_AutoForward --> DB_Users
+BE_AutoForward --> DB_Spaces
+BE_AutoForward --> DB_LinkSpaces
+BE_AutoForward -.->|"optional AI route suggestion"| EXTS_OpenAI
+BE_ExtRecovery -.->|"metadata or AI fallback, extension saves only"| DB_Links
+
+BE_JobQueue -.->|"QStash signed JSON publish"| EXTS_QStash
+EXTS_QStash -.->|"upstash-signature + JSON job"| R_JobMeta
+EXTS_QStash -.->|"upstash-signature + JSON job"| R_JobAITag
+EXTS_QStash -.->|"upstash-signature + JSON job"| R_JobAIVision
+EXTS_QStash -.->|"upstash-signature + JSON job"| R_JobImport
+
+R_JobMeta --> BE_QVerify
+R_JobAITag --> BE_QVerify
+R_JobAIVision --> BE_QVerify
+R_JobImport --> BE_QVerify
+BE_QVerify ==>|"signature missing or verify() failure"| ERR_QSig
+
+BE_QVerify --> BE_MetadataSvc
+BE_QVerify --> BE_AITagSvc
+BE_QVerify --> BE_AIVisionSvc
+BE_QVerify --> BE_ImportSvc
+
+BE_MetadataSvc -->|"write metadata fields"| DB_Links
+BE_AITagSvc -.->|"model call"| EXTS_OpenAI
+BE_AITagSvc -.->|"model call fallback or alternate path"| EXTS_GoogleAI
+BE_AITagSvc -->|"write ai_tags and AI metadata"| DB_Links
+BE_AIVisionSvc -.->|"vision tagging model call"| EXTS_OpenAI
+BE_AIVisionSvc -.->|"vision tagging model call"| EXTS_GoogleAI
+BE_AIVisionSvc -->|"write image tags"| DB_Links
+BE_MetadataSvc -.->|"500 triggers retry"| EXTS_QStash
+BE_AITagSvc -.->|"500 triggers retry"| EXTS_QStash
+BE_AIVisionSvc -.->|"500 triggers retry"| EXTS_QStash
+BE_ImportSvc -.->|"500 triggers retry"| EXTS_QStash
+
+R_ImportsGet --> DB_ImportJobs
+R_ImportById --> DB_ImportJobs
+R_ImportPreview --> BE_ImportSvc
+R_ImportStart --> BE_ImportSvc
+BE_ImportSvc --> DB_ImportJobs
+BE_ImportSvc -->|"write imported links"| DB_Links
+BE_ImportSvc -->|"attach imported links to spaces"| DB_LinkSpaces
+BE_ImportSvc -.->|"enqueueBookmarkImportProcessing"| BE_JobQueue
+
+FE_SettingsBilling -->|"GET billing status"| R_BillStatus
+FE_SettingsBilling -->|"POST checkout"| R_BillCheckout
+FE_SettingsBilling -->|"POST portal"| R_BillPortal
+FE_SettingsBilling -->|"POST manual sync"| R_BillSync
+FE_DashShell -->|"billing_success=1 -> POST sync"| R_BillSync
+FE_DashShell -->|"billing warning or refresh -> GET status"| R_BillStatus
+
+R_BillStatus --> BE_BillCtx
+R_BillStatus -->|"JSON plan, entitlements, usage, locked_space_ids"| FE_SettingsBilling
+R_BillStatus -->|"JSON billing warning data"| FE_DashShell
+R_BillCheckout --> BE_LemonClient
+BE_LemonClient -->|"create checkout: variant by plan and interval, custom.user_id, email, return_url"| EXTS_LemonAPI
+EXTS_LemonAPI -->|"checkout URL"| R_BillCheckout
+R_BillCheckout -->|"checkout_url"| FE_SettingsBilling
+
+R_BillPortal --> BE_BillPortalFlow
+BE_BillPortalFlow --> DB_UserBilling
+BE_BillPortalFlow ==>|"no local subscription -> syncSubscription() fallback"| BE_BillSync
+BE_BillPortalFlow -->|"fetch customer_portal URL"| EXTS_LemonAPI
+BE_BillPortalFlow ==>|"409 recoverable: no matching active subscription"| ERR_NoSub
+
+R_BillSync --> BE_BillSync
+BE_BillSync --> DB_UserBilling
+BE_BillSync -->|"lookup subscriptions and customers"| EXTS_LemonAPI
+
+EXTS_LemonHooks -->|"Lemon webhook payload"| R_LemonWebhook
+R_LemonWebhook -->|"x-signature (HMAC SHA-256)"| BE_WebhookSig
+BE_WebhookSig ==>|"signature invalid or missing"| ERR_Webhook
+BE_WebhookSig --> BE_WebhookProc
+BE_WebhookProc -->|"dedupe ledger insert or update, attempt_count, processing_status"| DB_BillLedger
+BE_WebhookProc -->|"upsert billing state"| DB_UserBilling
+BE_WebhookProc --> BE_BillStatuses
+DB_UserBilling --> BE_BillRefetch
+BE_BillRefetch -.->|"frontend must refetch; no realtime billing push"| FE_SettingsBilling
+BE_BillRefetch -.->|"frontend must refetch; no realtime billing push"| FE_DashShell
+
+R_CronTrash --> BE_CronGuard
+R_CronImports --> BE_CronGuard
+R_CronBill --> BE_CronGuard
+BE_CronGuard ==>|"CRON_SECRET missing or invalid"| ERR_401
+R_CronTrash --> BE_CleanupTrash
+R_CronImports --> BE_CleanupImports
+R_CronBill --> BE_BillReconcile
+BE_CleanupTrash --> DB_Links
+BE_CleanupImports --> DB_ImportJobs
+BE_BillReconcile --> DB_UserBilling
+BE_BillReconcile --> DB_Users
+BE_BillReconcile --> BE_BillSync
+
+R_Analytics --> BE_PostHogSrv
+
+BE_LemonClient -->|"variant price reads"| EXTS_LemonAPI
+BE_PostHogSrv -->|"server analytics capture"| EXTS_PostHog
+BE_Logger --> BE_PostHogSrv
+BE_Logger --> BE_SentrySrv
+
+DB_Users --> DB_UserProfiles
+DB_Users --> DB_ApiTokens
+DB_Users --> DB_Spaces
+DB_Users --> DB_Links
+DB_Users --> DB_ImportJobs
+DB_Users --> DB_UserBilling
+DB_Links --> DB_LinkSpaces
+DB_Spaces --> DB_LinkSpaces
+DB_Links --> DB_LinkTags
+DB_Spaces --> DB_ImportJobs
+
+DB_ApiTokens -->|"Bearer token lookup by token_hash"| BE_AuthDual
+DB_SupaStorage -->|"image and document uploads"| DB_Links

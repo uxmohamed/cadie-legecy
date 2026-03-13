@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createDataClientForRequest } from "@/lib/supabase/server";
-import { authenticateRequest } from "@/lib/auth-middleware";
+import { createRequestContext } from "@/lib/auth-middleware";
 import { rateLimitSpaces, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 import { validateUUID } from "@/lib/validation/validate";
+import { RequestDataAccess, RequestDataAccessError } from "@/lib/request-data";
 
 /**
  * GET /api/extension/link-context?linkId=<uuid>
@@ -10,10 +10,12 @@ import { validateUUID } from "@/lib/validation/validate";
  */
 export async function GET(request: NextRequest) {
   try {
-    const userId = await authenticateRequest(request);
-    if (!userId) {
+    const context = await createRequestContext(request);
+    if (!context) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const dataAccess = new RequestDataAccess(context);
 
     const linkId = request.nextUrl.searchParams.get("linkId");
     if (!linkId) {
@@ -23,7 +25,7 @@ export async function GET(request: NextRequest) {
     const uuidError = validateUUID(linkId, "linkId");
     if (uuidError) return uuidError;
 
-    const identifier = getIdentifier(request, userId);
+    const identifier = getIdentifier(request, context.userId);
     const { success, limit, reset, remaining } = await rateLimitSpaces.limit(identifier);
     if (!success) {
       return NextResponse.json(
@@ -32,47 +34,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const supabase = await createDataClientForRequest(request);
-
-    const { data: link, error: linkError } = await supabase
-      .from("links")
-      .select("id")
-      .eq("id", linkId)
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (linkError || !link) {
-      return NextResponse.json({ error: "Link not found" }, { status: 404 });
-    }
-
-    const [spacesResult, selectedResult] = await Promise.all([
-      supabase
-        .from("spaces")
-        .select("id, name, color")
-        .eq("user_id", userId)
-        .order("sort_order", { ascending: true }),
-      supabase
-        .from("link_spaces")
-        .select("space_id")
-        .eq("link_id", linkId),
-    ]);
-
-    if (spacesResult.error) {
-      return NextResponse.json({ error: spacesResult.error.message }, { status: 500 });
-    }
-
-    if (selectedResult.error) {
-      return NextResponse.json({ error: selectedResult.error.message }, { status: 500 });
-    }
-
-    const selectedSpaceIds = (selectedResult.data || []).map((row) => row.space_id);
-    const allowedSpaceIds = new Set((spacesResult.data || []).map((space) => space.id));
-    const filteredSelected = selectedSpaceIds.filter((spaceId) => allowedSpaceIds.has(spaceId));
+    const linkContext = await dataAccess.getLinkContext(linkId);
 
     const response = NextResponse.json(
       {
-        spaces: spacesResult.data || [],
-        selected_space_ids: filteredSelected,
+        spaces: linkContext.spaces,
+        selected_space_ids: linkContext.selectedSpaceIds,
       },
       { headers: getRateLimitHeaders(limit, remaining, reset) }
     );
@@ -80,6 +47,9 @@ export async function GET(request: NextRequest) {
     response.headers.set("Cache-Control", "private, max-age=20, stale-while-revalidate=40");
     return response;
   } catch (error) {
+    if (error instanceof RequestDataAccessError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error("Error in GET /api/extension/link-context:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

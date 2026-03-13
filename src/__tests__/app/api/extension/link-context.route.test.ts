@@ -1,6 +1,6 @@
-const mockAuthenticateRequest = jest.fn();
+const mockCreateRequestContext = jest.fn();
 const mockRateLimitSpacesLimit = jest.fn();
-const mockCreateDataClientForRequest = jest.fn();
+const mockGetLinkContext = jest.fn();
 
 jest.mock("next/server", () => {
   class MockNextResponse {
@@ -38,7 +38,7 @@ jest.mock("next/server", () => {
 });
 
 jest.mock("@/lib/auth-middleware", () => ({
-  authenticateRequest: (...args: unknown[]) => mockAuthenticateRequest(...args),
+  createRequestContext: (...args: unknown[]) => mockCreateRequestContext(...args),
 }));
 
 jest.mock("@/lib/rate-limit", () => ({
@@ -49,8 +49,18 @@ jest.mock("@/lib/rate-limit", () => ({
   getRateLimitHeaders: jest.fn(() => ({ "X-RateLimit-Limit": "30" })),
 }));
 
-jest.mock("@/lib/supabase/server", () => ({
-  createDataClientForRequest: (...args: unknown[]) => mockCreateDataClientForRequest(...args),
+jest.mock("@/lib/request-data", () => ({
+  RequestDataAccess: jest.fn().mockImplementation(() => ({
+    getLinkContext: (...args: unknown[]) => mockGetLinkContext(...args),
+  })),
+  RequestDataAccessError: class RequestDataAccessError extends Error {
+    status: number;
+
+    constructor(message: string, status: number) {
+      super(message);
+      this.status = status;
+    }
+  },
 }));
 
 import { GET } from "@/app/api/extension/link-context/route";
@@ -58,7 +68,15 @@ import { GET } from "@/app/api/extension/link-context/route";
 describe("GET /api/extension/link-context", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockAuthenticateRequest.mockResolvedValue("user_1");
+    mockCreateRequestContext.mockResolvedValue({
+      userId: "user_1",
+      authSource: "api_token",
+      token: {
+        id: "token_1",
+        expiresAt: "2099-01-01T00:00:00Z",
+        scopes: ["legacy_full_access"],
+      },
+    });
     mockRateLimitSpacesLimit.mockResolvedValue({
       success: true,
       limit: 30,
@@ -68,43 +86,13 @@ describe("GET /api/extension/link-context", () => {
   });
 
   it("returns spaces and selected space IDs for a link", async () => {
-    const linksQuery = {
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      maybeSingle: jest.fn().mockResolvedValue({
-        data: { id: "link_1" },
-        error: null,
-      }),
-    };
-
-    const spacesQuery = {
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      order: jest.fn().mockResolvedValue({
-        data: [
-          { id: "s1", name: "Work", color: "#111111" },
-          { id: "s2", name: "Personal", color: "#222222" },
-        ],
-        error: null,
-      }),
-    };
-
-    const linkSpacesQuery = {
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockResolvedValue({
-        data: [{ space_id: "s2" }],
-        error: null,
-      }),
-    };
-
-    const from = jest.fn().mockImplementation((table: string) => {
-      if (table === "links") return linksQuery;
-      if (table === "spaces") return spacesQuery;
-      if (table === "link_spaces") return linkSpacesQuery;
-      throw new Error(`Unexpected table: ${table}`);
+    mockGetLinkContext.mockResolvedValue({
+      spaces: [
+        { id: "s1", name: "Work", color: "#111111" },
+        { id: "s2", name: "Personal", color: "#222222" },
+      ],
+      selectedSpaceIds: ["s2"],
     });
-
-    mockCreateDataClientForRequest.mockResolvedValue({ from } as never);
 
     const response = await GET({
       headers: new Headers(),
@@ -119,6 +107,7 @@ describe("GET /api/extension/link-context", () => {
       ],
       selected_space_ids: ["s2"],
     });
+    expect(mockGetLinkContext).toHaveBeenCalledWith("3fa85f64-5717-4562-b3fc-2c963f66afa6");
   });
 
   it("returns 400 when linkId is missing", async () => {

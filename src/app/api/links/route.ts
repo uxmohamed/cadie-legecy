@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GetLinksHandler, CreateLinkHandler } from "@/features/links/api/handlers";
 import { rateLimitLinks, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
-import { authenticateRequest } from "@/lib/auth-middleware";
+import { createRequestContext } from "@/lib/auth-middleware";
 import { validateRequestBody } from "@/lib/validation/validate";
 import { createLinkSchema } from "@/lib/validation/link.schemas";
 import type { CreateLinkDTO } from "@/features/links/types";
@@ -17,14 +17,13 @@ const createLinkHandler = new CreateLinkHandler();
  * Marked no-store so list reads never serve stale data after mutations.
  */
 export async function GET(request: NextRequest) {
-  // Authenticate to get userId for rate limiting
-  const userId = await authenticateRequest(request);
-  if (!userId) {
+  const context = await createRequestContext(request);
+  if (!context) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   
   // Apply rate limiting
-  const identifier = getIdentifier(request, userId);
+  const identifier = getIdentifier(request, context.userId);
   const { success, limit, reset, remaining } = await rateLimitLinks.limit(identifier);
   
   if (!success) {
@@ -38,7 +37,7 @@ export async function GET(request: NextRequest) {
   }
   
   // Continue with handler
-  const response = await getLinksHandler.handle(request, userId);
+  const response = await getLinksHandler.handle(request, context.userId);
   
   // Add rate limit headers to response
   const headers = getRateLimitHeaders(limit, remaining, reset);
@@ -58,14 +57,13 @@ export async function GET(request: NextRequest) {
  * Create a new link
  */
 export async function POST(request: NextRequest) {
-  // Authenticate to get userId for rate limiting
-  const userId = await authenticateRequest(request);
-  if (!userId) {
+  const context = await createRequestContext(request);
+  if (!context) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   
   // Apply rate limiting
-  const identifier = getIdentifier(request, userId);
+  const identifier = getIdentifier(request, context.userId);
   const { success, limit, reset, remaining } = await rateLimitLinks.limit(identifier);
   
   if (!success) {
@@ -98,7 +96,7 @@ export async function POST(request: NextRequest) {
     color_value: validatedData.color_value ?? null,
   };
   
-  const response = await createLinkHandler.handle(request, dto, userId);
+  const response = await createLinkHandler.handle(request, dto, context);
   
   // Add rate limit headers to response
   const headers = getRateLimitHeaders(limit, remaining, reset);

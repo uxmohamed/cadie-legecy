@@ -2,48 +2,78 @@ import { NextRequest } from "next/server";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { log } from "@/lib/logger";
 
-export interface AuthenticatedRequest extends NextRequest {
-  userId?: string;
+export type AuthSource = "session" | "api_token";
+
+export interface ApiTokenMetadata {
+  id: string;
+  expiresAt: string;
+  scopes: readonly ["legacy_full_access"];
+}
+
+export interface RequestContext {
+  userId: string;
+  authSource: AuthSource;
+  token: ApiTokenMetadata | null;
 }
 
 /**
- * Authenticates a request using either:
- * 1. Bearer token from Authorization header (for extension/API)
- * 2. Session cookie (for web app)
- * 
- * @param request - The incoming request
- * @returns The user ID if authenticated, null otherwise
+ * Resolves the authenticated actor for either a session or API token request.
+ */
+export async function createRequestContext(
+  request: NextRequest
+): Promise<RequestContext | null> {
+  const authHeader = request.headers.get("authorization");
+
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.substring(7);
+    const apiToken = await authenticateApiToken(token);
+    if (!apiToken) {
+      return null;
+    }
+
+    return {
+      userId: apiToken.userId,
+      authSource: "api_token",
+      token: {
+        id: apiToken.tokenId,
+        expiresAt: apiToken.expiresAt,
+        scopes: ["legacy_full_access"] as const,
+      },
+    };
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return null;
+  }
+
+  return {
+    userId: user.id,
+    authSource: "session",
+    token: null,
+  };
+}
+
+/**
+ * Compatibility wrapper for unchanged routes that only need the user id.
  */
 export async function authenticateRequest(
   request: NextRequest
 ): Promise<string | null> {
-  // First, try Bearer token authentication
-  const authHeader = request.headers.get("authorization");
-  
-  if (authHeader?.startsWith("Bearer ")) {
-    const token = authHeader.substring(7);
-    const userId = await authenticateWithToken(token);
-    // If Bearer token was provided but is invalid, DON'T fall back to session
-    // This ensures revoked tokens properly fail
-    if (!userId) {
-      return null;
-    }
-    return userId;
-  }
-
-  // Fall back to session-based authentication (only when no Bearer token provided)
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  return user?.id || null;
+  const context = await createRequestContext(request);
+  return context?.userId ?? null;
 }
 
 /**
  * Authenticates using an API token
  * @param token - The plaintext token
- * @returns The user ID if valid, null otherwise
+ * @returns The token subject if valid, null otherwise
  */
-async function authenticateWithToken(token: string): Promise<string | null> {
+async function authenticateApiToken(
+  token: string
+): Promise<{ userId: string; tokenId: string; expiresAt: string } | null> {
   if (!token || token.length < 32) {
     // SECURITY: Don't log token details - could aid attackers
     log.warn("[AUTH] Invalid token format");
@@ -53,16 +83,15 @@ async function authenticateWithToken(token: string): Promise<string | null> {
   try {
     // Hash the token using SHA-256 (matching the hash we store)
     const tokenHash = await hashToken(token);
-    
+
     // SECURITY: Don't log hash prefix - could aid brute force attacks
-    
-    // Use service role to query api_tokens table
-    // We need to use service role because RLS won't let us query without auth
+
+    // Intentional elevated path: token verification requires service-role access.
     const supabase = createAdminClient();
-    
+
     // Current timestamp for expiration check
     const now = new Date().toISOString();
-    
+
     // Look up token in database and check expiration
     const { data: tokenRecord, error } = await supabase
       .from("api_tokens")
@@ -88,7 +117,11 @@ async function authenticateWithToken(token: string): Promise<string | null> {
       log.warn("[AUTH] Failed to update token last used timestamp");
     });
 
-    return tokenRecord.user_id;
+    return {
+      userId: tokenRecord.user_id,
+      tokenId: tokenRecord.id,
+      expiresAt: tokenRecord.expires_at,
+    };
   } catch {
     // SECURITY: Don't log error details that could reveal system internals
     log.error("[AUTH] Token authentication error");
@@ -102,7 +135,7 @@ async function authenticateWithToken(token: string): Promise<string | null> {
  */
 async function updateTokenLastUsed(tokenId: string): Promise<void> {
   const supabase = createAdminClient();
-  
+
   await supabase
     .from("api_tokens")
     .update({ last_used_at: new Date().toISOString() })

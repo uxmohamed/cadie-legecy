@@ -1,5 +1,10 @@
-import { authenticateRequest } from "@/lib/auth-middleware";
+import { authenticateRequest, createRequestContext } from "@/lib/auth-middleware";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
+
+jest.mock("@/lib/supabase/server", () => ({
+  createAdminClient: jest.fn(),
+  createClient: jest.fn(),
+}));
 
 describe("auth-middleware", () => {
   const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>;
@@ -32,7 +37,7 @@ describe("auth-middleware", () => {
     digestSpy = undefined;
   });
 
-  it("uses admin client for bearer token auth and token last-used update", async () => {
+  it("returns an api_token request context for bearer auth and updates token last-used", async () => {
     const select = jest.fn().mockReturnValue({
       eq: jest.fn().mockReturnValue({
         gt: jest.fn().mockReturnValue({
@@ -61,7 +66,15 @@ describe("auth-middleware", () => {
       }),
     } as never;
 
-    await expect(authenticateRequest(request)).resolves.toBe("user_123");
+    await expect(createRequestContext(request)).resolves.toEqual({
+      userId: "user_123",
+      authSource: "api_token",
+      token: {
+        id: "token_id_123",
+        expiresAt: "2099-01-01T00:00:00Z",
+        scopes: ["legacy_full_access"],
+      },
+    });
     expect(mockCreateAdminClient).toHaveBeenCalledTimes(2);
     expect(mockCreateClient).not.toHaveBeenCalled();
     expect(from).toHaveBeenCalledWith("api_tokens");
@@ -86,11 +99,11 @@ describe("auth-middleware", () => {
       }),
     } as never;
 
-    await expect(authenticateRequest(request)).resolves.toBeNull();
+    await expect(createRequestContext(request)).resolves.toBeNull();
     expect(mockCreateClient).not.toHaveBeenCalled();
   });
 
-  it("uses session auth when no bearer token is provided", async () => {
+  it("returns a session request context when no bearer token is provided", async () => {
     mockCreateClient.mockResolvedValue({
       auth: {
         getUser: jest.fn().mockResolvedValue({ data: { user: { id: "session_user_123" } } }),
@@ -101,8 +114,26 @@ describe("auth-middleware", () => {
       headers: new Headers(),
     } as never;
 
-    await expect(authenticateRequest(request)).resolves.toBe("session_user_123");
+    await expect(createRequestContext(request)).resolves.toEqual({
+      userId: "session_user_123",
+      authSource: "session",
+      token: null,
+    });
     expect(mockCreateClient).toHaveBeenCalledTimes(1);
     expect(mockCreateAdminClient).not.toHaveBeenCalled();
+  });
+
+  it("keeps authenticateRequest as a user-id compatibility wrapper", async () => {
+    mockCreateClient.mockResolvedValue({
+      auth: {
+        getUser: jest.fn().mockResolvedValue({ data: { user: { id: "compat_user_123" } } }),
+      },
+    } as never);
+
+    const request = {
+      headers: new Headers(),
+    } as never;
+
+    await expect(authenticateRequest(request)).resolves.toBe("compat_user_123");
   });
 });

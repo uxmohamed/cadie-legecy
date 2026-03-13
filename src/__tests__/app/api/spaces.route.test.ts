@@ -1,6 +1,8 @@
-const mockAuthenticateRequest = jest.fn();
+const mockCreateRequestContext = jest.fn();
 const mockRateLimitSpacesLimit = jest.fn();
-const mockCreateDataClientForRequest = jest.fn();
+const mockListSpacesLite = jest.fn();
+const mockListSpacesWithCounts = jest.fn();
+const mockCreateSpace = jest.fn();
 
 jest.mock("next/server", () => {
   class MockNextResponse {
@@ -38,7 +40,7 @@ jest.mock("next/server", () => {
 });
 
 jest.mock("@/lib/auth-middleware", () => ({
-  authenticateRequest: (...args: unknown[]) => mockAuthenticateRequest(...args),
+  createRequestContext: (...args: unknown[]) => mockCreateRequestContext(...args),
 }));
 
 jest.mock("@/lib/rate-limit", () => ({
@@ -49,8 +51,20 @@ jest.mock("@/lib/rate-limit", () => ({
   getRateLimitHeaders: jest.fn(() => ({ "X-RateLimit-Limit": "30" })),
 }));
 
-jest.mock("@/lib/supabase/server", () => ({
-  createDataClientForRequest: (...args: unknown[]) => mockCreateDataClientForRequest(...args),
+jest.mock("@/lib/request-data", () => ({
+  RequestDataAccess: jest.fn().mockImplementation(() => ({
+    listSpacesLite: (...args: unknown[]) => mockListSpacesLite(...args),
+    listSpacesWithCounts: (...args: unknown[]) => mockListSpacesWithCounts(...args),
+    createSpace: (...args: unknown[]) => mockCreateSpace(...args),
+  })),
+  RequestDataAccessError: class RequestDataAccessError extends Error {
+    status: number;
+
+    constructor(message: string, status: number) {
+      super(message);
+      this.status = status;
+    }
+  },
 }));
 
 import { GET } from "@/app/api/spaces/route";
@@ -58,7 +72,11 @@ import { GET } from "@/app/api/spaces/route";
 describe("GET /api/spaces", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockAuthenticateRequest.mockResolvedValue("user_1");
+    mockCreateRequestContext.mockResolvedValue({
+      userId: "user_1",
+      authSource: "session",
+      token: null,
+    });
     mockRateLimitSpacesLimit.mockResolvedValue({
       success: true,
       limit: 30,
@@ -68,18 +86,7 @@ describe("GET /api/spaces", () => {
   });
 
   it("returns lightweight spaces when lite=1", async () => {
-    const order = jest.fn().mockResolvedValue({
-      data: [{ id: "s1", name: "Work", color: "#000000" }],
-      error: null,
-    });
-    const eq = jest.fn().mockReturnValue({ order });
-    const select = jest.fn().mockReturnValue({ eq });
-    const from = jest.fn().mockImplementation((table: string) => {
-      expect(table).toBe("spaces");
-      return { select };
-    });
-
-    mockCreateDataClientForRequest.mockResolvedValue({ from } as never);
+    mockListSpacesLite.mockResolvedValue([{ id: "s1", name: "Work", color: "#000000" }]);
 
     const response = await GET({
       headers: new Headers(),
@@ -90,10 +97,11 @@ describe("GET /api/spaces", () => {
     await expect(response.json()).resolves.toEqual({
       spaces: [{ id: "s1", name: "Work", color: "#000000" }],
     });
+    expect(mockListSpacesLite).toHaveBeenCalledTimes(1);
   });
 
   it("returns 401 for unauthenticated requests", async () => {
-    mockAuthenticateRequest.mockResolvedValueOnce(null);
+    mockCreateRequestContext.mockResolvedValueOnce(null);
 
     const response = await GET({
       headers: new Headers(),
