@@ -59,8 +59,6 @@ interface AddLinksResponse {
   count?: number;
   restored?: number;
   duplicates?: number;
-  auto_forwarded_spaces?: string[];
-  auto_forwarded_by_link_id?: Record<string, string>;
 }
 
 /**
@@ -119,14 +117,6 @@ function showAddResultToast(
   }
 
   toast.success(singleLineMessage);
-}
-
-function formatAutoForwardToast(spaceName: string, count: number): { message: string; description: string } {
-  const itemLabel = count === 1 ? "item" : "items";
-  return {
-    message: `Auto-sorted ${count} ${itemLabel}`,
-    description: `Sent to ${spaceName}.`,
-  };
 }
 
 /**
@@ -1099,8 +1089,6 @@ export function useLinkMutations(filters: LinkFilters) {
       const restored = data.restored ?? 0;
       const successCount = Math.max(0, count - restored);
       const duplicateCount = data.duplicates ?? 0;
-      const autoForwardedByLinkId = data.auto_forwarded_by_link_id ?? {};
-
       // Atomically swap temp links for real links (single setQueryData = no flash)
       if (context?.tempIds) {
         swapLinksInCache(queryClient, ALL_FILTERS, context.tempIds, createdLinks);
@@ -1174,29 +1162,6 @@ export function useLinkMutations(filters: LinkFilters) {
         }
       }
 
-      const forwardedCounts = new Map<string, number>();
-      createdLinks.forEach((link) => {
-        const spaceName = autoForwardedByLinkId[link.id];
-        if (!spaceName) return;
-
-        forwardedCounts.set(spaceName, (forwardedCounts.get(spaceName) ?? 0) + 1);
-      });
-
-      const forwardedEntries = [...forwardedCounts.entries()].sort((a, b) => b[1] - a[1]);
-      const MAX_FORWARDING_TOASTS = 3;
-      forwardedEntries.slice(0, MAX_FORWARDING_TOASTS).forEach(([spaceName, total]) => {
-        const { message, description } = formatAutoForwardToast(spaceName, total);
-        showAddResultToast("success", message, description);
-      });
-
-      if (forwardedEntries.length > MAX_FORWARDING_TOASTS) {
-        const overflowSpaces = forwardedEntries.length - MAX_FORWARDING_TOASTS;
-        showAddResultToast(
-          "info",
-          `Plus ${overflowSpaces} more ${overflowSpaces === 1 ? "space" : "spaces"}`,
-          "Open Spaces to review where everything landed."
-        );
-      }
     },
     onError: (err, _items, context) => {
       // Rollback: restore previous cache snapshot

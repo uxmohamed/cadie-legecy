@@ -3767,39 +3767,6 @@ async function createSettingsMirrorScreens() {
   }
 
   function drawSpaces(content, state) {
-    var auto = makeCard(content.width, 14);
-    auto.appendChild(mkText("Smart auto-forwarding", 14, 20, "Medium", "fg/default"));
-    auto.appendChild(mkText("Automatically adds new items to the best matching space.", 12, 16, "Regular", "fg/subtle", "LEFT", content.width - 28));
-
-    var toggle = figma.createFrame();
-    toggle.layoutMode = "NONE";
-    toggle.resize(34, 20);
-    toggle.cornerRadius = 999;
-    applyFill(toggle, "success/default");
-    toggle.strokes = [];
-    var dot = figma.createFrame();
-    dot.resize(16, 16);
-    dot.cornerRadius = 999;
-    applyFill(dot, "bg/surface");
-    dot.strokes = [];
-    dot.x = 16;
-    dot.y = 2;
-    toggle.appendChild(dot);
-    auto.appendChild(toggle);
-    toggle.x = content.width - 48;
-    toggle.y = 16;
-
-    if (state === "rules") {
-      var rule = makeCard(content.width - 28, 10);
-      rule.appendChild(mkText("Advanced routing rules", 12, 16, "Medium", "fg/default"));
-      rule.appendChild(mkText("IF send to Product where Domain contains instagram.com", 12, 16, "Regular", "fg/subtle", "LEFT", content.width - 76));
-      auto.appendChild(rule);
-      auto.appendChild(mkText("Add condition", 12, 16, "Medium", "accent/default"));
-    }
-    auto.x = 0;
-    auto.y = 48;
-    content.appendChild(auto);
-
     function spaceRow(y, name, colorHex, subtitle, locked, editing) {
       var r = figma.createFrame();
       r.layoutMode = "HORIZONTAL";
@@ -3890,9 +3857,9 @@ async function createSettingsMirrorScreens() {
       return r;
     }
 
-    spaceRow(248, "Product", "#2783DE", "No note added", false, state === "editing");
-    spaceRow(294, "Fundraising", "#FF9F0A", "Investor updates and decks", false, false);
-    spaceRow(340, "Design", "#34C759", "Upgrade to unlock this space", true, false);
+    spaceRow(48, "Product", "#2783DE", "No note added", false, state === "editing");
+    spaceRow(94, "Fundraising", "#FF9F0A", "Investor updates and decks", false, false);
+    spaceRow(140, "Design", "#34C759", "Upgrade to unlock this space", true, false);
 
     if (state === "create") {
       var createRow = figma.createFrame();
@@ -3911,7 +3878,7 @@ async function createSettingsMirrorScreens() {
       applyFill(createRow, "bg/muted");
       createRow.strokes = [];
       createRow.x = 0;
-      createRow.y = 390;
+      createRow.y = 190;
       createRow.appendChild(makeIcon("capsuleFilled", 14, "accent/default"));
       createRow.appendChild(makeInputRow("", "Space name...", false, content.width - 120, null));
       createRow.appendChild(makeIcon("check", 14, "fg/subtle"));
@@ -3933,7 +3900,7 @@ async function createSettingsMirrorScreens() {
       createBtn.fills = [];
       createBtn.strokes = [];
       createBtn.x = 0;
-      createBtn.y = 390;
+      createBtn.y = 190;
       createBtn.appendChild(makeIcon("plus", 14, "fg/subtle"));
       createBtn.appendChild(mkText("Create Space", 13, 18, "Medium", "fg/subtle"));
       content.appendChild(createBtn);
@@ -4262,11 +4229,6 @@ async function createSettingsMirrorScreens() {
     drawSpaces(shell.content, "editing");
     return shell.screen;
   }
-  function makeSpacesRules() {
-    var shell = makeShell("Settings / Spaces / Auto Rules", "spaces");
-    drawSpaces(shell.content, "rules");
-    return shell.screen;
-  }
   function makeSpacesDeleteConfirm() {
     var shell = makeShell("Settings / Spaces / Delete Confirm", "spaces");
     drawSpaces(shell.content, "default");
@@ -4393,7 +4355,6 @@ async function createSettingsMirrorScreens() {
     makeSpacesDefault(),
     makeSpacesCreate(),
     makeSpacesEditing(),
-    makeSpacesRules(),
     makeSpacesDeleteConfirm(),
     makeBillingLoading(),
     makeBillingStarter(),

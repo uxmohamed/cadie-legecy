@@ -7,7 +7,6 @@ export type ContentType = "url" | "color" | "image" | "document" | "note";
 export type LinkProcessingState = "queued" | "processing" | "completed" | "failed";
 export type LinkProcessingStage =
     | "queued"
-    | "forwarding"
     | "enrichment_queue"
     | "metadata"
     | "ai_tagging"

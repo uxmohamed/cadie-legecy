@@ -44,8 +44,6 @@ export function getLinkProcessingStatus(link: Pick<Link, "processing_state" | "p
 
 function formatStageLabel(stage?: LinkProcessingStage | null): string | null {
   switch (stage) {
-    case "forwarding":
-      return "Forwarding";
     case "enrichment_queue":
       return "Queueing";
     case "metadata":

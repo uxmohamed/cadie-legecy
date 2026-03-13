@@ -79,12 +79,6 @@ jest.mock("@/lib/job-queue", () => ({
   enqueueBatchAIVisionTagging: jest.fn(),
 }));
 
-jest.mock("@/features/spaces/services/auto-space-forwarding.service", () => ({
-  AutoSpaceForwardingService: jest.fn().mockImplementation(() => ({
-    processBatch: jest.fn().mockResolvedValue(undefined),
-  })),
-}));
-
 jest.mock("@/lib/billing/context", () => ({
   getBillingContext: jest.fn(),
 }));

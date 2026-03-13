@@ -7,7 +7,6 @@ import { validateRequestBody } from "@/lib/validation/validate";
 import { batchActionSchema } from "@/lib/validation/link.schemas";
 import { withRetry, supabaseRetryPredicate } from "@/lib/retry";
 import { resolveColorMetadata } from "@/lib/canonicalize";
-import { AutoSpaceForwardingService } from "@/features/spaces/services/auto-space-forwarding.service";
 import { getBillingContext } from "@/lib/billing/context";
 import { createPlanLimitResponse } from "@/lib/billing/limit-response";
 import { log } from "@/lib/logger";
@@ -23,7 +22,6 @@ import { runDirectLinkEnrichment } from "@/features/links/services/direct-enrich
  * Prevents resource exhaustion and ensures reasonable response times
  */
 const MAX_BATCH_SIZE = 100;
-const autoSpaceForwardingService = new AutoSpaceForwardingService();
 
 /**
  * Extract domain from URL
@@ -311,8 +309,6 @@ export async function POST(request: NextRequest) {
           const shouldQueueProcessing = createdLinks.length > 0;
 
           (result.data as Record<string, unknown>).processing_state = shouldQueueProcessing ? "queued" : "completed";
-          (result.data as Record<string, unknown>).auto_forwarded_spaces = [];
-          (result.data as Record<string, unknown>).auto_forwarded_by_link_id = {};
 
           if (shouldQueueProcessing) {
             after(async () => {
@@ -323,17 +319,6 @@ export async function POST(request: NextRequest) {
               const imageLinks = createdLinks.filter((link) => link.content_type === "image");
               const documentLinks = createdLinks.filter((link) => link.content_type === "document");
               const directFallbackLinkIds = new Set<string>();
-
-              await Promise.allSettled(
-                createdLinks.map((link) =>
-                  updateLinkProcessingState(supabase, {
-                    linkId: link.id,
-                    userId: user.id,
-                    state: "processing",
-                    stage: "forwarding",
-                  })
-                )
-              );
 
               if (urlLinks.length > 0) {
                 const metadataJobs = urlLinks.map((link) => ({
@@ -400,16 +385,6 @@ export async function POST(request: NextRequest) {
                     })
                   )
               );
-
-              try {
-                await autoSpaceForwardingService.forwardLinks(user.id, createdLinks);
-              } catch (error) {
-                log.warn("[BatchAddAsync] Auto-forwarding failed", {
-                  userId: user.id,
-                  nonFatal: true,
-                  error: error instanceof Error ? error.message : String(error),
-                });
-              }
 
               log.info("[BatchAddAsyncPerf]", {
                 userId: user.id,

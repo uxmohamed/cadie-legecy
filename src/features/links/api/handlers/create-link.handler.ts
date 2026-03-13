@@ -8,7 +8,6 @@ import type { FaviconVariant } from "@/features/links/types/link.types";
 import { toAppError, ErrorCode, AppError } from "@/lib/errors";
 import { resolveColorMetadata } from "@/lib/canonicalize";
 import { enqueueMetadataEnrichment, enqueueAITagging, enqueueAIVisionTagging } from "@/lib/job-queue";
-import { AutoSpaceForwardingService } from "@/features/spaces/services/auto-space-forwarding.service";
 import { createAdminClient } from "@/lib/supabase/server";
 import { extractMetadata } from "@/lib/metadata";
 import { log } from "@/lib/logger";
@@ -95,8 +94,6 @@ interface CreateLinkResponseBody {
     };
     duplicate: boolean;
     restored: boolean;
-    auto_forwarded_to: string | null;
-    auto_forwarded_spaces: string[];
     processing_state: "queued" | "processing" | "completed" | "failed";
 }
 
@@ -111,12 +108,6 @@ export class CreateLinkHandler {
             : new SupabaseLinkRepository();
 
         return new LinkService(repository);
-    }
-
-    private createAutoForwardingService(usePrivilegedClient: boolean): AutoSpaceForwardingService {
-        return usePrivilegedClient
-            ? new AutoSpaceForwardingService(() => createAdminClient())
-            : new AutoSpaceForwardingService();
     }
 
     private async loadLinkForResponse(
@@ -791,9 +782,7 @@ export class CreateLinkHandler {
             if (shouldQueueProcessing) {
                 after(async () => {
                     const asyncStartedAt = Date.now();
-                    let forwardingMs = 0;
                     let recoveryMs = 0;
-                    const autoForwardingService = this.createAutoForwardingService(usePrivilegedClient);
                     let supabase: AdminClient | null = null;
 
                     if (enrichmentQueued) {
@@ -803,7 +792,7 @@ export class CreateLinkHandler {
                                 linkId: link.id,
                                 userId: userId!,
                                 state: "processing",
-                                stage: "forwarding",
+                                stage: "enrichment_queue",
                             });
                         } catch (error) {
                             log.warn("[LinkCreateAsync] Failed to mark link as processing", {
@@ -811,19 +800,6 @@ export class CreateLinkHandler {
                                 error: error instanceof Error ? error.message : String(error),
                             });
                         }
-                    }
-
-                    try {
-                        const forwardingStartedAt = Date.now();
-                        await autoForwardingService.forwardLinks(userId!, [link]);
-                        forwardingMs = Date.now() - forwardingStartedAt;
-                    } catch (error) {
-                        log.warn("[LinkCreateAsync] Failed to auto-forward link", {
-                            linkId: link.id,
-                            source: isExtensionSave ? EXTENSION_SOURCE_VALUE : "web",
-                            nonFatal: true,
-                            error: error instanceof Error ? error.message : String(error),
-                        });
                     }
 
                     if (enrichmentQueued) {
@@ -925,7 +901,6 @@ export class CreateLinkHandler {
                         linkId: link.id,
                         source: isExtensionSave ? EXTENSION_SOURCE_VALUE : "web",
                         queuedEnrichment: enrichmentQueued,
-                        forwardingMs,
                         recoveryMs,
                         totalAsyncMs: Date.now() - asyncStartedAt,
                     });
@@ -936,8 +911,6 @@ export class CreateLinkHandler {
                 link: responseLink,
                 duplicate: isDuplicate,
                 restored: isRestored,
-                auto_forwarded_to: null,
-                auto_forwarded_spaces: [],
                 processing_state: responseProcessingState,
             };
 

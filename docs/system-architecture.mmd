@@ -137,8 +137,6 @@ subgraph Backend["Backend"]
       R_SpaceDelete["DELETE /api/spaces/[id]"]
       R_SpaceLinksPost["POST /api/spaces/[id]/links"]
       R_SpaceLinksDelete["DELETE /api/spaces/[id]/links"]
-      R_SpaceForwardGet["GET /api/settings/space-forwarding"]
-      R_SpaceForwardPatch["PATCH /api/settings/space-forwarding"]
     end
 
     subgraph BE_API_Billing["Billing"]

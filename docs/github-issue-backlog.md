@@ -239,10 +239,10 @@ P2
 `@uxmohamed`
 
 **Background**  
-`POST /api/links` returns `processing_state`, but the non-blocking `after()` branch can fail silently for auto-forwarding, QStash publishing, or extension recovery.
+`POST /api/links` returns `processing_state`, but the non-blocking `after()` branch can fail silently for QStash publishing or extension recovery.
 
 **Problem statement**  
-Users can see a successful save while enrichment or forwarding fails with no visible signal beyond logs.
+Users can see a successful save while enrichment fails with no visible signal beyond logs.
 
 **Why this matters**  
 Silent async failure erodes trust and makes support/debugging harder.
@@ -269,7 +269,7 @@ Pairs well with Issues 5 and 6.
 
 **Acceptance criteria**  
 - Saved links show a meaningful processing state beyond the initial API response.
-- Failed enrichment or forwarding can be surfaced to the user or at least made inspectable.
+- Failed enrichment can be surfaced to the user or at least made inspectable.
 - Async state transitions are represented in data, not only logs.
 
 **Validation / test scenarios**  
