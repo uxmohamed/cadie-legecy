@@ -9,7 +9,7 @@ jest.mock("idb-keyval", () => ({
 }));
 
 import { clearAllCaches } from "@/lib/query/auth-reset";
-import { CACHE_KEY, QUERY_CACHE_STORE } from "@/lib/query/persister";
+import { getQueryCacheKey, QUERY_CACHE_STORE } from "@/lib/query/persister";
 import type { QueryClient } from "@tanstack/react-query";
 
 describe("clearAllCaches", () => {
@@ -21,11 +21,20 @@ describe("clearAllCaches", () => {
     const queryClient = { clear: jest.fn() } as unknown as QueryClient;
     mockDel.mockResolvedValue(undefined);
 
-    await clearAllCaches(queryClient);
+    await clearAllCaches(queryClient, "user-1");
 
     expect(queryClient.clear).toHaveBeenCalledTimes(1);
     expect(mockDel).toHaveBeenCalledTimes(1);
-    expect(mockDel).toHaveBeenCalledWith(CACHE_KEY, QUERY_CACHE_STORE);
+    expect(mockDel).toHaveBeenCalledWith(getQueryCacheKey("user-1"), QUERY_CACHE_STORE);
+  });
+
+  it("uses the anonymous cache scope when no user is provided", async () => {
+    const queryClient = { clear: jest.fn() } as unknown as QueryClient;
+    mockDel.mockResolvedValue(undefined);
+
+    await clearAllCaches(queryClient);
+
+    expect(mockDel).toHaveBeenCalledWith(getQueryCacheKey(), QUERY_CACHE_STORE);
   });
 
   it("logs a warning when IndexedDB cache deletion fails", async () => {
@@ -34,10 +43,10 @@ describe("clearAllCaches", () => {
     const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     mockDel.mockRejectedValue(error);
 
-    await clearAllCaches(queryClient);
+    await clearAllCaches(queryClient, "user-1");
 
     expect(queryClient.clear).toHaveBeenCalledTimes(1);
-    expect(mockDel).toHaveBeenCalledWith(CACHE_KEY, QUERY_CACHE_STORE);
+    expect(mockDel).toHaveBeenCalledWith(getQueryCacheKey("user-1"), QUERY_CACHE_STORE);
     expect(warnSpy).toHaveBeenCalledWith("Failed to clear IndexedDB cache:", error);
 
     warnSpy.mockRestore();

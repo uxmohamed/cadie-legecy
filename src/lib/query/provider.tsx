@@ -4,36 +4,32 @@ import * as React from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { makeQueryClient } from "./get-query-client";
-import { createIDBPersister } from "./persister";
-
-/**
- * Cache buster version - increment to invalidate all users' persisted caches
- * Use this when:
- * - Making breaking changes to cached data structure
- * - Needing to force all users to refetch fresh data
- * - Fixing bugs caused by stale cached data
- */
-const CACHE_BUSTER = "v3";
+import { createIDBPersister, getQueryCacheKey } from "./persister";
 
 /**
  * QueryProvider with IndexedDB persistence
  *
  * - Only enables persistence in browser (not SSR)
- * - Uses versioned cache key for easy invalidation
+ * - Uses a user-scoped, versioned cache key for easy invalidation
  * - Dehydrates/rehydrates query cache on page load
- * - Buster option allows forced cache invalidation across deployments
+ * - Remounts when the authenticated user changes to avoid cross-account memory reuse
  */
-export function QueryProvider({ children }: { children: React.ReactNode }) {
-  // Create QueryClient once, stable across re-renders
+export function QueryProvider({
+  children,
+  userId,
+}: {
+  children: React.ReactNode;
+  userId?: string | null;
+}) {
+  const cacheScopeKey = React.useMemo(() => getQueryCacheKey(userId), [userId]);
   const [queryClient] = React.useState(() => makeQueryClient());
 
-  // Only create persister in browser environment
-  const [persister] = React.useState(() => {
+  const persister = React.useMemo(() => {
     if (typeof window === "undefined") {
       return undefined;
     }
-    return createIDBPersister();
-  });
+    return createIDBPersister({ userId });
+  }, [userId]);
 
   // If no persister (SSR), use regular QueryClientProvider
   if (!persister) {
@@ -47,13 +43,14 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
   // With persister, use PersistQueryClientProvider for IndexedDB caching
   return (
     <PersistQueryClientProvider
+      key={cacheScopeKey}
       client={queryClient}
       persistOptions={{
         persister,
         // Max age of persisted data (1 hour - reduced from 24 to prevent stale data issues)
         maxAge: 1 * 60 * 60 * 1000,
-        // Buster invalidates cache when changed - use for breaking changes or forced refresh
-        buster: CACHE_BUSTER,
+        // Buster tracks the same scoped key so account changes cannot reuse another user's cache
+        buster: cacheScopeKey,
         // Dehydrate options - what to persist
         dehydrateOptions: {
           shouldDehydrateQuery: (query) => {

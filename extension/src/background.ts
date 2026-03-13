@@ -11,11 +11,22 @@ import {
   fetchLinkSpaces,
   fetchLinkContext,
 } from "./lib/api-client";
-import { getApiToken, getPendingUrl, setPendingUrl, clearPendingUrl } from "./lib/storage";
+import {
+  clearAuthSession,
+  clearPendingUrl,
+  getApiToken,
+  getAuthSession,
+  getInstallId,
+  getPendingUrl,
+  setAuthSession,
+  setPendingUrl,
+} from "./lib/storage";
 
 // Track saves in progress to prevent duplicates
 const savesInProgress = new Set<string>();
 const LOADING_OVERLAY_DELAY_MS = 450;
+const AUTH_SESSION_TTL_MS = 5 * 60 * 1000;
+let authValidationInFlight = false;
 
 // ============================================================================
 // EVENT LISTENERS - Register at top level for persistence across SW lifecycle
@@ -67,9 +78,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   // Handle open auth page request from content script
   if (request.action === "openAuthPage") {
-    const extensionId = chrome.runtime.id;
-    chrome.tabs.create({ url: `https://cadie.app/extension/authorize?extensionId=${extensionId}` });
-    sendResponse({ success: true });
+    void openAuthPage().then(sendResponse);
     return true;
   }
 
@@ -115,40 +124,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   // Handle authorization success from content script
   if (request.type === "CADIE_AUTH_SUCCESS" && request.data) {
-    const { token, email } = request.data;
-
-    // Always use production URL for the extension
-    const cadieUrlToUse = "https://cadie.app";
-
-    // Save API token to local storage (sensitive)
-    chrome.storage.local.set({ apiToken: token }, () => {
-      // Save non-sensitive settings to sync storage
-      chrome.storage.sync.set({
-        cadieUrl: cadieUrlToUse,
-        userEmail: email || "",
-      }, async () => {
-        // Notify any open options pages that auth completed
-        chrome.runtime.sendMessage({
-          type: "CADIE_AUTH_COMPLETE",
-          data: { cadieUrl: cadieUrlToUse },
-        }).catch(() => {
-          // Options page might not be listening, that's okay
-        });
-
-        // Check for pending URL to save after auth
-        const pendingUrl = await getPendingUrl();
-        if (pendingUrl) {
-          await clearPendingUrl();
-          // Get active tab and save the pending URL
-          const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-          if (tab?.id) {
-            await saveUrl(tab.id, pendingUrl);
-          }
-        }
-      });
-    });
-
-    sendResponse({ success: true });
+    void handleAuthorizationSuccess(request.data).then(sendResponse);
     return true;
   }
 });
@@ -284,6 +260,123 @@ async function saveWithRetry(
     error: lastError || "Failed to save",
   });
   showOverlayInTab(tabId, "error", lastError || "Failed to save");
+}
+
+async function openAuthPage(): Promise<{ success: boolean; error?: string }> {
+  try {
+    const extensionId = chrome.runtime.id;
+    const installId = await getInstallId();
+    const extensionVersion = chrome.runtime.getManifest().version;
+    const authSession = {
+      state: crypto.randomUUID(),
+      installId,
+      extensionId,
+      extensionVersion,
+      browserName: "chrome",
+      createdAt: Date.now(),
+      expiresAt: Date.now() + AUTH_SESSION_TTL_MS,
+    };
+
+    await setAuthSession(authSession);
+
+    const authUrl = new URL("https://cadie.app/extension/authorize");
+    authUrl.searchParams.set("extensionId", authSession.extensionId);
+    authUrl.searchParams.set("installId", authSession.installId);
+    authUrl.searchParams.set("extensionVersion", authSession.extensionVersion);
+    authUrl.searchParams.set("browserName", authSession.browserName);
+    authUrl.searchParams.set("state", authSession.state);
+
+    await chrome.tabs.create({ url: authUrl.toString() });
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to open auth page:", error);
+    return { success: false, error: "Failed to open auth page" };
+  }
+}
+
+interface AuthSuccessMessage {
+  token?: string;
+  email?: string;
+  state?: string;
+  installId?: string;
+  extensionId?: string;
+}
+
+async function handleAuthorizationSuccess(
+  data: AuthSuccessMessage
+): Promise<{ success: boolean; error?: string }> {
+  if (!data.token || !data.state || !data.installId || !data.extensionId) {
+    return { success: false, error: "Incomplete auth payload" };
+  }
+
+  const validation = await validateAndConsumeAuthSession({
+    state: data.state,
+    installId: data.installId,
+    extensionId: data.extensionId,
+  });
+  if (!validation.success) {
+    return validation;
+  }
+
+  const cadieUrlToUse = "https://cadie.app";
+
+  await chrome.storage.local.set({ apiToken: data.token });
+  await chrome.storage.sync.set({
+    cadieUrl: cadieUrlToUse,
+    userEmail: data.email || "",
+  });
+
+  chrome.runtime.sendMessage({
+    type: "CADIE_AUTH_COMPLETE",
+    data: { cadieUrl: cadieUrlToUse },
+  }).catch(() => {
+    // Options page might not be listening, that's okay.
+  });
+
+  const pendingUrl = await getPendingUrl();
+  if (pendingUrl) {
+    await clearPendingUrl();
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id) {
+      await saveUrl(tab.id, pendingUrl);
+    }
+  }
+
+  return { success: true };
+}
+
+async function validateAndConsumeAuthSession(
+  data: Required<Pick<AuthSuccessMessage, "state" | "installId" | "extensionId">>
+): Promise<{ success: boolean; error?: string }> {
+  if (authValidationInFlight) {
+    return { success: false, error: "Authorization already being processed" };
+  }
+
+  authValidationInFlight = true;
+  try {
+    const authSession = await getAuthSession();
+    if (!authSession) {
+      return { success: false, error: "No pending auth session" };
+    }
+
+    if (authSession.expiresAt <= Date.now()) {
+      await clearAuthSession();
+      return { success: false, error: "Auth session expired" };
+    }
+
+    if (
+      authSession.state !== data.state ||
+      authSession.installId !== data.installId ||
+      authSession.extensionId !== data.extensionId
+    ) {
+      return { success: false, error: "Auth session did not match" };
+    }
+
+    await clearAuthSession();
+    return { success: true };
+  } finally {
+    authValidationInFlight = false;
+  }
 }
 
 /**

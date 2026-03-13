@@ -60,6 +60,46 @@ function makeLink(overrides: Partial<Link> = {}): Link {
 }
 
 describe("useRealtimeSync", () => {
+  function renderRealtimeHook(queryClient: QueryClient) {
+    const handlers: Array<(payload: unknown) => void> = [];
+    let statusHandler: ((status: string) => void) | null = null;
+    const channel = {
+      on: jest.fn((_event, _filter, callback) => {
+        handlers.push(callback as (payload: unknown) => void);
+        return channel;
+      }),
+      subscribe: jest.fn((callback?: (status: string) => void) => {
+        statusHandler = callback ?? null;
+        return channel;
+      }),
+    };
+
+    const removeChannel = jest.fn().mockResolvedValue(undefined);
+
+    (createClient as jest.Mock).mockReturnValue({
+      channel: jest.fn(() => channel),
+      removeChannel,
+    });
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+
+    renderHook(() => {
+      useRealtimeSync(true, "user-1");
+      return null;
+    }, { wrapper });
+
+    return {
+      handlers,
+      channel,
+      removeChannel,
+      emitStatus(status: string) {
+        statusHandler?.(status);
+      },
+    };
+  }
+
   it("adds extension-saved links into cached space views when link_spaces inserts arrive", async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
@@ -83,30 +123,7 @@ describe("useRealtimeSync", () => {
       total: 0,
     });
 
-    const handlers: Array<(payload: unknown) => void> = [];
-    const channel = {
-      on: jest.fn((_event, _filter, callback) => {
-        handlers.push(callback as (payload: unknown) => void);
-        return channel;
-      }),
-      subscribe: jest.fn().mockReturnValue("SUBSCRIBED"),
-    };
-
-    const removeChannel = jest.fn().mockResolvedValue(undefined);
-
-    (createClient as jest.Mock).mockReturnValue({
-      channel: jest.fn(() => channel),
-      removeChannel,
-    });
-
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-
-    renderHook(() => {
-      useRealtimeSync(true, "user-1");
-      return null;
-    }, { wrapper });
+    const { handlers } = renderRealtimeHook(queryClient);
 
     await waitFor(() => {
       expect(handlers).toHaveLength(2);
@@ -139,5 +156,76 @@ describe("useRealtimeSync", () => {
 
     expect(spaceCache?.links.some((item) => item.id === link.id)).toBe(true);
     queryClient.clear();
+  });
+
+  it("invalidates derived link queries when realtime updates arrive", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: Infinity },
+      },
+    });
+
+    queryClient.setQueryData<LinksResponse>(
+      queryKeys.links.list({ is_deleted: false, is_archived: false, content_type: "note" }),
+      { links: [], total: 0 }
+    );
+
+    const invalidateSpy = jest
+      .spyOn(queryClient, "invalidateQueries")
+      .mockResolvedValue(undefined);
+
+    const { handlers } = renderRealtimeHook(queryClient);
+
+    await waitFor(() => {
+      expect(handlers).toHaveLength(2);
+    });
+
+    act(() => {
+      handlers[0]({
+        eventType: "INSERT",
+        new: makeLink({ id: "link-derived", content_type: "note" }),
+        old: null,
+      });
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      predicate: expect.any(Function),
+      refetchType: "active",
+    });
+  });
+
+  it("forces a freshness recovery after realtime reconnects", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: Infinity },
+      },
+    });
+
+    const invalidateSpy = jest
+      .spyOn(queryClient, "invalidateQueries")
+      .mockResolvedValue(undefined);
+
+    const { emitStatus } = renderRealtimeHook(queryClient);
+
+    act(() => {
+      emitStatus("CHANNEL_ERROR");
+      emitStatus("SUBSCRIBED");
+    });
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: queryKeys.links.all,
+        refetchType: "active",
+      });
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: queryKeys.spaces.all,
+      refetchType: "active",
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: queryKeys.linkSpaces.all,
+      refetchType: "active",
+    });
   });
 });

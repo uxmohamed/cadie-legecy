@@ -11,16 +11,28 @@ export default function ExtensionAuthorizePage() {
 
   const performAuthorization = React.useCallback(async (currentUser: User) => {
     try {
+      const params = new URLSearchParams(window.location.search);
+      const extensionId = params.get("extensionId");
+      const installId = params.get("installId");
+      const state = params.get("state");
+      const extensionVersion = params.get("extensionVersion");
+      const browserName = params.get("browserName") || "chrome";
+
+      if (!extensionId || !installId || !state) {
+        throw new Error("Missing extension auth session details");
+      }
+
       // Call API to generate token
       const response = await fetch("/api/extension/authorize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: "Extension",
-          installId: new URLSearchParams(window.location.search).get("installId"),
+          installId,
+          state,
           clientId: "cadie-browser-extension",
-          extensionVersion: new URLSearchParams(window.location.search).get("extensionVersion"),
-          browserName: new URLSearchParams(window.location.search).get("browserName") || "chrome",
+          extensionVersion,
+          browserName,
           platform: navigator.platform,
         }),
       });
@@ -31,14 +43,9 @@ export default function ExtensionAuthorizePage() {
 
       interface AuthResponse {
         token: string;
+        state: string;
       }
       const data = (await response.json()) as AuthResponse;
-
-      // Get the extension ID from URL params
-      const params = new URLSearchParams(window.location.search);
-      const extensionId = params.get("extensionId");
-      const installId = params.get("installId");
-      const state = params.get("state");
 
       // Always use production URL for extension - tokens are generated against production database
       const cadieUrl = "https://cadie.app";
@@ -48,8 +55,9 @@ export default function ExtensionAuthorizePage() {
         token: data.token,
         email: currentUser.email,
         cadieUrl: cadieUrl,
-        state: state || "",
-        installId: installId || "",
+        state: data.state,
+        installId,
+        extensionId,
       };
 
       // Store auth data in DOM for content script
@@ -59,8 +67,9 @@ export default function ExtensionAuthorizePage() {
         token: authData.token,
         email: authData.email || "",
         url: authData.cadieUrl,
-        state: authData.state || "",
-        installId: authData.installId || "",
+        state: authData.state,
+        installId: authData.installId,
+        extensionId: authData.extensionId,
       }));
       authDataElement.style.display = "none";
       document.body.appendChild(authDataElement);
@@ -76,7 +85,13 @@ export default function ExtensionAuthorizePage() {
 
       // Listen for acknowledgment from extension via postMessage
       const ackHandler = (e: MessageEvent) => {
-        if (e.data?.type === "CADIE_AUTH_ACK" && e.data?.success) {
+        if (
+          e.source === window &&
+          e.origin === window.location.origin &&
+          e.data?.type === "CADIE_AUTH_ACK" &&
+          e.data?.success &&
+          e.data?.state === authData.state
+        ) {
           window.removeEventListener("message", ackHandler);
           redirect();
         }
@@ -90,8 +105,8 @@ export default function ExtensionAuthorizePage() {
         email: authData.email || "",
         url: authData.cadieUrl,
         cadieUrl: authData.cadieUrl,
-        state: authData.state || "",
-        installId: authData.installId || "",
+        state: authData.state,
+        installId: authData.installId,
         extensionId,
       };
       

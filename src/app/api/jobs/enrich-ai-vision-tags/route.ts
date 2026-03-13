@@ -3,8 +3,21 @@ import { Receiver } from "@upstash/qstash";
 import { createClient } from "@supabase/supabase-js";
 import { AITaggingService } from "@/features/links/services/ai-tagging.service";
 import { log } from "@/lib/logger";
-import type { EnrichAIVisionTagsJob } from "@/lib/job-queue";
+import {
+  buildAIVisionTaggingJobDedupeKey,
+  QSTASH_JOB_MAX_ATTEMPTS,
+  type EnrichAIVisionTagsJob,
+} from "@/lib/job-queue";
 import { updateLinkProcessingState } from "@/features/links/lib/link-processing";
+import { shouldSkipAITagWrite } from "@/features/links/lib/enrichment-ownership";
+import {
+  claimBackgroundJobExecution,
+  getQStashAttemptInfo,
+  markBackgroundJobCompleted,
+  safeMarkBackgroundJobFailed,
+} from "@/lib/background-job-executions";
+
+const JOB_TYPE = "ai_vision_tagging";
 
 /**
  * POST /api/jobs/enrich-ai-vision-tags
@@ -14,6 +27,9 @@ import { updateLinkProcessingState } from "@/features/links/lib/link-processing"
  */
 export async function POST(request: NextRequest) {
   let job: EnrichAIVisionTagsJob | null = null;
+  let jobDedupeKey: string | null = null;
+  let invocationId: string | null = null;
+  let attemptCount = 1;
 
   try {
     // Verify QStash signature
@@ -44,6 +60,37 @@ export async function POST(request: NextRequest) {
     }
 
     log.info("[AI Vision Tags Job] Processing", { linkId });
+    const attemptInfo = getQStashAttemptInfo(
+      request.headers,
+      QSTASH_JOB_MAX_ATTEMPTS.aiVisionTagging
+    );
+    attemptCount = attemptInfo.attemptCount;
+    jobDedupeKey = buildAIVisionTaggingJobDedupeKey(job);
+
+    const claimed = await claimBackgroundJobExecution({
+      jobType: JOB_TYPE,
+      dedupeKey: jobDedupeKey,
+      payload: job as unknown as Record<string, unknown>,
+      attemptCount,
+      maxAttempts: attemptInfo.maxAttempts,
+    });
+    invocationId = claimed.invocationId;
+
+    if (!claimed.shouldProcess) {
+      log.info("[AI Vision Tags Job] Skipping duplicate delivery", {
+        linkId,
+        dedupeKey: jobDedupeKey,
+        state: claimed.duplicateState,
+        attemptCount,
+        messageId: attemptInfo.messageId,
+      });
+      return NextResponse.json({
+        success: true,
+        skipped: true,
+        reason: claimed.duplicateState,
+        linkId,
+      });
+    }
 
     // Use admin client to bypass RLS
     const supabase = createClient(
@@ -79,17 +126,27 @@ export async function POST(request: NextRequest) {
         state: "completed",
         stage: "complete",
       });
+      await markBackgroundJobCompleted({
+        jobType: JOB_TYPE,
+        dedupeKey: jobDedupeKey,
+        invocationId: invocationId!,
+      });
       return NextResponse.json({ success: true, skipped: true });
     }
 
     // Skip if already tagged
-    if (link.ai_tags && link.ai_tags.length > 0) {
+    if (shouldSkipAITagWrite(link.ai_tags)) {
       log.info("[AI Vision Tags Job] Already tagged, skipping", { linkId });
       await updateLinkProcessingState(supabase, {
         linkId,
         userId,
         state: "completed",
         stage: "complete",
+      });
+      await markBackgroundJobCompleted({
+        jobType: JOB_TYPE,
+        dedupeKey: jobDedupeKey,
+        invocationId: invocationId!,
       });
       return NextResponse.json({ success: true, skipped: true });
     }
@@ -116,6 +173,11 @@ export async function POST(request: NextRequest) {
         state: "failed",
         stage: "ai_vision_tagging",
         error: "Image analysis did not return any tags.",
+      });
+      await markBackgroundJobCompleted({
+        jobType: JOB_TYPE,
+        dedupeKey: jobDedupeKey,
+        invocationId: invocationId!,
       });
       return NextResponse.json({ success: true, noResult: true });
     }
@@ -167,6 +229,12 @@ export async function POST(request: NextRequest) {
       hasDescription: !!result.description,
     });
 
+    await markBackgroundJobCompleted({
+      jobType: JOB_TYPE,
+      dedupeKey: jobDedupeKey,
+      invocationId: invocationId!,
+    });
+
     return NextResponse.json({
       success: true,
       linkId,
@@ -190,6 +258,25 @@ export async function POST(request: NextRequest) {
         });
       } catch {
         // Ignore follow-up persistence failures.
+      }
+    }
+    if (jobDedupeKey && invocationId) {
+      const failure = await safeMarkBackgroundJobFailed({
+        jobType: JOB_TYPE,
+        dedupeKey: jobDedupeKey,
+        invocationId,
+        attemptCount,
+        maxAttempts: QSTASH_JOB_MAX_ATTEMPTS.aiVisionTagging,
+        error,
+      });
+      if (failure.terminal) {
+        return NextResponse.json(
+          {
+            error: "AI vision tagging failed permanently",
+            details: error instanceof Error ? error.message : "Unknown error",
+          },
+          { status: 489 }
+        );
       }
     }
     return NextResponse.json(

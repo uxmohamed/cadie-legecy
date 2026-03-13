@@ -19,6 +19,7 @@ import {
     shouldTrackLinkProcessing,
     updateLinkProcessingState,
 } from "@/features/links/lib/link-processing";
+import { buildRecoveryMetadataUpdates, shouldSkipAITagWrite } from "@/features/links/lib/enrichment-ownership";
 
 const EXTENSION_SOURCE_HEADER = "x-cadie-source";
 const EXTENSION_SOURCE_VALUE = "extension";
@@ -34,8 +35,22 @@ const RECOVERY_SELECT_FIELDS = [
     "content_text",
     "content_type",
     "og_image_url",
+    "favicon_url",
+    "final_url",
+    "canonical_url",
+    "favicon_variants",
+    "preview_image_width",
+    "preview_image_height",
+    "theme_color",
+    "language",
+    "word_count",
+    "reading_time_minutes",
+    "status_code",
     "ai_tags",
     "fetch_status",
+    "fetched_at",
+    "etag",
+    "last_modified",
 ].join(", ");
 
 type RecoveryOutcome = "success" | "failed" | "skipped";
@@ -53,8 +68,22 @@ interface RecoveryLink {
     content_text: string | null;
     content_type: string | null;
     og_image_url: string | null;
+    favicon_url: string | null;
+    final_url: string | null;
+    canonical_url: string | null;
+    favicon_variants: Array<Record<string, unknown>> | null;
+    preview_image_width: number | null;
+    preview_image_height: number | null;
+    theme_color: string | null;
+    language: string | null;
+    word_count: number | null;
+    reading_time_minutes: number | null;
+    status_code: number | null;
     ai_tags: string[] | null;
     fetch_status: string | null;
+    fetched_at: string | null;
+    etag: string | null;
+    last_modified: string | null;
 }
 
 interface CreateLinkResponseBody {
@@ -142,7 +171,7 @@ export class CreateLinkHandler {
     }
 
     private isAiMissing(link: Pick<RecoveryLink, "ai_tags">): boolean {
-        return !Array.isArray(link.ai_tags) || link.ai_tags.length === 0;
+        return !shouldSkipAITagWrite(link.ai_tags);
     }
 
     private isFetchStillLoading(status: string | null): boolean {
@@ -231,36 +260,7 @@ export class CreateLinkHandler {
 
         try {
             const metadata = await extractMetadata(link.url);
-            const hasGenericTitle = !link.title || link.title === link.url || (link.domain ? link.title === link.domain : false);
-            const updates: Record<string, unknown> = {
-                fetch_status: metadata.fetch_status,
-                fetched_at: metadata.fetched_at,
-            };
-
-            if (hasGenericTitle && metadata.title && metadata.title !== metadata.domain) {
-                updates.title = metadata.title;
-            }
-            if (!link.description && metadata.description) {
-                updates.description = metadata.description;
-            }
-            if (!link.og_image_url && metadata.preview_image_url) {
-                updates.og_image_url = metadata.preview_image_url;
-            }
-            if (metadata.site_name) {
-                updates.site_name = metadata.site_name;
-            }
-            if (metadata.final_url) {
-                updates.final_url = metadata.final_url;
-            }
-            if (metadata.canonical_url) {
-                updates.canonical_url = metadata.canonical_url;
-            }
-            if (metadata.content_text) {
-                updates.content_text = metadata.content_text;
-            }
-            if (metadata.favicon_url) {
-                updates.favicon_url = metadata.favicon_url;
-            }
+            const updates = buildRecoveryMetadataUpdates(link, metadata);
 
             const { error } = await supabase
                 .from("links")

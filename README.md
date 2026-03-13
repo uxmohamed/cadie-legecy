@@ -70,5 +70,5 @@ npm run extension:build
 - Env vars: `/Users/hassan/Repos/cadie/ENV_VARIABLES.md`
 - Bookmark import rollout: `/Users/hassan/Repos/cadie/docs/bookmark-import-v0-rollout.md`
 - Link export rollout: `/Users/hassan/Repos/cadie/docs/link-export-v0-rollout.md`
-
+- Link query performance strategy: `/Users/hassan/Repos/cadie/docs/link-query-performance.md`
 
