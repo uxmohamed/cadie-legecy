@@ -31,6 +31,21 @@ export async function POST(request: NextRequest) {
   let invocationId: string | null = null;
   let attemptCount = 1;
 
+  const failClaimedExecution = async (error: unknown) => {
+    if (!jobDedupeKey || !invocationId) return false;
+
+    const failure = await safeMarkBackgroundJobFailed({
+      jobType: JOB_TYPE,
+      dedupeKey: jobDedupeKey,
+      invocationId,
+      attemptCount,
+      maxAttempts: QSTASH_JOB_MAX_ATTEMPTS.aiVisionTagging,
+      error,
+    });
+
+    return failure.terminal;
+  };
+
   try {
     // Verify QStash signature
     const receiver = new Receiver({
@@ -210,9 +225,10 @@ export async function POST(request: NextRequest) {
         linkId,
         error: updateError,
       });
+      const terminal = await failClaimedExecution(updateError);
       return NextResponse.json(
-        { error: "Failed to update link" },
-        { status: 500 }
+        { error: "Failed to update link", terminal },
+        { status: terminal ? 489 : 500 }
       );
     }
     await updateLinkProcessingState(supabase, {
@@ -260,24 +276,15 @@ export async function POST(request: NextRequest) {
         // Ignore follow-up persistence failures.
       }
     }
-    if (jobDedupeKey && invocationId) {
-      const failure = await safeMarkBackgroundJobFailed({
-        jobType: JOB_TYPE,
-        dedupeKey: jobDedupeKey,
-        invocationId,
-        attemptCount,
-        maxAttempts: QSTASH_JOB_MAX_ATTEMPTS.aiVisionTagging,
-        error,
-      });
-      if (failure.terminal) {
-        return NextResponse.json(
+    const terminal = await failClaimedExecution(error);
+    if (terminal) {
+      return NextResponse.json(
           {
             error: "AI vision tagging failed permanently",
             details: error instanceof Error ? error.message : "Unknown error",
           },
           { status: 489 }
         );
-      }
     }
     return NextResponse.json(
       {
