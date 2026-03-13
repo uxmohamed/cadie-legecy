@@ -40,10 +40,19 @@ describe("auth-middleware", () => {
   it("returns an api_token request context for bearer auth and updates token last-used", async () => {
     const select = jest.fn().mockReturnValue({
       eq: jest.fn().mockReturnValue({
-        gt: jest.fn().mockReturnValue({
-          single: jest.fn().mockResolvedValue({
-            data: { user_id: "user_123", id: "token_id_123", expires_at: "2099-01-01T00:00:00Z" },
-            error: null,
+        is: jest.fn().mockReturnValue({
+          gt: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({
+              data: {
+                user_id: "user_123",
+                id: "token_id_123",
+                expires_at: "2099-01-01T00:00:00Z",
+                scope: ["links:read", "links:write"],
+                client_id: "cadie-browser-extension",
+                install_id: "install_123",
+              },
+              error: null,
+            }),
           }),
         }),
       }),
@@ -72,7 +81,9 @@ describe("auth-middleware", () => {
       token: {
         id: "token_id_123",
         expiresAt: "2099-01-01T00:00:00Z",
-        scopes: ["legacy_full_access"],
+        scopes: ["links:read", "links:write"],
+        clientId: "cadie-browser-extension",
+        installId: "install_123",
       },
     });
     expect(mockCreateAdminClient).toHaveBeenCalledTimes(2);
@@ -85,8 +96,10 @@ describe("auth-middleware", () => {
       from: jest.fn(() => ({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            gt: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({ data: null, error: { message: "not found" } }),
+            is: jest.fn().mockReturnValue({
+              gt: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: null, error: { message: "not found" } }),
+              }),
             }),
           }),
         }),
@@ -96,6 +109,31 @@ describe("auth-middleware", () => {
     const request = {
       headers: new Headers({
         authorization: `Bearer ${"b".repeat(64)}`,
+      }),
+    } as never;
+
+    await expect(createRequestContext(request)).resolves.toBeNull();
+    expect(mockCreateClient).not.toHaveBeenCalled();
+  });
+
+  it("rejects revoked bearer tokens", async () => {
+    mockCreateAdminClient.mockReturnValue({
+      from: jest.fn(() => ({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            is: jest.fn().mockReturnValue({
+              gt: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: null, error: { message: "not found" } }),
+              }),
+            }),
+          }),
+        }),
+      })),
+    } as never);
+
+    const request = {
+      headers: new Headers({
+        authorization: `Bearer ${"r".repeat(64)}`,
       }),
     } as never;
 
@@ -135,5 +173,47 @@ describe("auth-middleware", () => {
     } as never;
 
     await expect(authenticateRequest(request)).resolves.toBe("compat_user_123");
+  });
+
+  it("treats missing scope metadata as legacy full access", async () => {
+    mockCreateAdminClient.mockReturnValue({
+      from: jest.fn(() => ({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            is: jest.fn().mockReturnValue({
+              gt: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({
+                  data: {
+                    user_id: "user_legacy",
+                    id: "token_legacy",
+                    expires_at: "2099-01-01T00:00:00Z",
+                    scope: null,
+                    client_id: null,
+                    install_id: null,
+                  },
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
+        update: jest.fn().mockReturnValue({
+          eq: jest.fn().mockResolvedValue({ error: null }),
+        }),
+      })),
+    } as never);
+
+    const request = {
+      headers: new Headers({
+        authorization: `Bearer ${"c".repeat(64)}`,
+      }),
+    } as never;
+
+    await expect(createRequestContext(request)).resolves.toMatchObject({
+      authSource: "api_token",
+      token: {
+        scopes: ["legacy_full_access"],
+      },
+    });
   });
 });

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { validateUUID } from "@/lib/validation/validate";
+import { revokeApiToken } from "@/lib/api-token-service";
 
 
 /**
  * DELETE /api/auth/tokens/[id]
- * Revoke (delete) an API token
+ * Revoke an API token
  */
 export async function DELETE(
   request: NextRequest,
@@ -25,20 +26,7 @@ export async function DELETE(
     const uuidError = validateUUID(id, "Token ID");
     if (uuidError) return uuidError;
 
-    // Delete the token (RLS ensures user can only delete their own tokens)
-    const { error } = await supabase
-      .from("api_tokens")
-      .delete()
-      .eq("id", id)
-      .eq("user_id", user.id);
-
-    if (error) {
-      console.error("Error deleting token:", error);
-      return NextResponse.json(
-        { error: "Failed to delete token" },
-        { status: 500 }
-      );
-    }
+    await revokeApiToken(id, user.id, "manual");
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -49,4 +37,3 @@ export async function DELETE(
     );
   }
 }
-

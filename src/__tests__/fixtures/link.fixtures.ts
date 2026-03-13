@@ -66,6 +66,9 @@ export function createMockLink(overrides: Partial<Link> = {}): Link {
     fetched_at: new Date().toISOString(),
     etag: null,
     last_modified: null,
+    processing_state: 'completed',
+    processing_stage: 'complete',
+    processing_error: null,
     ...overrides,
   };
 }

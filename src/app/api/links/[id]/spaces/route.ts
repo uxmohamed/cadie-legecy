@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimitLinks, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
 import { createRequestContext } from "@/lib/auth-middleware";
+import { requireTokenScopes } from "@/lib/api-tokens";
 import { validateUUID } from "@/lib/validation/validate";
 import { RequestDataAccess, RequestDataAccessError } from "@/lib/request-data";
 
@@ -23,6 +24,8 @@ export async function GET(
     if (!context) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const scopeError = requireTokenScopes(context, ["spaces:read"]);
+    if (scopeError) return scopeError;
 
     const dataAccess = new RequestDataAccess(context);
 

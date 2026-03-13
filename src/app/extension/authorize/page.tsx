@@ -15,7 +15,14 @@ export default function ExtensionAuthorizePage() {
       const response = await fetch("/api/extension/authorize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Extension" }),
+        body: JSON.stringify({
+          name: "Extension",
+          installId: new URLSearchParams(window.location.search).get("installId"),
+          clientId: "cadie-browser-extension",
+          extensionVersion: new URLSearchParams(window.location.search).get("extensionVersion"),
+          browserName: new URLSearchParams(window.location.search).get("browserName") || "chrome",
+          platform: navigator.platform,
+        }),
       });
 
       if (!response.ok) {
@@ -30,6 +37,7 @@ export default function ExtensionAuthorizePage() {
       // Get the extension ID from URL params
       const params = new URLSearchParams(window.location.search);
       const extensionId = params.get("extensionId");
+      const installId = params.get("installId");
       const state = params.get("state");
 
       // Always use production URL for extension - tokens are generated against production database
@@ -41,6 +49,7 @@ export default function ExtensionAuthorizePage() {
         email: currentUser.email,
         cadieUrl: cadieUrl,
         state: state || "",
+        installId: installId || "",
       };
 
       // Store auth data in DOM for content script
@@ -51,6 +60,7 @@ export default function ExtensionAuthorizePage() {
         email: authData.email || "",
         url: authData.cadieUrl,
         state: authData.state || "",
+        installId: authData.installId || "",
       }));
       authDataElement.style.display = "none";
       document.body.appendChild(authDataElement);
@@ -81,6 +91,7 @@ export default function ExtensionAuthorizePage() {
         url: authData.cadieUrl,
         cadieUrl: authData.cadieUrl,
         state: authData.state || "",
+        installId: authData.installId || "",
         extensionId,
       };
       

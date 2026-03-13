@@ -119,11 +119,11 @@ export class MetadataService {
      * This is used for background metadata enrichment
      * Skips enrichment for non-URL content types (e.g., colors)
      */
-    async enrichLink(linkId: string, url: string, contentType?: string, userId?: string): Promise<void> {
+    async enrichLink(linkId: string, url: string, contentType?: string, userId?: string): Promise<string> {
         // Skip enrichment for non-URL content types
         if (contentType && contentType !== "url") {
             log.info(`Skipping metadata enrichment for non-URL content type: ${contentType}`, { linkId });
-            return;
+            return "success";
         }
 
         try {
@@ -158,6 +158,7 @@ export class MetadataService {
                 } else {
                     log.info(`[EnrichLink] Successfully updated metadata for ${linkId}`);
                 }
+                return "success";
             } else {
                 // Update with failure status but preserve url as title if needed
                 const supabase = createAdminClient();
@@ -180,6 +181,7 @@ export class MetadataService {
                 }
 
                 log.warn(`[EnrichLink] Metadata extraction completed with status ${metadata.fetch_status}`, { linkId });
+                return metadata.fetch_status;
             }
         } catch (error) {
             log.error(`[EnrichLink] Metadata enrichment failed`, error);

@@ -4,6 +4,10 @@ import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { canonicalizeUrl } from "@/lib/canonicalize";
 import { AppError, ErrorCode } from "@/lib/errors";
 import { withRetry, supabaseRetryPredicate } from "@/lib/retry";
+import {
+    getInitialLinkProcessingStage,
+    getInitialLinkProcessingState,
+} from "@/features/links/lib/link-processing";
 
 type SupabaseRepositoryClient =
     | Awaited<ReturnType<typeof createClient>>
@@ -203,6 +207,9 @@ export class SupabaseLinkRepository implements ILinkRepository {
                 is_deleted: false,
                 fetch_status: contentType === "color" || contentType === "note" ? "success" : "pending",
                 fetched_at: contentType === "color" || contentType === "note" ? new Date().toISOString() : null,
+                processing_state: getInitialLinkProcessingState(contentType),
+                processing_stage: getInitialLinkProcessingStage(contentType),
+                processing_error: null,
             })
             .select()
             .single();

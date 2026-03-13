@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { UpdateLinkHandler, DeleteLinkHandler } from "@/features/links/api/handlers";
 import { rateLimitLinks, getIdentifier, getRateLimitHeaders } from "@/lib/rate-limit";
-import { authenticateRequest } from "@/lib/auth-middleware";
+import { createRequestContext } from "@/lib/auth-middleware";
+import { requireTokenScopes } from "@/lib/api-tokens";
 import { validateUUID } from "@/lib/validation/validate";
 
 /**
@@ -19,7 +20,13 @@ export async function PUT(
   if (uuidError) return uuidError;
   
   // Rate limiting
-  const userId = await authenticateRequest(request);
+  const context = await createRequestContext(request);
+  if (!context) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const scopeError = requireTokenScopes(context, ["links:write"]);
+  if (scopeError) return scopeError;
+  const userId = context.userId;
   const identifier = getIdentifier(request, userId || undefined);
   const { success, limit, reset, remaining } = await rateLimitLinks.limit(identifier);
   
@@ -57,7 +64,13 @@ export async function DELETE(
   if (uuidError) return uuidError;
   
   // Rate limiting
-  const userId = await authenticateRequest(request);
+  const context = await createRequestContext(request);
+  if (!context) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const scopeError = requireTokenScopes(context, ["links:write"]);
+  if (scopeError) return scopeError;
+  const userId = context.userId;
   const identifier = getIdentifier(request, userId || undefined);
   const { success, limit, reset, remaining } = await rateLimitLinks.limit(identifier);
   

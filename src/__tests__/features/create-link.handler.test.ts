@@ -144,6 +144,8 @@ describe("CreateLinkHandler privileged extension path", () => {
           id: "token_1",
           expiresAt: "2099-01-01T00:00:00Z",
           scopes: ["legacy_full_access"],
+          clientId: "cadie-browser-extension",
+          installId: "install_1",
         },
       }
     );
@@ -172,5 +174,30 @@ describe("CreateLinkHandler privileged extension path", () => {
     );
 
     expect(mockRepositoryConstructor.mock.calls[0][0]).toBeUndefined();
+  });
+
+  it("returns completed processing state for non-async note saves", async () => {
+    const handler = new CreateLinkHandler();
+
+    const response = await handler.handle(
+      {
+        headers: new Headers(),
+        nextUrl: new URL("http://localhost/api/links"),
+      } as never,
+      {
+        url: "note://link",
+        title: "Note",
+        content_type: "note",
+      },
+      {
+        userId: "user_1",
+        authSource: "session",
+        token: null,
+      }
+    );
+
+    await expect(response.json()).resolves.toMatchObject({
+      processing_state: "completed",
+    });
   });
 });

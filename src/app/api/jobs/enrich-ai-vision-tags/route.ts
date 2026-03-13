@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { AITaggingService } from "@/features/links/services/ai-tagging.service";
 import { log } from "@/lib/logger";
 import type { EnrichAIVisionTagsJob } from "@/lib/job-queue";
+import { updateLinkProcessingState } from "@/features/links/lib/link-processing";
 
 /**
  * POST /api/jobs/enrich-ai-vision-tags
@@ -12,6 +13,8 @@ import type { EnrichAIVisionTagsJob } from "@/lib/job-queue";
  * Called by QStash with automatic retries.
  */
 export async function POST(request: NextRequest) {
+  let job: EnrichAIVisionTagsJob | null = null;
+
   try {
     // Verify QStash signature
     const receiver = new Receiver({
@@ -29,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     await receiver.verify({ signature, body });
 
-    const job: EnrichAIVisionTagsJob = JSON.parse(body);
+    job = JSON.parse(body) as EnrichAIVisionTagsJob;
     const { linkId, userId } = job;
 
     if (!linkId || !userId) {
@@ -47,6 +50,12 @@ export async function POST(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
+    await updateLinkProcessingState(supabase, {
+      linkId,
+      userId,
+      state: "processing",
+      stage: "ai_vision_tagging",
+    });
 
     // Fetch link data
     const { data: link, error: fetchError } = await supabase
@@ -64,12 +73,24 @@ export async function POST(request: NextRequest) {
     // Only process image items
     if (link.content_type !== "image") {
       log.info("[AI Vision Tags Job] Skipping non-image item", { linkId });
+      await updateLinkProcessingState(supabase, {
+        linkId,
+        userId,
+        state: "completed",
+        stage: "complete",
+      });
       return NextResponse.json({ success: true, skipped: true });
     }
 
     // Skip if already tagged
     if (link.ai_tags && link.ai_tags.length > 0) {
       log.info("[AI Vision Tags Job] Already tagged, skipping", { linkId });
+      await updateLinkProcessingState(supabase, {
+        linkId,
+        userId,
+        state: "completed",
+        stage: "complete",
+      });
       return NextResponse.json({ success: true, skipped: true });
     }
 
@@ -89,6 +110,13 @@ export async function POST(request: NextRequest) {
         })
         .eq("id", linkId)
         .eq("user_id", userId);
+      await updateLinkProcessingState(supabase, {
+        linkId,
+        userId,
+        state: "failed",
+        stage: "ai_vision_tagging",
+        error: "Image analysis did not return any tags.",
+      });
       return NextResponse.json({ success: true, noResult: true });
     }
 
@@ -125,6 +153,12 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+    await updateLinkProcessingState(supabase, {
+      linkId,
+      userId,
+      state: "completed",
+      stage: "complete",
+    });
 
     log.info("[AI Vision Tags Job] Completed", {
       linkId,
@@ -141,6 +175,23 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     log.error("[AI Vision Tags Job] Failed", { error });
+    if (job?.linkId && job.userId) {
+      try {
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
+        );
+        await updateLinkProcessingState(supabase, {
+          linkId: job.linkId,
+          userId: job.userId,
+          state: "failed",
+          stage: "ai_vision_tagging",
+          error: "Image analysis failed.",
+        });
+      } catch {
+        // Ignore follow-up persistence failures.
+      }
+    }
     return NextResponse.json(
       {
         error: "AI vision tagging failed",
