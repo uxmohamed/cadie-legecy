@@ -21,6 +21,7 @@ import {
 } from "@/features/links/lib/link-processing";
 import { buildRecoveryMetadataUpdates, shouldSkipAITagWrite } from "@/features/links/lib/enrichment-ownership";
 import { runDirectLinkEnrichment } from "@/features/links/services/direct-enrichment.service";
+import { sanitizeNoteHtml } from "@/lib/server/sanitize-note-html";
 
 const EXTENSION_SOURCE_HEADER = "x-cadie-source";
 const EXTENSION_SOURCE_VALUE = "extension";
@@ -697,6 +698,13 @@ export class CreateLinkHandler {
                     description: description || null,
                     notes: notes || null,
                     content_text: content_text || null,
+                };
+            }
+
+            if (createLinkDTO.content_type === "note") {
+                createLinkDTO = {
+                    ...createLinkDTO,
+                    content_text: sanitizeNoteHtml(createLinkDTO.content_text) || createLinkDTO.notes || null,
                 };
             }
 

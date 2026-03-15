@@ -249,7 +249,7 @@ export function UserMenu({ user }: UserMenuProps) {
           <DropdownMenuItem
             render={
               <a 
-                href="https://x.com/messages/compose?recipient_id=1649994120725778432" 
+                href="https://x.com/uxmohamed_" 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className="cursor-pointer w-full flex items-center group"
@@ -257,7 +257,7 @@ export function UserMenu({ user }: UserMenuProps) {
             }
           >
             <IconMessage className="h-4 w-4 text-[var(--icon-secondary)]" />
-            Beta Feedback
+            X Profile
             <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
           </DropdownMenuItem>
           <DropdownMenuItem
@@ -296,11 +296,11 @@ export function UserMenu({ user }: UserMenuProps) {
           </DropdownMenuItem>
           <DropdownMenuItem
             render={
-              <a href="https://x.com/cadieapp_" target="_blank" rel="noopener noreferrer" className="cursor-pointer w-full flex items-center group" />
+              <a href="https://x.com/uxmohamed_" target="_blank" rel="noopener noreferrer" className="cursor-pointer w-full flex items-center group" />
             }
           >
             <IconBrandX className="h-4 w-4 text-[var(--icon-secondary)]" />
-            Follow us on X
+            Follow @uxmohamed_
             <IconExternalLink className="ml-auto h-4 w-4 text-[var(--icon-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
           </DropdownMenuItem>
           <DropdownMenuItem 

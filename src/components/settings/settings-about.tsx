@@ -53,7 +53,7 @@ export function SettingsAbout() {
                 <IconBrandX className="h-5 w-5" />
               </div>
               <div>
-                <h4 className="text-sm font-medium">Follow us on X</h4>
+                <h4 className="text-sm font-medium">Follow Mohamed on X</h4>
                 <p className="text-xs text-fg-muted">Get the latest updates and features</p>
               </div>
             </div>
@@ -61,9 +61,9 @@ export function SettingsAbout() {
               variant="secondary"
               size="sm"
               className="w-full gap-2"
-              render={<a href="https://x.com/cadieapp_" target="_blank" rel="noopener noreferrer" />}
+              render={<a href="https://x.com/uxmohamed_" target="_blank" rel="noopener noreferrer" />}
             >
-              Follow @cadieapp_
+              Follow @uxmohamed_
               <IconArrowRight className="h-3 w-3 opacity-50" />
             </Button>
           </div>
@@ -82,9 +82,9 @@ export function SettingsAbout() {
               variant="secondary"
               size="sm"
               className="w-full justify-between"
-              render={<a href="https://x.com/messages/compose?recipient_id=1649994120725778432" target="_blank" rel="noopener noreferrer" />}
+              render={<a href="https://x.com/uxmohamed_" target="_blank" rel="noopener noreferrer" />}
             >
-              <span>Send Message</span>
+              <span>Open X Profile</span>
               <IconArrowRight className="h-3 w-3 opacity-50" />
             </Button>
           </div>

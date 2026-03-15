@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { sanitizeRichTextHtml } from "@/lib/sanitize-rich-text";
 import type { Link, LinkFilters } from "@/features/links/types";
 import type { DetectedContent } from "@/lib/content-detector";
 import { canonicalizeColor, resolveColorMetadata } from "@/lib/canonicalize";
@@ -946,6 +947,7 @@ export function useLinkMutations(filters: LinkFilters) {
 
   const addNoteMutation = useMutation({
     mutationFn: async ({ title, html, plainText }: { title: string; html: string; plainText: string }) => {
+      const sanitizedHtml = sanitizeRichTextHtml(html);
       const response = await fetch("/api/links", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -953,7 +955,7 @@ export function useLinkMutations(filters: LinkFilters) {
           url: `note://${crypto.randomUUID()}`,
           title,
           content_type: "note",
-          content_text: html,
+          content_text: sanitizedHtml,
           notes: plainText,
           description: plainText.slice(0, 280),
         }),

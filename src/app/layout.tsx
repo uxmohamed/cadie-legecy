@@ -61,8 +61,8 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Cadie",
     description: "Your personal library for the internet",
-    site: "@caaboray",
-    creator: "@caaboray",
+    site: "@uxmohamed_",
+    creator: "@uxmohamed_",
     images: [
       {
         url: `${SITE_URL}/og-image.png`,
@@ -96,7 +96,6 @@ export default async function RootLayout({
       <head>
         <meta name="theme-color" content="#F6F4EE" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#1f1f1f" media="(prefers-color-scheme: dark)" />
-        <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
       </head>
       <body suppressHydrationWarning className={`${inter.variable} ${customFont.variable} antialiased`}>
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-bg focus:text-fg">

@@ -1,43 +1,34 @@
-# Cadie
+# Cadie Legacy
 
-Cadie is a link and color organization app with Spaces, fast keyboard workflows, and a Chrome extension.
+Legacy version of Cadie, originally built as a bookmark manager for links and colors.
 
-## What it does
+This project is no longer maintained and is being kept online for reference and open source access.
+The active product direction for Cadie now lives separately.
+
+## What It Includes
 
 - Save links with metadata
-- Save color values (`hex`, `rgb`, `hsl`, `oklch`)
-- Organize with Spaces, pinning, archive, and trash
+- Save colors in `hex`, `rgb`, `hsl`, and `oklch`
+- Save notes, images, and PDF documents
+- Organize items with Spaces, pinning, archive, and trash
+- Fast keyboard workflows and command menu support
+- Metadata enrichment and AI-generated tagging
 - Sign in with Google or email magic link
-- Import bookmarks and export links as CSV
+- Import browser bookmarks and export links as CSV
+- Use the Chrome extension for quick saving
+- Light and dark themes
 
-## Quick start
+## Run Locally
 
 ```bash
 git clone <your-repo-url>
 cd cadie
 npm install
-```
-
-Create `.env.local` (see `/Users/hassan/Repos/cadie/ENV_VARIABLES.md` for full list):
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=<your-supabase-url>
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
-SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
-NEXT_PUBLIC_BASE_URL=http://localhost:3000
-```
-
-In Supabase Auth, add callback URLs:
-
-- `http://localhost:3000/auth/callback`
-- `https://your-domain.com/auth/callback`
-
-Run:
-
-```bash
 npm run dev
 ```
+
+Create `.env.local` with the required Supabase and site variables.
+See [ENV_VARIABLES.md](/Users/hassan/Repos/cadie/ENV_VARIABLES.md) for the full list.
 
 ## Extension
 
@@ -45,30 +36,11 @@ npm run dev
 npm run extension:build
 ```
 
-Load `extension/dist` in `chrome://extensions` (Developer Mode).
+Load `extension/dist` in `chrome://extensions` with Developer Mode enabled.
 
-## Common scripts
+## Status
 
-```bash
-npm run dev
-npm run build
-npm run start
-npm run lint
-npm run test
-npm run extension:dev
-npm run extension:build
-```
+This repo is kept as a legacy archive and is not under active development.
+Use it as a reference project, not as the current Cadie product.
 
-## Maintenance scripts
-
-- Billing recovery: `pnpm ts-node scripts/recover-billing-state.ts --mode=all` (dry-run)
-- Apply billing recovery: `pnpm ts-node scripts/recover-billing-state.ts --mode=all --apply`
-- Deprecated and removed: `upgrade.ts` (unsafe mass-upgrade script)
-
-## Docs
-
-- Env vars: `/Users/hassan/Repos/cadie/ENV_VARIABLES.md`
-- Bookmark import rollout: `/Users/hassan/Repos/cadie/docs/bookmark-import-v0-rollout.md`
-- Link export rollout: `/Users/hassan/Repos/cadie/docs/link-export-v0-rollout.md`
-- Link query performance strategy: `/Users/hassan/Repos/cadie/docs/link-query-performance.md`
-
+The new Cadie direction is focused on building a workspace for product teams to save, organize, discuss, and learn from experiments across links, prototypes, recordings, screenshots, and notes.

@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { IconBold, IconList, IconListNumbers, IconHighlight } from "@tabler/icons-react";
+import { sanitizeRichTextHtml } from "@/lib/sanitize-rich-text";
 
 interface NoteEditorModalProps {
   open: boolean;
@@ -52,7 +53,11 @@ export function NoteEditorModal({ open, onOpenChange, onSave }: NoteEditorModalP
     if (!canSave) return;
     setIsSaving(true);
     try {
-      await onSave({ title: title.trim(), html: getHtml(), plainText: getPlainText() });
+      await onSave({
+        title: title.trim(),
+        html: sanitizeRichTextHtml(getHtml()),
+        plainText: getPlainText(),
+      });
       onOpenChange(false);
     } finally {
       setIsSaving(false);

@@ -9,6 +9,7 @@ import { IconWorld, IconBrandX, IconFileTypePdf, IconExternalLink, IconNotes } f
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useTheme } from "@/components/theme-provider";
+import { sanitizeRichTextHtml } from "@/lib/sanitize-rich-text";
 
 interface PreviewPanelProps {
   link: Link;
@@ -293,6 +294,11 @@ function DocumentPreview({ link }: { link: Link }) {
 
 
 function NotePreview({ link }: { link: Link }) {
+  const sanitizedHtml = React.useMemo(
+    () => sanitizeRichTextHtml(link.content_text || link.notes || ""),
+    [link.content_text, link.notes]
+  );
+
   return (
     <div className="w-full h-full bg-bg-surface p-6 overflow-auto">
       <div className="max-w-2xl mx-auto">
@@ -303,7 +309,7 @@ function NotePreview({ link }: { link: Link }) {
         <h3 className="text-xl font-semibold text-fg mb-3">{link.title}</h3>
         <div
           className="prose prose-sm dark:prose-invert max-w-none text-fg"
-          dangerouslySetInnerHTML={{ __html: link.content_text || link.notes || "" }}
+          dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
         />
       </div>
     </div>

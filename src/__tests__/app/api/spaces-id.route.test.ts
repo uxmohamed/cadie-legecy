@@ -1,8 +1,9 @@
-const mockAuthenticateRequest = jest.fn();
+const mockCreateRequestContext = jest.fn();
 const mockRateLimitSpacesLimit = jest.fn();
 const mockCreateClient = jest.fn();
 const mockGetBillingContext = jest.fn();
 const mockCreatePlanLimitResponse = jest.fn();
+const mockRequireTokenScopes = jest.fn();
 
 jest.mock("next/server", () => {
   class MockNextResponse {
@@ -40,7 +41,11 @@ jest.mock("next/server", () => {
 });
 
 jest.mock("@/lib/auth-middleware", () => ({
-  authenticateRequest: (...args: unknown[]) => mockAuthenticateRequest(...args),
+  createRequestContext: (...args: unknown[]) => mockCreateRequestContext(...args),
+}));
+
+jest.mock("@/lib/api-tokens", () => ({
+  requireTokenScopes: (...args: unknown[]) => mockRequireTokenScopes(...args),
 }));
 
 jest.mock("@/lib/rate-limit", () => ({
@@ -68,7 +73,8 @@ import { PATCH } from "@/app/api/spaces/[id]/route";
 describe("PATCH /api/spaces/[id] billing lock behavior", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockAuthenticateRequest.mockResolvedValue("user_1");
+    mockCreateRequestContext.mockResolvedValue({ userId: "user_1", authSource: "session", token: null });
+    mockRequireTokenScopes.mockReturnValue(null);
     mockRateLimitSpacesLimit.mockResolvedValue({
       success: true,
       limit: 30,

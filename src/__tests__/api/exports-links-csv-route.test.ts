@@ -1,9 +1,10 @@
-const mockAuthenticateRequest = jest.fn();
+const mockCreateRequestContext = jest.fn();
 const mockRateLimit = jest.fn();
 const mockGetIdentifier = jest.fn();
 const mockGetRateLimitHeaders = jest.fn();
 const mockStreamActiveLinksCsv = jest.fn();
 const mockCreateExportFilename = jest.fn();
+const mockRequireTokenScopes = jest.fn();
 
 jest.mock("next/server", () => {
   class MockNextResponse {
@@ -69,7 +70,11 @@ jest.mock("next/server", () => {
 });
 
 jest.mock("@/lib/auth-middleware", () => ({
-  authenticateRequest: (...args: unknown[]) => mockAuthenticateRequest(...args),
+  createRequestContext: (...args: unknown[]) => mockCreateRequestContext(...args),
+}));
+
+jest.mock("@/lib/api-tokens", () => ({
+  requireTokenScopes: (...args: unknown[]) => mockRequireTokenScopes(...args),
 }));
 
 jest.mock("@/lib/rate-limit", () => ({
@@ -92,6 +97,7 @@ import { GET } from "@/app/api/exports/links/csv/route";
 describe("GET /api/exports/links/csv", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockRequireTokenScopes.mockReturnValue(null);
     mockGetIdentifier.mockReturnValue("user:test-user");
     mockGetRateLimitHeaders.mockReturnValue({
       "X-RateLimit-Limit": "10",
@@ -103,7 +109,7 @@ describe("GET /api/exports/links/csv", () => {
   });
 
   it("returns 401 when unauthenticated", async () => {
-    mockAuthenticateRequest.mockResolvedValue(null);
+    mockCreateRequestContext.mockResolvedValue(null);
 
     const request = { headers: new Headers() } as never;
     const response = await GET(request);
@@ -113,7 +119,7 @@ describe("GET /api/exports/links/csv", () => {
   });
 
   it("returns 429 when rate limited", async () => {
-    mockAuthenticateRequest.mockResolvedValue("test-user");
+    mockCreateRequestContext.mockResolvedValue({ userId: "test-user", authSource: "session", token: null });
     mockRateLimit.mockResolvedValue({
       success: false,
       limit: 10,
@@ -131,7 +137,7 @@ describe("GET /api/exports/links/csv", () => {
   });
 
   it("returns CSV stream with expected headers for authenticated requests", async () => {
-    mockAuthenticateRequest.mockResolvedValue("test-user");
+    mockCreateRequestContext.mockResolvedValue({ userId: "test-user", authSource: "session", token: null });
     mockRateLimit.mockResolvedValue({
       success: true,
       limit: 10,

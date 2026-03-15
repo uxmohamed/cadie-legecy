@@ -1,7 +1,6 @@
 import '@testing-library/jest-dom';
 import { TextDecoder, TextEncoder } from 'util';
 import { ReadableStream, TransformStream, WritableStream } from 'stream/web';
-import { MessageChannel, MessagePort } from 'worker_threads';
 
 if (typeof global.TextEncoder === 'undefined') {
   global.TextEncoder = TextEncoder;
@@ -23,12 +22,60 @@ if (typeof global.TransformStream === 'undefined') {
   global.TransformStream = TransformStream as unknown as typeof global.TransformStream;
 }
 
-if (typeof global.MessagePort === 'undefined') {
-  global.MessagePort = MessagePort as unknown as typeof global.MessagePort;
-}
+if (typeof global.MessagePort === 'undefined' || typeof global.MessageChannel === 'undefined') {
+  class MockMessageEvent<T = unknown> extends Event {
+    data: T;
 
-if (typeof global.MessageChannel === 'undefined') {
-  global.MessageChannel = MessageChannel as unknown as typeof global.MessageChannel;
+    constructor(type: string, init?: { data?: T }) {
+      super(type);
+      this.data = init?.data as T;
+    }
+  }
+
+  class MockMessagePort extends EventTarget {
+    onmessage: ((event: MessageEvent) => void) | null = null;
+    private counterpart: MockMessagePort | null = null;
+    private isClosed = false;
+
+    setCounterpart(counterpart: MockMessagePort) {
+      this.counterpart = counterpart;
+    }
+
+    postMessage(message?: unknown) {
+      if (this.isClosed || !this.counterpart || this.counterpart.isClosed) return;
+
+      queueMicrotask(() => {
+        if (!this.counterpart || this.counterpart.isClosed) return;
+        const event = new MockMessageEvent("message", { data: message }) as unknown as MessageEvent;
+        this.counterpart.dispatchEvent(event);
+        this.counterpart.onmessage?.(event);
+      });
+    }
+
+    start() {
+      return undefined;
+    }
+
+    close() {
+      this.isClosed = true;
+      this.onmessage = null;
+    }
+  }
+
+  class MockMessageChannel {
+    port1: MockMessagePort;
+    port2: MockMessagePort;
+
+    constructor() {
+      this.port1 = new MockMessagePort();
+      this.port2 = new MockMessagePort();
+      this.port1.setCounterpart(this.port2);
+      this.port2.setCounterpart(this.port1);
+    }
+  }
+
+  global.MessagePort = MockMessagePort as unknown as typeof global.MessagePort;
+  global.MessageChannel = MockMessageChannel as unknown as typeof global.MessageChannel;
 }
 
 if (typeof global.Request === "undefined") {

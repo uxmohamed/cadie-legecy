@@ -4,6 +4,7 @@ import { SupabaseLinkRepository } from "@/features/links/repositories";
 import { authenticateRequest } from "@/lib/auth-middleware";
 import type { UpdateLinkDTO } from "@/features/links/types";
 import { toAppError, ErrorCode } from "@/lib/errors";
+import { sanitizeNoteHtml } from "@/lib/server/sanitize-note-html";
 
 /**
  * Handler for PUT /api/links/[id]
@@ -36,7 +37,11 @@ export class UpdateLinkHandler {
 
             // Parse request body
             const body = (await request.json()) as UpdateLinkDTO;
-            const updateDTO: UpdateLinkDTO = body;
+            const updateDTO: UpdateLinkDTO = { ...body };
+
+            if (typeof updateDTO.content_text === "string") {
+                updateDTO.content_text = sanitizeNoteHtml(updateDTO.content_text) || null;
+            }
 
             // Update link using service
             const link = await this.linkService.updateLink(id, userId, updateDTO);

@@ -54,7 +54,7 @@ export function Footer() {
                 <ul className="space-y-3">
                   <li>
                     <a
-                      href="https://x.com/cadieapp_"
+                      href="https://x.com/uxmohamed_"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm font-[470] text-fg-muted hover:text-fg transition-colors"

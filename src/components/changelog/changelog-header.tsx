@@ -45,7 +45,7 @@ export function ChangelogHeader() {
               </Button>
             </Link>
             <a
-              href="https://x.com/cadieapp_"
+              href="https://x.com/uxmohamed_"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -142,7 +142,7 @@ export function ChangelogHeader() {
                         Changelog
                       </Link>
                       <a
-                        href="https://x.com/cadieapp_"
+                        href="https://x.com/uxmohamed_"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-2xl font-medium text-fg hover:text-fg-muted transition-colors"
