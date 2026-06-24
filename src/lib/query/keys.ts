@@ -34,6 +34,13 @@ export const queryKeys = {
     all: ["billing"] as const,
     status: () => ["billing", "status"] as const,
   },
+  notifications: {
+    all: ["notifications"] as const,
+    list: (userId: string, workspaceId?: string | null) =>
+      ["notifications", "list", userId, workspaceId ?? null] as const,
+    unreadCount: (userId: string, workspaceId?: string | null) =>
+      ["notifications", "unreadCount", userId, workspaceId ?? null] as const,
+  },
   links: {
     // Base key for all link queries
     all: ["links"] as const,

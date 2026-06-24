@@ -130,6 +130,10 @@ function recoverFromRealtimeReconnect(
     queryKey: queryKeys.linkSpaces.all,
     refetchType: "active",
   });
+  void queryClient.invalidateQueries({
+    queryKey: queryKeys.notifications.all,
+    refetchType: "active",
+  });
 }
 
 function updateSpaceLinkCount(
@@ -558,6 +562,21 @@ export function useRealtimeSync(isAuthenticated: boolean, userId?: string): void
             handleSpaceLinkDelete(queryClient, oldMembership);
             invalidateDerivedLinkQueries(queryClient);
           }
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          void queryClient.invalidateQueries({
+            queryKey: queryKeys.notifications.all,
+            refetchType: "active",
+          });
         },
       )
       .subscribe((status) => {
