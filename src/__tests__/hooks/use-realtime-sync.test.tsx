@@ -126,7 +126,7 @@ describe("useRealtimeSync", () => {
     const { handlers } = renderRealtimeHook(queryClient);
 
     await waitFor(() => {
-      expect(handlers).toHaveLength(2);
+      expect(handlers).toHaveLength(3);
     });
 
     const link = makeLink({ id: "link-2" });
@@ -177,7 +177,7 @@ describe("useRealtimeSync", () => {
     const { handlers } = renderRealtimeHook(queryClient);
 
     await waitFor(() => {
-      expect(handlers).toHaveLength(2);
+      expect(handlers).toHaveLength(3);
     });
 
     act(() => {
@@ -225,6 +225,44 @@ describe("useRealtimeSync", () => {
     });
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: queryKeys.linkSpaces.all,
+      refetchType: "active",
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: queryKeys.notifications.all,
+      refetchType: "active",
+    });
+  });
+
+  it("invalidates notification queries when notification realtime events arrive", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: Infinity },
+      },
+    });
+
+    const invalidateSpy = jest
+      .spyOn(queryClient, "invalidateQueries")
+      .mockResolvedValue(undefined);
+
+    const { handlers } = renderRealtimeHook(queryClient);
+
+    await waitFor(() => {
+      expect(handlers).toHaveLength(3);
+    });
+
+    act(() => {
+      handlers[2]({
+        eventType: "INSERT",
+        new: {
+          id: "notification-1",
+          user_id: "user-1",
+        },
+        old: null,
+      });
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: queryKeys.notifications.all,
       refetchType: "active",
     });
   });
