@@ -6,9 +6,9 @@ import { LinkListSkeleton } from "@/components/skeletons";
 import { useLinksQuery } from "@/features/links/queries/use-links-query";
 import { useSearchLinks } from "@/features/links/hooks/use-search-links";
 import { useLinkMutations, useCopyUrl } from "@/features/links/queries/use-link-mutations";
-import { useSpaces } from "@/features/spaces/queries";
 import type { User } from "@supabase/supabase-js";
 import type { Link, LinkFilters } from "@/features/links/types";
+import type { Space } from "@/types";
 import {
   detectMultipleContentTypes,
 } from "@/lib/content-detector";
@@ -40,6 +40,9 @@ interface DashboardContentProps {
   onImageUploadReady?: (handler: (files: File[]) => void) => void;
   onDocumentUploadReady?: (handler: (files: File[]) => void) => void;
   onCreateNoteReady?: (handler: (payload: { title: string; html: string; plainText: string }) => Promise<unknown>) => void;
+  spaces: Space[];
+  onAddLinksToSpace: (spaceId: string, linkIds: string[]) => Promise<boolean>;
+  onRemoveLinksFromSpace: (spaceId: string, linkIds: string[]) => Promise<boolean>;
 }
 
 export function DashboardContent({
@@ -58,9 +61,11 @@ export function DashboardContent({
   onImageUploadReady,
   onDocumentUploadReady,
   onCreateNoteReady,
+  spaces,
+  onAddLinksToSpace,
+  onRemoveLinksFromSpace,
 }: DashboardContentProps) {
   const PAGE_SIZE = 100;
-  const { spaces, addLinksToSpace, removeLinksFromSpace } = useSpaces(!!user);
   const [linkSpacesMap, setLinkSpacesMap] = React.useState<Map<string, string[]>>(new Map());
 
   // Memoize filters to prevent cache misses
@@ -171,7 +176,7 @@ export function DashboardContent({
   }, [user, allLinks]);
 
   const handleAddToSpace = React.useCallback(async (linkId: string, spaceId: string) => {
-    await addLinksToSpace(spaceId, [linkId]);
+    await onAddLinksToSpace(spaceId, [linkId]);
     // Update local map
     setLinkSpacesMap(prev => {
       const updated = new Map(prev);
@@ -181,10 +186,10 @@ export function DashboardContent({
       }
       return updated;
     });
-  }, [addLinksToSpace]);
+  }, [onAddLinksToSpace]);
 
   const handleRemoveFromSpace = React.useCallback(async (linkId: string, spaceId: string) => {
-    await removeLinksFromSpace(spaceId, [linkId]);
+    await onRemoveLinksFromSpace(spaceId, [linkId]);
     // Update local map
     setLinkSpacesMap(prev => {
       const updated = new Map(prev);
@@ -192,7 +197,7 @@ export function DashboardContent({
       updated.set(linkId, existing.filter(id => id !== spaceId));
       return updated;
     });
-  }, [removeLinksFromSpace]);
+  }, [onRemoveLinksFromSpace]);
 
   // Sort links based on current sort settings
   const sortedLinks = React.useMemo(() => {
@@ -322,7 +327,7 @@ export function DashboardContent({
   const handleBatchAddToSpace = React.useCallback(async (spaceId: string, ids: string[]) => {
     if (ids.length === 0) return;
 
-    const didAdd = await addLinksToSpace(spaceId, ids);
+    const didAdd = await onAddLinksToSpace(spaceId, ids);
     if (!didAdd) return;
 
     // Keep the local link-space map in sync for immediate UI feedback.
@@ -336,7 +341,7 @@ export function DashboardContent({
       });
       return updated;
     });
-  }, [addLinksToSpace]);
+  }, [onAddLinksToSpace]);
 
   // Show skeleton when:
   // 1. Initial load for this query key (isLoading)

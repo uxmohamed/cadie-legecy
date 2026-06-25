@@ -67,7 +67,14 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
   } | null>(null);
   
   // Spaces management
-  const { spaces, createSpace, updateSpace, deleteSpace } = useSpaces(!!user, initialSpaces);
+  const {
+    spaces,
+    createSpace,
+    updateSpace,
+    deleteSpace,
+    addLinksToSpace,
+    removeLinksFromSpace,
+  } = useSpaces(!!user, initialSpaces);
   const [spaceModalOpen, setSpaceModalOpen] = React.useState(false);
   const [editingSpace, setEditingSpace] = React.useState<Space | null>(null);
   const imageUploadHandlerRef = React.useRef<((files: File[]) => void) | null>(null);
@@ -361,6 +368,9 @@ export function DashboardClient({ user, initialView = null, initialSpaces }: Das
           onImageUploadReady={handleImageUploadReady}
           onDocumentUploadReady={handleDocumentUploadReady}
           onCreateNoteReady={handleCreateNoteReady}
+          spaces={spaces}
+          onAddLinksToSpace={addLinksToSpace}
+          onRemoveLinksFromSpace={removeLinksFromSpace}
         />
       </Suspense>
     </DashboardShell>
