@@ -535,6 +535,13 @@ export function DashboardShell({
 
   return (
     <div className="min-h-screen bg-bg relative">
+      <a
+        href="#dashboard-main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-bg focus:px-4 focus:py-2 focus:text-fg focus:ring-2 focus:ring-ring focus:ring-offset-2"
+      >
+        Skip to content
+      </a>
+
       {/* Sticky Header Zone */}
       <div className="sticky top-0 z-20 bg-bg">
         {/* Top Header Bar */}
@@ -780,7 +787,11 @@ export function DashboardShell({
       </div>
 
       {/* Main Content Area */}
-      <div className={`mx-auto w-full ${viewMode === "list" ? "max-w-4xl" : ""} px-4 sm:px-6 md:px-8 pt-6 pb-32 sm:pb-28`}>
+      <div
+        id="dashboard-main-content"
+        tabIndex={-1}
+        className={`mx-auto w-full ${viewMode === "list" ? "max-w-4xl" : ""} px-4 sm:px-6 md:px-8 pt-6 pb-32 sm:pb-28 focus:outline-none`}
+      >
         <div className={viewMode === "list" ? "-mx-2" : ""}>
           {children}
         </div>
